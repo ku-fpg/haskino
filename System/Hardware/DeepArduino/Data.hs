@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances, GADTs, KindSignatures,
              OverloadedStrings, ScopedTypeVariables, StandaloneDeriving #-}
 
-module DeepArduino.Arduino where
+module System.Hardware.DeepArduino.Arduino where
 
 import           Control.Applicative
 import           Control.Monad (ap, liftM2)
