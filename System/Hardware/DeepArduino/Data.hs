@@ -1,12 +1,15 @@
-{-# LANGUAGE FlexibleInstances, GADTs, KindSignatures,
-             OverloadedStrings, ScopedTypeVariables, StandaloneDeriving #-}
+{-# LANGUAGE FlexibleInstances, GADTs, KindSignatures, RankNTypes,
+             OverloadedStrings, ScopedTypeVariables, StandaloneDeriving,
+             GeneralizedNewtypeDeriving #-}
 
-module System.Hardware.DeepArduino.Arduino where
+module System.Hardware.DeepArduino.Data where
 
 import           Control.Applicative
 import           Control.Concurrent (Chan, MVar, ThreadId)
 import           Control.Monad (ap, liftM2)
+import           Control.Monad.State (StateT, MonadIO, MonadState, gets, liftIO)
 
+import           Data.Bits ((.|.), (.&.))
 import qualified Data.Map as M
 import qualified Data.Set as S
 import           Data.Monoid
@@ -53,6 +56,16 @@ data IPin = InternalPin { pinNo :: Word8 }
 data Port = Port { portNo :: Word8 } 
           deriving (Eq, Ord, Show)
 
+-- | On the Arduino, pins are grouped into banks of 8.
+-- Given a pin, this function determines which port it belongs to
+pinPort :: IPin -> Port
+pinPort p = Port (pinNo p `quot` 8)
+
+-- | On the Arduino, pins are grouped into banks of 8.
+-- Given a pin, this function determines which index it belongs to in its port
+pinPortIndex :: IPin -> Word8
+pinPortIndex p = pinNo p `rem` 8
+
 -- | The mode for a pin.
 data PinMode = INPUT    -- ^ Digital input
              | OUTPUT   -- ^ Digital output
@@ -72,9 +85,18 @@ data PinCapabilities  = PinCapabilities {
                           analogPinNumber :: Maybe Word8              -- ^ Analog pin number, if any
                         , allowedModes    :: [(PinMode, Resolution)]  -- ^ Allowed modes and resolutions
                         }
+    deriving Show
+
+-- | Data associated with a pin
+data PinData = PinData {
+                 pinMode  :: PinMode
+               , pinValue :: Maybe (Either Bool Int)
+               }
+               deriving Show
 
 -- | What the board is capable of and current settings
 newtype BoardCapabilities = BoardCapabilities (M.Map IPin PinCapabilities)
+    deriving Show
 
 type SlaveAddress = Word16
 type SlaveRegister = Word16
@@ -125,6 +147,16 @@ data Query :: * -> * where
      QueryTask :: TaskID -> Query (TaskTime, TaskLength, TaskPos, [Procedure])
 
 deriving instance Show a => Show (Query a)
+
+-- | A response, as returned from the Arduino
+data Response = Firmware  Word8 Word8 String         -- ^ Firmware version (maj/min and indentifier
+              | Capabilities BoardCapabilities       -- ^ Capabilities report
+              | AnalogMapping [Word8]                -- ^ Analog pin mappings
+              | DigitalMessage Port Word8 Word8      -- ^ Status of a port
+              | AnalogMessage  IPin Word8 Word8      -- ^ Status of an analog pin
+              | PulseResponse  IPin Word32           -- ^ Repsonse to a PulseInCommand
+              | Unimplemented (Maybe String) [Word8] -- ^ Represents messages currently unsupported
+    deriving Show
 
 -- | Firmata commands, see: http://firmata.org/wiki/Protocol#Message_Types
 data FirmataCmd = ANALOG_MESSAGE      IPin -- ^ @0xE0@ pin
@@ -256,3 +288,7 @@ data ArduinoConnection = ArduinoConnection {
               , capabilities  :: BoardCapabilities                    -- ^ Capabilities of the board
               , listenerTid   :: MVar ThreadId                        -- ^ ThreadId of the listener
               }
+
+-- | The ArduinoConnection monad.
+-- newtype ArduinoConnection a = ArduinoConnection (StateT ArduinoState IO a)
+--        deriving (Functor, Applicative, Monad, MonadIO, MonadState ArduinoState)

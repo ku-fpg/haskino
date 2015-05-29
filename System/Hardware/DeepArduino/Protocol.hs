@@ -8,8 +8,9 @@
 --
 -- Internal representation of the firmata protocol.
 -------------------------------------------------------------------------------
+{-# LANGUAGE GADTs      #-}
 
-module System.Hardware.Arduino.Protocol(package, unpackageSysEx, unpackageNonSysEx) where
+module System.Hardware.DeepArduino.Protocol(packageProcedure, packageQuery, unpackageSysEx, unpackageNonSysEx) where
 
 import Data.Word (Word8)
 
@@ -32,20 +33,22 @@ nonSysEx cmd bs = B.pack $ firmataCmdVal cmd : bs
 
 -- | Package a request as a sequence of bytes to be sent to the board
 -- using the Firmata protocol.
-package :: Request -> B.ByteString
-package SystemReset              = nonSysEx SYSTEM_RESET            []
-package QueryFirmware            = sysEx    REPORT_FIRMWARE         []
-package CapabilityQuery          = sysEx    CAPABILITY_QUERY        []
-package AnalogMappingQuery       = sysEx    ANALOG_MAPPING_QUERY    []
-package (AnalogReport  p b)      = nonSysEx (REPORT_ANALOG_PIN p)   [if b then 1 else 0]
-package (DigitalReport p b)      = nonSysEx (REPORT_DIGITAL_PORT p) [if b then 1 else 0]
-package (SetPinMode p m)         = nonSysEx SET_PIN_MODE            [fromIntegral (pinNo p), fromIntegral (fromEnum m)]
-package (DigitalPortWrite p l m) = nonSysEx (DIGITAL_MESSAGE p)     [l, m]
-package (AnalogPinWrite p l m)   = nonSysEx (ANALOG_MESSAGE p)      [l, m]
-package (AnalogPinExtendedWrite p w8s) = sysEx EXTENDED_ANALOG      [fromIntegral (pinNo p)] ++ w8s
-package (SamplingInterval l m)   = sysEx    SAMPLING_INTERVAL       [l, m]
+packageProcedure :: Procedure -> B.ByteString
+packageProcedure SystemReset              = nonSysEx SYSTEM_RESET            []
+packageProcedure (AnalogReport  p b)      = nonSysEx (REPORT_ANALOG_PIN p)   [if b then 1 else 0]
+packageProcedure (DigitalReport p b)      = nonSysEx (REPORT_DIGITAL_PORT p) [if b then 1 else 0]
+packageProcedure (SetPinMode p m)         = nonSysEx SET_PIN_MODE            [fromIntegral (pinNo p), fromIntegral (fromEnum m)]
+packageProcedure (DigitalPortWrite p l m) = nonSysEx (DIGITAL_MESSAGE p)     [l, m]
+packageProcedure (AnalogPinWrite p l m)   = nonSysEx (ANALOG_MESSAGE p)      [l, m]
+-- packageProcedure (AnalogPinExtendedWrite p w8s) = sysEx EXTENDED_ANALOG      [fromIntegral (pinNo p)] ++ w8s
+packageProcedure (SamplingInterval l m)   = sysEx    SAMPLING_INTERVAL       [l, m]
 -- package (I2CWrite m sa w16s)     = sysEx    I2C_REQUEST
-package (Pulse p b dur to)       = sysEx    PULSE                   ([fromIntegral (pinNo p), if b then 1 else 0] ++ concatMap toArduinoBytes (word2Bytes dur ++ word2Bytes to))
+
+packageQuery :: Query a -> B.ByteString
+packageQuery QueryFirmware            = sysEx    REPORT_FIRMWARE         []
+packageQuery CapabilityQuery          = sysEx    CAPABILITY_QUERY        []
+packageQuery AnalogMappingQuery       = sysEx    ANALOG_MAPPING_QUERY    []
+packageQuery (Pulse p b dur to)       = sysEx    PULSE                   ([fromIntegral (pinNo p), if b then 1 else 0] ++ concatMap toArduinoBytes (word2Bytes dur ++ word2Bytes to))
 
 -- | Unpackage a SysEx response
 unpackageSysEx :: [Word8] -> Response

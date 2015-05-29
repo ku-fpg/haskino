@@ -14,7 +14,7 @@
 module System.Hardware.DeepArduino.Comm where
 
 import Control.Monad        (when, forever)
-import Control.Concurrent   (MVar, ThreadId, newChan, newMVar, newEmptyMVar, putMVar, writeChan, readChan, forkIO, modifyMVar_, tryTakeMVar, killThread)
+import Control.Concurrent   (Chan, MVar, ThreadId, newChan, newMVar, newEmptyMVar, putMVar, writeChan, readChan, forkIO, modifyMVar_, tryTakeMVar, killThread)
 import Control.Exception    (tryJust, AsyncException(UserInterrupt), handle, SomeException)
 import Control.Monad.State  (runStateT, gets, liftIO, modify)
 import Data.Bits            (testBit, (.&.))
@@ -22,16 +22,17 @@ import Data.List            (intercalate, isInfixOf)
 import Data.Maybe           (listToMaybe)
 import Data.Word            (Word8)
 import System.Timeout       (timeout)
+import System.Hardware.Serialport (SerialPort)
 import System.IO            (stderr, hPutStrLn)
 
 import qualified Data.ByteString            as B (unpack, length)
 import qualified Data.Map                   as M (empty, mapWithKey, insert, assocs, lookup)
 import qualified Data.Set                   as S (empty)
-import qualified System.Hardware.Serialport as S (withSerial, defaultSerialSettings, CommSpeed(CS57600), commSpeed, recv, send)
+import qualified System.Hardware.Serialport as S (openSerial, closeSerial, defaultSerialSettings, CommSpeed(CS57600), commSpeed, recv, send)
 
-import System.Hardware.Arduino.Data
--- import System.Hardware.Arduino.Utils
--- import System.Hardware.Arduino.Protocol
+import System.Hardware.DeepArduino.Data
+import System.Hardware.DeepArduino.Utils
+import System.Hardware.DeepArduino.Protocol
 
 
 -- | Open the connection to control the board:
@@ -50,7 +51,7 @@ openArduino :: Bool                 -- ^ If 'True', debugging info will be print
             -> FilePath             -- ^ Path to the Serial port
             -> IO ArduinoConnection
 openArduino verbose fp = do
-    do debugger <- mkDebugPrinter verbose
+        debugger <- mkDebugPrinter verbose
         debugger $ "Accessing arduino located at: " ++ show fp
         listenerTid <- newEmptyMVar
         port <- S.openSerial fp S.defaultSerialSettings{S.commSpeed = S.CS57600}
@@ -63,6 +64,9 @@ openArduino verbose fp = do
                               }
         bs <- newMVar initBoardState
         dc <- newChan
+        tid <- setupListener port debugger dc bs
+        liftIO $ putMVar listenerTid tid
+        debugger $ "Started listener thread: " ++ show tid
         let initState = ArduinoConnection {
                            message       = debugger
                          , bailOut       = bailOut listenerTid
@@ -74,27 +78,34 @@ openArduino verbose fp = do
                          , listenerTid   = listenerTid
                       }
         return initState
+    where
+        bailOut tid m ms = do cleanUpArduino tid
+                              error $ "\n*** hArduino:ERROR: " ++ intercalate "\n*** " (m:ms)
+
 
 closeArduino :: ArduinoConnection -> IO ()
 closeArduino conn = do
-        cleanup $ listenerTid conn
+        -- ltid <- gets listenerTid
+        -- sport <- gets port
+        cleanUpArduino $ listenerTid conn
         S.closeSerial $ port conn
         return ()
-    where
-        cleanUp tid = do mbltid <- tryTakeMVar tid
-                        case mbltid of
-                          Just t -> killThread t
-                          _      -> return ()
 
-send :: ArduinoConnection -> Arduino a -> IO a
-send conn commands =
+cleanUpArduino :: MVar ThreadId -> IO ()
+cleanUpArduino tid = do mbltid <- tryTakeMVar tid
+                        case mbltid of
+                            Just t -> killThread t
+                            _      -> return ()
+
+-- send :: ArduinoConnection -> Arduino a -> IO a
+-- send conn commands =
 
 -- | Start a thread to listen to the board and populate the channel with incoming queries.
-setupListener :: Arduino ThreadId
-setupListener = do
-        serial <- gets port
-        dbg    <- gets message
-        chan   <- gets deviceChannel
+setupListener :: SerialPort -> (String -> IO ()) -> Chan Response -> MVar BoardState -> IO ThreadId
+setupListener serial dbg chan bs = do
+        -- serial <- gets port
+        -- dbg    <- gets message
+        -- chan   <- gets deviceChannel
         let getBytes n = do let go need sofar
                                  | need <= 0  = return $ reverse sofar
                                  | True       = do b <- S.recv serial need
@@ -145,11 +156,11 @@ setupListener = do
                                                   return bst'
                   _                    -> do dbg $ "Received " ++ show resp
                                              writeChan chan resp
-        bs <- gets boardState
+        -- bs <- gets boardState
         tid <- liftIO $ forkIO $ forever (listener bs)
-        debug $ "Started listener thread: " ++ show tid
         return tid
 
+{-
 -- | Initialize our board, get capabilities, etc. Returns True if initialization
 -- went OK, False if not.
 initialize :: MVar ThreadId -> Arduino Bool
@@ -207,3 +218,4 @@ initialize ltid = do
          where rl = length as
                i  = fromIntegral (pinNo p)
                m  = as !! i
+-}

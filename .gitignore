@@ -30,3 +30,8 @@
 
 # Debug files
 *.dSYM/
+
+# Sandbox
+.cabal-sandbox
+cabal.sandbox.config
+
