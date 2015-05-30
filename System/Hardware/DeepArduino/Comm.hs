@@ -11,6 +11,7 @@
 
 {-# LANGUAGE NamedFieldPuns      #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE GADTs #-}
 module System.Hardware.DeepArduino.Comm where
 
 import Control.Monad        (when, forever)
@@ -25,7 +26,7 @@ import System.Timeout       (timeout)
 import System.Hardware.Serialport (SerialPort)
 import System.IO            (stderr, hPutStrLn)
 
-import qualified Data.ByteString            as B (unpack, length)
+import qualified Data.ByteString            as B 
 import qualified Data.Map                   as M (empty, mapWithKey, insert, assocs, lookup)
 import qualified Data.Set                   as S (empty)
 import qualified System.Hardware.Serialport as S (openSerial, closeSerial, defaultSerialSettings, CommSpeed(CS57600), commSpeed, recv, send)
@@ -97,8 +98,39 @@ cleanUpArduino tid = do mbltid <- tryTakeMVar tid
                             Just t -> killThread t
                             _      -> return ()
 
--- send :: ArduinoConnection -> Arduino a -> IO a
--- send conn commands =
+-- TBD need to add Local
+send :: ArduinoConnection -> Arduino a -> IO a
+send conn commands =
+      send' conn commands B.empty
+  where
+      sendBind :: ArduinoConnection -> Arduino a -> (a -> Arduino b) -> B.ByteString -> IO b
+      sendBind c (Return a)      k cmds = send' c (k a) cmds
+      sendBind c (Bind m k1)    k2 cmds = sendBind c m (\ r -> Bind (k1 r) k2) cmds
+      sendBind c (Procedure cmd) k cmds = send' c (k ()) (B.append cmds (packageProcedure cmd))
+      sendBind c (Query query)   k cmds = sendQuery c query k cmds
+
+      sendQuery :: ArduinoConnection -> Query a -> (a -> Arduino b) -> B.ByteString -> IO b
+      sendQuery c query k cmds = do
+          sendToArduino c (B.append cmds (packageQuery query))
+          resp <- liftIO $ readChan (deviceChannel c)
+          send' c (k (parseQueryResult query resp)) B.empty
+
+      send' :: ArduinoConnection -> Arduino a -> B.ByteString -> IO a
+      -- Most of these can be factored out, except return
+      send' c (Bind m k)            cmds = sendBind c m k cmds
+      send' _ (Return a)            cmds = do
+              sendToArduino conn cmds
+              return a
+      send' c cmd                   cmds = sendBind c cmd Return cmds
+
+      sendToArduino :: ArduinoConnection -> B.ByteString -> IO ()
+      sendToArduino conn cmds = do
+          message conn $ "Sending: " ++ show cmds
+          sent <- liftIO $ S.send (port conn) cmds
+          when (sent /= lp)
+               (message conn $ "Send failed. Tried: " ++ show lp ++ "bytes, reported: " ++ show sent)
+        where
+          lp = B.length cmds
 
 -- | Start a thread to listen to the board and populate the channel with incoming queries.
 setupListener :: SerialPort -> (String -> IO ()) -> Chan Response -> MVar BoardState -> IO ThreadId

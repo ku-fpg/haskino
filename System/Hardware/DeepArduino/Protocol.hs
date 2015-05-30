@@ -10,7 +10,7 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE GADTs      #-}
 
-module System.Hardware.DeepArduino.Protocol(packageProcedure, packageQuery, unpackageSysEx, unpackageNonSysEx) where
+module System.Hardware.DeepArduino.Protocol(packageProcedure, packageQuery, unpackageSysEx, unpackageNonSysEx, parseQueryResult) where
 
 import Data.Word (Word8)
 
@@ -44,6 +44,7 @@ packageProcedure (AnalogPinWrite p l m)   = nonSysEx (ANALOG_MESSAGE p)      [l,
 packageProcedure (SamplingInterval l m)   = sysEx    SAMPLING_INTERVAL       [l, m]
 -- package (I2CWrite m sa w16s)     = sysEx    I2C_REQUEST
 
+-- TBD need to add new queries
 packageQuery :: Query a -> B.ByteString
 packageQuery QueryFirmware            = sysEx    REPORT_FIRMWARE         []
 packageQuery CapabilityQuery          = sysEx    CAPABILITY_QUERY        []
@@ -63,6 +64,14 @@ unpackageSysEx (cmdWord:args)
       _                                     -> Unimplemented (Just (show cmd)) args
   | True
   = Unimplemented Nothing (cmdWord : args)
+
+-- This is how we match responses with queries TBD need to handle mismatches
+-- TBD need to add new queries
+parseQueryResult :: Query a -> Response -> a
+parseQueryResult QueryFirmware (Firmware wa wb s) = (wa,wb,s)
+parseQueryResult CapabilityQuery (Capabilities bc) = bc
+parseQueryResult AnalogMappingQuery (AnalogMapping ms) = ms
+parseQueryResult (Pulse p b dur to) (PulseResponse p2 w) = w
 
 getCapabilities :: [Word8] -> BoardCapabilities
 getCapabilities bs = BoardCapabilities $ M.fromList $ zipWith (\p c -> (p, PinCapabilities{analogPinNumber = Nothing, allowedModes = c}))

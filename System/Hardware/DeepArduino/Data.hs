@@ -149,7 +149,7 @@ data Query :: * -> * where
 deriving instance Show a => Show (Query a)
 
 -- | A response, as returned from the Arduino
-data Response = Firmware  Word8 Word8 String         -- ^ Firmware version (maj/min and indentifier
+data Response = Firmware Word8 Word8 String          -- ^ Firmware version (maj/min and indentifier
               | Capabilities BoardCapabilities       -- ^ Capabilities report
               | AnalogMapping [Word8]                -- ^ Analog pin mappings
               | DigitalMessage Port Word8 Word8      -- ^ Status of a port
