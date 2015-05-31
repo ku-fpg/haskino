@@ -11,6 +11,7 @@ import           Control.Monad.State (StateT, MonadIO, MonadState, gets, liftIO)
 
 import           Data.Bits ((.|.), (.&.))
 import qualified Data.Map as M
+import           Data.Maybe (listToMaybe)
 import qualified Data.Set as S
 import           Data.Monoid
 import           Data.Word (Word8, Word16, Word32)
@@ -55,6 +56,26 @@ data IPin = InternalPin { pinNo :: Word8 }
 -- | A port (containing 8 pins)
 data Port = Port { portNo :: Word8 } 
           deriving (Eq, Ord, Show)
+
+-- | On the arduino, digital pin numbers are in 1-to-1 match with
+-- the board pins. However, ANALOG pins come at an offset, determined by
+-- the capabilities query. Users of the library refer to these pins
+-- simply by their natural numbers, which makes for portable programs
+-- between boards that have different number of digital pins. We adjust
+-- for this shift here.
+getInternalPin :: Pin -> IPin
+getInternalPin (MixedPin p)   = InternalPin p
+getInternalPin (DigitalPin p) = InternalPin p
+getInternalPin (AnalogPin p)  = InternalPin p
+{-  TBD Fix
+getInternalPin (AnalogPin p)
+  = do BoardCapabilities caps <- gets capabilities
+       case listToMaybe [realPin | (realPin, PinCapabilities{analogPinNumber = Just n}) <- M.toAscList caps, p == n] of
+         Nothing -> die ("hArduino: " ++ show p ++ " is not a valid analog-pin on this board.")
+                        -- Try to be helpful in case they are trying to use a large value thinking it needs to be offset
+                        ["Hint: To refer to analog pin number k, simply use 'pin k', not 'pin (k+noOfDigitalPins)'" | p > 13]
+         Just rp -> return rp
+-}
 
 -- | On the Arduino, pins are grouped into banks of 8.
 -- Given a pin, this function determines which port it belongs to
@@ -111,31 +132,97 @@ data I2CAddrMode = Bit7 | Bit10
 
 data Procedure =
        SystemReset                              -- ^ Send system reset
-     | SetPinMode IPin PinMode                  -- ^ Set the mode on a pin
+     | SetPinMode Pin PinMode                  -- ^ Set the mode on a pin
      | DigitalReport Port Bool                  -- ^ Digital report values on port enable/disable
-     | AnalogReport IPin Bool                   -- ^ Analog report values on pin enable/disable
+     | AnalogReport Pin Bool                   -- ^ Analog report values on pin enable/disable
      | DigitalPortWrite Port Word8 Word8        -- ^ Set the values on a port digitally
-     | AnalogPinWrite IPin Word8 Word8          -- ^ Send an analog-write; used for servo control
-     | AnalogPinExtendedWrite IPin [Word8]      -- ^ 
+     | DigitalPinWrite Pin Bool                -- ^ Set the value on a pin digitally
+     | AnalogPinWrite Pin Word8 Word8          -- ^ Send an analog-write; used for servo control
+     | AnalogPinExtendedWrite Pin [Word8]      -- ^ 
      | SamplingInterval Word8 Word8             -- ^ Set the sampling interval
      | I2CWrite I2CAddrMode SlaveAddress [Word16]
      | I2CConfig Word16
-     | ServoConfig IPin MinPulse MaxPulse
+     | ServoConfig Pin MinPulse MaxPulse
      deriving Show
+
+systemReset :: Arduino ()
+systemReset = Procedure SystemReset
+
+setPinMode :: Pin -> PinMode -> Arduino ()
+setPinMode p pm = Procedure (SetPinMode p pm)
+
+digitalReport :: Port -> Bool -> Arduino ()
+digitalReport p b = Procedure (DigitalReport p b)
+
+analogReport :: Pin -> Bool -> Arduino ()
+analogReport p b = Procedure (AnalogReport p b)
+
+-- TBD change parameters to one Word16?
+digitalPortWrite :: Port -> Word8 -> Word8 -> Arduino ()
+digitalPortWrite p w1 w2 = Procedure (DigitalPortWrite p w1 w2)
+
+digitalPinWrite :: Pin -> Bool -> Arduino ()
+digitalPinWrite p b = Procedure (DigitalPinWrite p b)
+
+analogPinWrite :: Pin -> Word8 -> Word8 -> Arduino ()
+analogPinWrite p w1 w2 = Procedure (AnalogPinWrite p w1 w2)
+
+analogPinExtendedWrite :: Pin -> [Word8] -> Arduino ()
+analogPinExtendedWrite p ws = Procedure (AnalogPinExtendedWrite p ws)
+
+samplingInterval :: Word8 -> Word8 -> Arduino ()
+samplingInterval w1 w2 = Procedure (SamplingInterval w1 w2)
+
+i2cWrite :: I2CAddrMode -> SlaveAddress -> [Word16] -> Arduino ()
+i2cWrite m sa ws = Procedure (I2CWrite m sa ws)
+
+i2cConfig :: Word16 -> Arduino ()
+i2cConfig w = Procedure (I2CConfig w)
+
+servoConfig :: Pin -> MinPulse -> MaxPulse -> Arduino ()
+servoConfig p min max = Procedure (ServoConfig p min max)
 
 data Local :: * -> * where
      DigitalPortRead  :: Port -> Local Word8          -- ^ Set the values on a port digitally
      AnalogPinRead    :: IPin -> Local Word8          -- ^ Send an analog-write; used for servo control
+     HostDelay        :: Local ()
+
+digitalPortRead :: Port -> Arduino Word8
+digitalPortRead p = Local (DigitalPortRead p)
+
+analogPinRead :: IPin -> Arduino Word8
+analogPinRead p = Local (AnalogPinRead p)
+
+hostDelay :: Arduino ()
+hostDelay = Local HostDelay
 
 deriving instance Show a => Show (Local a)
 
 data TaskProcedure =
-       CrateTask TaskID TaskLength
+       CreateTask TaskID TaskLength
      | DeleteTask TaskID
      | AddToTask TaskID [Procedure]
      | DelayTask TaskTime
      | ScheduleTask TaskID TaskTime
      | ScheduleReset
+
+createTask :: TaskID -> TaskLength -> Arduino ()
+createTask tid tl = TaskProcedure (CreateTask tid tl)
+
+deleteTask :: TaskID -> Arduino ()
+deleteTask tid = TaskProcedure (DeleteTask tid)
+
+addToTask :: TaskID -> [Procedure] -> Arduino ()
+addToTask tid ps = TaskProcedure (AddToTask tid ps)
+
+delayTask :: TaskTime -> Arduino ()
+delayTask t = TaskProcedure (DelayTask t)
+
+scheduleTask :: TaskID -> TaskTime -> Arduino ()
+scheduleTask tid tt = TaskProcedure (ScheduleTask tid tt)
+
+scheduleReset :: Arduino ()
+scheduleReset = TaskProcedure ScheduleReset
 
 data Query :: * -> * where
      QueryFirmware  :: Query (Word8, Word8, String)   -- ^ Query the Firmata version installed
@@ -148,7 +235,29 @@ data Query :: * -> * where
 
 deriving instance Show a => Show (Query a)
 
+queryFirmware :: Arduino (Word8, Word8, String)
+queryFirmware = Query QueryFirmware
+
+capabilityQuery :: Arduino BoardCapabilities
+capabilityQuery = Query CapabilityQuery
+
+analogMappingQuery :: Arduino [Word8]
+analogMappingQuery = Query AnalogMappingQuery
+
+pulse :: IPin -> Bool -> Word32 -> Word32 -> Arduino Word32
+pulse p b w1 w2 = Query (Pulse p b w1 w2)
+
+i2cRead :: I2CAddrMode -> SlaveAddress -> Maybe SlaveRegister -> Arduino [Word16]
+i2cRead am sa sr = Query (I2CRead am sa sr)
+
+queryAllTasks :: Arduino [TaskID]
+queryAllTasks = Query QueryAllTasks
+
+queryTask :: TaskID -> Arduino (TaskTime, TaskLength, TaskPos, [Procedure])
+queryTask tid = Query (QueryTask tid)
+
 -- | A response, as returned from the Arduino
+-- TBD need to add new queries
 data Response = Firmware Word8 Word8 String          -- ^ Firmware version (maj/min and indentifier
               | Capabilities BoardCapabilities       -- ^ Capabilities report
               | AnalogMapping [Word8]                -- ^ Analog pin mappings
@@ -165,6 +274,7 @@ data FirmataCmd = ANALOG_MESSAGE      IPin -- ^ @0xE0@ pin
                 | REPORT_DIGITAL_PORT Port -- ^ @0xD0@ port
                 | START_SYSEX              -- ^ @0xF0@
                 | SET_PIN_MODE             -- ^ @0xF4@
+                | SET_DIGITAL_PIN_VALUE    -- ^ @0xF5@
                 | END_SYSEX                -- ^ @0xF7@
                 | PROTOCOL_VERSION         -- ^ @0xF9@
                 | SYSTEM_RESET             -- ^ @0xFF@
@@ -178,6 +288,7 @@ firmataCmdVal (REPORT_ANALOG_PIN   p) = 0xC0 .|. pinNo  p
 firmataCmdVal (REPORT_DIGITAL_PORT p) = 0xD0 .|. portNo p
 firmataCmdVal START_SYSEX             = 0xF0
 firmataCmdVal SET_PIN_MODE            = 0xF4
+firmataCmdVal SET_DIGITAL_PIN_VALUE   = 0xF5
 firmataCmdVal END_SYSEX               = 0xF7
 firmataCmdVal PROTOCOL_VERSION        = 0xF9
 firmataCmdVal SYSTEM_RESET            = 0xFF
@@ -189,6 +300,7 @@ getFirmataCmd w = classify
                   | True         = Nothing
         classify | w == 0xF0              = Right START_SYSEX
                  | w == 0xF4              = Right SET_PIN_MODE
+                 | w == 0xF5              = Right SET_DIGITAL_PIN_VALUE
                  | w == 0xF7              = Right END_SYSEX
                  | w == 0xF9              = Right PROTOCOL_VERSION
                  | w == 0xFF              = Right SYSTEM_RESET
@@ -288,7 +400,3 @@ data ArduinoConnection = ArduinoConnection {
               , capabilities  :: BoardCapabilities                    -- ^ Capabilities of the board
               , listenerTid   :: MVar ThreadId                        -- ^ ThreadId of the listener
               }
-
--- | The ArduinoConnection monad.
--- newtype ArduinoConnection a = ArduinoConnection (StateT ArduinoState IO a)
---        deriving (Functor, Applicative, Monad, MonadIO, MonadState ArduinoState)

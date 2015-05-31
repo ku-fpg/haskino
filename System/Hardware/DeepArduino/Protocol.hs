@@ -35,11 +35,12 @@ nonSysEx cmd bs = B.pack $ firmataCmdVal cmd : bs
 -- using the Firmata protocol.
 packageProcedure :: Procedure -> B.ByteString
 packageProcedure SystemReset              = nonSysEx SYSTEM_RESET            []
-packageProcedure (AnalogReport  p b)      = nonSysEx (REPORT_ANALOG_PIN p)   [if b then 1 else 0]
+packageProcedure (AnalogReport  p b)      = nonSysEx (REPORT_ANALOG_PIN (getInternalPin p))   [if b then 1 else 0]
 packageProcedure (DigitalReport p b)      = nonSysEx (REPORT_DIGITAL_PORT p) [if b then 1 else 0]
-packageProcedure (SetPinMode p m)         = nonSysEx SET_PIN_MODE            [fromIntegral (pinNo p), fromIntegral (fromEnum m)]
+packageProcedure (SetPinMode p m)         = nonSysEx SET_PIN_MODE            [fromIntegral (pinNo (getInternalPin p)), fromIntegral (fromEnum m)]
 packageProcedure (DigitalPortWrite p l m) = nonSysEx (DIGITAL_MESSAGE p)     [l, m]
-packageProcedure (AnalogPinWrite p l m)   = nonSysEx (ANALOG_MESSAGE p)      [l, m]
+packageProcedure (DigitalPinWrite p b)    = nonSysEx SET_DIGITAL_PIN_VALUE   [fromIntegral (pinNo (getInternalPin p)), if b then 1 else 0]
+packageProcedure (AnalogPinWrite p l m)   = nonSysEx (ANALOG_MESSAGE (getInternalPin p))      [l, m]
 -- packageProcedure (AnalogPinExtendedWrite p w8s) = sysEx EXTENDED_ANALOG      [fromIntegral (pinNo p)] ++ w8s
 packageProcedure (SamplingInterval l m)   = sysEx    SAMPLING_INTERVAL       [l, m]
 -- package (I2CWrite m sa w16s)     = sysEx    I2C_REQUEST
