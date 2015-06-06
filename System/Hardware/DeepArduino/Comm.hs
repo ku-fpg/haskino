@@ -86,8 +86,6 @@ openArduino verbose fp = do
 
 closeArduino :: ArduinoConnection -> IO ()
 closeArduino conn = do
-        -- ltid <- gets listenerTid
-        -- sport <- gets port
         cleanUpArduino $ listenerTid conn
         S.closeSerial $ port conn
         return ()
@@ -98,7 +96,7 @@ cleanUpArduino tid = do mbltid <- tryTakeMVar tid
                             Just t -> killThread t
                             _      -> return ()
 
--- TBD need to add Local
+-- TBD need to finish Local
 send :: ArduinoConnection -> Arduino a -> IO a
 send conn commands =
       send' conn commands B.empty
@@ -107,7 +105,24 @@ send conn commands =
       sendBind c (Return a)      k cmds = send' c (k a) cmds
       sendBind c (Bind m k1)    k2 cmds = sendBind c m (\ r -> Bind (k1 r) k2) cmds
       sendBind c (Procedure cmd) k cmds = send' c (k ()) (B.append cmds (packageProcedure cmd))
+      sendBind c (Local local)   k cmds = sendLocal c local k cmds
       sendBind c (Query query)   k cmds = sendQuery c query k cmds
+
+      sendLocal :: ArduinoConnection -> Local a -> (a -> Arduino b) -> B.ByteString -> IO b
+      sendLocal c (AnalogPinRead p) k cmds = do
+          sendToArduino c cmds
+          send' c (k (anaPinRead p)) B.empty
+      sendLocal c (DigitalPortRead p) k cmds = do
+          sendToArduino c cmds
+          send' c (k (digPortRead p)) B.empty
+      sendLocal c (DigitalPinRead p) k cmds = do
+          sendToArduino c cmds
+          send' c (k (digPinRead p)) B.empty
+      sendLocal c (HostDelay d) k cmds = do
+          sendToArduino c cmds
+          message c $ "Delaying: " ++ show d
+          delay d
+          send' c (k (return ())) B.empty
 
       sendQuery :: ArduinoConnection -> Query a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendQuery c query k cmds = do

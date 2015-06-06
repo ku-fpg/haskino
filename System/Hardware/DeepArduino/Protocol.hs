@@ -12,6 +12,7 @@
 
 module System.Hardware.DeepArduino.Protocol(packageProcedure, packageQuery, unpackageSysEx, unpackageNonSysEx, parseQueryResult) where
 
+import Data.Bits ((.|.), (.&.))
 import Data.Word (Word8)
 
 import qualified Data.ByteString as B
@@ -41,16 +42,38 @@ packageProcedure (SetPinMode p m)         = nonSysEx SET_PIN_MODE            [fr
 packageProcedure (DigitalPortWrite p l m) = nonSysEx (DIGITAL_MESSAGE p)     [l, m]
 packageProcedure (DigitalPinWrite p b)    = nonSysEx SET_DIGITAL_PIN_VALUE   [fromIntegral (pinNo (getInternalPin p)), if b then 1 else 0]
 packageProcedure (AnalogPinWrite p l m)   = nonSysEx (ANALOG_MESSAGE (getInternalPin p))      [l, m]
--- packageProcedure (AnalogPinExtendedWrite p w8s) = sysEx EXTENDED_ANALOG      [fromIntegral (pinNo p)] ++ w8s
+packageProcedure (AnalogPinExtendedWrite p w8s) = sysEx EXTENDED_ANALOG      ([fromIntegral (pinNo (getInternalPin p))] ++ w8s)
 packageProcedure (SamplingInterval l m)   = sysEx    SAMPLING_INTERVAL       [l, m]
--- package (I2CWrite m sa w16s)     = sysEx    I2C_REQUEST
+packageProcedure (I2CWrite m sa w16s)     = sysEx    I2C_REQUEST     ((packageI2c m False sa Nothing) ++
+                                                                      (words16ToBytes w16s)) 
 
--- TBD need to add new queries
+-- | Package a task request as a sequence of bytes to be sent to the board
+-- using the Firmata protocol.
+packageTaskProcedure :: TaskProcedure -> B.ByteString
+packageTaskProcedure (CreateTask tid tl)   = sysEx SCHEDULER_DATA ([schedulerCmdVal CREATE_TASK, tid] ++ (word16ToBytes tl))
+packageTaskProcedure (DeleteTask tid)      = sysEx SCHEDULER_DATA [schedulerCmdVal DELETE_TASK, tid]
+-- TBD Add AddToTask
+packageTaskProcedure (DelayTask tt)        = sysEx SCHEDULER_DATA ([schedulerCmdVal DELAY_TASK] ++ (word32ToArduinoBytes tt))
+packageTaskProcedure (ScheduleTask tid tt) = sysEx SCHEDULER_DATA ([schedulerCmdVal DELAY_TASK, tid] ++ (word32ToArduinoBytes tt))
+
 packageQuery :: Query a -> B.ByteString
 packageQuery QueryFirmware            = sysEx    REPORT_FIRMWARE         []
 packageQuery CapabilityQuery          = sysEx    CAPABILITY_QUERY        []
 packageQuery AnalogMappingQuery       = sysEx    ANALOG_MAPPING_QUERY    []
-packageQuery (Pulse p b dur to)       = sysEx    PULSE                   ([fromIntegral (pinNo p), if b then 1 else 0] ++ concatMap toArduinoBytes (word2Bytes dur ++ word2Bytes to))
+packageQuery (Pulse p b dur to)       = sysEx    PULSE                   ([fromIntegral (pinNo p), if b then 1 else 0] ++ concatMap toArduinoBytes (word32ToBytes dur ++ word32ToBytes to))
+packageQuery (I2CRead m sa sr)        = sysEx    I2C_REQUEST  (packageI2c m False sa sr)
+packageQuery QueryAllTasks            = sysEx    SCHEDULER_DATA [schedulerCmdVal QUERY_ALL_TASKS]
+packageQuery (QueryTask tid)          = sysEx    SCHEDULER_DATA [schedulerCmdVal QUERY_TASK, tid]
+
+packageI2c :: I2CAddrMode -> Bool -> SlaveAddress -> Maybe SlaveRegister -> [Word8]
+packageI2c m w sa sr = [addrBytes !! 0, commandByte] ++ slaveBytes
+  where
+    addrBytes = word16ToBytes sa
+    commandByte = (firmataI2CModeVal m) .&. writeByte .&. (addrBytes !! 1)
+    writeByte = if w then 0x00 else 0x08
+    slaveBytes = case sr of 
+                    Nothing -> []
+                    Just r  -> word16ToBytes r
 
 -- | Unpackage a SysEx response
 unpackageSysEx :: [Word8] -> Response
@@ -61,7 +84,7 @@ unpackageSysEx (cmdWord:args)
       (REPORT_FIRMWARE, majV : minV : rest) -> Firmware majV minV (getString rest)
       (CAPABILITY_RESPONSE, bs)             -> Capabilities (getCapabilities bs)
       (ANALOG_MAPPING_RESPONSE, bs)         -> AnalogMapping bs
-      (PULSE, xs) | length xs == 10         -> let [p, a, b, c, d] = fromArduinoBytes xs in PulseResponse (InternalPin p) (bytes2Words (a, b, c, d))
+      (PULSE, xs) | length xs == 10         -> let [p, a, b, c, d] = fromArduinoBytes xs in PulseResponse (InternalPin p) (bytesToWord32 (a, b, c, d))
       _                                     -> Unimplemented (Just (show cmd)) args
   | True
   = Unimplemented Nothing (cmdWord : args)
@@ -73,6 +96,7 @@ parseQueryResult QueryFirmware (Firmware wa wb s) = (wa,wb,s)
 parseQueryResult CapabilityQuery (Capabilities bc) = bc
 parseQueryResult AnalogMappingQuery (AnalogMapping ms) = ms
 parseQueryResult (Pulse p b dur to) (PulseResponse p2 w) = w
+parseQueryResult (I2CRead am saq srq) (I2CReply sar srr ds) = ds
 
 getCapabilities :: [Word8] -> BoardCapabilities
 getCapabilities bs = BoardCapabilities $ M.fromList $ zipWith (\p c -> (p, PinCapabilities{analogPinNumber = Nothing, allowedModes = c}))

@@ -20,10 +20,14 @@ import System.Hardware.DeepArduino.Comm
 
 main :: IO ()
 main = do
-    conn <- openArduino False "/dev/cu.usbmodem1411"
+    conn <- openArduino True "/dev/cu.usbmodem1421"
     let led = DigitalPin 13
-    send conn $ do
-          setPinMode led OUTPUT
+    (firm_maj, firm_min, firm_s) <- send conn $ do
+                                        setPinMode led OUTPUT
+                                        firm <- queryFirmware
+                                        return firm
+    putStrLn (firm_s ++ " " ++ (show firm_maj) ++ "." ++ (show firm_min))
+{-
     forever $ do 
         send conn $ do 
             digitalPinWrite led True
@@ -31,6 +35,13 @@ main = do
         send conn $ do 
             digitalPinWrite led False
         threadDelay (1000 * 1000)
+-}
+    forever $ do 
+        send conn $ do 
+            digitalPinWrite led True
+            hostDelay 1000
+            digitalPinWrite led False
+            hostDelay 1000
 {-
 main :: IO ()
 main = do

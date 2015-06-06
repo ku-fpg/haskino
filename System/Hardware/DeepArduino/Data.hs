@@ -6,7 +6,7 @@ module System.Hardware.DeepArduino.Data where
 
 import           Control.Applicative
 import           Control.Concurrent (Chan, MVar, ThreadId)
-import           Control.Monad (ap, liftM2)
+import           Control.Monad (ap, liftM, liftM2)
 import           Control.Monad.State (StateT, MonadIO, MonadState, gets, liftIO)
 
 import           Data.Bits ((.|.), (.&.))
@@ -142,7 +142,9 @@ data Procedure =
      | SamplingInterval Word8 Word8             -- ^ Set the sampling interval
      | I2CWrite I2CAddrMode SlaveAddress [Word16]
      | I2CConfig Word16
+     -- TBD add I2C continuous read
      | ServoConfig Pin MinPulse MaxPulse
+     -- TBD add stepper procedures
      deriving Show
 
 systemReset :: Arduino ()
@@ -183,18 +185,31 @@ servoConfig :: Pin -> MinPulse -> MaxPulse -> Arduino ()
 servoConfig p min max = Procedure (ServoConfig p min max)
 
 data Local :: * -> * where
-     DigitalPortRead  :: Port -> Local Word8          -- ^ Set the values on a port digitally
-     AnalogPinRead    :: IPin -> Local Word8          -- ^ Send an analog-write; used for servo control
-     HostDelay        :: Local ()
+     DigitalPortRead  :: Port -> Local Word8          -- ^ Read the values on a port digitally
+     DigitalPinRead   :: IPin -> Local Bool           -- ^ Read the avlue ona pin digitally
+     AnalogPinRead    :: IPin -> Local Word8          -- ^ Read the analog value on a pin
+     HostDelay        :: Int  -> Local (IO ())
 
 digitalPortRead :: Port -> Arduino Word8
 digitalPortRead p = Local (DigitalPortRead p)
 
+digitalPinRead :: IPin -> Arduino Bool
+digitalPinRead p = Local (DigitalPinRead p)
+
 analogPinRead :: IPin -> Arduino Word8
 analogPinRead p = Local (AnalogPinRead p)
 
-hostDelay :: Arduino ()
-hostDelay = Local HostDelay
+hostDelay :: Int -> Arduino (IO ())
+hostDelay d = Local (HostDelay d)
+
+anaPinRead :: IPin -> Word8
+anaPinRead _ = 4 :: Word8
+
+digPinRead :: IPin -> Bool
+digPinRead _ = True
+
+digPortRead :: Port -> Word8
+digPortRead _ = 10 :: Word8
 
 deriving instance Show a => Show (Local a)
 
@@ -264,6 +279,7 @@ data Response = Firmware Word8 Word8 String          -- ^ Firmware version (maj/
               | DigitalMessage Port Word8 Word8      -- ^ Status of a port
               | AnalogMessage  IPin Word8 Word8      -- ^ Status of an analog pin
               | PulseResponse  IPin Word32           -- ^ Repsonse to a PulseInCommand
+              | I2CReply Word16 Word16 [Word16]      -- ^ Response to a I2C Read
               | Unimplemented (Maybe String) [Word8] -- ^ Represents messages currently unsupported
     deriving Show
 
@@ -292,6 +308,32 @@ firmataCmdVal SET_DIGITAL_PIN_VALUE   = 0xF5
 firmataCmdVal END_SYSEX               = 0xF7
 firmataCmdVal PROTOCOL_VERSION        = 0xF9
 firmataCmdVal SYSTEM_RESET            = 0xFF
+
+-- | Compute the numeric value of a mode
+firmataI2CModeVal :: I2CAddrMode -> Word8
+firmataI2CModeVal Bit7            = 0x00
+firmataI2CModeVal Bit10           = 0x20
+
+-- | Firmata scheduler commands, see: https://github.com/firmata/protocol/blob/master/scheduler.md
+data SchedulerCmd = CREATE_TASK    -- ^ @0x00@
+                | DELETE_TASK      -- ^ @0x01@
+                | ADD_TO_TASK      -- ^ @0x02@
+                | DELAY_TASK       -- ^ @0x03@
+                | SCHEDULE_TASK    -- ^ @0x04@
+                | QUERY_ALL_TASKS  -- ^ @0x05@
+                | QUERY_TASK       -- ^ @0x06@
+                | SCHEDULER_RESET  -- ^ @0x07@
+
+-- | Compute the numeric value of a scheduler command
+schedulerCmdVal :: SchedulerCmd -> Word8
+schedulerCmdVal CREATE_TASK     = 0x00
+schedulerCmdVal DELETE_TASK     = 0x00
+schedulerCmdVal ADD_TO_TASK     = 0x00
+schedulerCmdVal DELAY_TASK      = 0x00
+schedulerCmdVal SCHEDULE_TASK   = 0x00
+schedulerCmdVal QUERY_ALL_TASKS = 0x00
+schedulerCmdVal QUERY_TASK      = 0x00
+schedulerCmdVal SCHEDULER_RESET = 0x00
 
 -- | Convert a byte to a Firmata command
 getFirmataCmd :: Word8 -> Either Word8 FirmataCmd
