@@ -21,7 +21,7 @@ main :: IO ()
 main = do
     conn <- openArduino True "/dev/cu.usbmodem1421"
     let led = DigitalPin 13
-    let port = pinPort $ getInternalPin led
+    let port = pinPort $ getInternalPin conn led
     send conn (setPinMode led OUTPUT)
     forever $ do 
         send conn $ do 

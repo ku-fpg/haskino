@@ -34,22 +34,22 @@ nonSysEx cmd bs = B.pack $ firmataCmdVal cmd : bs
 
 -- | Package a request as a sequence of bytes to be sent to the board
 -- using the Firmata protocol.
-packageProcedure :: Procedure -> B.ByteString
-packageProcedure SystemReset              = nonSysEx SYSTEM_RESET            []
-packageProcedure (AnalogReport  p b)      = nonSysEx (REPORT_ANALOG_PIN (getInternalPin p))   [if b then 1 else 0]
-packageProcedure (DigitalReport p b)      = nonSysEx (REPORT_DIGITAL_PORT p) [if b then 1 else 0]
-packageProcedure (SetPinMode p m)         = nonSysEx SET_PIN_MODE            [fromIntegral (pinNo (getInternalPin p)), fromIntegral (fromEnum m)]
-packageProcedure (DigitalPortWrite p l m) = nonSysEx (DIGITAL_MESSAGE p)     [l, m]
-packageProcedure (DigitalPinWrite p b)    = nonSysEx SET_DIGITAL_PIN_VALUE   [fromIntegral (pinNo (getInternalPin p)), if b then 1 else 0]
-packageProcedure (AnalogPinWrite p l m)   = nonSysEx (ANALOG_MESSAGE (getInternalPin p))      [l, m]
-packageProcedure (AnalogPinExtendedWrite p w8s) = sysEx EXTENDED_ANALOG      ([fromIntegral (pinNo (getInternalPin p))] ++ w8s)
-packageProcedure (SamplingInterval l m)   = sysEx    SAMPLING_INTERVAL       [l, m]
-packageProcedure (I2CWrite m sa w16s)     = sysEx    I2C_REQUEST     ((packageI2c m False sa Nothing) ++
+packageProcedure :: ArduinoConnection -> Procedure -> B.ByteString
+packageProcedure c SystemReset              = nonSysEx SYSTEM_RESET            []
+packageProcedure c (AnalogReport  p b)      = nonSysEx (REPORT_ANALOG_PIN (getInternalPin c p))   [if b then 1 else 0]
+packageProcedure c (DigitalReport p b)      = nonSysEx (REPORT_DIGITAL_PORT p) [if b then 1 else 0]
+packageProcedure c (SetPinMode p m)         = nonSysEx SET_PIN_MODE            [fromIntegral (pinNo (getInternalPin c p)), fromIntegral (fromEnum m)]
+packageProcedure c (DigitalPortWrite p l m) = nonSysEx (DIGITAL_MESSAGE p)     [l, m]
+packageProcedure c (DigitalPinWrite p b)    = nonSysEx SET_DIGITAL_PIN_VALUE   [fromIntegral (pinNo (getInternalPin c p)), if b then 1 else 0]
+packageProcedure c (AnalogPinWrite p l m)   = nonSysEx (ANALOG_MESSAGE (getInternalPin c p))      [l, m]
+packageProcedure c (AnalogPinExtendedWrite p w8s) = sysEx EXTENDED_ANALOG      ([fromIntegral (pinNo (getInternalPin c p))] ++ w8s)
+packageProcedure c (SamplingInterval l m)   = sysEx    SAMPLING_INTERVAL       [l, m]
+packageProcedure c (I2CWrite m sa w16s)     = sysEx    I2C_REQUEST     ((packageI2c m False sa Nothing) ++
                                                                       (words16ToArduinoBytes w16s)) 
-packageProcedure (CreateTask tid tl)      = sysEx SCHEDULER_DATA ([schedulerCmdVal CREATE_TASK, tid] ++ (word16ToArduinoBytes tl))
-packageProcedure (DeleteTask tid)         = sysEx SCHEDULER_DATA [schedulerCmdVal DELETE_TASK, tid]
-packageProcedure (DelayTask tt)           = sysEx SCHEDULER_DATA ([schedulerCmdVal DELAY_TASK] ++ (word32ToArduinoBytes tt))
-packageProcedure (ScheduleTask tid tt)    = sysEx SCHEDULER_DATA ([schedulerCmdVal DELAY_TASK, tid] ++ (word32ToArduinoBytes tt))
+packageProcedure c (CreateTask tid tl)      = sysEx SCHEDULER_DATA ([schedulerCmdVal CREATE_TASK, tid] ++ (word16ToArduinoBytes tl))
+packageProcedure c (DeleteTask tid)         = sysEx SCHEDULER_DATA [schedulerCmdVal DELETE_TASK, tid]
+packageProcedure c (DelayTask tt)           = sysEx SCHEDULER_DATA ([schedulerCmdVal DELAY_TASK] ++ (word32ToArduinoBytes tt))
+packageProcedure c (ScheduleTask tid tt)    = sysEx SCHEDULER_DATA ([schedulerCmdVal DELAY_TASK, tid] ++ (word32ToArduinoBytes tt))
 
 -- | Package a task request as a sequence of bytes to be sent to the board
 -- using the Firmata protocol.

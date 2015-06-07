@@ -66,10 +66,10 @@ data Port = Port { portNo :: Word8 }
 -- simply by their natural numbers, which makes for portable programs
 -- between boards that have different number of digital pins. We adjust
 -- for this shift here.
-getInternalPin :: Pin -> IPin
-getInternalPin (MixedPin p)   = InternalPin p
-getInternalPin (DigitalPin p) = InternalPin p
-getInternalPin (AnalogPin p)  = InternalPin p
+getInternalPin :: ArduinoConnection -> Pin -> IPin
+getInternalPin c (MixedPin p)   = InternalPin p
+getInternalPin c (DigitalPin p) = InternalPin p
+getInternalPin c (AnalogPin p)  = InternalPin p
 {-  TBD Fix
 getInternalPin (AnalogPin p)
   = do BoardCapabilities caps <- gets capabilities
