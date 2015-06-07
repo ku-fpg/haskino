@@ -15,7 +15,7 @@
 module System.Hardware.DeepArduino.Comm where
 
 import Control.Monad        (when, forever)
-import Control.Concurrent   (Chan, MVar, ThreadId, newChan, newMVar, newEmptyMVar, putMVar, writeChan, readChan, forkIO, modifyMVar_, tryTakeMVar, killThread)
+import Control.Concurrent   (Chan, MVar, ThreadId, newChan, newMVar, newEmptyMVar, putMVar, takeMVar, writeChan, readChan, forkIO, modifyMVar_, tryTakeMVar, killThread)
 import Control.Exception    (tryJust, AsyncException(UserInterrupt), handle, SomeException)
 import Control.Monad.State  (runStateT, gets, liftIO, modify)
 import Data.Bits            (testBit, (.&.))
@@ -79,12 +79,38 @@ openArduino verbose fp = do
                          , deviceChannel = dc
                          , listenerTid   = listenerTid
                       }
+        -- Step 1: Send a reset to get things going
         send initState systemReset
-        return initState
+        -- Step 2: Send query-firmware, and wait until we get a response
+        (v1, v2, s) <- send initState queryFirmware
+        let versionState = initState {firmataID = "Firmware v" ++ show v1 ++ "." ++ show v2 ++ "(" ++ s ++ ")"}
+        -- Step 3: Send a capabilities request
+        bc <- send versionState capabilityQuery
+        -- Step 4: Send an analog mapping query
+        am <- send versionState analogMappingQuery
+        -- Use the board capabilities and the analog mapping to create new
+        -- board capabilities
+        let BoardCapabilities m = bc
+        let newBc = BoardCapabilities (M.mapWithKey (mapAnalog am) m)
+        -- Update the capabilities in the connection state
+        let openState = versionState {capabilities = newBc}
+        -- Update the capabilities in the board state, and put new 
+        -- board state in the connetion state
+        let newBoardState = initBoardState {boardCapabilities = newBc}
+        takeMVar (boardState openState)
+        putMVar (boardState openState) newBoardState
+        return openState
     where
         bailOut tid m ms = do cleanUpArduino tid
                               error $ "\n*** DeepArduino:ERROR: " ++ intercalate "\n*** " (m:ms)
-
+        mapAnalog as p c
+            | i < rl && m /= 0x7f
+            = c{analogPinNumber = Just m}
+            | True             -- out-of-bounds, or not analog; ignore
+            = c
+          where rl = length as
+                i  = fromIntegral (pinNo p)
+                m  = as !! i
 
 closeArduino :: ArduinoConnection -> IO ()
 closeArduino conn = do
@@ -130,6 +156,7 @@ send conn commands =
       sendQuery c query k cmds = do
           sendToArduino c (B.append cmds (packageQuery query))
           resp <- liftIO $ readChan (deviceChannel c)
+          putStrLn (show resp)
           send' c (k (parseQueryResult query resp)) B.empty
 
       send' :: ArduinoConnection -> Arduino a -> B.ByteString -> IO a

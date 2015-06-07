@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances, GADTs, KindSignatures, RankNTypes,
              OverloadedStrings, ScopedTypeVariables, StandaloneDeriving,
-             GeneralizedNewtypeDeriving #-}
+             GeneralizedNewtypeDeriving, NamedFieldPuns #-}
 
 module System.Hardware.DeepArduino.Data where
 
@@ -10,6 +10,7 @@ import           Control.Monad (ap, liftM, liftM2)
 import           Control.Monad.State (StateT, MonadIO, MonadState, gets, liftIO)
 
 import           Data.Bits ((.|.), (.&.))
+import           Data.List (intercalate)
 import qualified Data.Map as M
 import           Data.Maybe (listToMaybe)
 import qualified Data.Set as S
@@ -117,7 +118,11 @@ data PinData = PinData {
 
 -- | What the board is capable of and current settings
 newtype BoardCapabilities = BoardCapabilities (M.Map IPin PinCapabilities)
-    deriving Show
+
+instance Show BoardCapabilities where
+  show (BoardCapabilities m) = intercalate "\n" (map sh (M.toAscList m))
+    where sh (p, PinCapabilities{analogPinNumber, allowedModes}) = show p ++ sep ++ unwords [show md | (md, _) <- allowedModes]
+             where sep = maybe ": " (\i -> "[A" ++ show i ++ "]: ") analogPinNumber
 
 type SlaveAddress = Word16
 type SlaveRegister = Word16
