@@ -19,6 +19,8 @@ import           Data.Word (Word8, Word16, Word32)
 
 import           System.Hardware.Serialport (SerialPort)
 
+import           System.Hardware.DeepArduino.Utils
+
 -----------------------------------------------------------------------------
 
 data Arduino :: * -> * where
@@ -169,15 +171,18 @@ digitalReport p b = Procedure (DigitalReport p b)
 analogReport :: Pin -> Bool -> Arduino ()
 analogReport p b = Procedure (AnalogReport p b)
 
--- TBD change parameters to one Word16?
-digitalPortWrite :: Port -> Word8 -> Word8 -> Arduino ()
-digitalPortWrite p w1 w2 = Procedure (DigitalPortWrite p w1 w2)
+digitalPortWrite :: Port -> Word16 -> Arduino ()
+digitalPortWrite p w = Procedure (DigitalPortWrite p w1 w2)
+  where
+    [w1, w2] = word16ToArduinoBytes w
 
 digitalPinWrite :: Pin -> Bool -> Arduino ()
 digitalPinWrite p b = Procedure (DigitalPinWrite p b)
 
-analogPinWrite :: Pin -> Word8 -> Word8 -> Arduino ()
-analogPinWrite p w1 w2 = Procedure (AnalogPinWrite p w1 w2)
+analogPinWrite :: Pin -> Word16 -> Arduino ()
+analogPinWrite p w = Procedure (AnalogPinWrite p w1 w2)
+  where
+    [w1, w2] = word16ToArduinoBytes w
 
 analogPinExtendedWrite :: Pin -> [Word8] -> Arduino ()
 analogPinExtendedWrite p ws = Procedure (AnalogPinExtendedWrite p ws)

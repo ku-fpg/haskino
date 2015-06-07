@@ -82,7 +82,7 @@ bytesToWord32 (a, b, c, d) = fromIntegral a `shiftL` 24 .|. fromIntegral b `shif
 
 -- | Convert a word to it's bytes, as would be required by Arduino comms
 word16ToArduinoBytes :: Word16 -> [Word8]
-word16ToArduinoBytes i = map fromIntegral [(i `shiftR`  7) .&. 0x7F, i .&. 0x7F]
+word16ToArduinoBytes i = map fromIntegral [i .&. 0x7F, (i `shiftR`  7) .&. 0x7F]
 
 -- | Convert words to it's bytes, as would be required by Arduino comms
 words16ToArduinoBytes :: [Word16] -> [Word8]
@@ -90,7 +90,7 @@ words16ToArduinoBytes ws = concat $ map word16ToArduinoBytes ws
 
 -- | Convert a word to it's bytes, as would be required by Arduino comms
 word32ToArduinoBytes :: Word32 -> [Word8]
-word32ToArduinoBytes i = map fromIntegral [(i `shiftR` 28) .&. 0x0F, (i `shiftR` 21) .&. 0x7F, (i `shiftR` 14) .&. 0x7F, (i `shiftR`  7) .&. 0x7F, i .&. 0x7F]
+word32ToArduinoBytes i = map fromIntegral [i .&. 0x7F, (i `shiftR` 7) .&. 0x0F, (i `shiftR` 14) .&. 0x7F, (i `shiftR` 21) .&. 0x7F, (i `shiftR`  28) .&. 0x7F]
 
 -- | Convert a sequence of 7 bit bytes into an array of 16 bit data
 arduinoBytesToWords16 :: [Word8] -> [Word16]

@@ -25,8 +25,8 @@ main = do
     send conn (setPinMode led OUTPUT)
     forever $ do 
         send conn $ do 
-            digitalPortWrite port 0x20 0x00
+            digitalPortWrite port 0x20
             hostDelay 1000
-            digitalPortWrite port 0x00 0x00
+            digitalPortWrite port 0x00
             hostDelay 1000
 
