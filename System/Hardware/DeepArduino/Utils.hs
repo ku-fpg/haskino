@@ -33,7 +33,7 @@ mkDebugPrinter True  = do
                      tick <- utctDayTime `fmap` getCurrentTime
                      let precision = 1000000 :: Integer
                          micro = round . (fromIntegral precision *) . toRational $ tick
-                     putStrLn $ "[" ++ show i ++ ":" ++ show (micro :: Integer) ++ "] hArduino: " ++ s
+                     putStrLn $ "[" ++ show i ++ ":" ++ show (micro :: Integer) ++ "] DeepArduino: " ++ s
         return f
 
 -- | Show a byte in a visible format.

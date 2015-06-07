@@ -6,7 +6,7 @@
 -- Maintainer  :  erkokl@gmail.com
 -- Stability   :  experimental
 --
--- hArduino allows Haskell programs to control Arduino boards (<http://www.arduino.cc>)
+-- DeepArduino allows Haskell programs to control Arduino boards (<http://www.arduino.cc>)
 -- and peripherals, using the Firmata protocol (<http://firmata.org>).
 --
 -- For details, see: <http://leventerkok.github.com/hArduino>.

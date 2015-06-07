@@ -83,7 +83,7 @@ openArduino verbose fp = do
         return initState
     where
         bailOut tid m ms = do cleanUpArduino tid
-                              error $ "\n*** hArduino:ERROR: " ++ intercalate "\n*** " (m:ms)
+                              error $ "\n*** DeepArduino:ERROR: " ++ intercalate "\n*** " (m:ms)
 
 
 closeArduino :: ArduinoConnection -> IO ()

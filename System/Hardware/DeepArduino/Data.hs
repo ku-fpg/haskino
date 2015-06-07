@@ -71,7 +71,7 @@ getInternalPin (AnalogPin p)  = InternalPin p
 getInternalPin (AnalogPin p)
   = do BoardCapabilities caps <- gets capabilities
        case listToMaybe [realPin | (realPin, PinCapabilities{analogPinNumber = Just n}) <- M.toAscList caps, p == n] of
-         Nothing -> die ("hArduino: " ++ show p ++ " is not a valid analog-pin on this board.")
+         Nothing -> die ("DeepArduino: " ++ show p ++ " is not a valid analog-pin on this board.")
                         -- Try to be helpful in case they are trying to use a large value thinking it needs to be offset
                         ["Hint: To refer to analog pin number k, simply use 'pin k', not 'pin (k+noOfDigitalPins)'" | p > 13]
          Just rp -> return rp
