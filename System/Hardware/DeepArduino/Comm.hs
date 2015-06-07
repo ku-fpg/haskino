@@ -82,6 +82,7 @@ openArduino verbose fp = do
         -- Step 1: Send a reset to get things going
         send initState systemReset
         -- Step 2: Send query-firmware, and wait until we get a response
+        -- TBD Need to handle no response instance with Queries returning maybies
         (v1, v2, s) <- send initState queryFirmware
         let versionState = initState {firmataID = "Firmware v" ++ show v1 ++ "." ++ show v2 ++ "(" ++ s ++ ")"}
         -- Step 3: Send a capabilities request
@@ -96,9 +97,7 @@ openArduino verbose fp = do
         let openState = versionState {capabilities = newBc}
         -- Update the capabilities in the board state, and put new 
         -- board state in the connetion state
-        let newBoardState = initBoardState {boardCapabilities = newBc}
-        takeMVar (boardState openState)
-        putMVar (boardState openState) newBoardState
+        modifyMVar_ (boardState openState) $ \bst -> return initBoardState {boardCapabilities = newBc}
         return openState
     where
         bailOut tid m ms = do cleanUpArduino tid
@@ -232,63 +231,3 @@ setupListener serial dbg chan bs = do
         -- bs <- gets boardState
         tid <- liftIO $ forkIO $ forever (listener bs)
         return tid
-
-{-
--- | Initialize our board, get capabilities, etc. Returns True if initialization
--- went OK, False if not.
-initialize :: MVar ThreadId -> Arduino Bool
-initialize ltid = do
-     -- Step 0: Set up the listener thread
-     tid <- setupListener
-     liftIO $ putMVar ltid tid
-     -- Step 1: Send a reset to get things going
-     send SystemReset
-     -- Step 2: Send query-firmware, and wait until we get a response
-     -- To accommodate for the case when standard-Firmata may not be running,
-     -- we will time out after 10 seconds of waiting, which should be plenty
-     mbTo <- handshake QueryFirmware (Just (5000000 :: Int))
-                       (\r -> case r of {Firmware{} -> True; _ -> False})
-                       (\(Firmware v1 v2 m) -> modify (\s -> s{firmataID = "Firmware v" ++ show v1 ++ "." ++ show v2 ++ "(" ++ m ++ ")"}))
-     case mbTo of
-       Nothing -> return False  -- timed out
-       Just () -> do -- Step 3: Send a capabilities request
-                     _ <- handshake CapabilityQuery Nothing
-                                    (\r -> case r of {Capabilities{} -> True; _ -> False})
-                                    (\(Capabilities c) -> modify (\s -> s{capabilities = c}))
-                     -- Step 4: Send analog-mapping query
-                     _ <- handshake AnalogMappingQuery Nothing
-                                    (\r -> case r of {AnalogMapping{} -> True; _ -> False})
-                                    (\(AnalogMapping as) -> do BoardCapabilities m <- gets capabilities
-                                                               -- need to put capabilities to both outer and inner state
-                                                               let caps = BoardCapabilities (M.mapWithKey (mapAnalog as) m)
-                                                               modify (\s -> s{capabilities = caps})
-                                                               bs <- gets boardState
-                                                               liftIO $ modifyMVar_ bs $ \bst -> return bst{boardCapabilities = caps})
-                     -- We're done, print capabilities in debug mode
-                     caps <- gets capabilities
-                     dbg <- gets message
-                     liftIO $ dbg $ "Handshake complete. Board capabilities:\n" ++ show caps
-                     return True
- where handshake msg mbTOut isOK process = do
-           dbg <- gets message
-           send msg
-           let wait = do mbResp <- case mbTOut of
-                                     Nothing -> Just `fmap` recv
-                                     Just n  -> recvTimeOut n
-                         case mbResp of
-                           Nothing   -> return Nothing
-                           Just resp -> if isOK resp
-                                        then Just `fmap` process resp
-                                        else do liftIO $ dbg $ "Skipping unexpected response: " ++ show resp
-                                                wait
-           wait
-       mapAnalog :: [Word8] -> IPin -> PinCapabilities -> PinCapabilities
-       mapAnalog as p c
-          | i < rl && m /= 0x7f
-          = c{analogPinNumber = Just m}
-          | True             -- out-of-bounds, or not analog; ignore
-          = c
-         where rl = length as
-               i  = fromIntegral (pinNo p)
-               m  = as !! i
--}
