@@ -123,6 +123,15 @@ cleanUpArduino tid = do mbltid <- tryTakeMVar tid
                             Just t -> killThread t
                             _      -> return ()
 
+withArduino :: Bool       -- ^ If 'True', debugging info will be printed
+            -> FilePath   -- ^ Path to the USB port
+            -> Arduino () -- ^ The Haskell controller program to run
+            -> IO ()
+withArduino verbose fp program = do 
+        conn <- openArduino verbose fp
+        send conn program
+        closeArduino conn  
+
 -- TBD need to finish Local
 send :: ArduinoConnection -> Arduino a -> IO a
 send conn commands =
