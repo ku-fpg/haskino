@@ -27,6 +27,7 @@ import System.Hardware.Serialport (SerialPort)
 import System.IO            (stderr, hPutStrLn)
 
 import qualified Data.ByteString            as B 
+import Data.ByteString.Base16 (encode)
 import qualified Data.Map                   as M (empty, mapWithKey, insert, assocs, lookup)
 import qualified Data.Set                   as S (empty)
 import qualified System.Hardware.Serialport as S (openSerial, closeSerial, defaultSerialSettings, CommSpeed(CS57600), commSpeed, recv, send)
@@ -78,6 +79,7 @@ openArduino verbose fp = do
                          , deviceChannel = dc
                          , listenerTid   = listenerTid
                       }
+        send initState systemReset
         return initState
     where
         bailOut tid m ms = do cleanUpArduino tid
@@ -140,7 +142,7 @@ send conn commands =
 
       sendToArduino :: ArduinoConnection -> B.ByteString -> IO ()
       sendToArduino conn cmds = do
-          message conn $ "Sending: " ++ show cmds
+          message conn $ "Sending: " ++ show (encode cmds)
           sent <- liftIO $ S.send (port conn) cmds
           when (sent /= lp)
                (message conn $ "Send failed. Tried: " ++ show lp ++ "bytes, reported: " ++ show sent)
@@ -150,9 +152,6 @@ send conn commands =
 -- | Start a thread to listen to the board and populate the channel with incoming queries.
 setupListener :: SerialPort -> (String -> IO ()) -> Chan Response -> MVar BoardState -> IO ThreadId
 setupListener serial dbg chan bs = do
-        -- serial <- gets port
-        -- dbg    <- gets message
-        -- chan   <- gets deviceChannel
         let getBytes n = do let go need sofar
                                  | need <= 0  = return $ reverse sofar
                                  | True       = do b <- S.recv serial need
