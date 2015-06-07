@@ -11,8 +11,7 @@
 
 module Blink where
 
-import Control.Concurrent (threadDelay)
-import Control.Monad (forever, liftM)
+import Control.Monad (forever)
 
 import System.Hardware.DeepArduino.Data
 import System.Hardware.DeepArduino.Comm
@@ -22,11 +21,12 @@ main :: IO ()
 main = do
     conn <- openArduino True "/dev/cu.usbmodem1421"
     let led = DigitalPin 13
+    let port = pinPort $ getInternalPin led
     send conn (setPinMode led OUTPUT)
     forever $ do 
         send conn $ do 
-            digitalPinWrite led True
+            digitalPortWrite port 0x20 0x00
             hostDelay 1000
-            digitalPinWrite led False
+            digitalPortWrite port 0x00 0x00
             hostDelay 1000
 
