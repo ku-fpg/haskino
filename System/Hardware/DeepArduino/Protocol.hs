@@ -45,16 +45,16 @@ packageProcedure (AnalogPinWrite p l m)   = nonSysEx (ANALOG_MESSAGE (getInterna
 packageProcedure (AnalogPinExtendedWrite p w8s) = sysEx EXTENDED_ANALOG      ([fromIntegral (pinNo (getInternalPin p))] ++ w8s)
 packageProcedure (SamplingInterval l m)   = sysEx    SAMPLING_INTERVAL       [l, m]
 packageProcedure (I2CWrite m sa w16s)     = sysEx    I2C_REQUEST     ((packageI2c m False sa Nothing) ++
-                                                                      (words16ToBytes w16s)) 
+                                                                      (words16ToArduinoBytes w16s)) 
+packageProcedure (CreateTask tid tl)      = sysEx SCHEDULER_DATA ([schedulerCmdVal CREATE_TASK, tid] ++ (word16ToArduinoBytes tl))
+packageProcedure (DeleteTask tid)         = sysEx SCHEDULER_DATA [schedulerCmdVal DELETE_TASK, tid]
+packageProcedure (DelayTask tt)           = sysEx SCHEDULER_DATA ([schedulerCmdVal DELAY_TASK] ++ (word32ToArduinoBytes tt))
+packageProcedure (ScheduleTask tid tt)    = sysEx SCHEDULER_DATA ([schedulerCmdVal DELAY_TASK, tid] ++ (word32ToArduinoBytes tt))
 
 -- | Package a task request as a sequence of bytes to be sent to the board
 -- using the Firmata protocol.
-packageTaskProcedure :: TaskProcedure -> B.ByteString
-packageTaskProcedure (CreateTask tid tl)   = sysEx SCHEDULER_DATA ([schedulerCmdVal CREATE_TASK, tid] ++ (word16ToBytes tl))
-packageTaskProcedure (DeleteTask tid)      = sysEx SCHEDULER_DATA [schedulerCmdVal DELETE_TASK, tid]
+-- packageTaskProcedure :: TaskProcedure -> B.ByteString
 -- TBD Add AddToTask
-packageTaskProcedure (DelayTask tt)        = sysEx SCHEDULER_DATA ([schedulerCmdVal DELAY_TASK] ++ (word32ToArduinoBytes tt))
-packageTaskProcedure (ScheduleTask tid tt) = sysEx SCHEDULER_DATA ([schedulerCmdVal DELAY_TASK, tid] ++ (word32ToArduinoBytes tt))
 
 packageQuery :: Query a -> B.ByteString
 packageQuery QueryFirmware            = sysEx    REPORT_FIRMWARE         []
@@ -68,12 +68,12 @@ packageQuery (QueryTask tid)          = sysEx    SCHEDULER_DATA [schedulerCmdVal
 packageI2c :: I2CAddrMode -> Bool -> SlaveAddress -> Maybe SlaveRegister -> [Word8]
 packageI2c m w sa sr = [addrBytes !! 0, commandByte] ++ slaveBytes
   where
-    addrBytes = word16ToBytes sa
+    addrBytes = word16ToArduinoBytes sa
     commandByte = (firmataI2CModeVal m) .&. writeByte .&. (addrBytes !! 1)
     writeByte = if w then 0x00 else 0x08
     slaveBytes = case sr of 
                     Nothing -> []
-                    Just r  -> word16ToBytes r
+                    Just r  -> word16ToArduinoBytes r
 
 -- | Unpackage a SysEx response
 unpackageSysEx :: [Word8] -> Response
@@ -85,6 +85,11 @@ unpackageSysEx (cmdWord:args)
       (CAPABILITY_RESPONSE, bs)             -> Capabilities (getCapabilities bs)
       (ANALOG_MAPPING_RESPONSE, bs)         -> AnalogMapping bs
       (PULSE, xs) | length xs == 10         -> let [p, a, b, c, d] = fromArduinoBytes xs in PulseResponse (InternalPin p) (bytesToWord32 (a, b, c, d))
+      (I2C_REPLY, xs)                       -> let (sa:sr:idata) = arduinoBytesToWords16 xs in I2CReply sa sr idata
+      (SCHEDULER_DATA, srWord : ts) | Right sr <- getSchedulerReply srWord
+          -> case sr of 
+            QUERY_ALL_TASKS_REPLY           -> QueryAllTasksReply ts
+    -- TBD add other scheduler responses
       _                                     -> Unimplemented (Just (show cmd)) args
   | True
   = Unimplemented Nothing (cmdWord : args)
@@ -97,6 +102,7 @@ parseQueryResult CapabilityQuery (Capabilities bc) = bc
 parseQueryResult AnalogMappingQuery (AnalogMapping ms) = ms
 parseQueryResult (Pulse p b dur to) (PulseResponse p2 w) = w
 parseQueryResult (I2CRead am saq srq) (I2CReply sar srr ds) = ds
+parseQueryResult QueryAllTasks (QueryAllTasksReply ts) = ts
 
 getCapabilities :: [Word8] -> BoardCapabilities
 getCapabilities bs = BoardCapabilities $ M.fromList $ zipWith (\p c -> (p, PinCapabilities{analogPinNumber = Nothing, allowedModes = c}))

@@ -145,6 +145,11 @@ data Procedure =
      -- TBD add I2C continuous read
      | ServoConfig Pin MinPulse MaxPulse
      -- TBD add stepper procedures
+     | CreateTask TaskID TaskLength
+     | DeleteTask TaskID
+     | DelayTask TaskTime
+     | ScheduleTask TaskID TaskTime
+     | ScheduleReset
      deriving Show
 
 systemReset :: Arduino ()
@@ -184,6 +189,21 @@ i2cConfig w = Procedure (I2CConfig w)
 servoConfig :: Pin -> MinPulse -> MaxPulse -> Arduino ()
 servoConfig p min max = Procedure (ServoConfig p min max)
 
+createTask :: TaskID -> TaskLength -> Arduino ()
+createTask tid tl = Procedure (CreateTask tid tl)
+
+deleteTask :: TaskID -> Arduino ()
+deleteTask tid = Procedure (DeleteTask tid)
+
+delayTask :: TaskTime -> Arduino ()
+delayTask t = Procedure (DelayTask t)
+
+scheduleTask :: TaskID -> TaskTime -> Arduino ()
+scheduleTask tid tt = Procedure (ScheduleTask tid tt)
+
+scheduleReset :: Arduino ()
+scheduleReset = Procedure ScheduleReset
+
 data Local :: * -> * where
      DigitalPortRead  :: Port -> Local Word8          -- ^ Read the values on a port digitally
      DigitalPinRead   :: IPin -> Local Bool           -- ^ Read the avlue ona pin digitally
@@ -213,31 +233,13 @@ digPortRead _ = 10 :: Word8
 
 deriving instance Show a => Show (Local a)
 
+-- TBD Error reporting from Task Procedures?  Mainly it's taskid related
+-- So perhaps track that in connection instead?
 data TaskProcedure =
-       CreateTask TaskID TaskLength
-     | DeleteTask TaskID
-     | AddToTask TaskID [Procedure]
-     | DelayTask TaskTime
-     | ScheduleTask TaskID TaskTime
-     | ScheduleReset
+     AddToTask TaskID (Arduino ())
 
-createTask :: TaskID -> TaskLength -> Arduino ()
-createTask tid tl = TaskProcedure (CreateTask tid tl)
-
-deleteTask :: TaskID -> Arduino ()
-deleteTask tid = TaskProcedure (DeleteTask tid)
-
-addToTask :: TaskID -> [Procedure] -> Arduino ()
+addToTask :: TaskID -> Arduino () -> Arduino ()
 addToTask tid ps = TaskProcedure (AddToTask tid ps)
-
-delayTask :: TaskTime -> Arduino ()
-delayTask t = TaskProcedure (DelayTask t)
-
-scheduleTask :: TaskID -> TaskTime -> Arduino ()
-scheduleTask tid tt = TaskProcedure (ScheduleTask tid tt)
-
-scheduleReset :: Arduino ()
-scheduleReset = TaskProcedure ScheduleReset
 
 data Query :: * -> * where
      QueryFirmware  :: Query (Word8, Word8, String)   -- ^ Query the Firmata version installed
@@ -246,7 +248,7 @@ data Query :: * -> * where
      Pulse :: IPin -> Bool -> Word32 -> Word32 -> Query Word32 -- ^ Request for a pulse reading on a pin, value, duration, timeout
      I2CRead :: I2CAddrMode -> SlaveAddress -> Maybe SlaveRegister -> Query [Word16]
      QueryAllTasks :: Query [TaskID]
-     QueryTask :: TaskID -> Query (TaskTime, TaskLength, TaskPos, [Procedure])
+     QueryTask :: TaskID -> Query (TaskTime, TaskLength, TaskPos, [Word8])
 
 deriving instance Show a => Show (Query a)
 
@@ -268,11 +270,10 @@ i2cRead am sa sr = Query (I2CRead am sa sr)
 queryAllTasks :: Arduino [TaskID]
 queryAllTasks = Query QueryAllTasks
 
-queryTask :: TaskID -> Arduino (TaskTime, TaskLength, TaskPos, [Procedure])
+queryTask :: TaskID -> Arduino (TaskTime, TaskLength, TaskPos, [Word8])
 queryTask tid = Query (QueryTask tid)
 
 -- | A response, as returned from the Arduino
--- TBD need to add new queries
 data Response = Firmware Word8 Word8 String          -- ^ Firmware version (maj/min and indentifier
               | Capabilities BoardCapabilities       -- ^ Capabilities report
               | AnalogMapping [Word8]                -- ^ Analog pin mappings
@@ -280,6 +281,9 @@ data Response = Firmware Word8 Word8 String          -- ^ Firmware version (maj/
               | AnalogMessage  IPin Word8 Word8      -- ^ Status of an analog pin
               | PulseResponse  IPin Word32           -- ^ Repsonse to a PulseInCommand
               | I2CReply Word16 Word16 [Word16]      -- ^ Response to a I2C Read
+              | QueryAllTasksReply [Word8]          -- ^ Response to Query All Tasks
+              | QueryTaskReply TaskTime TaskLength TaskPos [Word8]
+              | ErrorTaskReply TaskTime TaskLength TaskPos [Word8]
               | Unimplemented (Maybe String) [Word8] -- ^ Represents messages currently unsupported
     deriving Show
 
@@ -327,13 +331,23 @@ data SchedulerCmd = CREATE_TASK    -- ^ @0x00@
 -- | Compute the numeric value of a scheduler command
 schedulerCmdVal :: SchedulerCmd -> Word8
 schedulerCmdVal CREATE_TASK     = 0x00
-schedulerCmdVal DELETE_TASK     = 0x00
-schedulerCmdVal ADD_TO_TASK     = 0x00
-schedulerCmdVal DELAY_TASK      = 0x00
-schedulerCmdVal SCHEDULE_TASK   = 0x00
-schedulerCmdVal QUERY_ALL_TASKS = 0x00
-schedulerCmdVal QUERY_TASK      = 0x00
-schedulerCmdVal SCHEDULER_RESET = 0x00
+schedulerCmdVal DELETE_TASK     = 0x01
+schedulerCmdVal ADD_TO_TASK     = 0x02
+schedulerCmdVal DELAY_TASK      = 0x03
+schedulerCmdVal SCHEDULE_TASK   = 0x04
+schedulerCmdVal QUERY_ALL_TASKS = 0x05
+schedulerCmdVal QUERY_TASK      = 0x06
+schedulerCmdVal SCHEDULER_RESET = 0x07
+
+data SchedulerReply = QUERY_ALL_TASKS_REPLY
+                | QUERY_TASK_REPLY
+                | ERROR_FIRMATA_TASK_REPLY
+
+getSchedulerReply :: Word8 -> Either Word8 SchedulerReply
+getSchedulerReply 0x09 = Right QUERY_ALL_TASKS_REPLY
+getSchedulerReply 0x0A = Right QUERY_TASK_REPLY
+getSchedulerReply 0x0B = Right ERROR_FIRMATA_TASK_REPLY
+getSchedulerReply n    = Left n
 
 -- | Convert a byte to a Firmata command
 getFirmataCmd :: Word8 -> Either Word8 FirmataCmd
