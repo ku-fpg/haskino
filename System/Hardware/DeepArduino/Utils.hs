@@ -19,6 +19,8 @@ import Data.Word          (Word8, Word16, Word32)
 import Data.Time          (getCurrentTime, utctDayTime)
 import Numeric            (showHex, showIntAtBase)
 
+import qualified Data.ByteString            as B 
+
 -- | Delay (wait) for the given number of milli-seconds
 delay :: Int -> IO ()
 delay n = threadDelay (n*1000)
@@ -99,7 +101,15 @@ arduinoBytesToWords16 [x]        = arduinoBytesToWords16 [x,0]  -- shouldn't rea
 arduinoBytesToWords16 (l:h:rest) = c : arduinoBytesToWords16 rest
   where c = fromIntegral h `shiftL` 7 .|. fromIntegral l -- first seven bit comes from l; then extra stuff is in h
 
---arduinoBytesToWord32 :: [Word8] -> Word32
---arduinoBytesToWord32 []         = []
---arduinoBytesToWord32 [x]        = [fromIntegral x]  -- shouldn't really happen
-
+-- | Convert a sequence of 8 bit bytes to a sequence of 7 bit bytes
+arduinoEncoded :: B.ByteString -> B.ByteString 
+arduinoEncoded bs = arduinoEncoded' bs 0 0
+  where
+    arduinoEncoded' :: B.ByteString -> Int -> Word8 -> B.ByteString 
+    arduinoEncoded' bs shift prev = 
+      case B.uncons bs of
+        Nothing                 -> if prev == 0 then B.empty else B.singleton prev
+        Just (h,t) | shift == 6 -> B.cons (((h `shiftL` shift) .&. 0x7f) .|. prev) 
+                                    (B.cons (h `shiftR` 1) (arduinoEncoded' t 0 0))
+        Just (h,t)              -> B.cons (((h `shiftL` shift) .&. 0x7f) .|. prev) 
+                                    (arduinoEncoded' t ((shift + 1) `mod` 7) (h `shiftR` (7 - shift)))

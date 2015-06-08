@@ -143,6 +143,7 @@ send conn commands =
       sendBind c (Procedure cmd) k cmds = send' c (k ()) (B.append cmds (packageProcedure c cmd))
       sendBind c (Local local)   k cmds = sendLocal c local k cmds
       sendBind c (Query query)   k cmds = sendQuery c query k cmds
+      sendBind c (TaskProcedure task) k cmds = sendTaskProcedure c task k cmds
 
       sendLocal :: ArduinoConnection -> Local a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendLocal c (AnalogPinRead p) k cmds = do
@@ -164,8 +165,14 @@ send conn commands =
       sendQuery c query k cmds = do
           sendToArduino c (B.append cmds (packageQuery query))
           resp <- liftIO $ readChan (deviceChannel c)
-          putStrLn (show resp)
           send' c (k (parseQueryResult query resp)) B.empty
+
+      sendTaskProcedure :: ArduinoConnection -> TaskProcedure a -> (a -> Arduino b) -> B.ByteString -> IO b
+      sendTaskProcedure c (AddToTask tid m) k cmds = do
+          sendToArduino c (B.append cmds (packageTaskProcedure (AddToTask tid m)))
+          sendTask c m
+          sendToArduino c (B.singleton $ firmataCmdVal END_SYSEX)
+          send' c (k ()) B.empty
 
       send' :: ArduinoConnection -> Arduino a -> B.ByteString -> IO a
       -- Most of these can be factored out, except return
@@ -175,14 +182,54 @@ send conn commands =
               return a
       send' c cmd                   cmds = sendBind c cmd Return cmds
 
-      sendToArduino :: ArduinoConnection -> B.ByteString -> IO ()
-      sendToArduino conn cmds = do
-          message conn $ "Sending: " ++ show (encode cmds)
-          sent <- liftIO $ S.send (port conn) cmds
-          when (sent /= lp)
-               (message conn $ "Send failed. Tried: " ++ show lp ++ "bytes, reported: " ++ show sent)
-        where
-          lp = B.length cmds
+sendTask :: ArduinoConnection -> Arduino a -> IO a
+sendTask conn commands =
+      send' conn commands B.empty
+  where
+      sendBind :: ArduinoConnection -> Arduino a -> (a -> Arduino b) -> B.ByteString -> IO b
+      sendBind c (Return a)      k cmds = send' c (k a) cmds
+      sendBind c (Bind m k1)    k2 cmds = sendBind c m (\ r -> Bind (k1 r) k2) cmds
+      sendBind c (Procedure cmd) k cmds = send' c (k ()) (B.append cmds (packageProcedure c cmd))
+      -- For sending as part of a Scheduler task, queries, locals, and task
+      -- procedures make no sense.  Instead of signalling an error, at this
+      -- point they are just ignored.
+      sendBind c (Local local)   k cmds = sendLocal c local k cmds
+      sendBind c (Query query)   k cmds = sendQuery c query k cmds
+      sendBind c (TaskProcedure task) k cmds = sendTaskProcedure c task k cmds
+
+      sendLocal :: ArduinoConnection -> Local a -> (a -> Arduino b) -> B.ByteString -> IO b
+      sendLocal c (AnalogPinRead _) k cmds = send' c (k 0) B.empty
+      sendLocal c (DigitalPortRead _) k cmds = send' c (k 0) B.empty
+      sendLocal c (DigitalPinRead _) k cmds = send' c (k False) B.empty
+      sendLocal c (HostDelay _) k cmds = send' c (k (return ())) B.empty
+
+      sendQuery :: ArduinoConnection -> Query a -> (a -> Arduino b) -> B.ByteString -> IO b
+      sendQuery c QueryFirmware k cmds = send' c (k (0,0,[])) B.empty
+      sendQuery c CapabilityQuery k cmds = send' c (k (BoardCapabilities M.empty)) B.empty
+      sendQuery c AnalogMappingQuery k cmds = send' c (k ([])) B.empty
+      sendQuery c (Pulse _ _ _ _) k cmds = send' c (k 0) B.empty
+      sendQuery c QueryAllTasks k cmds = send' c (k ([])) B.empty
+      sendQuery c (QueryTask _) k cmds = send' c (k (0,0,0,[])) B.empty
+
+      sendTaskProcedure :: ArduinoConnection -> TaskProcedure a -> (a -> Arduino b) -> B.ByteString -> IO b
+      sendTaskProcedure c (AddToTask tid m) k cmds = send' c (k ()) B.empty
+
+      send' :: ArduinoConnection -> Arduino a -> B.ByteString -> IO a
+      -- Most of these can be factored out, except return
+      send' c (Bind m k)            cmds = sendBind c m k cmds
+      send' _ (Return a)            cmds = do
+              sendToArduino conn (arduinoEncoded cmds)
+              return a
+      send' c cmd                   cmds = sendBind c cmd Return cmds
+
+sendToArduino :: ArduinoConnection -> B.ByteString -> IO ()
+sendToArduino conn cmds = do
+    message conn $ "Sending: " ++ show (encode cmds)
+    sent <- liftIO $ S.send (port conn) cmds
+    when (sent /= lp)
+         (message conn $ "Send failed. Tried: " ++ show lp ++ "bytes, reported: " ++ show sent)
+  where
+    lp = B.length cmds
 
 -- | Start a thread to listen to the board and populate the channel with incoming queries.
 setupListener :: SerialPort -> (String -> IO ()) -> Chan Response -> MVar BoardState -> IO ThreadId

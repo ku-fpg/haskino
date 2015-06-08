@@ -10,7 +10,7 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE GADTs      #-}
 
-module System.Hardware.DeepArduino.Protocol(packageProcedure, packageQuery, unpackageSysEx, unpackageNonSysEx, parseQueryResult) where
+module System.Hardware.DeepArduino.Protocol(packageProcedure, packageQuery, packageTaskProcedure, unpackageSysEx, unpackageNonSysEx, parseQueryResult) where
 
 import Data.Bits ((.|.), (.&.))
 import Data.Word (Word8)
@@ -27,6 +27,12 @@ sysEx cmd bs = B.pack $  firmataCmdVal START_SYSEX
                       :  sysExCmdVal cmd
                       :  bs
                       ++ [firmataCmdVal END_SYSEX]
+
+-- | Wrap the start of a sys-ex message to be sent to the board
+startSysEx :: SysExCmd -> [Word8] -> B.ByteString
+startSysEx cmd bs = B.pack $  firmataCmdVal START_SYSEX
+                      :  sysExCmdVal cmd
+                      :  bs
 
 -- | Construct a non sys-ex message
 nonSysEx :: FirmataCmd -> [Word8] -> B.ByteString
@@ -53,13 +59,14 @@ packageProcedure c (ScheduleTask tid tt)    = sysEx SCHEDULER_DATA ([schedulerCm
 
 -- | Package a task request as a sequence of bytes to be sent to the board
 -- using the Firmata protocol.
--- packageTaskProcedure :: TaskProcedure -> B.ByteString
--- TBD Add AddToTask
+packageTaskProcedure :: TaskProcedure a -> B.ByteString
+packageTaskProcedure (AddToTask tid m)      = startSysEx SCHEDULER_DATA [schedulerCmdVal DELETE_TASK, tid]
 
 packageQuery :: Query a -> B.ByteString
 packageQuery QueryFirmware            = sysEx    REPORT_FIRMWARE         []
 packageQuery CapabilityQuery          = sysEx    CAPABILITY_QUERY        []
 packageQuery AnalogMappingQuery       = sysEx    ANALOG_MAPPING_QUERY    []
+-- TBD - Does Pulse still exist in Firmata?
 packageQuery (Pulse p b dur to)       = sysEx    PULSE                   ([fromIntegral (pinNo p), if b then 1 else 0] ++ concatMap toArduinoBytes (word32ToBytes dur ++ word32ToBytes to))
 packageQuery (I2CRead m sa sr)        = sysEx    I2C_REQUEST  (packageI2c m False sa sr)
 packageQuery QueryAllTasks            = sysEx    SCHEDULER_DATA [schedulerCmdVal QUERY_ALL_TASKS]
@@ -121,7 +128,6 @@ unpackageNonSysEx getBytes c = grab c
        grab (ANALOG_MESSAGE       p)    = getBytes 2 >>= \[l, h] -> return (AnalogMessage  p l h)
        grab (DIGITAL_MESSAGE      p)    = getBytes 2 >>= \[l, h] -> return (DigitalMessage p l h)
        -- we should never see any of the following since they are "request" codes
-       -- TBD: Maybe we should put them in a different data-type
        grab (REPORT_ANALOG_PIN   _pin)  = unimplemented 1
        grab (REPORT_DIGITAL_PORT _port) = unimplemented 1
        grab START_SYSEX                 = unimplemented 0

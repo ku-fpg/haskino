@@ -27,7 +27,7 @@ data Arduino :: * -> * where
     Procedure      :: Procedure                       -> Arduino ()
     Local          :: Local a                         -> Arduino a
     Query          :: Query a                         -> Arduino a
-    TaskProcedure  :: TaskProcedure                   -> Arduino a
+    TaskProcedure  :: TaskProcedure a                 -> Arduino a
     Bind           :: Arduino a -> (a -> Arduino b)   -> Arduino b
     Return         :: a                               -> Arduino a
 
@@ -69,10 +69,11 @@ data Port = Port { portNo :: Word8 }
 getInternalPin :: ArduinoConnection -> Pin -> IPin
 getInternalPin c (MixedPin p)   = InternalPin p
 getInternalPin c (DigitalPin p) = InternalPin p
-getInternalPin c (AnalogPin p)  = InternalPin p
-{-  TBD Fix
-getInternalPin (AnalogPin p)
-  = do BoardCapabilities caps <- gets capabilities
+getInternalPin c (AnalogPin p) = InternalPin p
+-- TBD Fix me
+{-
+getInternalPin c (AnalogPin p)
+  = do BoardCapabilities caps <- boardCapabilities c
        case listToMaybe [realPin | (realPin, PinCapabilities{analogPinNumber = Just n}) <- M.toAscList caps, p == n] of
          Nothing -> die ("DeepArduino: " ++ show p ++ " is not a valid analog-pin on this board.")
                         -- Try to be helpful in case they are trying to use a large value thinking it needs to be offset
@@ -245,8 +246,8 @@ deriving instance Show a => Show (Local a)
 
 -- TBD Error reporting from Task Procedures?  Mainly it's taskid related
 -- So perhaps track that in connection instead?
-data TaskProcedure =
-     AddToTask TaskID (Arduino ())
+data TaskProcedure :: * -> * where
+     AddToTask :: TaskID -> (Arduino ()) -> TaskProcedure ()
 
 addToTask :: TaskID -> Arduino () -> Arduino ()
 addToTask tid ps = TaskProcedure (AddToTask tid ps)
