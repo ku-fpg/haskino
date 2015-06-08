@@ -170,7 +170,7 @@ send conn commands =
       sendTaskProcedure :: ArduinoConnection -> TaskProcedure a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendTaskProcedure c (AddToTask tid m) k cmds = do
           sendToArduino c (B.append cmds (packageTaskProcedure (AddToTask tid m)))
-          sendTask c m
+          sendToArduino c (arduinoEncoded (sendTask c m))
           sendToArduino c (B.singleton $ firmataCmdVal END_SYSEX)
           send' c (k ()) B.empty
 
@@ -182,11 +182,11 @@ send conn commands =
               return a
       send' c cmd                   cmds = sendBind c cmd Return cmds
 
-sendTask :: ArduinoConnection -> Arduino a -> IO a
+sendTask :: ArduinoConnection -> Arduino a -> B.ByteString
 sendTask conn commands =
       send' conn commands B.empty
   where
-      sendBind :: ArduinoConnection -> Arduino a -> (a -> Arduino b) -> B.ByteString -> IO b
+      sendBind :: ArduinoConnection -> Arduino a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
       sendBind c (Return a)      k cmds = send' c (k a) cmds
       sendBind c (Bind m k1)    k2 cmds = sendBind c m (\ r -> Bind (k1 r) k2) cmds
       sendBind c (Procedure cmd) k cmds = send' c (k ()) (B.append cmds (packageProcedure c cmd))
@@ -197,13 +197,13 @@ sendTask conn commands =
       sendBind c (Query query)   k cmds = sendQuery c query k cmds
       sendBind c (TaskProcedure task) k cmds = sendTaskProcedure c task k cmds
 
-      sendLocal :: ArduinoConnection -> Local a -> (a -> Arduino b) -> B.ByteString -> IO b
+      sendLocal :: ArduinoConnection -> Local a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
       sendLocal c (AnalogPinRead _) k cmds = send' c (k 0) cmds
       sendLocal c (DigitalPortRead _) k cmds = send' c (k 0) cmds
       sendLocal c (DigitalPinRead _) k cmds = send' c (k False) cmds
       sendLocal c (HostDelay _) k cmds = send' c (k (return ())) cmds
 
-      sendQuery :: ArduinoConnection -> Query a -> (a -> Arduino b) -> B.ByteString -> IO b
+      sendQuery :: ArduinoConnection -> Query a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
       sendQuery c QueryFirmware k cmds = send' c (k (0,0,[])) cmds
       sendQuery c CapabilityQuery k cmds = send' c (k (BoardCapabilities M.empty)) cmds
       sendQuery c AnalogMappingQuery k cmds = send' c (k ([])) cmds
@@ -212,16 +212,13 @@ sendTask conn commands =
       sendQuery c (QueryTask _) k cmds = send' c (k []) cmds
 --      sendQuery c (QueryTask _) k cmds = send' c (k (0,0,0,[])) B.empty
 
-      sendTaskProcedure :: ArduinoConnection -> TaskProcedure a -> (a -> Arduino b) -> B.ByteString -> IO b
+      sendTaskProcedure :: ArduinoConnection -> TaskProcedure a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
       sendTaskProcedure c (AddToTask tid m) k cmds = send' c (k ()) cmds
 
-      send' :: ArduinoConnection -> Arduino a -> B.ByteString -> IO a
+      send' :: ArduinoConnection -> Arduino a -> B.ByteString -> B.ByteString
       -- Most of these can be factored out, except return
       send' c (Bind m k)            cmds = sendBind c m k cmds
-      send' _ (Return a)            cmds = do
-              message conn $ "Unencoded Task Data: " ++ show (encode cmds)
-              sendToArduino conn (arduinoEncoded cmds)
-              return a
+      send' _ (Return a)            cmds = cmds
       send' c cmd                   cmds = sendBind c cmd Return cmds
 
 sendToArduino :: ArduinoConnection -> B.ByteString -> IO ()
