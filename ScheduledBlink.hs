@@ -29,7 +29,7 @@ myTask port portVal = do
 
 main :: IO ()
 main = do
-    conn <- openArduino True "/dev/cu.usbmodem1421"
+    conn <- openArduino False "/dev/cu.usbmodem1421"
     let led = DigitalPin 13
     let iled = getInternalPin conn led
     let port = pinPort iled
@@ -43,4 +43,9 @@ main = do
         t <- queryTask 1
         return (ts,t)
     putStrLn $ show (tasks,task)
+
+    send conn $ do
+        hostDelay 10500
+        deleteTask 1
+        return ()
 
