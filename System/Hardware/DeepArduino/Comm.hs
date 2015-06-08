@@ -198,22 +198,22 @@ sendTask conn commands =
       sendBind c (TaskProcedure task) k cmds = sendTaskProcedure c task k cmds
 
       sendLocal :: ArduinoConnection -> Local a -> (a -> Arduino b) -> B.ByteString -> IO b
-      sendLocal c (AnalogPinRead _) k cmds = send' c (k 0) B.empty
-      sendLocal c (DigitalPortRead _) k cmds = send' c (k 0) B.empty
-      sendLocal c (DigitalPinRead _) k cmds = send' c (k False) B.empty
-      sendLocal c (HostDelay _) k cmds = send' c (k (return ())) B.empty
+      sendLocal c (AnalogPinRead _) k cmds = send' c (k 0) cmds
+      sendLocal c (DigitalPortRead _) k cmds = send' c (k 0) cmds
+      sendLocal c (DigitalPinRead _) k cmds = send' c (k False) cmds
+      sendLocal c (HostDelay _) k cmds = send' c (k (return ())) cmds
 
       sendQuery :: ArduinoConnection -> Query a -> (a -> Arduino b) -> B.ByteString -> IO b
-      sendQuery c QueryFirmware k cmds = send' c (k (0,0,[])) B.empty
-      sendQuery c CapabilityQuery k cmds = send' c (k (BoardCapabilities M.empty)) B.empty
-      sendQuery c AnalogMappingQuery k cmds = send' c (k ([])) B.empty
-      sendQuery c (Pulse _ _ _ _) k cmds = send' c (k 0) B.empty
-      sendQuery c QueryAllTasks k cmds = send' c (k ([])) B.empty
-      sendQuery c (QueryTask _) k cmds = send' c (k []) B.empty
+      sendQuery c QueryFirmware k cmds = send' c (k (0,0,[])) cmds
+      sendQuery c CapabilityQuery k cmds = send' c (k (BoardCapabilities M.empty)) cmds
+      sendQuery c AnalogMappingQuery k cmds = send' c (k ([])) cmds
+      sendQuery c (Pulse _ _ _ _) k cmds = send' c (k 0) cmds
+      sendQuery c QueryAllTasks k cmds = send' c (k ([])) cmds
+      sendQuery c (QueryTask _) k cmds = send' c (k []) cmds
 --      sendQuery c (QueryTask _) k cmds = send' c (k (0,0,0,[])) B.empty
 
       sendTaskProcedure :: ArduinoConnection -> TaskProcedure a -> (a -> Arduino b) -> B.ByteString -> IO b
-      sendTaskProcedure c (AddToTask tid m) k cmds = send' c (k ()) B.empty
+      sendTaskProcedure c (AddToTask tid m) k cmds = send' c (k ()) cmds
 
       send' :: ArduinoConnection -> Arduino a -> B.ByteString -> IO a
       -- Most of these can be factored out, except return
