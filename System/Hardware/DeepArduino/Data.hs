@@ -252,9 +252,7 @@ data Query :: * -> * where
      Pulse :: IPin -> Bool -> Word32 -> Word32 -> Query Word32 -- ^ Request for a pulse reading on a pin, value, duration, timeout
      I2CRead :: I2CAddrMode -> SlaveAddress -> Maybe SlaveRegister -> Query [Word16]
      QueryAllTasks :: Query [TaskID]
-     QueryTask :: TaskID -> Query [Word8]
---  TBD - Decode QueryTask reply
---     QueryTask :: TaskID -> Query (TaskTime, TaskLength, TaskPos, [Word8])
+     QueryTask :: TaskID -> Query (TaskID, TaskTime, TaskLength, TaskPos, [Word8])
 
 deriving instance Show a => Show (Query a)
 
@@ -276,8 +274,7 @@ i2cRead am sa sr = Query (I2CRead am sa sr)
 queryAllTasks :: Arduino [TaskID]
 queryAllTasks = Query QueryAllTasks
 
-queryTask :: TaskID -> Arduino [Word8]
--- queryTask :: TaskID -> Arduino (TaskTime, TaskLength, TaskPos, [Word8])
+queryTask :: TaskID -> Arduino (TaskID, TaskTime, TaskLength, TaskPos, [Word8])
 queryTask tid = Query (QueryTask tid)
 
 -- | A response, as returned from the Arduino
@@ -290,8 +287,7 @@ data Response = Firmware Word8 Word8 String          -- ^ Firmware version (maj/
               | PulseResponse  IPin Word32           -- ^ Repsonse to a PulseInCommand
               | I2CReply Word16 Word16 [Word16]      -- ^ Response to a I2C Read
               | QueryAllTasksReply [Word8]           -- ^ Response to Query All Tasks
---              | QueryTaskReply TaskTime TaskLength TaskPos [Word8]
-              | QueryTaskReply [Word8]
+              | QueryTaskReply TaskID TaskTime TaskLength TaskPos [Word8]
               | ErrorTaskReply TaskTime TaskLength TaskPos [Word8]
               | Unimplemented (Maybe String) [Word8] -- ^ Represents messages currently unsupported
     deriving Show

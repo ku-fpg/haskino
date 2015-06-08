@@ -90,8 +90,7 @@ packageTaskData conn commands =
       packQuery c AnalogMappingQuery k cmds = packageTaskData' c (k ([])) cmds
       packQuery c (Pulse _ _ _ _) k cmds = packageTaskData' c (k 0) cmds
       packQuery c QueryAllTasks k cmds = packageTaskData' c (k ([])) cmds
-      packQuery c (QueryTask _) k cmds = packageTaskData' c (k []) cmds
---      packQuery (QueryTask _) k cmds = send' (k (0,0,0,[])) cmds
+      packQuery c (QueryTask _) k cmds = packageTaskData' c (k (0,0,0,0,[])) cmds
 
       packageTaskData' :: ArduinoConnection -> Arduino a -> B.ByteString -> B.ByteString
       -- Most of these can be factored out, except return
@@ -125,18 +124,21 @@ unpackageSysEx []              = Unimplemented (Just "<EMPTY-SYSEX-CMD>") []
 unpackageSysEx (cmdWord:args)
   | Right cmd <- getSysExCommand cmdWord
   = case (cmd, args) of
-      (REPORT_FIRMWARE, majV : minV : rest) -> Firmware majV minV (getString rest)
-      (CAPABILITY_RESPONSE, bs)             -> Capabilities (getCapabilities bs)
-      (ANALOG_MAPPING_RESPONSE, bs)         -> AnalogMapping bs
-      (PULSE, xs) | length xs == 10         -> let [p, a, b, c, d] = fromArduinoBytes xs in PulseResponse (InternalPin p) (bytesToWord32 (a, b, c, d))
-      (STRING_DATA, rest)                   -> StringMessage (getString rest)
-      (I2C_REPLY, xs)                       -> let (sa:sr:idata) = arduinoBytesToWords16 xs in I2CReply sa sr idata
+      (REPORT_FIRMWARE, majV : minV : rest)  -> Firmware majV minV (getString rest)
+      (CAPABILITY_RESPONSE, bs)              -> Capabilities (getCapabilities bs)
+      (ANALOG_MAPPING_RESPONSE, bs)          -> AnalogMapping bs
+      (PULSE, xs) | length xs == 10          -> let [p, a, b, c, d] = fromArduinoBytes xs in PulseResponse (InternalPin p) (bytesToWord32 (a, b, c, d))
+      (STRING_DATA, rest)                    -> StringMessage (getString rest)
+      (I2C_REPLY, xs)                        -> let (sa:sr:idata) = arduinoBytesToWords16 xs in I2CReply sa sr idata
       (SCHEDULER_DATA, srWord : ts) | Right sr <- getSchedulerReply srWord
-          -> case sr of 
-            QUERY_ALL_TASKS_REPLY           -> QueryAllTasksReply ts
-            QUERY_TASK_REPLY                -> QueryTaskReply ts
+        -> case sr of 
+          QUERY_ALL_TASKS_REPLY              -> QueryAllTasksReply ts
+          QUERY_TASK_REPLY | length ts == 1  -> QueryTaskReply (ts !! 0) 0 0 0 []
+          QUERY_TASK_REPLY | length ts >= 11 -> let ti:adata = ts
+                                                    tt0:tt1:tt2:tt3:tl0:tl1:tp0:tp1:td = arduinoDecoded adata
+                                                in QueryTaskReply ti (bytesToWord32 (tt3,tt2,tt1,tt0)) (bytesToWord16 (tl1,tl0)) (bytesToWord16 (tp1,tp0)) td
     -- TBD add other scheduler responses
-      _                                     -> Unimplemented (Just (show cmd)) args
+      _                                      -> Unimplemented (Just (show cmd)) args
   | True
   = Unimplemented Nothing (cmdWord : args)
 
@@ -149,7 +151,7 @@ parseQueryResult AnalogMappingQuery (AnalogMapping ms) = ms
 parseQueryResult (Pulse p b dur to) (PulseResponse p2 w) = w
 parseQueryResult (I2CRead am saq srq) (I2CReply sar srr ds) = ds
 parseQueryResult QueryAllTasks (QueryAllTasksReply ts) = ts
-parseQueryResult (QueryTask tid) (QueryTaskReply ts) = ts
+parseQueryResult (QueryTask tid) (QueryTaskReply tid' tt tl tp ws) = (tid',tt,tl,tp,ws)
 
 getCapabilities :: [Word8] -> BoardCapabilities
 getCapabilities bs = BoardCapabilities $ M.fromList $ zipWith (\p c -> (p, PinCapabilities{analogPinNumber = Nothing, allowedModes = c}))

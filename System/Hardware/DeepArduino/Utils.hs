@@ -84,6 +84,14 @@ bytesToWord32 :: (Word8, Word8, Word8, Word8) -> Word32
 bytesToWord32 (a, b, c, d) = fromIntegral a `shiftL` 24 .|. fromIntegral b `shiftL` 16 .|. fromIntegral c `shiftL` 8 .|. fromIntegral d
 
 -- | Convert a word to it's bytes, as would be required by Arduino comms
+word16ToBytes :: Word16 -> [Word8]
+word16ToBytes i = map fromIntegral [(i `shiftR`  8) .&. 0xFF, i .&. 0xFF]
+
+-- | Inverse conversion for word32ToBytes
+bytesToWord16 :: (Word8, Word8) -> Word16
+bytesToWord16 (a, b) = fromIntegral a `shiftL` 8 .|. fromIntegral b
+
+-- | Convert a word to it's bytes, as would be required by Arduino comms
 word16ToArduinoBytes :: Word16 -> [Word8]
 word16ToArduinoBytes i = map fromIntegral [i .&. 0x7F, (i `shiftR`  7) .&. 0x7F]
 
@@ -114,3 +122,13 @@ arduinoEncoded bs = arduinoEncoded' bs 0 0
                                     (B.cons (h `shiftR` 1) (arduinoEncoded' t 0 0))
         Just (h,t)              -> B.cons (((h `shiftL` shift) .&. 0x7f) .|. prev) 
                                     (arduinoEncoded' t ((shift + 1) `mod` 7) (h `shiftR` (7 - shift)))
+
+-- | Convert a sequence of 7 bit bytes to a sequence of 8 bit bytes
+arduinoDecoded :: [Word8] -> [Word8]
+arduinoDecoded bs = arduinoDecoded' bs 0
+  where
+    arduinoDecoded' :: [Word8] -> Int -> [Word8]
+    arduinoDecoded' []          _     = []
+    arduinoDecoded' [x]         shift = [x `shiftR` shift]
+    arduinoDecoded' (x:x1:rest) shift = ((x `shiftR` shift) .|. ((x1 `shiftL` (7 - shift)) .&. 0xFF)) : 
+                                        (arduinoDecoded' (x1:rest) ((shift + 1) `mod` 7)) 

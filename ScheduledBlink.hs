@@ -43,16 +43,4 @@ main = do
         t <- queryTask 1
         return (ts,t)
     putStrLn $ show (tasks,task)
-    send conn (hostDelay 4000)
-    (tasks,task) <- send conn $ do
-        ts <- queryAllTasks
-        t <- queryTask 1
-        return (ts,t)
-    putStrLn $ show (tasks,task)
-    send conn (hostDelay 6000)
-    (tasks,task) <- send conn $ do
-        ts <- queryAllTasks
-        t <- queryTask 1
-        return (ts,t)
-    putStrLn $ show (tasks,task)
 
