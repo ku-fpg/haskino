@@ -37,8 +37,7 @@ main = do
 
     send conn (setPinMode led OUTPUT)
     (tasks,task) <- send conn $ do
-        createTask 1 24
-        addToTask 1 (myTask port portVal)
+        createTask 1 (myTask port portVal)
         scheduleTask 1 5000
         ts <- queryAllTasks
         t <- queryTask 1

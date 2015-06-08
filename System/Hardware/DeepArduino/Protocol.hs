@@ -10,7 +10,7 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE GADTs      #-}
 
-module System.Hardware.DeepArduino.Protocol(packageProcedure, packageQuery, packageTaskProcedure, unpackageSysEx, unpackageNonSysEx, parseQueryResult) where
+module System.Hardware.DeepArduino.Protocol(packageProcedure, packageQuery, unpackageSysEx, unpackageNonSysEx, parseQueryResult) where
 
 import Data.Bits ((.|.), (.&.))
 import Data.Word (Word8)
@@ -28,7 +28,8 @@ sysEx cmd bs = B.pack $  firmataCmdVal START_SYSEX
                       :  bs
                       ++ [firmataCmdVal END_SYSEX]
 
--- | Wrap the start of a sys-ex message to be sent to the board
+-- | Wrap the start of a sys-ex message to be sent to the board (all except
+-- |  the END_SYSEX byte)
 startSysEx :: SysExCmd -> [Word8] -> B.ByteString
 startSysEx cmd bs = B.pack $  firmataCmdVal START_SYSEX
                       :  sysExCmdVal cmd
@@ -52,15 +53,51 @@ packageProcedure c (AnalogPinExtendedWrite p w8s) = sysEx EXTENDED_ANALOG      (
 packageProcedure c (SamplingInterval l m)   = sysEx    SAMPLING_INTERVAL       [l, m]
 packageProcedure c (I2CWrite m sa w16s)     = sysEx    I2C_REQUEST     ((packageI2c m False sa Nothing) ++
                                                                       (words16ToArduinoBytes w16s)) 
-packageProcedure c (CreateTask tid tl)      = sysEx SCHEDULER_DATA ([schedulerCmdVal CREATE_TASK, tid] ++ (word16ToArduinoBytes tl))
 packageProcedure c (DeleteTask tid)         = sysEx SCHEDULER_DATA [schedulerCmdVal DELETE_TASK, tid]
 packageProcedure c (DelayTask tt)           = sysEx SCHEDULER_DATA ([schedulerCmdVal DELAY_TASK] ++ (word32ToArduinoBytes tt))
 packageProcedure c (ScheduleTask tid tt)    = sysEx SCHEDULER_DATA ([schedulerCmdVal SCHEDULE_TASK, tid] ++ (word32ToArduinoBytes tt))
+packageProcedure c (CreateTask tid m)       = (sysEx SCHEDULER_DATA ([schedulerCmdVal CREATE_TASK, tid] ++ (word16ToArduinoBytes taskSize)))
+                                              `B.append` (startSysEx SCHEDULER_DATA [schedulerCmdVal ADD_TO_TASK, tid])
+                                              `B.append` (arduinoEncoded taskData)
+                                              `B.append` (B.singleton (firmataCmdVal END_SYSEX))
+  where
+    taskData = packageTaskData c m
+    taskSize = fromIntegral (B.length taskData)
 
--- | Package a task request as a sequence of bytes to be sent to the board
--- using the Firmata protocol.
-packageTaskProcedure :: TaskProcedure a -> B.ByteString
-packageTaskProcedure (AddToTask tid m)      = startSysEx SCHEDULER_DATA [schedulerCmdVal ADD_TO_TASK, tid]
+packageTaskData :: ArduinoConnection -> Arduino a -> B.ByteString
+packageTaskData conn commands =
+      packageTaskData' conn commands B.empty
+  where
+      packBind :: ArduinoConnection -> Arduino a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
+      packBind c (Return a)      k cmds = packageTaskData' c (k a) cmds
+      packBind c (Bind m k1)    k2 cmds = packBind c m (\ r -> Bind (k1 r) k2) cmds
+      packBind c (Procedure cmd) k cmds = packageTaskData' c (k ()) (B.append cmds (packageProcedure c cmd))
+      -- For sending as part of a Scheduler task, queries, locals, and task
+      -- procedures make no sense.  Instead of signalling an error, at this
+      -- point they are just ignored.
+      packBind c (Local local)   k cmds = packLocal c local k cmds
+      packBind c (Query query)   k cmds = packQuery c query k cmds
+
+      packLocal :: ArduinoConnection -> Local a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
+      packLocal c (AnalogPinRead _) k cmds = packageTaskData' c (k 0) cmds
+      packLocal c (DigitalPortRead _) k cmds = packageTaskData' c (k 0) cmds
+      packLocal c (DigitalPinRead _) k cmds = packageTaskData' c (k False) cmds
+      packLocal c (HostDelay _) k cmds = packageTaskData' c (k (return ())) cmds
+
+      packQuery :: ArduinoConnection -> Query a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
+      packQuery c QueryFirmware k cmds = packageTaskData' c (k (0,0,[])) cmds
+      packQuery c CapabilityQuery k cmds = packageTaskData' c (k (BoardCapabilities M.empty)) cmds
+      packQuery c AnalogMappingQuery k cmds = packageTaskData' c (k ([])) cmds
+      packQuery c (Pulse _ _ _ _) k cmds = packageTaskData' c (k 0) cmds
+      packQuery c QueryAllTasks k cmds = packageTaskData' c (k ([])) cmds
+      packQuery c (QueryTask _) k cmds = packageTaskData' c (k []) cmds
+--      packQuery (QueryTask _) k cmds = send' (k (0,0,0,[])) cmds
+
+      packageTaskData' :: ArduinoConnection -> Arduino a -> B.ByteString -> B.ByteString
+      -- Most of these can be factored out, except return
+      packageTaskData' c (Bind m k) cmds = packBind c m k cmds
+      packageTaskData' c (Return a) cmds = cmds
+      packageTaskData' c cmd        cmds = packBind c cmd Return cmds
 
 packageQuery :: Query a -> B.ByteString
 packageQuery QueryFirmware            = sysEx    REPORT_FIRMWARE         []

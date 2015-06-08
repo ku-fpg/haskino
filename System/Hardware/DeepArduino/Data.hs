@@ -27,7 +27,6 @@ data Arduino :: * -> * where
     Procedure      :: Procedure                       -> Arduino ()
     Local          :: Local a                         -> Arduino a
     Query          :: Query a                         -> Arduino a
-    TaskProcedure  :: TaskProcedure a                 -> Arduino a
     Bind           :: Arduino a -> (a -> Arduino b)   -> Arduino b
     Return         :: a                               -> Arduino a
 
@@ -156,12 +155,11 @@ data Procedure =
      -- TBD add I2C continuous read
      | ServoConfig Pin MinPulse MaxPulse
      -- TBD add stepper procedures
-     | CreateTask TaskID TaskLength
+     | CreateTask TaskID (Arduino ())
      | DeleteTask TaskID
      | DelayTask TaskTime
      | ScheduleTask TaskID TaskTime
      | ScheduleReset
-     deriving Show
 
 systemReset :: Arduino ()
 systemReset = Procedure SystemReset
@@ -202,9 +200,6 @@ i2cConfig w = Procedure (I2CConfig w)
 
 servoConfig :: Pin -> MinPulse -> MaxPulse -> Arduino ()
 servoConfig p min max = Procedure (ServoConfig p min max)
-
-createTask :: TaskID -> TaskLength -> Arduino ()
-createTask tid tl = Procedure (CreateTask tid tl)
 
 deleteTask :: TaskID -> Arduino ()
 deleteTask tid = Procedure (DeleteTask tid)
@@ -247,13 +242,8 @@ digPortRead _ = 10 :: Word8
 
 deriving instance Show a => Show (Local a)
 
--- TBD Error reporting from Task Procedures?  Mainly it's taskid related
--- So perhaps track that in connection instead?
-data TaskProcedure :: * -> * where
-     AddToTask :: TaskID -> (Arduino ()) -> TaskProcedure ()
-
-addToTask :: TaskID -> Arduino () -> Arduino ()
-addToTask tid ps = TaskProcedure (AddToTask tid ps)
+createTask :: TaskID -> Arduino () -> Arduino ()
+createTask tid ps = Procedure (CreateTask tid ps)
 
 data Query :: * -> * where
      QueryFirmware  :: Query (Word8, Word8, String)   -- ^ Query the Firmata version installed
@@ -263,6 +253,7 @@ data Query :: * -> * where
      I2CRead :: I2CAddrMode -> SlaveAddress -> Maybe SlaveRegister -> Query [Word16]
      QueryAllTasks :: Query [TaskID]
      QueryTask :: TaskID -> Query [Word8]
+--  TBD - Decode QueryTask reply
 --     QueryTask :: TaskID -> Query (TaskTime, TaskLength, TaskPos, [Word8])
 
 deriving instance Show a => Show (Query a)
