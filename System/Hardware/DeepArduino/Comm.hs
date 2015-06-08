@@ -209,7 +209,8 @@ sendTask conn commands =
       sendQuery c AnalogMappingQuery k cmds = send' c (k ([])) B.empty
       sendQuery c (Pulse _ _ _ _) k cmds = send' c (k 0) B.empty
       sendQuery c QueryAllTasks k cmds = send' c (k ([])) B.empty
-      sendQuery c (QueryTask _) k cmds = send' c (k (0,0,0,[])) B.empty
+      sendQuery c (QueryTask _) k cmds = send' c (k []) B.empty
+--      sendQuery c (QueryTask _) k cmds = send' c (k (0,0,0,[])) B.empty
 
       sendTaskProcedure :: ArduinoConnection -> TaskProcedure a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendTaskProcedure c (AddToTask tid m) k cmds = send' c (k ()) B.empty
@@ -218,6 +219,7 @@ sendTask conn commands =
       -- Most of these can be factored out, except return
       send' c (Bind m k)            cmds = sendBind c m k cmds
       send' _ (Return a)            cmds = do
+              message conn $ "Unencoded Task Data: " ++ show (encode cmds)
               sendToArduino conn (arduinoEncoded cmds)
               return a
       send' c cmd                   cmds = sendBind c cmd Return cmds
@@ -254,6 +256,7 @@ setupListener serial dbg chan bs = do
                            Right nonSysEx    -> unpackageNonSysEx getBytes nonSysEx
                 case resp of
                   Unimplemented{}      -> dbg $ "Ignoring the received response: " ++ show resp
+                  StringMessage{}      -> dbg $ "Received " ++ show resp
                   -- NB. When Firmata sends back AnalogMessage, it uses the number in A0-A1-A2, etc., i.e., 0-1-2; which we
                   -- need to properly interpret in our own pin mapping schema, where analogs come after digitals.
                   AnalogMessage mp l h -> modifyMVar_ bs $ \bst ->
@@ -284,6 +287,5 @@ setupListener serial dbg chan bs = do
                                                   return bst'
                   _                    -> do dbg $ "Received " ++ show resp
                                              writeChan chan resp
-        -- bs <- gets boardState
         tid <- liftIO $ forkIO $ forever (listener bs)
         return tid

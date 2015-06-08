@@ -36,7 +36,24 @@ main = do
     let portVal = 1 `shiftL` (fromIntegral $ pinPortIndex iled)
 
     send conn (setPinMode led OUTPUT)
-    send conn $ do
-        createTask 1 100
+    (tasks,task) <- send conn $ do
+        createTask 1 24
         addToTask 1 (myTask port portVal)
         scheduleTask 1 5000
+        ts <- queryAllTasks
+        t <- queryTask 1
+        return (ts,t)
+    putStrLn $ show (tasks,task)
+    send conn (hostDelay 4000)
+    (tasks,task) <- send conn $ do
+        ts <- queryAllTasks
+        t <- queryTask 1
+        return (ts,t)
+    putStrLn $ show (tasks,task)
+    send conn (hostDelay 6000)
+    (tasks,task) <- send conn $ do
+        ts <- queryAllTasks
+        t <- queryTask 1
+        return (ts,t)
+    putStrLn $ show (tasks,task)
+

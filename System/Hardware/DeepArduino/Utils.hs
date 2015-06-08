@@ -20,6 +20,7 @@ import Data.Time          (getCurrentTime, utctDayTime)
 import Numeric            (showHex, showIntAtBase)
 
 import qualified Data.ByteString            as B 
+import Data.ByteString.Base16 (encode)
 
 -- | Delay (wait) for the given number of milli-seconds
 delay :: Int -> IO ()
@@ -92,7 +93,7 @@ words16ToArduinoBytes ws = concat $ map word16ToArduinoBytes ws
 
 -- | Convert a word to it's bytes, as would be required by Arduino comms
 word32ToArduinoBytes :: Word32 -> [Word8]
-word32ToArduinoBytes i = map fromIntegral [i .&. 0x7F, (i `shiftR` 7) .&. 0x0F, (i `shiftR` 14) .&. 0x7F, (i `shiftR` 21) .&. 0x7F, (i `shiftR`  28) .&. 0x7F]
+word32ToArduinoBytes i = map fromIntegral [i .&. 0x7F, (i `shiftR` 7) .&. 0x7F, (i `shiftR` 14) .&. 0x7F, (i `shiftR` 21) .&. 0x7F, (i `shiftR`  28) .&. 0x0F]
 
 -- | Convert a sequence of 7 bit bytes into an array of 16 bit data
 arduinoBytesToWords16 :: [Word8] -> [Word16]
@@ -108,7 +109,7 @@ arduinoEncoded bs = arduinoEncoded' bs 0 0
     arduinoEncoded' :: B.ByteString -> Int -> Word8 -> B.ByteString 
     arduinoEncoded' bs shift prev = 
       case B.uncons bs of
-        Nothing                 -> if prev == 0 then B.empty else B.singleton prev
+        Nothing                 -> if shift == 0 then B.empty else B.singleton prev
         Just (h,t) | shift == 6 -> B.cons (((h `shiftL` shift) .&. 0x7f) .|. prev) 
                                     (B.cons (h `shiftR` 1) (arduinoEncoded' t 0 0))
         Just (h,t)              -> B.cons (((h `shiftL` shift) .&. 0x7f) .|. prev) 

@@ -55,12 +55,12 @@ packageProcedure c (I2CWrite m sa w16s)     = sysEx    I2C_REQUEST     ((package
 packageProcedure c (CreateTask tid tl)      = sysEx SCHEDULER_DATA ([schedulerCmdVal CREATE_TASK, tid] ++ (word16ToArduinoBytes tl))
 packageProcedure c (DeleteTask tid)         = sysEx SCHEDULER_DATA [schedulerCmdVal DELETE_TASK, tid]
 packageProcedure c (DelayTask tt)           = sysEx SCHEDULER_DATA ([schedulerCmdVal DELAY_TASK] ++ (word32ToArduinoBytes tt))
-packageProcedure c (ScheduleTask tid tt)    = sysEx SCHEDULER_DATA ([schedulerCmdVal DELAY_TASK, tid] ++ (word32ToArduinoBytes tt))
+packageProcedure c (ScheduleTask tid tt)    = sysEx SCHEDULER_DATA ([schedulerCmdVal SCHEDULE_TASK, tid] ++ (word32ToArduinoBytes tt))
 
 -- | Package a task request as a sequence of bytes to be sent to the board
 -- using the Firmata protocol.
 packageTaskProcedure :: TaskProcedure a -> B.ByteString
-packageTaskProcedure (AddToTask tid m)      = startSysEx SCHEDULER_DATA [schedulerCmdVal DELETE_TASK, tid]
+packageTaskProcedure (AddToTask tid m)      = startSysEx SCHEDULER_DATA [schedulerCmdVal ADD_TO_TASK, tid]
 
 packageQuery :: Query a -> B.ByteString
 packageQuery QueryFirmware            = sysEx    REPORT_FIRMWARE         []
@@ -92,10 +92,12 @@ unpackageSysEx (cmdWord:args)
       (CAPABILITY_RESPONSE, bs)             -> Capabilities (getCapabilities bs)
       (ANALOG_MAPPING_RESPONSE, bs)         -> AnalogMapping bs
       (PULSE, xs) | length xs == 10         -> let [p, a, b, c, d] = fromArduinoBytes xs in PulseResponse (InternalPin p) (bytesToWord32 (a, b, c, d))
+      (STRING_DATA, rest)                   -> StringMessage (getString rest)
       (I2C_REPLY, xs)                       -> let (sa:sr:idata) = arduinoBytesToWords16 xs in I2CReply sa sr idata
       (SCHEDULER_DATA, srWord : ts) | Right sr <- getSchedulerReply srWord
           -> case sr of 
             QUERY_ALL_TASKS_REPLY           -> QueryAllTasksReply ts
+            QUERY_TASK_REPLY                -> QueryTaskReply ts
     -- TBD add other scheduler responses
       _                                     -> Unimplemented (Just (show cmd)) args
   | True
@@ -110,6 +112,7 @@ parseQueryResult AnalogMappingQuery (AnalogMapping ms) = ms
 parseQueryResult (Pulse p b dur to) (PulseResponse p2 w) = w
 parseQueryResult (I2CRead am saq srq) (I2CReply sar srr ds) = ds
 parseQueryResult QueryAllTasks (QueryAllTasksReply ts) = ts
+parseQueryResult (QueryTask tid) (QueryTaskReply ts) = ts
 
 getCapabilities :: [Word8] -> BoardCapabilities
 getCapabilities bs = BoardCapabilities $ M.fromList $ zipWith (\p c -> (p, PinCapabilities{analogPinNumber = Nothing, allowedModes = c}))

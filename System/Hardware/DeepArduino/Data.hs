@@ -99,6 +99,9 @@ data PinMode = INPUT    -- ^ Digital input
              | SERVO    -- ^ Servo Motor controller
              | SHIFT    -- ^ Shift controller
              | I2C      -- ^ I2C (Inter-Integrated-Circuit) connection
+             | ONEWIRE  -- ^ pin configured for 1-wire
+             | STEPPER  -- ^ pin configured for stepper motor
+             | ENCODER  -- ^ pin configured for encoders
              deriving (Eq, Show, Enum)
 
 -- | Resolution, as referred to in http://firmata.org/wiki/Protocol#Capability_Query
@@ -259,7 +262,8 @@ data Query :: * -> * where
      Pulse :: IPin -> Bool -> Word32 -> Word32 -> Query Word32 -- ^ Request for a pulse reading on a pin, value, duration, timeout
      I2CRead :: I2CAddrMode -> SlaveAddress -> Maybe SlaveRegister -> Query [Word16]
      QueryAllTasks :: Query [TaskID]
-     QueryTask :: TaskID -> Query (TaskTime, TaskLength, TaskPos, [Word8])
+     QueryTask :: TaskID -> Query [Word8]
+--     QueryTask :: TaskID -> Query (TaskTime, TaskLength, TaskPos, [Word8])
 
 deriving instance Show a => Show (Query a)
 
@@ -281,7 +285,8 @@ i2cRead am sa sr = Query (I2CRead am sa sr)
 queryAllTasks :: Arduino [TaskID]
 queryAllTasks = Query QueryAllTasks
 
-queryTask :: TaskID -> Arduino (TaskTime, TaskLength, TaskPos, [Word8])
+queryTask :: TaskID -> Arduino [Word8]
+-- queryTask :: TaskID -> Arduino (TaskTime, TaskLength, TaskPos, [Word8])
 queryTask tid = Query (QueryTask tid)
 
 -- | A response, as returned from the Arduino
@@ -290,10 +295,12 @@ data Response = Firmware Word8 Word8 String          -- ^ Firmware version (maj/
               | AnalogMapping [Word8]                -- ^ Analog pin mappings
               | DigitalMessage Port Word8 Word8      -- ^ Status of a port
               | AnalogMessage  IPin Word8 Word8      -- ^ Status of an analog pin
+              | StringMessage  String                -- ^ String message from Firmata
               | PulseResponse  IPin Word32           -- ^ Repsonse to a PulseInCommand
               | I2CReply Word16 Word16 [Word16]      -- ^ Response to a I2C Read
-              | QueryAllTasksReply [Word8]          -- ^ Response to Query All Tasks
-              | QueryTaskReply TaskTime TaskLength TaskPos [Word8]
+              | QueryAllTasksReply [Word8]           -- ^ Response to Query All Tasks
+--              | QueryTaskReply TaskTime TaskLength TaskPos [Word8]
+              | QueryTaskReply [Word8]
               | ErrorTaskReply TaskTime TaskLength TaskPos [Word8]
               | Unimplemented (Maybe String) [Word8] -- ^ Represents messages currently unsupported
     deriving Show
