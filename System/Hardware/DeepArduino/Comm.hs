@@ -1,9 +1,10 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Arduino.Comm
--- Copyright   :  (c) Levent Erkok
+-- Module      :  System.Hardware.DeepArduino.Comm
+--                Based on System.Hardware.Arduino.comm
+-- Copyright   :  (c) University of Kansas
+--                System.Hardware.Arduino.comm (c) Levent Erkok
 -- License     :  BSD3
--- Maintainer  :  erkokl@gmail.com
 -- Stability   :  experimental
 --
 -- Basic serial communication routines

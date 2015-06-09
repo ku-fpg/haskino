@@ -1,3 +1,14 @@
+-------------------------------------------------------------------------------
+-- |
+-- Module      :  System.Hardware.DeepArduino.Comm
+--                Based on System.Hardware.Arduino.comm
+-- Copyright   :  (c) University of Kansas
+--                System.Hardware.Arduino.comm (c) Levent Erkok
+-- License     :  BSD3
+-- Stability   :  experimental
+--
+-- Underlying data structures
+-------------------------------------------------------------------------------
 {-# LANGUAGE FlexibleInstances, GADTs, KindSignatures, RankNTypes,
              OverloadedStrings, ScopedTypeVariables, StandaloneDeriving,
              GeneralizedNewtypeDeriving, NamedFieldPuns #-}
