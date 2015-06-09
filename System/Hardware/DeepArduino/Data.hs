@@ -223,8 +223,10 @@ analogPinWrite p w = Procedure (AnalogPinWrite p w1 w2)
 analogPinExtendedWrite :: Pin -> [Word8] -> Arduino ()
 analogPinExtendedWrite p ws = Procedure (AnalogPinExtendedWrite p ws)
 
-samplingInterval :: Word8 -> Word8 -> Arduino ()
-samplingInterval w1 w2 = Procedure (SamplingInterval w1 w2)
+samplingInterval :: Word16 -> Arduino ()
+samplingInterval w = Procedure (SamplingInterval w1 w2)
+  where
+    [w1, w2] = word16ToArduinoBytes w
 
 i2cWrite :: I2CAddrMode -> SlaveAddress -> [Word16] -> Arduino ()
 i2cWrite m sa ws = Procedure (I2CWrite m sa ws)
