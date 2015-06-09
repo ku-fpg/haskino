@@ -1,15 +1,17 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Arduino
--- Copyright   :  (c) Levent Erkok
+-- Module      :  System.Hardware.DeepArduino.SamplePrograms.Blink
+--                Based on System.Hardware.Arduino.comm
+-- Copyright   :  (c) University of Kansas
+--                System.Hardware.Arduino (c) Levent Erkok
 -- License     :  BSD3
--- Maintainer  :  erkokl@gmail.com
 -- Stability   :  experimental
 --
--- DeepArduino allows Haskell programs to control Arduino boards (<http://www.arduino.cc>)
+-- DeepArduino allows Haskell programs to control Arduino boards 
+-- (<http://www.arduino.cc>)
 -- and peripherals, using the Firmata protocol (<http://firmata.org>).
 --
--- For details, see: <http://leventerkok.github.com/hArduino>.
+-- For details, see: <http://kufpg.github.com/DeepArduino>.
 -------------------------------------------------------------------------------
 module System.Hardware.DeepArduino (
   -- * Communication functions
