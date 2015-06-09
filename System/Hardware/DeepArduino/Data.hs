@@ -16,10 +16,10 @@
 module System.Hardware.DeepArduino.Data where
 
 import           Control.Applicative
-import           Control.Concurrent (Chan, MVar, ThreadId)
-import           Control.Monad (ap, liftM2)
+import           Control.Concurrent (Chan, MVar, ThreadId, withMVar, modifyMVar)
+import           Control.Monad (ap, liftM2, when)
 
-import           Data.Bits ((.|.), (.&.))
+import           Data.Bits ((.|.), (.&.), setBit)
 import           Data.List (intercalate)
 import qualified Data.Map as M
 import           Data.Maybe (listToMaybe)
@@ -69,6 +69,12 @@ data IPin = InternalPin { pinNo :: Word8 }
 data Port = Port { portNo :: Word8 } 
           deriving (Eq, Ord, Show)
 
+-- | Bailing out: print the given string on stdout and die
+die :: ArduinoConnection -> String -> [String] -> IO a
+die c m ms = do 
+    let f = bailOut c
+    f m ms
+
 -- | On the arduino, digital pin numbers are in 1-to-1 match with
 -- the board pins. However, ANALOG pins come at an offset, determined by
 -- the capabilities query. Users of the library refer to these pins
@@ -89,6 +95,24 @@ getInternalPin c (AnalogPin p)
                         ["Hint: To refer to analog pin number k, simply use 'pin k', not 'pin (k+noOfDigitalPins)'" | p > 13]
          Just rp -> return rp
 -}
+
+-- | Similar to getInternalPin above, except also makes sure the pin is in a required mode.
+convertAndCheckPin :: ArduinoConnection -> String -> Pin -> PinMode -> IO (IPin, PinData)
+convertAndCheckPin c what p' m = do
+   let p = getInternalPin c p'
+   pd <- getPinData c p
+   let user = userPinNo p'
+       board = pinNo p
+       bInfo
+         | user == board = ""
+         | True          = " (On board " ++ show p ++ ")"
+   when (pinMode pd /= m) $ die c ("Invalid " ++ what ++ " call on pin " ++ show p' ++ bInfo)
+                                [ "The current mode for this pin is: " ++ show (pinMode pd)
+                                , "For " ++ what ++ ", it must be set to: " ++ show m
+                                , "via a proper call to setPinMode"
+                                ]
+   return (p, pd)
+
 
 -- | On the Arduino, pins are grouped into banks of 8.
 -- Given a pin, this function determines which port it belongs to
@@ -225,17 +249,19 @@ scheduleReset = Procedure ScheduleReset
 
 data Local :: * -> * where
      DigitalPortRead  :: Port -> Local Word8          -- ^ Read the values on a port digitally
-     DigitalPinRead   :: IPin -> Local Bool           -- ^ Read the avlue ona pin digitally
-     AnalogPinRead    :: IPin -> Local Word8          -- ^ Read the analog value on a pin
+     DigitalPinRead   :: Pin -> Local Bool           -- ^ Read the avlue ona pin digitally
+     AnalogPinRead    :: Pin -> Local Word8          -- ^ Read the analog value on a pin
      HostDelay        :: Int  -> Local (IO ())
+
+deriving instance Show a => Show (Local a)
 
 digitalPortRead :: Port -> Arduino Word8
 digitalPortRead p = Local (DigitalPortRead p)
 
-digitalPinRead :: IPin -> Arduino Bool
+digitalPinRead :: Pin -> Arduino Bool
 digitalPinRead p = Local (DigitalPinRead p)
 
-analogPinRead :: IPin -> Arduino Word8
+analogPinRead :: Pin -> Arduino Word8
 analogPinRead p = Local (AnalogPinRead p)
 
 hostDelay :: Int -> Arduino (IO ())
@@ -247,10 +273,29 @@ anaPinRead _ = 4 :: Word8
 digPinRead :: IPin -> Bool
 digPinRead _ = True
 
+-- | Read the value of a pin in digital mode; this is a non-blocking call, returning
+-- the current value immediately. See 'waitFor' for a version that waits for a change
+-- in the pin first.
+digitalRead :: ArduinoConnection -> Pin -> IO Bool
+digitalRead c p' = do
+   (_, pd) <- convertAndCheckPin c "digitalRead" p' INPUT
+   return $ case pinValue pd of
+              Just (Left v) -> v
+              _             -> False -- no (correctly-typed) value reported yet, default to False
+
+-- | Read the value of a pin in analog mode; this is a non-blocking call, immediately
+-- returning the last sampled value. It returns @0@ if the voltage on the pin
+-- is 0V, and @1023@ if it is 5V, properly scaled. (See `setAnalogSamplingInterval` for
+-- sampling frequency.)
+analogRead :: ArduinoConnection -> Pin -> IO Int
+analogRead c p' = do
+   (_, pd) <- convertAndCheckPin c "analogRead" p' ANALOG
+   return $ case pinValue pd of
+              Just (Right v) -> v
+              _              -> 0 -- no (correctly-typed) value reported yet, default to 0
+
 digPortRead :: Port -> Word8
 digPortRead _ = 10 :: Word8
-
-deriving instance Show a => Show (Local a)
 
 createTask :: TaskID -> Arduino () -> Arduino ()
 createTask tid ps = Procedure (CreateTask tid ps)
@@ -301,6 +346,50 @@ data Response = Firmware Word8 Word8 String          -- ^ Firmware version (maj/
               | ErrorTaskReply TaskTime TaskLength TaskPos [Word8]
               | Unimplemented (Maybe String) [Word8] -- ^ Represents messages currently unsupported
     deriving Show
+
+-- | Which modes does this pin support?
+getPinModes :: ArduinoConnection -> IPin -> IO [PinMode]
+getPinModes c p = do
+  let BoardCapabilities caps = capabilities c
+  case p `M.lookup` caps of
+    Nothing                            -> return []
+    Just PinCapabilities{allowedModes} -> return $ map fst allowedModes
+
+-- | Current state of the pin
+getPinData :: ArduinoConnection -> IPin -> IO PinData
+getPinData c p = do
+  let bs = boardState c
+  let err = bailOut c
+  withMVar bs $ \bst ->
+     case p `M.lookup` pinStates bst of
+       Nothing -> err ("Trying to access " ++ show p ++ " without proper configuration.")
+                      ["Make sure that you use 'setPinMode' to configure this pin first."]
+       Just pd -> return pd
+
+-- | Given a pin, collect the digital value corresponding to the
+-- port it belongs to, where the new value of the current pin is given
+-- The result is two bytes:
+--
+--   * First  lsb: pins 0-6 on the port
+--   * Second msb: pins 7-13 on the port
+--
+-- In particular, the result is suitable to be sent with a digital message
+computePortData :: ArduinoConnection -> IPin -> Bool -> IO (Word8, Word8)
+computePortData c curPin newValue = do
+  let curPort  = pinPort curPin
+  let curIndex = pinPortIndex curPin
+  let bs = boardState c
+  modifyMVar bs $ \bst -> do
+     let values = [(pinPortIndex p, pinValue pd) | (p, pd) <- M.assocs (pinStates bst), curPort == pinPort p, pinMode pd `elem` [INPUT, OUTPUT]]
+         getVal i
+           | i == curIndex                             = newValue
+           | Just (Just (Left v)) <- i `lookup` values = v
+           | True                                      = False
+         [b0, b1, b2, b3, b4, b5, b6, b7] = map getVal [0 .. 7]
+         lsb = foldr (\(i, b) m -> if b then m `setBit` i     else m) 0 (zip [0..] [b0, b1, b2, b3, b4, b5, b6])
+         msb = foldr (\(i, b) m -> if b then m `setBit` (i-7) else m) 0 (zip [7..] [b7])
+         bst' = bst{pinStates = M.insert curPin PinData{pinMode = OUTPUT, pinValue = Just (Left newValue)}(pinStates bst)}
+     return (bst', (lsb, msb))
 
 -- | Firmata commands, see: http://firmata.org/wiki/Protocol#Message_Types
 data FirmataCmd = ANALOG_MESSAGE      IPin -- ^ @0xE0@ pin

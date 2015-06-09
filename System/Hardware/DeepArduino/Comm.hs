@@ -144,13 +144,16 @@ send conn commands =
       sendLocal :: ArduinoConnection -> Local a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendLocal c (AnalogPinRead p) k cmds = do
           sendToArduino c cmds
-          send' c (k (anaPinRead p)) B.empty
+          a <- analogRead c p
+          -- TBD Should this be only 8 bit or Int?
+          send' c (k (fromIntegral a)) B.empty
       sendLocal c (DigitalPortRead p) k cmds = do
           sendToArduino c cmds
           send' c (k (digPortRead p)) B.empty
       sendLocal c (DigitalPinRead p) k cmds = do
           sendToArduino c cmds
-          send' c (k (digPinRead p)) B.empty
+          b <- digitalRead c p
+          send' c (k b) B.empty
       sendLocal c (HostDelay d) k cmds = do
           sendToArduino c cmds
           message c $ "Delaying: " ++ show d
