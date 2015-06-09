@@ -251,8 +251,8 @@ scheduleReset = Procedure ScheduleReset
 
 data Local :: * -> * where
      DigitalPortRead  :: Port -> Local Word8          -- ^ Read the values on a port digitally
-     DigitalPinRead   :: Pin -> Local Bool           -- ^ Read the avlue ona pin digitally
-     AnalogPinRead    :: Pin -> Local Word8          -- ^ Read the analog value on a pin
+     DigitalPinRead   :: Pin -> Local Bool            -- ^ Read the avlue ona pin digitally
+     AnalogPinRead    :: Pin -> Local Word16          -- ^ Read the analog value on a pin
 
 deriving instance Show a => Show (Local a)
 
@@ -262,7 +262,7 @@ digitalPortRead p = Local (DigitalPortRead p)
 digitalPinRead :: Pin -> Arduino Bool
 digitalPinRead p = Local (DigitalPinRead p)
 
-analogPinRead :: Pin -> Arduino Word8
+analogPinRead :: Pin -> Arduino Word16
 analogPinRead p = Local (AnalogPinRead p)
 
 -- | Read the value of a pin in digital mode; this is a non-blocking call, returning

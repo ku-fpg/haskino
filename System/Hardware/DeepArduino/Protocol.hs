@@ -73,9 +73,9 @@ packageTaskData conn commands =
       packBind c (Return a)      k cmds = packageTaskData' c (k a) cmds
       packBind c (Bind m k1)    k2 cmds = packBind c m (\ r -> Bind (k1 r) k2) cmds
       packBind c (Procedure cmd) k cmds = packageTaskData' c (k ()) (B.append cmds (packageProcedure c cmd))
-      -- For sending as part of a Scheduler task, queries, locals, and task
-      -- procedures make no sense.  Instead of signalling an error, at this
-      -- point they are just ignored.
+      -- For sending as part of a Scheduler task, locals make no sense.  
+      -- Queries will work, but receiving them is problematic at the moment.
+      -- Instead of signalling an error, at this point they are just ignored.
       packBind c (Local local)   k cmds = packLocal c local k cmds
       packBind c (Query query)   k cmds = packQuery c query k cmds
 
@@ -93,7 +93,6 @@ packageTaskData conn commands =
       packQuery c (QueryTask _) k cmds = packageTaskData' c (k (0,0,0,0,[])) cmds
 
       packageTaskData' :: ArduinoConnection -> Arduino a -> B.ByteString -> B.ByteString
-      -- Most of these can be factored out, except return
       packageTaskData' c (Bind m k) cmds = packBind c m k cmds
       packageTaskData' c (Return a) cmds = cmds
       packageTaskData' c cmd        cmds = packBind c cmd Return cmds

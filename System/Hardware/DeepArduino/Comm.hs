@@ -129,7 +129,6 @@ withArduino verbose fp program = do
         send conn program
         closeArduino conn  
 
--- TBD need to finish Local
 send :: ArduinoConnection -> Arduino a -> IO a
 send conn commands =
       send' conn commands B.empty
@@ -150,8 +149,8 @@ send conn commands =
       sendLocal c (AnalogPinRead p) k cmds = do
           sendToArduino c cmds
           a <- analogRead c p
-          -- TBD Should this be only 8 bit or Int?
           send' c (k (fromIntegral a)) B.empty
+-- TBD need to finish Locals, complete digtial port read and add waits
       sendLocal c (DigitalPortRead p) k cmds = do
           sendToArduino c cmds
           send' c (k (digPortRead p)) B.empty
@@ -167,7 +166,6 @@ send conn commands =
           send' c (k (parseQueryResult query resp)) B.empty
 
       send' :: ArduinoConnection -> Arduino a -> B.ByteString -> IO a
-      -- Most of these can be factored out, except return
       send' c (Bind m k)            cmds = sendBind c m k cmds
       send' _ (Return a)            cmds = do
               sendToArduino conn cmds
