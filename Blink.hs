@@ -1,9 +1,10 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Arduino.SamplePrograms.Blink
--- Copyright   :  (c) Levent Erkok
+-- Module      :  System.Hardware.DeepArduino.SamplePrograms.Blink
+--                Based on System.Hardware.Arduino.comm
+-- Copyright   :  (c) University of Kansas
+--                System.Hardware.Arduino.comm (c) Levent Erkok
 -- License     :  BSD3
--- Maintainer  :  erkokl@gmail.com
 -- Stability   :  experimental
 --
 -- The /hello world/ of the arduino world, blinking the led.

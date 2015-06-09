@@ -19,6 +19,8 @@ import Data.Word (Word16)
 import System.Hardware.DeepArduino.Data
 import System.Hardware.DeepArduino.Comm
 
+-- Task which will execute on Arduino, blink on a second, off a second and
+-- repeat
 myTask :: Port -> Word16 -> Arduino ()
 myTask port portVal = do
         digitalPortWrite port portVal
@@ -35,15 +37,20 @@ main = do
     let port = pinPort iled
     let portVal = 1 `shiftL` (fromIntegral $ pinPortIndex iled)
 
+    -- Set the pin mode to digital output
     send conn (setPinMode led OUTPUT)
     (tasks,task) <- send conn $ do
+        -- Create the task which blinks with a 2 second period
         createTask 1 (myTask port portVal)
+        -- Schedule the task to start in 5 seconds
         scheduleTask 1 5000
         ts <- queryAllTasks
+        -- Query to confirm task creation
         t <- queryTask 1
         return (ts,t)
     putStrLn $ show (tasks,task)
 
+    -- Wait 10.5 seconds and delete the task
     send conn $ do
         delay 10500
         deleteTask 1
