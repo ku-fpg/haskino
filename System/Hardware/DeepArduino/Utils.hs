@@ -11,7 +11,6 @@
 -------------------------------------------------------------------------------
 module System.Hardware.DeepArduino.Utils where
 
-import Control.Concurrent (threadDelay)
 import Data.Bits          ((.|.), shiftL, (.&.), shiftR)
 import Data.Char          (isAlphaNum, isAscii, isSpace, chr)
 import Data.IORef         (newIORef, readIORef, writeIORef)
@@ -22,10 +21,6 @@ import Numeric            (showHex, showIntAtBase)
 
 import qualified Data.ByteString            as B 
 import Data.ByteString.Base16 (encode)
-
--- | Delay (wait) for the given number of milli-seconds
-delay :: Int -> IO ()
-delay n = threadDelay (n*1000)
 
 -- | A simple printer that can keep track of sequence numbers. Used for debugging purposes.
 mkDebugPrinter :: Bool -> IO (String -> IO ())

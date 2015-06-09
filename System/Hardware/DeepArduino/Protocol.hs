@@ -135,16 +135,15 @@ unpackageSysEx (cmdWord:args)
         -> case sr of 
           QUERY_ALL_TASKS_REPLY              -> QueryAllTasksReply ts
           QUERY_TASK_REPLY | length ts == 1  -> QueryTaskReply (ts !! 0) 0 0 0 []
-          QUERY_TASK_REPLY | length ts >= 11 -> let ti:adata = ts
-                                                    tt0:tt1:tt2:tt3:tl0:tl1:tp0:tp1:td = arduinoDecoded adata
-                                                in QueryTaskReply ti (bytesToWord32 (tt3,tt2,tt1,tt0)) (bytesToWord16 (tl1,tl0)) (bytesToWord16 (tp1,tp0)) td
+          -- TBD Fix reply decode
+          QUERY_TASK_REPLY | length ts >= 11 -> let tt0:tt1:tt2:tt3:tl0:tl1:tp0:tp1:td = arduinoDecoded (tail ts)
+                                                in QueryTaskReply (head ts) (bytesToWord32 (tt3,tt2,tt1,tt0)) (bytesToWord16 (tl1,tl0)) (bytesToWord16 (tp1,tp0)) td
     -- TBD add other scheduler responses
       _                                      -> Unimplemented (Just (show cmd)) args
   | True
   = Unimplemented Nothing (cmdWord : args)
 
 -- This is how we match responses with queries TBD need to handle mismatches
--- TBD need to add new queries
 parseQueryResult :: Query a -> Response -> a
 parseQueryResult QueryFirmware (Firmware wa wb s) = (wa,wb,s)
 parseQueryResult CapabilityQuery (Capabilities bc) = bc

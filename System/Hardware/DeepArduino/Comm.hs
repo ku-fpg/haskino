@@ -16,7 +16,7 @@
 module System.Hardware.DeepArduino.Comm where
 
 import Control.Monad        (when, forever)
-import Control.Concurrent   (Chan, MVar, ThreadId, newChan, newMVar, newEmptyMVar, putMVar, takeMVar, writeChan, readChan, forkIO, modifyMVar_, tryTakeMVar, killThread)
+import Control.Concurrent   (Chan, MVar, ThreadId, newChan, newMVar, newEmptyMVar, putMVar, takeMVar, writeChan, readChan, forkIO, modifyMVar_, tryTakeMVar, killThread, threadDelay)
 import Control.Exception    (tryJust, AsyncException(UserInterrupt), handle, SomeException)
 import Control.Monad.State  (runStateT, gets, liftIO, modify)
 import Data.Bits            (testBit, (.&.))
@@ -158,7 +158,7 @@ send conn commands =
       sendLocal c (HostDelay d) k cmds = do
           sendToArduino c cmds
           message c $ "Delaying: " ++ show d
-          delay d
+          threadDelay (d*1000)
           send' c (k (return ())) B.empty
 
       sendQuery :: ArduinoConnection -> Query a -> (a -> Arduino b) -> B.ByteString -> IO b
@@ -175,14 +175,14 @@ send conn commands =
               return a
       send' c cmd                   cmds = sendBind c cmd Return cmds
 
-sendToArduino :: ArduinoConnection -> B.ByteString -> IO ()
-sendToArduino conn cmds = do
-    message conn $ "Sending: " ++ show (encode cmds)
-    sent <- liftIO $ S.send (port conn) cmds
-    when (sent /= lp)
-         (message conn $ "Send failed. Tried: " ++ show lp ++ "bytes, reported: " ++ show sent)
-  where
-    lp = B.length cmds
+      sendToArduino :: ArduinoConnection -> B.ByteString -> IO ()
+      sendToArduino conn cmds = do
+          message conn $ "Sending: " ++ show (encode cmds)
+          sent <- liftIO $ S.send (port conn) cmds
+          when (sent /= lp)
+               (message conn $ "Send failed. Tried: " ++ show lp ++ "bytes, reported: " ++ show sent)
+        where
+          lp = B.length cmds
 
 -- | Start a thread to listen to the board and populate the channel with incoming queries.
 setupListener :: SerialPort -> (String -> IO ()) -> Chan Response -> MVar BoardState -> IO ThreadId
