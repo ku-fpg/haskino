@@ -21,7 +21,7 @@ import System.Hardware.DeepArduino.Comm
 
 main :: IO ()
 main = do
-    conn <- openArduino True "/dev/cu.usbmodem1421"
+    conn <- openArduino False "/dev/cu.usbmodem1421"
     let led = DigitalPin 13
     let iled = getInternalPin conn led
     let port = pinPort iled
@@ -31,7 +31,7 @@ main = do
     forever $ do 
         send conn $ do 
             digitalPortWrite port portVal
-            delayTask 1000
+            delay 1000
             digitalPortWrite port 0
-            delayTask 1000
+            delay 1000
 

@@ -191,7 +191,7 @@ data Procedure =
      -- TBD add stepper procedures
      | CreateTask TaskID (Arduino ())
      | DeleteTask TaskID
-     | DelayTask TaskTime
+     | Delay TaskTime
      | ScheduleTask TaskID TaskTime
      | ScheduleReset
 
@@ -238,8 +238,8 @@ servoConfig p min max = Procedure (ServoConfig p min max)
 deleteTask :: TaskID -> Arduino ()
 deleteTask tid = Procedure (DeleteTask tid)
 
-delayTask :: TaskTime -> Arduino ()
-delayTask t = Procedure (DelayTask t)
+delay :: TaskTime -> Arduino ()
+delay t = Procedure (Delay t)
 
 scheduleTask :: TaskID -> TaskTime -> Arduino ()
 scheduleTask tid tt = Procedure (ScheduleTask tid tt)
@@ -251,7 +251,6 @@ data Local :: * -> * where
      DigitalPortRead  :: Port -> Local Word8          -- ^ Read the values on a port digitally
      DigitalPinRead   :: Pin -> Local Bool           -- ^ Read the avlue ona pin digitally
      AnalogPinRead    :: Pin -> Local Word8          -- ^ Read the analog value on a pin
-     HostDelay        :: Int  -> Local (IO ())
 
 deriving instance Show a => Show (Local a)
 
@@ -263,15 +262,6 @@ digitalPinRead p = Local (DigitalPinRead p)
 
 analogPinRead :: Pin -> Arduino Word8
 analogPinRead p = Local (AnalogPinRead p)
-
-hostDelay :: Int -> Arduino (IO ())
-hostDelay d = Local (HostDelay d)
-
-anaPinRead :: IPin -> Word8
-anaPinRead _ = 4 :: Word8
-
-digPinRead :: IPin -> Bool
-digPinRead _ = True
 
 -- | Read the value of a pin in digital mode; this is a non-blocking call, returning
 -- the current value immediately. See 'waitFor' for a version that waits for a change

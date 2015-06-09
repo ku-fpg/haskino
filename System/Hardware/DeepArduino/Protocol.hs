@@ -55,7 +55,7 @@ packageProcedure c (SamplingInterval l m)   = sysEx    SAMPLING_INTERVAL       [
 packageProcedure c (I2CWrite m sa w16s)     = sysEx    I2C_REQUEST     ((packageI2c m False sa Nothing) ++
                                                                       (words16ToArduinoBytes w16s)) 
 packageProcedure c (DeleteTask tid)         = sysEx SCHEDULER_DATA [schedulerCmdVal DELETE_TASK, tid]
-packageProcedure c (DelayTask tt)           = sysEx SCHEDULER_DATA ([schedulerCmdVal DELAY_TASK] ++ (word32ToArduinoBytes tt))
+packageProcedure c (Delay tt)               = sysEx SCHEDULER_DATA ([schedulerCmdVal DELAY_TASK] ++ (word32ToArduinoBytes tt))
 packageProcedure c (ScheduleTask tid tt)    = sysEx SCHEDULER_DATA ([schedulerCmdVal SCHEDULE_TASK, tid] ++ (word32ToArduinoBytes tt))
 packageProcedure c (CreateTask tid m)       = (sysEx SCHEDULER_DATA ([schedulerCmdVal CREATE_TASK, tid] ++ (word16ToArduinoBytes taskSize)))
                                               `B.append` (startSysEx SCHEDULER_DATA [schedulerCmdVal ADD_TO_TASK, tid])
@@ -83,7 +83,6 @@ packageTaskData conn commands =
       packLocal c (AnalogPinRead _) k cmds = packageTaskData' c (k 0) cmds
       packLocal c (DigitalPortRead _) k cmds = packageTaskData' c (k 0) cmds
       packLocal c (DigitalPinRead _) k cmds = packageTaskData' c (k False) cmds
-      packLocal c (HostDelay _) k cmds = packageTaskData' c (k (return ())) cmds
 
       packQuery :: ArduinoConnection -> Query a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
       packQuery c QueryFirmware k cmds = packageTaskData' c (k (0,0,[])) cmds

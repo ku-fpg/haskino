@@ -137,6 +137,11 @@ send conn commands =
       sendBind :: ArduinoConnection -> Arduino a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendBind c (Return a)      k cmds = send' c (k a) cmds
       sendBind c (Bind m k1)    k2 cmds = sendBind c m (\ r -> Bind (k1 r) k2) cmds
+      sendBind c (Procedure (Delay d)) k cmds = do
+          sendToArduino c cmds
+          message c $ "Delaying: " ++ show d
+          threadDelay ((fromIntegral d)*1000)
+          send' c (k ()) B.empty
       sendBind c (Procedure cmd) k cmds = send' c (k ()) (B.append cmds (packageProcedure c cmd))
       sendBind c (Local local)   k cmds = sendLocal c local k cmds
       sendBind c (Query query)   k cmds = sendQuery c query k cmds
@@ -154,11 +159,6 @@ send conn commands =
           sendToArduino c cmds
           b <- digitalRead c p
           send' c (k b) B.empty
-      sendLocal c (HostDelay d) k cmds = do
-          sendToArduino c cmds
-          message c $ "Delaying: " ++ show d
-          threadDelay (d*1000)
-          send' c (k (return ())) B.empty
 
       sendQuery :: ArduinoConnection -> Query a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendQuery c query k cmds = do

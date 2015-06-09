@@ -22,9 +22,9 @@ import System.Hardware.DeepArduino.Comm
 myTask :: Port -> Word16 -> Arduino ()
 myTask port portVal = do
         digitalPortWrite port portVal
-        delayTask 1000
+        delay 1000
         digitalPortWrite port 0
-        delayTask 1000
+        delay 1000
         return ()
 
 main :: IO ()
@@ -45,7 +45,7 @@ main = do
     putStrLn $ show (tasks,task)
 
     send conn $ do
-        hostDelay 10500
+        delay 10500
         deleteTask 1
         return ()
 
