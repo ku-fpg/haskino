@@ -33,6 +33,10 @@ main :: IO ()
 main = do
     conn <- openArduino False "/dev/cu.usbmodem1421"
     let led = DigitalPin 13
+    -- Currently there is no Firmata command to modify just one pin on a 
+    -- digital port.  History storage in the connection ala hArduino is not
+    -- yet completely reimplementd (plus that is not possible as a Firmata
+    -- Scheduled Task), so for now the entire 8 bit port is written.
     let iled = getInternalPin conn led
     let port = pinPort iled
     let portVal = 1 `shiftL` (fromIntegral $ pinPortIndex iled)

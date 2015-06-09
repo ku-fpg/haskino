@@ -199,52 +199,52 @@ systemReset :: Arduino ()
 systemReset = Procedure SystemReset
 
 setPinMode :: Pin -> PinMode -> Arduino ()
-setPinMode p pm = Procedure (SetPinMode p pm)
+setPinMode p pm = Procedure $ SetPinMode p pm
 
 digitalReport :: Port -> Bool -> Arduino ()
-digitalReport p b = Procedure (DigitalReport p b)
+digitalReport p b = Procedure $ DigitalReport p b
 
 analogReport :: Pin -> Bool -> Arduino ()
-analogReport p b = Procedure (AnalogReport p b)
+analogReport p b = Procedure $ AnalogReport p b
 
 digitalPortWrite :: Port -> Word16 -> Arduino ()
-digitalPortWrite p w = Procedure (DigitalPortWrite p w1 w2)
+digitalPortWrite p w = Procedure $ DigitalPortWrite p w1 w2
   where
     [w1, w2] = word16ToArduinoBytes w
 
 digitalPinWrite :: Pin -> Bool -> Arduino ()
-digitalPinWrite p b = Procedure (DigitalPinWrite p b)
+digitalPinWrite p b = Procedure $ DigitalPinWrite p b
 
 analogPinWrite :: Pin -> Word16 -> Arduino ()
-analogPinWrite p w = Procedure (AnalogPinWrite p w1 w2)
+analogPinWrite p w = Procedure $ AnalogPinWrite p w1 w2
   where
     [w1, w2] = word16ToArduinoBytes w
 
 analogPinExtendedWrite :: Pin -> [Word8] -> Arduino ()
-analogPinExtendedWrite p ws = Procedure (AnalogPinExtendedWrite p ws)
+analogPinExtendedWrite p ws = Procedure $ AnalogPinExtendedWrite p ws
 
 samplingInterval :: Word16 -> Arduino ()
-samplingInterval w = Procedure (SamplingInterval w1 w2)
+samplingInterval w = Procedure $ SamplingInterval w1 w2
   where
     [w1, w2] = word16ToArduinoBytes w
 
 i2cWrite :: I2CAddrMode -> SlaveAddress -> [Word16] -> Arduino ()
-i2cWrite m sa ws = Procedure (I2CWrite m sa ws)
+i2cWrite m sa ws = Procedure $ I2CWrite m sa ws
 
 i2cConfig :: Word16 -> Arduino ()
-i2cConfig w = Procedure (I2CConfig w)
+i2cConfig w = Procedure $ I2CConfig w
 
 servoConfig :: Pin -> MinPulse -> MaxPulse -> Arduino ()
-servoConfig p min max = Procedure (ServoConfig p min max)
+servoConfig p min max = Procedure $ ServoConfig p min max
 
 deleteTask :: TaskID -> Arduino ()
-deleteTask tid = Procedure (DeleteTask tid)
+deleteTask tid = Procedure $ DeleteTask tid
 
 delay :: TaskTime -> Arduino ()
-delay t = Procedure (Delay t)
+delay t = Procedure $ Delay t
 
 scheduleTask :: TaskID -> TaskTime -> Arduino ()
-scheduleTask tid tt = Procedure (ScheduleTask tid tt)
+scheduleTask tid tt = Procedure $ ScheduleTask tid tt
 
 scheduleReset :: Arduino ()
 scheduleReset = Procedure ScheduleReset
@@ -257,13 +257,13 @@ data Local :: * -> * where
 deriving instance Show a => Show (Local a)
 
 digitalPortRead :: Port -> Arduino Word8
-digitalPortRead p = Local (DigitalPortRead p)
+digitalPortRead p = Local $ DigitalPortRead p
 
 digitalPinRead :: Pin -> Arduino Bool
-digitalPinRead p = Local (DigitalPinRead p)
+digitalPinRead p = Local $ DigitalPinRead p
 
 analogPinRead :: Pin -> Arduino Word16
-analogPinRead p = Local (AnalogPinRead p)
+analogPinRead p = Local $ AnalogPinRead p
 
 -- | Read the value of a pin in digital mode; this is a non-blocking call, returning
 -- the current value immediately. See 'waitFor' for a version that waits for a change
@@ -313,16 +313,16 @@ analogMappingQuery :: Arduino [Word8]
 analogMappingQuery = Query AnalogMappingQuery
 
 pulse :: IPin -> Bool -> Word32 -> Word32 -> Arduino Word32
-pulse p b w1 w2 = Query (Pulse p b w1 w2)
+pulse p b w1 w2 = Query $ Pulse p b w1 w2
 
 i2cRead :: I2CAddrMode -> SlaveAddress -> Maybe SlaveRegister -> Arduino [Word16]
-i2cRead am sa sr = Query (I2CRead am sa sr)
+i2cRead am sa sr = Query $ I2CRead am sa sr
 
 queryAllTasks :: Arduino [TaskID]
 queryAllTasks = Query QueryAllTasks
 
 queryTask :: TaskID -> Arduino (TaskID, TaskTime, TaskLength, TaskPos, [Word8])
-queryTask tid = Query (QueryTask tid)
+queryTask tid = Query $ QueryTask tid
 
 -- | A response, as returned from the Arduino
 data Response = Firmware Word8 Word8 String          -- ^ Firmware version (maj/min and indentifier
