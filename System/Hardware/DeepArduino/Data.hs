@@ -17,8 +17,7 @@ module System.Hardware.DeepArduino.Data where
 
 import           Control.Applicative
 import           Control.Concurrent (Chan, MVar, ThreadId)
-import           Control.Monad (ap, liftM, liftM2)
-import           Control.Monad.State (StateT, MonadIO, MonadState, gets, liftIO)
+import           Control.Monad (ap, liftM2)
 
 import           Data.Bits ((.|.), (.&.))
 import           Data.List (intercalate)

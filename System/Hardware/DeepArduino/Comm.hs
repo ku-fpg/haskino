@@ -17,15 +17,11 @@ module System.Hardware.DeepArduino.Comm where
 
 import Control.Monad        (when, forever)
 import Control.Concurrent   (Chan, MVar, ThreadId, newChan, newMVar, newEmptyMVar, putMVar, takeMVar, writeChan, readChan, forkIO, modifyMVar_, tryTakeMVar, killThread, threadDelay)
-import Control.Exception    (tryJust, AsyncException(UserInterrupt), handle, SomeException)
-import Control.Monad.State  (runStateT, gets, liftIO, modify)
+import Control.Monad.State  (liftIO)
 import Data.Bits            (testBit, (.&.))
-import Data.List            (intercalate, isInfixOf)
+import Data.List            (intercalate)
 import Data.Maybe           (listToMaybe)
-import Data.Word            (Word8)
-import System.Timeout       (timeout)
 import System.Hardware.Serialport (SerialPort)
-import System.IO            (stderr, hPutStrLn)
 
 import qualified Data.ByteString            as B 
 import Data.ByteString.Base16 (encode)
