@@ -40,20 +40,29 @@ startSysEx cmd bs = B.pack $  firmataCmdVal START_SYSEX
 nonSysEx :: FirmataCmd -> [Word8] -> B.ByteString
 nonSysEx cmd bs = B.pack $ firmataCmdVal cmd : bs
 
+
+
 -- | Package a request as a sequence of bytes to be sent to the board
 -- using the Firmata protocol.
 packageProcedure :: ArduinoConnection -> Procedure -> B.ByteString
 packageProcedure c SystemReset              = nonSysEx SYSTEM_RESET            []
 packageProcedure c (AnalogReport  p b)      = nonSysEx (REPORT_ANALOG_PIN (getInternalPin c p))   [if b then 1 else 0]
 packageProcedure c (DigitalReport p b)      = nonSysEx (REPORT_DIGITAL_PORT p) [if b then 1 else 0]
-packageProcedure c (SetPinMode p m)         = nonSysEx SET_PIN_MODE            [fromIntegral (pinNo (getInternalPin c p)), fromIntegral (fromEnum m)]
+packageProcedure c (SetPinMode p m)         = nonSysEx SET_PIN_MODE            [fromIntegral $ pinNo $ getInternalPin c p, fromIntegral $ fromEnum m]
 packageProcedure c (DigitalPortWrite p l m) = nonSysEx (DIGITAL_MESSAGE p)     [l, m]
-packageProcedure c (DigitalPinWrite p b)    = nonSysEx SET_DIGITAL_PIN_VALUE   [fromIntegral (pinNo (getInternalPin c p)), if b then 1 else 0]
+packageProcedure c (DigitalPinWrite p b)    = nonSysEx SET_DIGITAL_PIN_VALUE   [fromIntegral $ pinNo $ getInternalPin c p, if b then 1 else 0]
 packageProcedure c (AnalogPinWrite p l m)   = nonSysEx (ANALOG_MESSAGE (getInternalPin c p))      [l, m]
-packageProcedure c (AnalogPinExtendedWrite p w8s) = sysEx EXTENDED_ANALOG      ([fromIntegral (pinNo (getInternalPin c p))] ++ w8s)
+packageProcedure c (AnalogPinExtendedWrite p w8s) = sysEx EXTENDED_ANALOG      ([fromIntegral $ pinNo $ getInternalPin c p] ++ (arduinoEncodedL w8s))
 packageProcedure c (SamplingInterval l m)   = sysEx    SAMPLING_INTERVAL       [l, m]
 packageProcedure c (I2CWrite m sa w16s)     = sysEx    I2C_REQUEST     ((packageI2c m False sa Nothing) ++
                                                                       (words16ToArduinoBytes w16s)) 
+-- TBD Finish packaging for I2C and Stepper
+-- packageProcedure c (I2CConfig d)            = sysEx I2C_CONFIG [(word16ToArduinoBytes d)
+-- packageProcedure c (StepperConfig2Wire dev d sr p1 p2) = sysEx STEPPER_DATA ([dev,((stepDelayVal d) .|. 0x02)] ++(word16ToArduinoBytes d) ++ (word16ToArduinoBytes sr) ++ [p1,p2])
+-- packageProcedure c (StepperConfig4Wire dev d sr p1 p2 p3 p4) = sysEx STEPPER_DATA ([dev,((stepDelayVal d) .|. 0x04)] ++ (word16ToArduinoBytes d) ++ (word16ToArduinoBytes sr) ++ [p1,p2,p3,p4])
+-- packageProcedure c (StepperConfigStepDir dev d sr dp sp) = sysEx STEPPER_DATA ([dev,((stepDelayVal d) .|. 0x02)] ++ (word16ToArduinoBytes d) ++ (word16ToArduinoBytes sr) ++ [dp,sp])
+-- packageProcedure c (StepperStep dev sd ns sp ac) = sysEx STEPPER_DATA ([dev,(stepDirVal sd)] ++ (word32To3ArduinoBytes ns) ++ (word16ToArduinoBytes sp) ++ (intTo4ArduinoBytes ac))
+packageProcedure c (ServoConfig p min max)  = sysEx SERVO_CONFIG ([fromIntegral $ pinNo $ getInternalPin c p] ++ (word16ToArduinoBytes min) ++ (word16ToArduinoBytes max))
 packageProcedure c (DeleteTask tid)         = sysEx SCHEDULER_DATA [schedulerCmdVal DELETE_TASK, tid]
 packageProcedure c (Delay tt)               = sysEx SCHEDULER_DATA ([schedulerCmdVal DELAY_TASK] ++ (word32ToArduinoBytes tt))
 packageProcedure c (ScheduleTask tid tt)    = sysEx SCHEDULER_DATA ([schedulerCmdVal SCHEDULE_TASK, tid] ++ (word32ToArduinoBytes tt))

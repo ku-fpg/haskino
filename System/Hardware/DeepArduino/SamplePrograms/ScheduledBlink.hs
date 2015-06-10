@@ -29,8 +29,8 @@ myTask port portVal = do
         delay 1000
         return ()
 
-main :: IO ()
-main = do
+scheduledBlink :: IO ()
+scheduledBlink = do
     conn <- openArduino False "/dev/cu.usbmodem1421"
     let led = DigitalPin 13
     -- Currently there is no Firmata command to modify just one pin on a 

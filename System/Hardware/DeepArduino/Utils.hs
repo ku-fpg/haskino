@@ -99,6 +99,17 @@ words16ToArduinoBytes ws = concat $ map word16ToArduinoBytes ws
 word32ToArduinoBytes :: Word32 -> [Word8]
 word32ToArduinoBytes i = map fromIntegral [i .&. 0x7F, (i `shiftR` 7) .&. 0x7F, (i `shiftR` 14) .&. 0x7F, (i `shiftR` 21) .&. 0x7F, (i `shiftR`  28) .&. 0x0F]
 
+-- | Convert a word to it's 3 bytes (or 21 bits), as would be required by Arduino comms
+word32To3ArduinoBytes :: Word32 -> [Word8]
+word32To3ArduinoBytes i = map fromIntegral [i .&. 0x7F, (i `shiftR` 7) .&. 0x7F, (i `shiftR` 14) .&. 0x7F, (i `shiftR` 21) .&. 0x7F]
+
+-- | Convert a word to it's bytes, as would be required by Arduino comms
+intTo4ArduinoBytes :: Int -> [Word8]
+intTo4ArduinoBytes i = 
+  if (i >= 0)
+  then map fromIntegral [0, 0, i .&. 0x7F, (i `shiftR` 7) .&. 0x7F]
+  else map fromIntegral [i .&. 0x7F, (i `shiftR` 7) .&. 0x7F, 0, 0]
+
 -- | Convert a sequence of 7 bit bytes into an array of 16 bit data
 arduinoBytesToWords16 :: [Word8] -> [Word16]
 arduinoBytesToWords16 []         = []
@@ -118,6 +129,17 @@ arduinoEncoded bs = arduinoEncoded' bs 0 0
                                     (B.cons (h `shiftR` 1) (arduinoEncoded' t 0 0))
         Just (h,t)              -> B.cons (((h `shiftL` shift) .&. 0x7f) .|. prev) 
                                     (arduinoEncoded' t ((shift + 1) `mod` 7) (h `shiftR` (7 - shift)))
+
+-- | Convert a list of 8 bit bytes to a list of 7 bit bytes
+arduinoEncodedL :: [Word8] -> [Word8] 
+arduinoEncodedL bs = arduinoEncoded' bs 0 0
+  where
+    arduinoEncoded' :: [Word8] -> Int -> Word8 -> [Word8] 
+    arduinoEncoded' [] shift prev    = if shift == 0 then [] else [prev]
+    arduinoEncoded' (h:t) shift prev | shift == 6 = (((h `shiftL` shift) .&. 0x7f) .|. prev) :
+                                                     (h `shiftR` 1) : (arduinoEncoded' t 0 0)
+    arduinoEncoded' (h:t) shift prev              = (((h `shiftL` shift) .&. 0x7f) .|. prev) :
+                                                     (arduinoEncoded' t ((shift + 1) `mod` 7) (h `shiftR` (7 - shift)))
 
 -- | Convert a sequence of 7 bit bytes to a sequence of 8 bit bytes
 arduinoDecoded :: [Word8] -> [Word8]

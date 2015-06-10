@@ -20,8 +20,8 @@ import System.Hardware.DeepArduino.Data
 import System.Hardware.DeepArduino.Comm
 
 
-main :: IO ()
-main = do
+blink :: IO ()
+blink = do
     conn <- openArduino False "/dev/cu.usbmodem1421"
     let led = DigitalPin 13
     -- Currently there is no Firmata command to modify just one pin on a 

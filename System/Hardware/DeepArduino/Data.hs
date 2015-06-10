@@ -171,8 +171,15 @@ type TaskLength = Word16
 type TaskID = Word8
 type TaskTime = Word32
 type TaskPos = Word16
+type StepDevice = Word8
+type NumSteps = Word32
+type StepSpeed = Word16
+type StepAccel = Int
+type StepPerRev = Word16
 data I2CAddrMode = Bit7 | Bit10
       deriving Show
+data StepDelay = OneUs | TwoUs
+data StepDir = CW | CCW
 
 data Procedure =
        SystemReset                              -- ^ Send system reset
@@ -188,7 +195,11 @@ data Procedure =
      | I2CConfig Word16
      -- TBD add I2C continuous read
      | ServoConfig Pin MinPulse MaxPulse
-     -- TBD add stepper procedures
+     -- TBD add one wire procedures
+     | StepperConfig2Wire StepDevice StepDelay StepPerRev Pin Pin
+     | StepperConfig4Wire StepDevice StepDelay StepPerRev Pin Pin Pin Pin
+     | StepperConfigStepDir StepDevice StepDelay StepPerRev Pin Pin
+     | StepperStep StepDevice StepDir NumSteps StepSpeed StepAccel
      | CreateTask TaskID (Arduino ())
      | DeleteTask TaskID
      | Delay TaskTime
@@ -236,6 +247,18 @@ i2cConfig w = Procedure $ I2CConfig w
 
 servoConfig :: Pin -> MinPulse -> MaxPulse -> Arduino ()
 servoConfig p min max = Procedure $ ServoConfig p min max
+
+stepperConfig2Wire :: StepDevice -> StepDelay -> StepPerRev -> Pin -> Pin -> Arduino ()
+stepperConfig2Wire dev d sr p1 p2 = Procedure $ StepperConfig2Wire dev d sr p1 p2
+
+stepperConfig4Wire :: StepDevice -> StepDelay -> StepPerRev -> Pin -> Pin -> Pin -> Pin -> Arduino ()
+stepperConfig4Wire dev d sr p1 p2 p3 p4 = Procedure $ StepperConfig4Wire dev d sr p1 p2 p3 p4
+
+stepperConfigStepDir :: StepDevice -> StepDelay -> StepPerRev -> Pin -> Pin -> Arduino ()
+stepperConfigStepDir dev d sr dp sp = Procedure $ StepperConfigStepDir dev d sr dp sp
+
+stepperStep :: StepDevice -> StepDir -> NumSteps -> StepSpeed -> StepAccel -> Arduino ()
+stepperStep dev sd ns sp ac = Procedure $ StepperStep dev sd ns sp ac
 
 deleteTask :: TaskID -> Arduino ()
 deleteTask tid = Procedure $ DeleteTask tid
@@ -445,6 +468,14 @@ getSchedulerReply 0x0A = Right QUERY_TASK_REPLY
 getSchedulerReply 0x0B = Right ERROR_FIRMATA_TASK_REPLY
 getSchedulerReply n    = Left n
 
+stepDelayVal :: StepDelay -> Word8
+stepDelayVal OneUs = 0x00
+stepDelayVal TwoUs = 0x10
+
+stepDirVal :: StepDir -> Word8
+stepDirVal CW = 0x00
+stepDirVal CCW = 0x10
+
 -- | Convert a byte to a Firmata command
 getFirmataCmd :: Word8 -> Either Word8 FirmataCmd
 getFirmataCmd w = classify
@@ -473,6 +504,7 @@ data SysExCmd = RESERVED_COMMAND        -- ^ @0x00@  2nd SysEx data byte is a ch
               | EXTENDED_ANALOG         -- ^ @0x6F@  analog write (PWM, Servo, etc) to any pin
               | SERVO_CONFIG            -- ^ @0x70@  set max angle, minPulse, maxPulse, freq
               | STRING_DATA             -- ^ @0x71@  a string message with 14-bits per char
+              | STEPPER_DATA            -- ^ @0x72@  a stepper motor config or step command
               | PULSE                   -- ^ @0x74@  Pulse, see: https://github.com/rwldrn/johnny-five/issues/18
               | SHIFT_DATA              -- ^ @0x75@  shiftOut config/data message (34 bits)
               | I2C_REQUEST             -- ^ @0x76@  I2C request messages from a host to an I/O board
@@ -497,6 +529,7 @@ sysExCmdVal PIN_STATE_RESPONSE      = 0x6E
 sysExCmdVal EXTENDED_ANALOG         = 0x6F
 sysExCmdVal SERVO_CONFIG            = 0x70
 sysExCmdVal STRING_DATA             = 0x71
+sysExCmdVal STEPPER_DATA            = 0x72
 sysExCmdVal PULSE                   = 0x74
 sysExCmdVal SHIFT_DATA              = 0x75
 sysExCmdVal I2C_REQUEST             = 0x76
@@ -520,6 +553,7 @@ getSysExCommand 0x6E = Right PIN_STATE_RESPONSE
 getSysExCommand 0x6F = Right EXTENDED_ANALOG
 getSysExCommand 0x70 = Right SERVO_CONFIG
 getSysExCommand 0x71 = Right STRING_DATA
+getSysExCommand 0x72 = Right STEPPER_DATA
 getSysExCommand 0x75 = Right SHIFT_DATA
 getSysExCommand 0x76 = Right I2C_REQUEST
 getSysExCommand 0x77 = Right I2C_REPLY
