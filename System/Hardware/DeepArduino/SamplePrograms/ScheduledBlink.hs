@@ -32,7 +32,7 @@ myTask port portVal = do
 scheduledBlink :: IO ()
 scheduledBlink = do
     conn <- openArduino False "/dev/cu.usbmodem1421"
-    let led = DigitalPin 13
+    let led = digital 13
     -- Currently there is no Firmata command to modify just one pin on a 
     -- digital port.  History storage in the connection ala hArduino is not
     -- yet completely reimplementd (plus that is not possible as a Firmata

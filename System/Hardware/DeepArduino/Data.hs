@@ -69,6 +69,33 @@ data IPin = InternalPin { pinNo :: Word8 }
 data Port = Port { portNo :: Word8 } 
           deriving (Eq, Ord, Show)
 
+-- | Declare a pin by its index. For maximum portability, prefer 'digital'
+-- and 'analog' functions, which will adjust pin indexes properly based on
+-- which board the program is running on at run-time, as Arduino boards
+-- differ in their pin numbers. This function is provided for cases where
+-- a pin is used in mixed-mode, i.e., both for digital and analog purposes,
+-- as Arduino does not really distinguish pin usage. In these cases, the
+-- user has the proof obligation to make sure that the index used is supported
+-- on the board with appropriate capabilities.
+pin :: Word8 -> Pin
+pin = MixedPin
+
+-- | Declare an digital pin on the board. For instance, to refer to digital pin no 12
+-- use 'digital' @12@.
+digital :: Word8 -> Pin
+digital = DigitalPin
+
+-- | Declare an analog pin on the board. For instance, to refer to analog pin no 0
+-- simply use 'analog' @0@.
+--
+-- Note that 'analog' @0@ on an Arduino UNO will be appropriately adjusted
+-- internally to refer to pin 14, since UNO has 13 digital pins, while on an
+-- Arduino MEGA, it will refer to internal pin 55, since MEGA has 54 digital pins;
+-- and similarly for other boards depending on their capabilities.
+-- (Also see the note on 'pin' for pin mappings.)
+analog :: Word8 -> Pin
+analog = AnalogPin
+
 -- | Bailing out: print the given string on stdout and die
 die :: ArduinoConnection -> String -> [String] -> IO a
 die c m ms = do 
