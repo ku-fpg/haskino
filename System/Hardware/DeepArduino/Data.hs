@@ -16,7 +16,7 @@
 module System.Hardware.DeepArduino.Data where
 
 import           Control.Applicative
-import           Control.Concurrent (Chan, MVar, ThreadId, withMVar, modifyMVar)
+import           Control.Concurrent (Chan, MVar, ThreadId, withMVar, modifyMVar, modifyMVar_)
 import           Control.Monad (ap, liftM2, when)
 
 import           Data.Bits ((.|.), (.&.), setBit)
@@ -591,6 +591,24 @@ getSysExCommand 0x7E = Right SYSEX_NON_REALTIME
 getSysExCommand 0x7F = Right SYSEX_REALTIME
 getSysExCommand 0x74 = Right PULSE
 getSysExCommand n    = Left n
+
+-- | Keep track of pin-mode changes
+registerPinMode :: ArduinoConnection -> IPin -> PinMode -> IO ()
+registerPinMode c p m = do
+        -- first check that the requested mode is supported for this pin
+        let BoardCapabilities caps = capabilities c
+        case p `M.lookup` caps of
+          Nothing
+             -> die c ("Invalid access to unsupported pin: " ++ show p)
+                    ("Available pins are: " : ["  " ++ show k | (k, _) <- M.toAscList caps])
+          Just PinCapabilities{allowedModes}
+            | m `notElem` map fst allowedModes
+            -> die c ("Invalid mode " ++ show m ++ " set for " ++ show p)
+                   ["Supported modes for this pin are: " ++ unwords (if null allowedModes then ["NONE"] else map show allowedModes)]
+          _ -> return ()
+        -- Modify the board state MVar for the mode change
+        modifyMVar_ (boardState c) $ \bst -> return bst{pinStates = M.insert p PinData{pinMode = m, pinValue = Nothing} (pinStates bst) }
+        return ()
 
 -- | State of the board
 data BoardState = BoardState {

@@ -141,6 +141,9 @@ send conn commands =
           message c $ "Delaying: " ++ show d
           threadDelay ((fromIntegral d)*1000)
           send' c (k ()) B.empty
+      sendBind c (Procedure (SetPinMode p pm)) k cmds = do
+          registerPinMode c (getInternalPin c p) pm
+          send' c (k ()) (B.append cmds (packageProcedure c (SetPinMode p pm)))
       sendBind c (Procedure cmd) k cmds = send' c (k ()) (B.append cmds (packageProcedure c cmd))
       sendBind c (Local local)   k cmds = sendLocal c local k cmds
       sendBind c (Query query)   k cmds = sendQuery c query k cmds
