@@ -12,6 +12,7 @@
 
 module System.Hardware.DeepArduino.SamplePrograms.Analog where
 
+import Control.Monad (when)
 import Data.Bits (shiftL)
 import Data.Word (Word16)
 
@@ -40,19 +41,24 @@ analogVal = do
         port = pinPort iled
         portVal = 1 `shiftL` (fromIntegral $ pinPortIndex iled)
 
-    send conn $ do 
+    first <- send conn $ do 
       setPinMode led OUTPUT
       setPinMode pot ANALOG
       analogReport pot True
       cur <- analogPinRead pot
-      blinkRate port portVal cur pot
-
+      return cur
+    
+    loop conn port portVal first pot
   where
-    blinkRate port portVal rate pot = do
+    loop conn port portVal cur pot = do
+      new <- send conn (analogPinRead pot)
+      when (cur /= new) $ print new
+      send conn $ blinkRate port portVal new
+      loop conn port portVal new pot 
+
+    blinkRate port portVal rate = do
       digitalPortWrite port portVal
       delay $ fromIntegral rate
       digitalPortWrite port 0
       delay $ fromIntegral rate
-      cur <- analogPinRead pot
-      blinkRate port portVal cur pot
 

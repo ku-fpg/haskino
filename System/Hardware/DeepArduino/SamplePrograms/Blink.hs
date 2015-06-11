@@ -22,7 +22,7 @@ import System.Hardware.DeepArduino.Comm
 
 blink :: IO ()
 blink = do
-    conn <- openArduino FALSE "/dev/cu.usbmodem1421"
+    conn <- openArduino False "/dev/cu.usbmodem1421"
     let led = digital 13
     -- Currently there is no Firmata command to modify just one pin on a 
     -- digital port.  History storage in the connection ala hArduino is not
