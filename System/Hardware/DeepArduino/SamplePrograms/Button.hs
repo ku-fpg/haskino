@@ -40,9 +40,6 @@ button = do
     let butPort = pinPort ibut
 
     let led = digital 13
-    let iled = getInternalPin conn led
-    let ledPort = pinPort iled
-    let ledPortVal = 1 `shiftL` (fromIntegral $ pinPortIndex iled)
 
     first <- send conn $ do 
       setPinMode but INPUT
@@ -51,11 +48,11 @@ button = do
       cur <- digitalPinRead but
       return cur
     
-    loop conn but first ledPort ledPortVal
+    loop conn but first led
   where
-    loop conn pin cur ledPort ledPortVal = do
+    loop conn pin cur led = do
       new <- send conn (digitalPinRead pin)
       when (cur /= new) $ do 
             print new
-            send conn $ digitalPortWrite ledPort (if new then ledPortVal else 0)
-      loop conn pin new  ledPort ledPortVal
+            send conn $ digitalPinWrite led new
+      loop conn pin new led

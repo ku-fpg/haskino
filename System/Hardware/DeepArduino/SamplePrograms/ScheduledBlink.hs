@@ -21,11 +21,11 @@ import System.Hardware.DeepArduino.Comm
 
 -- Task which will execute on Arduino, blink on a second, off a second and
 -- repeat
-myTask :: Port -> Word16 -> Arduino ()
-myTask port portVal = do
-        digitalPortWrite port portVal
+myTask :: Pin -> Arduino ()
+myTask led = do
+        digitalPinWrite led True
         delay 1000
-        digitalPortWrite port 0
+        digitalPinWrite led False
         delay 1000
         return ()
 
@@ -33,19 +33,12 @@ scheduledBlink :: IO ()
 scheduledBlink = do
     conn <- openArduino False "/dev/cu.usbmodem1421"
     let led = digital 13
-    -- Currently there is no Firmata command to modify just one pin on a 
-    -- digital port.  History storage in the connection ala hArduino is not
-    -- yet completely reimplementd (plus that is not possible as a Firmata
-    -- Scheduled Task), so for now the entire 8 bit port is written.
-    let iled = getInternalPin conn led
-    let port = pinPort iled
-    let portVal = 1 `shiftL` (fromIntegral $ pinPortIndex iled)
 
     -- Set the pin mode to digital output
     send conn (setPinMode led OUTPUT)
     (tasks,task) <- send conn $ do
         -- Create the task which blinks with a 2 second period
-        createTask 1 (myTask port portVal)
+        createTask 1 (myTask led)
         -- Schedule the task to start in 5 seconds
         scheduleTask 1 5000
         ts <- queryAllTasks

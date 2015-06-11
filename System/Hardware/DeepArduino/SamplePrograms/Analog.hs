@@ -37,9 +37,6 @@ analogVal = do
     -- Scheduled Task), so for now the entire 8 bit port is written.
     let led = digital 13
         pot = analog 3
-        iled = getInternalPin conn led
-        port = pinPort iled
-        portVal = 1 `shiftL` (fromIntegral $ pinPortIndex iled)
 
     first <- send conn $ do 
       setPinMode led OUTPUT
@@ -48,17 +45,17 @@ analogVal = do
       cur <- analogPinRead pot
       return cur
     
-    loop conn port portVal first pot
+    loop conn led first pot
   where
-    loop conn port portVal cur pot = do
+    loop conn pin cur pot = do
       new <- send conn (analogPinRead pot)
       when (cur /= new) $ print new
-      send conn $ blinkRate port portVal new
-      loop conn port portVal new pot 
+      send conn $ blinkRate pin new
+      loop conn pin new pot 
 
-    blinkRate port portVal rate = do
-      digitalPortWrite port portVal
+    blinkRate pin rate = do
+      digitalPinWrite pin True
       delay $ fromIntegral rate
-      digitalPortWrite port 0
+      digitalPinWrite pin False
       delay $ fromIntegral rate
 
