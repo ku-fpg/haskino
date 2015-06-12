@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.SamplePrograms.Blink
+-- Module      :  System.Hardware.DeepArduino.SamplePrograms.Analog
 --                Based on System.Hardware.Arduino.comm
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino.comm (c) Levent Erkok

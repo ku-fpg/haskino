@@ -408,7 +408,7 @@ runWaitGeneric c ps = do
    curVals <- mapM (runDigitalPinRead c) ps
    semaphore <- newEmptyMVar
    let wait = do digitalWakeUp c semaphore
-                 readMVar semaphore
+                 takeMVar semaphore
                  newVals <- mapM (runDigitalPinRead c) ps
                  if curVals == newVals
                     then wait
