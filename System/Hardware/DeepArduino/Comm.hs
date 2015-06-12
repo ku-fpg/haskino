@@ -56,7 +56,6 @@ openArduino verbose fp = do
         port <- S.openSerial fp S.defaultSerialSettings{S.commSpeed = S.CS57600}
         let initBoardState = BoardState {
                                  boardCapabilities    = BoardCapabilities M.empty
-                               , analogReportingPins  = S.empty
                                , digitalReportingPins = S.empty
                                , pinStates            = M.empty
                                , digitalWakeUpQueue   = []

@@ -645,7 +645,6 @@ registerPinMode c p m = do
 -- | State of the board
 data BoardState = BoardState {
                     boardCapabilities    :: BoardCapabilities   -- ^ Capabilities of the board
-                  , analogReportingPins  :: S.Set IPin          -- ^ Which analog pins are reporting
                   , digitalReportingPins :: S.Set Word8         -- ^ Which digital pins are reporting
                   , pinStates            :: M.Map IPin PinData  -- ^ For-each pin, store its data
                   , digitalWakeUpQueue   :: [MVar ()]           -- ^ Semaphore list to wake-up upon receiving a digital message
