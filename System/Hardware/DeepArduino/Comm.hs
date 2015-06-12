@@ -16,24 +16,31 @@
 module System.Hardware.DeepArduino.Comm where
 
 import Control.Monad        (when, forever)
-import Control.Concurrent   (Chan, MVar, ThreadId, newChan, newMVar, newEmptyMVar, putMVar, takeMVar, writeChan, readChan, forkIO, modifyMVar_, tryTakeMVar, killThread, threadDelay)
+import Control.Concurrent   (Chan, MVar, ThreadId, newChan, newMVar, 
+                             newEmptyMVar, putMVar, takeMVar, writeChan, 
+                             readChan, forkIO, modifyMVar_, tryTakeMVar, 
+                             killThread, threadDelay)
 import Control.Monad.State  (liftIO)
 import Data.Bits            (testBit, (.&.))
 import Data.List            (intercalate)
 import Data.Maybe           (listToMaybe)
 import System.Hardware.Serialport (SerialPort)
+import System.Timeout       (timeout)
+
 
 import qualified Data.ByteString            as B 
 import Data.ByteString.Base16 (encode)
-import qualified Data.Map                   as M (empty, mapWithKey, insert, assocs, lookup)
+import qualified Data.Map                   as M (empty, mapWithKey, insert, 
+                                                  assocs, lookup)
 import qualified Data.Set                   as S (empty)
-import qualified System.Hardware.Serialport as S (openSerial, closeSerial, defaultSerialSettings, CommSpeed(CS57600), commSpeed, recv, send)
+import qualified System.Hardware.Serialport as S (openSerial, closeSerial, 
+                                                  defaultSerialSettings, 
+                                                  CommSpeed(CS57600), commSpeed,
+                                                  recv, send)
 
 import System.Hardware.DeepArduino.Data
 import System.Hardware.DeepArduino.Utils
 import System.Hardware.DeepArduino.Protocol
-
-import System.Timeout       (timeout)
 
 -- | Open the connection to control the board:
 --
