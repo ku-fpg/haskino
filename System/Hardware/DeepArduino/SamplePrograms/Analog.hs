@@ -30,7 +30,7 @@ import System.Hardware.DeepArduino.Comm
 --  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/Analog.png>>
 analogVal :: IO ()
 analogVal = do
-    conn <- openArduino True "/dev/cu.usbmodem1421"
+    conn <- openArduino False "/dev/cu.usbmodem1421"
     let led = digital 13
         pot = analog 3
 

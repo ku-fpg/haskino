@@ -44,68 +44,114 @@ nonSysEx cmd bs = B.pack $ firmataCmdVal cmd : bs
 
 -- | Package a request as a sequence of bytes to be sent to the board
 -- using the Firmata protocol.
-packageProcedure :: ArduinoConnection -> Procedure -> B.ByteString
-packageProcedure c SystemReset              = nonSysEx SYSTEM_RESET            []
-packageProcedure c (AnalogReport  p b)      = nonSysEx (REPORT_ANALOG_PIN (getInternalPin c p))   [if b then 1 else 0]
-packageProcedure c (DigitalReport p b)      = nonSysEx (REPORT_DIGITAL_PORT p) [if b then 1 else 0]
-packageProcedure c (DigitalPinReport p b)   = nonSysEx (REPORT_DIGITAL_PORT $ pinPort $ getInternalPin c p) [if b then 1 else 0]
-packageProcedure c (SetPinMode p m)         = nonSysEx SET_PIN_MODE            [fromIntegral $ pinNo $ getInternalPin c p, fromIntegral $ fromEnum m]
-packageProcedure c (DigitalPortWrite p l m) = nonSysEx (DIGITAL_MESSAGE p)     [l, m]
-packageProcedure c (DigitalPinWrite p b)    = nonSysEx SET_DIGITAL_PIN_VALUE   [fromIntegral $ pinNo $ getInternalPin c p, if b then 1 else 0]
-packageProcedure c (AnalogPinWrite p l m)   = nonSysEx (ANALOG_MESSAGE (getInternalPin c p))      [l, m]
-packageProcedure c (AnalogPinExtendedWrite p w8s) = sysEx EXTENDED_ANALOG      ([fromIntegral $ pinNo $ getInternalPin c p] ++ (arduinoEncodedL w8s))
-packageProcedure c (SamplingInterval l m)   = sysEx    SAMPLING_INTERVAL       [l, m]
-packageProcedure c (I2CWrite m sa w16s)     = sysEx    I2C_REQUEST     ((packageI2c m False sa Nothing) ++
-                                                                      (words16ToArduinoBytes w16s)) 
+packageProcedure :: ArduinoConnection -> Procedure -> IO B.ByteString
+packageProcedure c SystemReset              = 
+    return $ nonSysEx SYSTEM_RESET            []
+packageProcedure c (AnalogReport  p b)      = do
+    ipin <- getInternalPin c p
+    return $ nonSysEx (REPORT_ANALOG_PIN ipin) [if b then 1 else 0]
+packageProcedure c (DigitalReport p b)      = 
+    return $ nonSysEx (REPORT_DIGITAL_PORT p) [if b then 1 else 0]
+packageProcedure c (DigitalPinReport p b)   = do
+    ipin <- getInternalPin c p
+    return $ nonSysEx (REPORT_DIGITAL_PORT $ pinPort ipin) [if b then 1 else 0]
+packageProcedure c (SetPinMode p m)         = do
+    ipin <- getInternalPin c p
+    return $ nonSysEx SET_PIN_MODE [fromIntegral $ pinNo ipin, fromIntegral $ fromEnum m]
+packageProcedure c (DigitalPortWrite p l m) = 
+    return $ nonSysEx (DIGITAL_MESSAGE p) [l, m]
+packageProcedure c (DigitalPinWrite p b)    = do
+    ipin <- getInternalPin c p
+    return $ nonSysEx SET_DIGITAL_PIN_VALUE [fromIntegral $ pinNo ipin, if b then 1 else 0]
+packageProcedure c (AnalogPinWrite p l m)   = do
+    ipin <- getInternalPin c p
+    return $ nonSysEx (ANALOG_MESSAGE ipin) [l, m]
+packageProcedure c (AnalogPinExtendedWrite p w8s) = do
+    ipin <- getInternalPin c p
+    return $ sysEx EXTENDED_ANALOG ([fromIntegral $ pinNo ipin] ++ (arduinoEncodedL w8s))
+packageProcedure c (SamplingInterval l m)   =
+    return $ sysEx SAMPLING_INTERVAL [l, m]
+packageProcedure c (I2CWrite m sa w16s)     = 
+    return $ sysEx I2C_REQUEST ((packageI2c m False sa Nothing) ++
+                               (words16ToArduinoBytes w16s)) 
 -- TBD Finish packaging for I2C and Stepper
 -- packageProcedure c (I2CConfig d)            = sysEx I2C_CONFIG [(word16ToArduinoBytes d)
 -- packageProcedure c (StepperConfig2Wire dev d sr p1 p2) = sysEx STEPPER_DATA ([dev,((stepDelayVal d) .|. 0x02)] ++(word16ToArduinoBytes d) ++ (word16ToArduinoBytes sr) ++ [p1,p2])
 -- packageProcedure c (StepperConfig4Wire dev d sr p1 p2 p3 p4) = sysEx STEPPER_DATA ([dev,((stepDelayVal d) .|. 0x04)] ++ (word16ToArduinoBytes d) ++ (word16ToArduinoBytes sr) ++ [p1,p2,p3,p4])
 -- packageProcedure c (StepperConfigStepDir dev d sr dp sp) = sysEx STEPPER_DATA ([dev,((stepDelayVal d) .|. 0x02)] ++ (word16ToArduinoBytes d) ++ (word16ToArduinoBytes sr) ++ [dp,sp])
 -- packageProcedure c (StepperStep dev sd ns sp ac) = sysEx STEPPER_DATA ([dev,(stepDirVal sd)] ++ (word32To3ArduinoBytes ns) ++ (word16ToArduinoBytes sp) ++ (intTo4ArduinoBytes ac))
-packageProcedure c (ServoConfig p min max)  = sysEx SERVO_CONFIG ([fromIntegral $ pinNo $ getInternalPin c p] ++ (word16ToArduinoBytes min) ++ (word16ToArduinoBytes max))
-packageProcedure c (DeleteTask tid)         = sysEx SCHEDULER_DATA [schedulerCmdVal DELETE_TASK, tid]
-packageProcedure c (Delay tt)               = sysEx SCHEDULER_DATA ([schedulerCmdVal DELAY_TASK] ++ (word32ToArduinoBytes tt))
-packageProcedure c (ScheduleTask tid tt)    = sysEx SCHEDULER_DATA ([schedulerCmdVal SCHEDULE_TASK, tid] ++ (word32ToArduinoBytes tt))
-packageProcedure c (CreateTask tid m)       = (sysEx SCHEDULER_DATA ([schedulerCmdVal CREATE_TASK, tid] ++ (word16ToArduinoBytes taskSize)))
-                                              `B.append` (startSysEx SCHEDULER_DATA [schedulerCmdVal ADD_TO_TASK, tid])
-                                              `B.append` (arduinoEncoded taskData)
-                                              `B.append` (B.singleton (firmataCmdVal END_SYSEX))
-  where
-    taskData = packageTaskData c m
-    taskSize = fromIntegral (B.length taskData)
+packageProcedure c (ServoConfig p min max)  = do
+    ipin <- getInternalPin c p
+    return $ sysEx SERVO_CONFIG ([fromIntegral $ pinNo ipin] ++ (word16ToArduinoBytes min) ++ (word16ToArduinoBytes max))
+packageProcedure c (DeleteTask tid)         = 
+    return $ sysEx SCHEDULER_DATA [schedulerCmdVal DELETE_TASK, tid]
+packageProcedure c (Delay tt)               = 
+    return $ sysEx SCHEDULER_DATA ([schedulerCmdVal DELAY_TASK] ++ (word32ToArduinoBytes tt))
+packageProcedure c (ScheduleTask tid tt)    = 
+    return $ sysEx SCHEDULER_DATA ([schedulerCmdVal SCHEDULE_TASK, tid] ++ (word32ToArduinoBytes tt))
+packageProcedure c (CreateTask tid m)       = do
+    td <- packageTaskData c m
+    let taskSize = fromIntegral (B.length td)
+    return $ sysEx SCHEDULER_DATA ([schedulerCmdVal CREATE_TASK, tid] ++ 
+                                    (word16ToArduinoBytes taskSize))
+                                    `B.append` (startSysEx SCHEDULER_DATA [schedulerCmdVal ADD_TO_TASK, tid])
+                                    `B.append` (arduinoEncoded td)
+                                    `B.append` (B.singleton (firmataCmdVal END_SYSEX))
 
-packageTaskData :: ArduinoConnection -> Arduino a -> B.ByteString
+packageTaskData :: ArduinoConnection -> Arduino a -> IO B.ByteString
 packageTaskData conn commands =
       packageTaskData' conn commands B.empty
   where
-      packBind :: ArduinoConnection -> Arduino a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
-      packBind c (Return a)      k cmds = packageTaskData' c (k a) cmds
+      packBind :: ArduinoConnection -> Arduino a -> (a -> Arduino b) -> IO B.ByteString -> IO B.ByteString
+      packBind c (Return a)      k cmds = do
+          cs <- cmds
+          packageTaskData' c (k a) cs
       packBind c (Bind m k1)    k2 cmds = packBind c m (\ r -> Bind (k1 r) k2) cmds
-      packBind c (Procedure cmd) k cmds = packageTaskData' c (k ()) (B.append cmds (packageProcedure c cmd))
-      -- For sending as part of a Scheduler task, locals make no sense.  
-      -- Queries will work, but receiving them is problematic at the moment.
-      -- Instead of signalling an error, at this point they are just ignored.
+      packBind c (Procedure cmd) k cmds = do
+          proc <- packageProcedure c cmd
+          cs <- cmds
+          packageTaskData' c (k ()) (B.append cs proc)
       packBind c (Local local)   k cmds = packLocal c local k cmds
       packBind c (Query query)   k cmds = packQuery c query k cmds
 
-      packLocal :: ArduinoConnection -> Local a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
-      packLocal c (AnalogPinRead _) k cmds = packageTaskData' c (k 0) cmds
-      packLocal c (DigitalPortRead _) k cmds = packageTaskData' c (k 0) cmds
-      packLocal c (DigitalPinRead _) k cmds = packageTaskData' c (k False) cmds
+      -- For sending as part of a Scheduler task, locals make no sense.  
+      -- Queries will work, but receiving them is problematic at the moment.
+      -- Instead of signalling an error, at this point they are just ignored.
+      packLocal :: ArduinoConnection -> Local a -> (a -> Arduino b) -> IO B.ByteString -> IO B.ByteString
+      packLocal c (AnalogPinRead _) k cmds = do
+          cs <- cmds 
+          packageTaskData' c (k 0) cs
+      packLocal c (DigitalPortRead _) k cmds = do
+          cs <- cmds 
+          packageTaskData' c (k 0) cs
+      packLocal c (DigitalPinRead _) k cmds = do
+          cs <- cmds 
+          packageTaskData' c (k False) cs
 
-      packQuery :: ArduinoConnection -> Query a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
-      packQuery c QueryFirmware k cmds = packageTaskData' c (k (0,0,[])) cmds
-      packQuery c CapabilityQuery k cmds = packageTaskData' c (k (BoardCapabilities M.empty)) cmds
-      packQuery c AnalogMappingQuery k cmds = packageTaskData' c (k ([])) cmds
-      packQuery c (Pulse _ _ _ _) k cmds = packageTaskData' c (k 0) cmds
-      packQuery c QueryAllTasks k cmds = packageTaskData' c (k ([])) cmds
-      packQuery c (QueryTask _) k cmds = packageTaskData' c (k (0,0,0,0,[])) cmds
+      packQuery :: ArduinoConnection -> Query a -> (a -> Arduino b) -> IO B.ByteString -> IO B.ByteString
+      packQuery c QueryFirmware k cmds = do 
+          cs <- cmds           
+          packageTaskData' c (k (0,0,[])) cs
+      packQuery c CapabilityQuery k cmds = do
+          cs <- cmds
+          packageTaskData' c (k (BoardCapabilities M.empty)) cs
+      packQuery c AnalogMappingQuery k cmds = do
+          cs <- cmds 
+          packageTaskData' c (k ([])) cs
+      packQuery c (Pulse _ _ _ _) k cmds = do
+          cs <- cmds 
+          packageTaskData' c (k 0) cs
+      packQuery c QueryAllTasks k cmds = do
+          cs <- cmds
+          packageTaskData' c (k ([])) cs
+      packQuery c (QueryTask _) k cmds = do
+          cs <- cmds
+          packageTaskData' c (k (0,0,0,0,[])) cs
 
-      packageTaskData' :: ArduinoConnection -> Arduino a -> B.ByteString -> B.ByteString
-      packageTaskData' c (Bind m k) cmds = packBind c m k cmds
-      packageTaskData' c (Return a) cmds = cmds
-      packageTaskData' c cmd        cmds = packBind c cmd Return cmds
+      packageTaskData' :: ArduinoConnection -> Arduino a -> B.ByteString -> IO B.ByteString
+      packageTaskData' c (Bind m k) cmds = packBind c m k (return cmds)
+      packageTaskData' c (Return a) cmds = return cmds
+      packageTaskData' c cmd        cmds = packBind c cmd Return (return cmds)
 
 packageQuery :: Query a -> B.ByteString
 packageQuery QueryFirmware            = sysEx    REPORT_FIRMWARE         []

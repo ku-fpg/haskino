@@ -109,24 +109,22 @@ die c m ms = do
 -- simply by their natural numbers, which makes for portable programs
 -- between boards that have different number of digital pins. We adjust
 -- for this shift here.
-getInternalPin :: ArduinoConnection -> Pin -> IPin
-getInternalPin c (MixedPin p)   = InternalPin p
-getInternalPin c (DigitalPin p) = InternalPin p
+getInternalPin :: ArduinoConnection -> Pin -> IO IPin
+getInternalPin c (MixedPin p)   = return $ InternalPin p
+getInternalPin c (DigitalPin p) = return $ InternalPin p
 getInternalPin c (AnalogPin p)=
     case listToMaybe [realPin | (realPin, PinCapabilities{analogPinNumber = Just n}) <- M.toAscList caps, p == n] of
--- TBD Fix me - Need to handle errors, but will need to be in IO Monad
-         Nothing -> InternalPin 14
---         Nothing -> die ("DeepArduino: " ++ show p ++ " is not a valid analog-pin on this board.")
---                        -- Try to be helpful in case they are trying to use a large value thinking it needs to be offset
---                        ["Hint: To refer to analog pin number k, simply use 'pin k', not 'pin (k+noOfDigitalPins)'" | p > 13]
-         Just rp -> rp
+         Nothing -> die c ("DeepArduino: " ++ show p ++ " is not a valid analog-pin on this board.")
+                        -- Try to be helpful in case they are trying to use a large value thinking it needs to be offset
+                        ["Hint: To refer to analog pin number k, simply use 'pin k', not 'pin (k+noOfDigitalPins)'" | p > 13]
+         Just rp -> return rp
   where 
     BoardCapabilities caps = capabilities c
 
 -- | Similar to getInternalPin above, except also makes sure the pin is in a required mode.
 convertAndCheckPin :: ArduinoConnection -> String -> Pin -> PinMode -> IO (IPin, PinData)
 convertAndCheckPin c what p' m = do
-   let p = getInternalPin c p'
+   p  <- getInternalPin c p'
    pd <- getPinData c p
    let user = userPinNo p'
        board = pinNo p

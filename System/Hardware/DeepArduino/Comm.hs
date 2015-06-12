@@ -142,19 +142,28 @@ send conn commands =
           threadDelay ((fromIntegral d)*1000)
           send' c (k ()) B.empty
       sendBind c (Procedure (SetPinMode p pm)) k cmds = do
-          registerPinMode c (getInternalPin c p) pm
-          send' c (k ()) (B.append cmds (packageProcedure c (SetPinMode p pm)))
+          ipin <- getInternalPin c p
+          registerPinMode c ipin pm
+          proc <- packageProcedure c (SetPinMode p pm)
+          send' c (k ()) (B.append cmds proc)
       sendBind c (Procedure (DigitalReport p r)) k cmds = do
           shouldSend <- registerDigitalPortReport c p r
           if shouldSend 
-          then send' c (k ()) (B.append cmds (packageProcedure c (DigitalReport p r)))
+          then do
+              proc <- packageProcedure c (DigitalReport p r) 
+              send' c (k ()) (B.append cmds proc)
           else send' c (k ()) cmds
       sendBind c (Procedure (DigitalPinReport p r)) k cmds = do
-          shouldSend <- registerDigitalPinReport c (getInternalPin c p) r
+          ipin <- getInternalPin c p
+          shouldSend <- registerDigitalPinReport c ipin r
           if shouldSend 
-          then send' c (k ()) (B.append cmds (packageProcedure c (DigitalPinReport p r)))
+          then do 
+              proc <- packageProcedure c (DigitalPinReport p r)
+              send' c (k ()) (B.append cmds proc)
           else send' c (k ()) cmds
-      sendBind c (Procedure cmd) k cmds = send' c (k ()) (B.append cmds (packageProcedure c cmd))
+      sendBind c (Procedure cmd) k cmds = do 
+          proc <- packageProcedure c cmd
+          send' c (k ()) (B.append cmds proc)
       sendBind c (Local local)   k cmds = sendLocal c local k cmds
       sendBind c (Query query)   k cmds = sendQuery c query k cmds
 
