@@ -197,15 +197,16 @@ unpackageSysEx (cmdWord:args)
   | True
   = Unimplemented Nothing (cmdWord : args)
 
--- This is how we match responses with queries TBD need to handle mismatches
-parseQueryResult :: Query a -> Response -> a
-parseQueryResult QueryFirmware (Firmware wa wb s) = (wa,wb,s)
-parseQueryResult CapabilityQuery (Capabilities bc) = bc
-parseQueryResult AnalogMappingQuery (AnalogMapping ms) = ms
-parseQueryResult (Pulse p b dur to) (PulseResponse p2 w) = w
-parseQueryResult (I2CRead am saq srq) (I2CReply sar srr ds) = ds
-parseQueryResult QueryAllTasks (QueryAllTasksReply ts) = ts
-parseQueryResult (QueryTask tid) (QueryTaskReply tid' tt tl tp ws) = (tid',tt,tl,tp,ws)
+-- This is how we match responses with queries
+parseQueryResult :: Query a -> Response -> Maybe a
+parseQueryResult QueryFirmware (Firmware wa wb s) = Just (wa,wb,s)
+parseQueryResult CapabilityQuery (Capabilities bc) = Just bc
+parseQueryResult AnalogMappingQuery (AnalogMapping ms) = Just ms
+parseQueryResult (Pulse p b dur to) (PulseResponse p2 w) = Just w
+parseQueryResult (I2CRead am saq srq) (I2CReply sar srr ds) = Just ds
+parseQueryResult QueryAllTasks (QueryAllTasksReply ts) = Just ts
+parseQueryResult (QueryTask tid) (QueryTaskReply tid' tt tl tp ws) = Just (tid',tt,tl,tp,ws)
+parseQueryResult q r = Nothing
 
 getCapabilities :: [Word8] -> BoardCapabilities
 getCapabilities bs = BoardCapabilities $ M.fromList $ zipWith (\p c -> (p, PinCapabilities{analogPinNumber = Nothing, allowedModes = c}))

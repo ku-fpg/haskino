@@ -33,6 +33,7 @@ import System.Hardware.DeepArduino.Data
 import System.Hardware.DeepArduino.Utils
 import System.Hardware.DeepArduino.Protocol
 
+import System.Timeout       (timeout)
 
 -- | Open the connection to control the board:
 --
@@ -54,6 +55,7 @@ openArduino verbose fp = do
         debugger $ "Accessing arduino located at: " ++ show fp
         listenerTid <- newEmptyMVar
         port <- S.openSerial fp S.defaultSerialSettings{S.commSpeed = S.CS57600}
+        -- TBD Handle cable not connected exception
         let initBoardState = BoardState {
                                  boardCapabilities    = BoardCapabilities M.empty
                                , digitalReportingPins = S.empty
@@ -183,8 +185,17 @@ send conn commands =
       sendQuery :: ArduinoConnection -> Query a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendQuery c query k cmds = do
           sendToArduino c (B.append cmds (packageQuery query))
-          resp <- liftIO $ readChan (deviceChannel c)
-          send' c (k (parseQueryResult query resp)) B.empty
+          resp <- liftIO $ timeout 5000000 $ readChan $ deviceChannel c
+          case resp of 
+              Nothing -> die c "Response Timeout" 
+                               [ "Make sure your Arduino is running Standard or Configurable Firmata"]
+              Just r -> do 
+                  let qres = parseQueryResult query r
+                  case qres of
+                      -- TBD Ignore mismatched response and get the next one
+                      Nothing -> die c "Response Mismatch" 
+                               [ "Make sure your Arduino is running Standard or Configurable Firmata"]
+                      Just qr -> send' c (k qr) B.empty
 
       send' :: ArduinoConnection -> Arduino a -> B.ByteString -> IO a
       send' c (Bind m k)            cmds = sendBind c m k cmds
