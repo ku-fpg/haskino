@@ -1,9 +1,9 @@
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  System.Hardware.DeepArduino.SamplePrograms.Analog
---                Based on System.Hardware.Arduino.comm
+--                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
---                System.Hardware.Arduino.comm (c) Levent Erkok
+--                System.Hardware.Arduino (c) Levent Erkok
 -- License     :  BSD3
 -- Stability   :  experimental
 --
@@ -13,8 +13,6 @@
 module System.Hardware.DeepArduino.SamplePrograms.Analog where
 
 import Control.Monad (when)
-import Data.Bits (shiftL)
-import Data.Word (Word16)
 
 import System.Hardware.DeepArduino.Data
 import System.Hardware.DeepArduino.Comm
@@ -38,13 +36,13 @@ analogVal = do
       setPinMode led OUTPUT
       setPinMode pot ANALOG
       analogReport pot True
-      cur <- analogPinRead pot
+      cur <- analogRead pot
       return cur
     
     loop conn led first pot
   where
     loop conn pin cur pot = do
-      new <- send conn (analogPinRead pot)
+      new <- send conn (analogRead pot)
       when (cur /= new) $ print new
       send conn $ blinkRate pin new
       loop conn pin new pot 

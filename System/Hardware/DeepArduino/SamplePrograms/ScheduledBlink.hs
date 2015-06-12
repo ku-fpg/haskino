@@ -1,20 +1,20 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Arduino.SamplePrograms.ScheduledBlink
--- Copyright   :  (c) Levent Erkok
+-- Module      :  System.Hardware.DeepArduino.SamplePrograms.ScheduledBlink
+--                Based on System.Hardware.Arduino
+-- Copyright   :  (c) University of Kansas
+--                System.Hardware.Arduino (c) Levent Erkok
 -- License     :  BSD3
--- Maintainer  :  erkokl@gmail.com
 -- Stability   :  experimental
 --
 -- The /hello world/ of the arduino world, blinking the led.
+-- This version is done by creating a scheduled task on the Arduino which
+-- blinks the LED on and off without host intervention.
 -------------------------------------------------------------------------------
 
 module ScheduledBlink where
 
 import Control.Monad (forever)
-
-import Data.Bits (shiftL)
-import Data.Word (Word16)
 
 import System.Hardware.DeepArduino.Data
 import System.Hardware.DeepArduino.Comm

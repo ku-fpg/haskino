@@ -1,9 +1,9 @@
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  System.Hardware.DeepArduino.SamplePrograms.ButtonWait
---                Based on System.Hardware.Arduino.comm
+--                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
---                System.Hardware.Arduino.comm (c) Levent Erkok
+--                System.Hardware.Arduino (c) Levent Erkok
 -- License     :  BSD3
 -- Stability   :  experimental
 --
@@ -11,10 +11,6 @@
 -------------------------------------------------------------------------------
 
 module System.Hardware.DeepArduino.SamplePrograms.Button where
-
-import Control.Monad (when)
-import Data.Bits (shiftL)
-import Data.Word (Word16)
 
 import System.Hardware.DeepArduino.Data
 import System.Hardware.DeepArduino.Comm

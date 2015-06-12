@@ -1,9 +1,9 @@
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  System.Hardware.DeepArduino.SamplePrograms.Blink
---                Based on System.Hardware.Arduino.comm
+--                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
---                System.Hardware.Arduino.comm (c) Levent Erkok
+--                System.Hardware.Arduino (c) Levent Erkok
 -- License     :  BSD3
 -- Stability   :  experimental
 --
@@ -13,8 +13,6 @@
 module Blink where
 
 import Control.Monad (forever)
-
-import Data.Bits (shiftL)
 
 import System.Hardware.DeepArduino.Data
 import System.Hardware.DeepArduino.Comm
