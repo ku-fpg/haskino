@@ -178,16 +178,32 @@ send conn commands =
       sendLocal :: ArduinoConnection -> Local a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendLocal c (AnalogPinRead p) k cmds = do
           sendToArduino c cmds
-          a <- analogRead c p
+          a <- runAnalogRead c p
           send' c (k (fromIntegral a)) B.empty
--- TBD need to finish Locals, complete digtial port read and add waits
+-- TBD need to finish Locals, complete digtial port read
       sendLocal c (DigitalPortRead p) k cmds = do
           sendToArduino c cmds
-          send' c (k (digPortRead p)) B.empty
+          send' c (k (runDigitalPortRead p)) B.empty
       sendLocal c (DigitalPinRead p) k cmds = do
           sendToArduino c cmds
-          b <- digitalRead c p
+          b <- runDigitalPinRead c p
           send' c (k b) B.empty
+      sendLocal c (WaitFor p) k cmds = do
+          sendToArduino c cmds
+          b <- runWaitFor c p
+          send' c (k b) B.empty
+      sendLocal c (WaitAny ps) k cmds = do
+          sendToArduino c cmds
+          bs <- runWaitAny c ps
+          send' c (k bs) B.empty
+      sendLocal c (WaitAnyHigh ps) k cmds = do
+          sendToArduino c cmds
+          bs <- runWaitAnyHigh c ps
+          send' c (k bs) B.empty
+      sendLocal c (WaitAnyLow ps) k cmds = do
+          sendToArduino c cmds
+          bs <- runWaitAnyLow c ps
+          send' c (k bs) B.empty
 
       sendQuery :: ArduinoConnection -> Query a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendQuery c query k cmds = do

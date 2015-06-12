@@ -16,8 +16,10 @@
 module System.Hardware.DeepArduino.Data where
 
 import           Control.Applicative
-import           Control.Concurrent (Chan, MVar, ThreadId, withMVar, modifyMVar, modifyMVar_, putMVar, takeMVar)
-import           Control.Monad (ap, liftM2, when)
+import           Control.Concurrent (Chan, MVar, ThreadId, withMVar, modifyMVar, 
+                                     modifyMVar_, putMVar, takeMVar, readMVar,
+                                     newEmptyMVar)
+import           Control.Monad (ap, liftM2, when, unless, void)
 
 import           Data.Bits ((.|.), (.&.), setBit)
 import           Data.List (intercalate)
@@ -309,7 +311,10 @@ data Local :: * -> * where
      DigitalPortRead  :: Port -> Local Word8          -- ^ Read the values on a port digitally
      DigitalPinRead   :: Pin -> Local Bool            -- ^ Read the avlue ona pin digitally
      AnalogPinRead    :: Pin -> Local Word16          -- ^ Read the analog value on a pin
-
+     WaitFor          :: Pin -> Local Bool
+     WaitAny          :: [Pin] -> Local [Bool]
+     WaitAnyHigh      :: [Pin] -> Local [Bool]
+     WaitAnyLow       :: [Pin] -> Local [Bool]
 deriving instance Show a => Show (Local a)
 
 digitalPortRead :: Port -> Arduino Word8
@@ -318,15 +323,27 @@ digitalPortRead p = Local $ DigitalPortRead p
 digitalPinRead :: Pin -> Arduino Bool
 digitalPinRead p = Local $ DigitalPinRead p
 
-analogPinRead :: Pin -> Arduino Word16
-analogPinRead p = Local $ AnalogPinRead p
+analogRead :: Pin -> Arduino Word16
+analogRead p = Local $ AnalogPinRead p
+
+waitFor :: Pin -> Arduino Bool
+waitFor p = Local $ WaitFor p
+
+waitAny :: [Pin] -> Arduino [Bool]
+waitAny ps = Local $ WaitAny ps
+
+waitAnyHigh :: [Pin] -> Arduino [Bool]
+waitAnyHigh ps = Local $ WaitAnyHigh ps
+
+waitAnyLow :: [Pin] -> Arduino [Bool]
+waitAnyLow ps = Local $ WaitAnyLow ps
 
 -- | Read the value of a pin in digital mode; this is a non-blocking call, returning
 -- the current value immediately. See 'waitFor' for a version that waits for a change
 -- in the pin first.
-digitalRead :: ArduinoConnection -> Pin -> IO Bool
-digitalRead c p' = do
-   (_, pd) <- convertAndCheckPin c "digitalRead" p' INPUT
+runDigitalPinRead :: ArduinoConnection -> Pin -> IO Bool
+runDigitalPinRead c p' = do
+   (_, pd) <- convertAndCheckPin c "runDigitalPinRead" p' INPUT
    return $ case pinValue pd of
               Just (Left v) -> v
               _             -> False -- no (correctly-typed) value reported yet, default to False
@@ -335,15 +352,68 @@ digitalRead c p' = do
 -- returning the last sampled value. It returns @0@ if the voltage on the pin
 -- is 0V, and @1023@ if it is 5V, properly scaled. (See `setAnalogSamplingInterval` for
 -- sampling frequency.)
-analogRead :: ArduinoConnection -> Pin -> IO Int
-analogRead c p' = do
-   (_, pd) <- convertAndCheckPin c "analogRead" p' ANALOG
+runAnalogRead :: ArduinoConnection -> Pin -> IO Int
+runAnalogRead c p' = do
+   (_, pd) <- convertAndCheckPin c "runAnalogRead" p' ANALOG
    return $ case pinValue pd of
               Just (Right v) -> v
               _              -> 0 -- no (correctly-typed) value reported yet, default to 0
 
-digPortRead :: Port -> Word8
-digPortRead _ = 10 :: Word8
+-- | Read the value of a port in digital mode; this is a non-blocking call, returning
+-- the current value immediately. See 'waitAny' for a version that waits for a change
+-- in the port first.
+runDigitalPortRead :: Port -> Word8
+runDigitalPortRead _ = 10 :: Word8
+
+-- | Wait for a change in the value of the digital input pin. Returns the new value.
+-- Note that this is a blocking call. For a non-blocking version, see 'digitalRead', which returns the current
+-- value of a pin immediately.
+runWaitFor :: ArduinoConnection -> Pin -> IO Bool
+runWaitFor c p = head `fmap` (runWaitAny c) [p]
+
+-- | Wait for a change in any of the given pins. Once a change is detected, all the new values are
+-- returned. Similar to 'waitFor', but is useful when we are watching multiple digital inputs.
+runWaitAny :: ArduinoConnection -> [Pin] -> IO [Bool]
+runWaitAny c ps = map snd `fmap` (runWaitGeneric c) ps
+
+-- | Wait for any of the given pins to go from low to high. If all of the pins are high to start
+-- with, then we first wait for one of them to go low, and then wait for one of them to go back high.
+-- Returns the new values.
+runWaitAnyHigh :: ArduinoConnection -> [Pin] -> IO [Bool]
+runWaitAnyHigh c ps = do
+   curVals <- mapM (runDigitalPinRead c) ps
+   when (and curVals) $ void $ runWaitAnyLow c ps   -- all are H to start with, wait for at least one to go low
+   vs <- runWaitGeneric c ps  -- wait for some change
+   if (False, True) `elem` vs
+      then return $ map snd vs
+      else runWaitAnyHigh c ps
+
+-- | Wait for any of the given pins to go from high to low. If all of the pins are low to start
+-- with, then we first wait for one of them to go high, and then wait for one of them to go back low.
+-- Returns the new values.
+runWaitAnyLow :: ArduinoConnection -> [Pin] -> IO [Bool]
+runWaitAnyLow c ps = do
+   curVals <- mapM (runDigitalPinRead c) ps
+   unless (or curVals) $ void $ runWaitAnyHigh c ps   -- all are L to start with, wait for at least one to go high
+   vs <- runWaitGeneric c ps  -- wait for some change
+   if (True, False) `elem` vs
+      then return $ map snd vs
+      else runWaitAnyLow c ps
+
+-- | A utility function, waits for any change on any given pin
+-- and returns both old and new values. It's guaranteed that
+-- at least one returned pair have differing values.
+runWaitGeneric :: ArduinoConnection -> [Pin] -> IO [(Bool, Bool)]
+runWaitGeneric c ps = do
+   curVals <- mapM (runDigitalPinRead c) ps
+   semaphore <- newEmptyMVar
+   let wait = do digitalWakeUp c semaphore
+                 readMVar semaphore
+                 newVals <- mapM (runDigitalPinRead c) ps
+                 if curVals == newVals
+                    then wait
+                    else return $ zip curVals newVals
+   wait
 
 createTask :: TaskID -> Arduino () -> Arduino ()
 createTask tid ps = Procedure (CreateTask tid ps)
@@ -414,30 +484,11 @@ getPinData c p = do
                       ["Make sure that you use 'setPinMode' to configure this pin first."]
        Just pd -> return pd
 
--- | Given a pin, collect the digital value corresponding to the
--- port it belongs to, where the new value of the current pin is given
--- The result is two bytes:
---
---   * First  lsb: pins 0-6 on the port
---   * Second msb: pins 7-13 on the port
---
--- In particular, the result is suitable to be sent with a digital message
-computePortData :: ArduinoConnection -> IPin -> Bool -> IO (Word8, Word8)
-computePortData c curPin newValue = do
-  let curPort  = pinPort curPin
-  let curIndex = pinPortIndex curPin
-  let bs = boardState c
-  modifyMVar bs $ \bst -> do
-     let values = [(pinPortIndex p, pinValue pd) | (p, pd) <- M.assocs (pinStates bst), curPort == pinPort p, pinMode pd `elem` [INPUT, OUTPUT]]
-         getVal i
-           | i == curIndex                             = newValue
-           | Just (Just (Left v)) <- i `lookup` values = v
-           | True                                      = False
-         [b0, b1, b2, b3, b4, b5, b6, b7] = map getVal [0 .. 7]
-         lsb = foldr (\(i, b) m -> if b then m `setBit` i     else m) 0 (zip [0..] [b0, b1, b2, b3, b4, b5, b6])
-         msb = foldr (\(i, b) m -> if b then m `setBit` (i-7) else m) 0 (zip [7..] [b7])
-         bst' = bst{pinStates = M.insert curPin PinData{pinMode = OUTPUT, pinValue = Just (Left newValue)}(pinStates bst)}
-     return (bst', (lsb, msb))
+-- | Keep track of listeners on a digital message
+digitalWakeUp :: ArduinoConnection -> MVar () -> IO ()
+digitalWakeUp c semaphore = do
+    let bs = boardState c
+    modifyMVar_ bs $ \bst -> return bst{digitalWakeUpQueue = semaphore : digitalWakeUpQueue bst}
 
 -- | Firmata commands, see: http://firmata.org/wiki/Protocol#Message_Types
 data FirmataCmd = ANALOG_MESSAGE      IPin -- ^ @0xE0@ pin
