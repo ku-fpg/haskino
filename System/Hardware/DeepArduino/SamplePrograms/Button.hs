@@ -35,16 +35,13 @@ button = do
     -- digital port.  History storage in the connection ala hArduino is not
     -- yet completely reimplementd (plus that is not possible as a Firmata
     -- Scheduled Task), so for now the entire 8 bit port is written.
-    let but = digital 2
-    let ibut = getInternalPin conn but
-    let butPort = pinPort ibut
-
+    let but = digital 3
     let led = digital 13
 
     first <- send conn $ do 
       setPinMode but INPUT
       setPinMode led OUTPUT
-      digitalReport butPort True
+      digitalPinReport but True
       cur <- digitalPinRead but
       return cur
     

@@ -48,6 +48,7 @@ packageProcedure :: ArduinoConnection -> Procedure -> B.ByteString
 packageProcedure c SystemReset              = nonSysEx SYSTEM_RESET            []
 packageProcedure c (AnalogReport  p b)      = nonSysEx (REPORT_ANALOG_PIN (getInternalPin c p))   [if b then 1 else 0]
 packageProcedure c (DigitalReport p b)      = nonSysEx (REPORT_DIGITAL_PORT p) [if b then 1 else 0]
+packageProcedure c (DigitalPinReport p b)   = nonSysEx (REPORT_DIGITAL_PORT $ pinPort $ getInternalPin c p) [if b then 1 else 0]
 packageProcedure c (SetPinMode p m)         = nonSysEx SET_PIN_MODE            [fromIntegral $ pinNo $ getInternalPin c p, fromIntegral $ fromEnum m]
 packageProcedure c (DigitalPortWrite p l m) = nonSysEx (DIGITAL_MESSAGE p)     [l, m]
 packageProcedure c (DigitalPinWrite p b)    = nonSysEx SET_DIGITAL_PIN_VALUE   [fromIntegral $ pinNo $ getInternalPin c p, if b then 1 else 0]

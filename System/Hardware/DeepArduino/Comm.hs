@@ -144,6 +144,16 @@ send conn commands =
       sendBind c (Procedure (SetPinMode p pm)) k cmds = do
           registerPinMode c (getInternalPin c p) pm
           send' c (k ()) (B.append cmds (packageProcedure c (SetPinMode p pm)))
+      sendBind c (Procedure (DigitalReport p r)) k cmds = do
+          shouldSend <- registerDigitalPortReport c p r
+          if shouldSend 
+          then send' c (k ()) (B.append cmds (packageProcedure c (DigitalReport p r)))
+          else send' c (k ()) cmds
+      sendBind c (Procedure (DigitalPinReport p r)) k cmds = do
+          shouldSend <- registerDigitalPinReport c (getInternalPin c p) r
+          if shouldSend 
+          then send' c (k ()) (B.append cmds (packageProcedure c (DigitalPinReport p r)))
+          else send' c (k ()) cmds
       sendBind c (Procedure cmd) k cmds = send' c (k ()) (B.append cmds (packageProcedure c cmd))
       sendBind c (Local local)   k cmds = sendLocal c local k cmds
       sendBind c (Query query)   k cmds = sendQuery c query k cmds
@@ -177,7 +187,8 @@ send conn commands =
 
       sendToArduino :: ArduinoConnection -> B.ByteString -> IO ()
       sendToArduino conn cmds = do
-          message conn $ "Sending: " ++ show (encode cmds)
+          when (lp /= 0) 
+               (message conn $ "Sending: " ++ show (encode cmds))
           sent <- liftIO $ S.send (port conn) cmds
           when (sent /= lp)
                (message conn $ "Send failed. Tried: " ++ show lp ++ "bytes, reported: " ++ show sent)

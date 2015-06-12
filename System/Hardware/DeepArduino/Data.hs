@@ -16,7 +16,7 @@
 module System.Hardware.DeepArduino.Data where
 
 import           Control.Applicative
-import           Control.Concurrent (Chan, MVar, ThreadId, withMVar, modifyMVar, modifyMVar_)
+import           Control.Concurrent (Chan, MVar, ThreadId, withMVar, modifyMVar, modifyMVar_, putMVar, takeMVar)
 import           Control.Monad (ap, liftM2, when)
 
 import           Data.Bits ((.|.), (.&.), setBit)
@@ -31,6 +31,7 @@ import           System.Hardware.Serialport (SerialPort)
 
 import           System.Hardware.DeepArduino.Utils
 
+import Debug.Trace
 -----------------------------------------------------------------------------
 
 data Arduino :: * -> * where
@@ -143,7 +144,11 @@ convertAndCheckPin c what p' m = do
 -- | On the Arduino, pins are grouped into banks of 8.
 -- Given a pin, this function determines which port it belongs to
 pinPort :: IPin -> Port
-pinPort p = Port (pinNo p `quot` 8)
+pinPort p = Port $ pinNoPortNo $ pinNo p
+
+-- Given a pin number, this function determines which port it belongs to
+pinNoPortNo :: Word8 -> Word8
+pinNoPortNo n = n `quot` 8
 
 -- | On the Arduino, pins are grouped into banks of 8.
 -- Given a pin, this function determines which index it belongs to in its port
@@ -211,6 +216,7 @@ data Procedure =
        SystemReset                              -- ^ Send system reset
      | SetPinMode Pin PinMode                  -- ^ Set the mode on a pin
      | DigitalReport Port Bool                  -- ^ Digital report values on port enable/disable
+     | DigitalPinReport Pin Bool                  -- ^ Digital report values on port enable/disable
      | AnalogReport Pin Bool                   -- ^ Analog report values on pin enable/disable
      | DigitalPortWrite Port Word8 Word8        -- ^ Set the values on a port digitally
      | DigitalPinWrite Pin Bool                -- ^ Set the value on a pin digitally
@@ -240,6 +246,9 @@ setPinMode p pm = Procedure $ SetPinMode p pm
 
 digitalReport :: Port -> Bool -> Arduino ()
 digitalReport p b = Procedure $ DigitalReport p b
+
+digitalPinReport :: Pin -> Bool -> Arduino ()
+digitalPinReport p b = Procedure $ DigitalPinReport p b
 
 analogReport :: Pin -> Bool -> Arduino ()
 analogReport p b = Procedure $ AnalogReport p b
@@ -592,6 +601,31 @@ getSysExCommand 0x7F = Right SYSEX_REALTIME
 getSysExCommand 0x74 = Right PULSE
 getSysExCommand n    = Left n
 
+registerDigitalPinReport :: ArduinoConnection -> IPin -> Bool -> IO Bool
+registerDigitalPinReport c p r = registerDigitalReport c pins portNo r 
+  where
+    pn = pinNo p
+    pins = S.singleton pn
+    portNo = pinNoPortNo pn
+
+registerDigitalPortReport :: ArduinoConnection -> Port -> Bool -> IO Bool
+registerDigitalPortReport c p r = registerDigitalReport c pins pn r 
+  where
+    pn = portNo p
+    pins = S.fromList [(pn*8)..((pn*8+7))]
+
+registerDigitalReport :: ArduinoConnection -> S.Set Word8 -> Word8 -> Bool -> IO Bool
+registerDigitalReport c pins portNo r = do
+    bs <- takeMVar (boardState c)
+    let oldPins = digitalReportingPins bs
+    let newPins = if r then S.union oldPins pins else S.difference oldPins pins
+    putMVar (boardState c) bs {digitalReportingPins = newPins}
+    return $ if (r) then notEl oldPins
+                    else (el oldPins) && (notEl newPins) 
+  where
+    notEl ps = portNo `notElem` map pinNoPortNo (S.elems ps)
+    el ps = portNo `elem` map pinNoPortNo (S.elems ps)
+
 -- | Keep track of pin-mode changes
 registerPinMode :: ArduinoConnection -> IPin -> PinMode -> IO ()
 registerPinMode c p m = do
@@ -614,7 +648,7 @@ registerPinMode c p m = do
 data BoardState = BoardState {
                     boardCapabilities    :: BoardCapabilities   -- ^ Capabilities of the board
                   , analogReportingPins  :: S.Set IPin          -- ^ Which analog pins are reporting
-                  , digitalReportingPins :: S.Set IPin          -- ^ Which digital pins are reporting
+                  , digitalReportingPins :: S.Set Word8         -- ^ Which digital pins are reporting
                   , pinStates            :: M.Map IPin PinData  -- ^ For-each pin, store its data
                   , digitalWakeUpQueue   :: [MVar ()]           -- ^ Semaphore list to wake-up upon receiving a digital message
                   }
