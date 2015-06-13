@@ -23,9 +23,9 @@ import System.Hardware.DeepArduino.Comm
 -- repeat
 myTask :: Pin -> Arduino ()
 myTask led = do
-        digitalPinWrite led True
+        digitalWrite led True
         delay 1000
-        digitalPinWrite led False
+        digitalWrite led False
         delay 1000
         return ()
 

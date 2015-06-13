@@ -48,8 +48,8 @@ analogVal = do
       loop conn pin new pot 
 
     blinkRate pin rate = do
-      digitalPinWrite pin True
+      digitalWrite pin True
       delay $ fromIntegral rate
-      digitalPinWrite pin False
+      digitalWrite pin False
       delay $ fromIntegral rate
 

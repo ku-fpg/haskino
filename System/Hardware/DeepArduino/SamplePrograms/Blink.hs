@@ -26,8 +26,8 @@ blink = do
     send conn (setPinMode led OUTPUT)
     forever $ do 
         send conn $ do 
-            digitalPinWrite led True
+            digitalWrite led True
             delay 1000
-            digitalPinWrite led False
+            digitalWrite led False
             delay 1000
 

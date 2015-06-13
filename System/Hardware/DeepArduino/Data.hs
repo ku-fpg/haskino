@@ -219,7 +219,7 @@ data Procedure =
      | DigitalPinReport Pin Bool                  -- ^ Digital report values on port enable/disable
      | AnalogReport Pin Bool                   -- ^ Analog report values on pin enable/disable
      | DigitalPortWrite Port Word8 Word8        -- ^ Set the values on a port digitally
-     | DigitalPinWrite Pin Bool                -- ^ Set the value on a pin digitally
+     | DigitalWrite Pin Bool                    -- ^ Set the value on a pin digitally
      | AnalogPinWrite Pin Word8 Word8          -- ^ Send an analog-write; used for servo control
      | AnalogPinExtendedWrite Pin [Word8]      -- ^ 
      | SamplingInterval Word8 Word8             -- ^ Set the sampling interval
@@ -258,8 +258,8 @@ digitalPortWrite p w = Procedure $ DigitalPortWrite p w1 w2
   where
     [w1, w2] = word16ToArduinoBytes w
 
-digitalPinWrite :: Pin -> Bool -> Arduino ()
-digitalPinWrite p b = Procedure $ DigitalPinWrite p b
+digitalWrite :: Pin -> Bool -> Arduino ()
+digitalWrite p b = Procedure $ DigitalWrite p b
 
 analogPinWrite :: Pin -> Word16 -> Arduino ()
 analogPinWrite p w = Procedure $ AnalogPinWrite p w1 w2

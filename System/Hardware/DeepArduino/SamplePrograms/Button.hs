@@ -45,5 +45,5 @@ button = do
       new <- send conn (digitalPinRead pin)
       when (cur /= new) $ do 
             print new
-            send conn $ digitalPinWrite led new
+            send conn $ digitalWrite led new
       loop conn pin new led

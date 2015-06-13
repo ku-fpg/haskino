@@ -45,33 +45,33 @@ nonSysEx cmd bs = B.pack $ firmataCmdVal cmd : bs
 -- | Package a request as a sequence of bytes to be sent to the board
 -- using the Firmata protocol.
 packageProcedure :: ArduinoConnection -> Procedure -> IO B.ByteString
-packageProcedure c SystemReset              = 
-    return $ nonSysEx SYSTEM_RESET            []
-packageProcedure c (AnalogReport  p b)      = do
+packageProcedure c SystemReset = 
+    return $ nonSysEx SYSTEM_RESET []
+packageProcedure c (AnalogReport  p b) = do
     ipin <- getInternalPin c p
     return $ nonSysEx (REPORT_ANALOG_PIN ipin) [if b then 1 else 0]
-packageProcedure c (DigitalReport p b)      = 
+packageProcedure c (DigitalReport p b) = 
     return $ nonSysEx (REPORT_DIGITAL_PORT p) [if b then 1 else 0]
-packageProcedure c (DigitalPinReport p b)   = do
+packageProcedure c (DigitalPinReport p b) = do
     ipin <- getInternalPin c p
     return $ nonSysEx (REPORT_DIGITAL_PORT $ pinPort ipin) [if b then 1 else 0]
-packageProcedure c (SetPinMode p m)         = do
+packageProcedure c (SetPinMode p m) = do
     ipin <- getInternalPin c p
     return $ nonSysEx SET_PIN_MODE [fromIntegral $ pinNo ipin, fromIntegral $ fromEnum m]
 packageProcedure c (DigitalPortWrite p l m) = 
     return $ nonSysEx (DIGITAL_MESSAGE p) [l, m]
-packageProcedure c (DigitalPinWrite p b)    = do
+packageProcedure c (DigitalWrite p b)  = do
     ipin <- getInternalPin c p
     return $ nonSysEx SET_DIGITAL_PIN_VALUE [fromIntegral $ pinNo ipin, if b then 1 else 0]
-packageProcedure c (AnalogPinWrite p l m)   = do
+packageProcedure c (AnalogPinWrite p l m) = do
     ipin <- getInternalPin c p
     return $ nonSysEx (ANALOG_MESSAGE ipin) [l, m]
 packageProcedure c (AnalogPinExtendedWrite p w8s) = do
     ipin <- getInternalPin c p
     return $ sysEx EXTENDED_ANALOG ([fromIntegral $ pinNo ipin] ++ (arduinoEncodedL w8s))
-packageProcedure c (SamplingInterval l m)   =
+packageProcedure c (SamplingInterval l m) =
     return $ sysEx SAMPLING_INTERVAL [l, m]
-packageProcedure c (I2CWrite m sa w16s)     = 
+packageProcedure c (I2CWrite m sa w16s) = 
     return $ sysEx I2C_REQUEST ((packageI2c m False sa Nothing) ++
                                (words16ToArduinoBytes w16s)) 
 -- TBD Finish packaging for I2C and Stepper

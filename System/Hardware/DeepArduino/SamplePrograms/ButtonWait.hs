@@ -41,10 +41,10 @@ buttonWait = do
     loop conn pin led = do
       send conn $ do
         waitAnyHigh [pin]
-        digitalPinWrite led True
+        digitalWrite led True
       putStrLn "Button Pressed"
       send conn $ do 
         waitAnyLow [pin]
-        digitalPinWrite led False
+        digitalWrite led False
       putStrLn "Button Released"
       loop conn pin led
