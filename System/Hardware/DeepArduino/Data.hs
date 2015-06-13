@@ -310,7 +310,7 @@ scheduleReset = Procedure ScheduleReset
 data Local :: * -> * where
      DigitalPortRead  :: Port -> Local Word8          -- ^ Read the values on a port digitally
      DigitalPinRead   :: Pin -> Local Bool            -- ^ Read the avlue ona pin digitally
-     AnalogPinRead    :: Pin -> Local Word16          -- ^ Read the analog value on a pin
+     AnalogRead       :: Pin -> Local Word16          -- ^ Read the analog value on a pin
      WaitFor          :: Pin -> Local Bool
      WaitAny          :: [Pin] -> Local [Bool]
      WaitAnyHigh      :: [Pin] -> Local [Bool]
@@ -324,7 +324,7 @@ digitalPinRead :: Pin -> Arduino Bool
 digitalPinRead p = Local $ DigitalPinRead p
 
 analogRead :: Pin -> Arduino Word16
-analogRead p = Local $ AnalogPinRead p
+analogRead p = Local $ AnalogRead p
 
 waitFor :: Pin -> Arduino Bool
 waitFor p = Local $ WaitFor p
@@ -362,8 +362,12 @@ runAnalogRead c p' = do
 -- | Read the value of a port in digital mode; this is a non-blocking call, returning
 -- the current value immediately. See 'waitAny' for a version that waits for a change
 -- in the port first.
-runDigitalPortRead :: Port -> Word8
-runDigitalPortRead _ = 10 :: Word8
+runDigitalPortRead :: ArduinoConnection -> Port -> IO Word8
+runDigitalPortRead c p = do
+    let bs = boardState c
+    let err = bailOut c
+    withMVar bs $ \bst ->
+       return $ M.findWithDefault 0 p (portStates bst)
 
 -- | Wait for a change in the value of the digital input pin. Returns the new value.
 -- Note that this is a blocking call. For a non-blocking version, see 'digitalRead', which returns the current
@@ -480,8 +484,8 @@ getPinData c p = do
   let err = bailOut c
   withMVar bs $ \bst ->
      case p `M.lookup` pinStates bst of
-       Nothing -> err ("Trying to access " ++ show p ++ " without proper configuration.")
-                      ["Make sure that you use 'setPinMode' to configure this pin first."]
+       Nothing -> err ("Trying to access " ++ show p ++ " without proper setup.")
+                      ["Make sure that you use 'digitalPinReport' to configure this pin first."]
        Just pd -> return pd
 
 -- | Keep track of listeners on a digital message
@@ -698,6 +702,7 @@ data BoardState = BoardState {
                     boardCapabilities    :: BoardCapabilities   -- ^ Capabilities of the board
                   , digitalReportingPins :: S.Set Word8         -- ^ Which digital pins are reporting
                   , pinStates            :: M.Map IPin PinData  -- ^ For-each pin, store its data
+                  , portStates           :: M.Map Port Word8    -- ^ For-each digital port, store its data
                   , digitalWakeUpQueue   :: [MVar ()]           -- ^ Semaphore list to wake-up upon receiving a digital message
                   }
 

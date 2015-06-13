@@ -118,7 +118,7 @@ packageTaskData conn commands =
       -- Queries will work, but receiving them is problematic at the moment.
       -- Instead of signalling an error, at this point they are just ignored.
       packLocal :: ArduinoConnection -> Local a -> (a -> Arduino b) -> IO B.ByteString -> IO B.ByteString
-      packLocal c (AnalogPinRead _) k cmds = do
+      packLocal c (AnalogRead _) k cmds = do
           cs <- cmds 
           packageTaskData' c (k 0) cs
       packLocal c (DigitalPortRead _) k cmds = do

@@ -71,6 +71,7 @@ openArduino verbose fp = do
                                    boardCapabilities    = BoardCapabilities M.empty
                                  , digitalReportingPins = S.empty
                                  , pinStates            = M.empty
+                                 , portStates           = M.empty
                                  , digitalWakeUpQueue   = []
                                 }
           bs <- newMVar initBoardState
@@ -179,14 +180,14 @@ send conn commands =
       sendBind c (Query query)   k cmds = sendQuery c query k cmds
 
       sendLocal :: ArduinoConnection -> Local a -> (a -> Arduino b) -> B.ByteString -> IO b
-      sendLocal c (AnalogPinRead p) k cmds = do
+      sendLocal c (AnalogRead p) k cmds = do
           sendToArduino c cmds
           a <- runAnalogRead c p
           send' c (k (fromIntegral a)) B.empty
--- TBD need to finish Locals, complete digtial port read
       sendLocal c (DigitalPortRead p) k cmds = do
           sendToArduino c cmds
-          send' c (k (runDigitalPortRead p)) B.empty
+          w <- runDigitalPortRead c p
+          send' c (k w) B.empty
       sendLocal c (DigitalPinRead p) k cmds = do
           sendToArduino c cmds
           b <- runDigitalPinRead c p
@@ -293,6 +294,7 @@ setupListener serial dbg chan bs = do
                                                                      | True     = h `testBit` fromIntegral (idx - 7)
                                                   let wakeUpQ = digitalWakeUpQueue bst
                                                       bst' = bst{ pinStates          = M.mapWithKey upd (pinStates bst)
+                                                                , portStates         = M.insert p (fromArduinoByte (l,h)) (portStates bst)
                                                                 , digitalWakeUpQueue = []
                                                                 }
                                                   mapM_ (`putMVar` ()) wakeUpQ
