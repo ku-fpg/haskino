@@ -25,6 +25,7 @@ import Data.Bits            (testBit, (.&.))
 import Data.List            (intercalate)
 import Data.Maybe           (listToMaybe)
 import System.Hardware.Serialport (SerialPort)
+import System.IO.Error      (tryIOError)
 import System.Timeout       (timeout)
 
 
@@ -58,69 +59,71 @@ openArduino :: Bool                 -- ^ If 'True', debugging info will be print
             -> FilePath             -- ^ Path to the Serial port
             -> IO ArduinoConnection
 openArduino verbose fp = do
-        debugger <- mkDebugPrinter verbose
-        debugger $ "Accessing arduino located at: " ++ show fp
-        listenerTid <- newEmptyMVar
-        port <- S.openSerial fp S.defaultSerialSettings{S.commSpeed = S.CS57600}
-        -- TBD Handle cable not connected exception
-        let initBoardState = BoardState {
-                                 boardCapabilities    = BoardCapabilities M.empty
-                               , digitalReportingPins = S.empty
-                               , pinStates            = M.empty
-                               , digitalWakeUpQueue   = []
-                              }
-        bs <- newMVar initBoardState
-        dc <- newChan
-        tid <- setupListener port debugger dc bs
-        liftIO $ putMVar listenerTid tid
-        debugger $ "Started listener thread: " ++ show tid
-        let initState = ArduinoConnection {
-                           message       = debugger
-                         , bailOut       = bailOut listenerTid
-                         , port          = port
-                         , firmataID     = "Unknown"
-                         , capabilities  = BoardCapabilities M.empty
-                         , boardState    = bs
-                         , deviceChannel = dc
-                         , listenerTid   = listenerTid
-                      }
-        -- Step 1: Send a reset to get things going
-        send initState systemReset
-        -- Step 2: Send query-firmware, and wait until we get a response
-        -- TBD Need to handle no response instance with Queries returning maybies
-        (v1, v2, s) <- send initState queryFirmware
-        let versionState = initState {firmataID = "Firmware v" ++ show v1 ++ "." ++ show v2 ++ "(" ++ s ++ ")"}
-        -- Step 3: Send a capabilities request
-        bc <- send versionState capabilityQuery
-        -- Step 4: Send an analog mapping query
-        am <- send versionState analogMappingQuery
-        -- Use the board capabilities and the analog mapping to create new
-        -- board capabilities
-        let BoardCapabilities m = bc
-        let newBc = BoardCapabilities (M.mapWithKey (mapAnalog am) m)
-        -- Update the capabilities in the connection state
-        let openState = versionState {capabilities = newBc}
-        -- Update the capabilities in the board state, and put new 
-        -- board state in the connetion state
-        modifyMVar_ (boardState openState) $ \bst -> return initBoardState {boardCapabilities = newBc}
-        return openState
-    where
-        bailOut tid m ms = do cleanUpArduino tid
-                              error $ "\n*** DeepArduino:ERROR: " ++ intercalate "\n*** " (m:ms)
-        mapAnalog as p c
-            | i < rl && m /= 0x7f
-            = c{analogPinNumber = Just m}
-            | True             -- out-of-bounds, or not analog; ignore
-            = c
-          where rl = length as
-                i  = fromIntegral (pinNo p)
-                m  = as !! i
+      debugger <- mkDebugPrinter verbose
+      debugger $ "Accessing arduino located at: " ++ show fp
+      listenerTid <- newEmptyMVar
+      portTry <- tryIOError (S.openSerial fp S.defaultSerialSettings{S.commSpeed = S.CS57600})
+      case portTry of 
+        Left e -> 
+          error $ "\n*** DeepArduino:ERROR:\n*** Make sure your Arduino is connected to " ++ fp
+        Right port -> do
+          let initBoardState = BoardState {
+                                   boardCapabilities    = BoardCapabilities M.empty
+                                 , digitalReportingPins = S.empty
+                                 , pinStates            = M.empty
+                                 , digitalWakeUpQueue   = []
+                                }
+          bs <- newMVar initBoardState
+          dc <- newChan
+          tid <- setupListener port debugger dc bs
+          liftIO $ putMVar listenerTid tid
+          debugger $ "Started listener thread: " ++ show tid
+          let initState = ArduinoConnection {
+                             message       = debugger
+                           , bailOut       = bailOut listenerTid
+                           , port          = port
+                           , firmataID     = "Unknown"
+                           , capabilities  = BoardCapabilities M.empty
+                           , boardState    = bs
+                           , deviceChannel = dc
+                           , listenerTid   = listenerTid
+                        }
+          -- Step 1: Send a reset to get things going
+          send initState systemReset
+          -- Step 2: Send query-firmware, and wait until we get a response
+          (v1, v2, s) <- send initState queryFirmware
+          let versionState = initState {firmataID = "Firmware v" ++ show v1 ++ "." ++ show v2 ++ "(" ++ s ++ ")"}
+          -- Step 3: Send a capabilities request
+          bc <- send versionState capabilityQuery
+          -- Step 4: Send an analog mapping query
+          am <- send versionState analogMappingQuery
+          -- Use the board capabilities and the analog mapping to create new
+          -- board capabilities
+          let BoardCapabilities m = bc
+          let newBc = BoardCapabilities (M.mapWithKey (mapAnalog am) m)
+          -- Update the capabilities in the connection state
+          let openState = versionState {capabilities = newBc}
+          -- Update the capabilities in the board state, and put new 
+          -- board state in the connetion state
+          modifyMVar_ (boardState openState) $ \bst -> return initBoardState {boardCapabilities = newBc}
+          return openState
+  where
+      bailOut tid m ms = do cleanUpArduino tid
+                            error $ "\n*** DeepArduino:ERROR: " ++ intercalate "\n*** " (m:ms)
+      mapAnalog as p c
+          | i < rl && m /= 0x7f
+          = c{analogPinNumber = Just m}
+          | True             -- out-of-bounds, or not analog; ignore
+          = c
+        where rl = length as
+              i  = fromIntegral (pinNo p)
+              m  = as !! i
 
 closeArduino :: ArduinoConnection -> IO ()
 closeArduino conn = do
-        cleanUpArduino $ listenerTid conn
-        S.closeSerial $ port conn
-        return ()
+      cleanUpArduino $ listenerTid conn
+      S.closeSerial $ port conn
+      return ()
 
 cleanUpArduino :: MVar ThreadId -> IO ()
 cleanUpArduino tid = do mbltid <- tryTakeMVar tid
@@ -133,9 +136,9 @@ withArduino :: Bool       -- ^ If 'True', debugging info will be printed
             -> Arduino () -- ^ The Haskell controller program to run
             -> IO ()
 withArduino verbose fp program = do 
-        conn <- openArduino verbose fp
-        send conn program
-        closeArduino conn  
+      conn <- openArduino verbose fp
+      send conn program
+      closeArduino conn  
 
 send :: ArduinoConnection -> Arduino a -> IO a
 send conn commands =
