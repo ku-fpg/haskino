@@ -465,7 +465,7 @@ data Response = Firmware Word8 Word8 String          -- ^ Firmware version (maj/
               | I2CReply Word16 Word16 [Word16]      -- ^ Response to a I2C Read
               | QueryAllTasksReply [Word8]           -- ^ Response to Query All Tasks
               | QueryTaskReply TaskID TaskTime TaskLength TaskPos [Word8]
-              | ErrorTaskReply TaskTime TaskLength TaskPos [Word8]
+              | ErrorTaskReply TaskID TaskTime TaskLength TaskPos [Word8]
               | Unimplemented (Maybe String) [Word8] -- ^ Represents messages currently unsupported
     deriving Show
 

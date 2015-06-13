@@ -192,7 +192,10 @@ unpackageSysEx (cmdWord:args)
           -- TBD Fix reply decode
           QUERY_TASK_REPLY | length ts >= 11 -> let tt0:tt1:tt2:tt3:tl0:tl1:tp0:tp1:td = arduinoDecoded (tail ts)
                                                 in QueryTaskReply (head ts) (bytesToWord32 (tt3,tt2,tt1,tt0)) (bytesToWord16 (tl1,tl0)) (bytesToWord16 (tp1,tp0)) td
-    -- TBD add other scheduler responses
+          ERROR_FIRMATA_TASK_REPLY | length ts == 1  -> ErrorTaskReply (ts !! 0) 0 0 0 []
+          -- TBD Fix reply decode
+          ERROR_FIRMATA_TASK_REPLY | length ts >= 11 -> let tt0:tt1:tt2:tt3:tl0:tl1:tp0:tp1:td = arduinoDecoded (tail ts)
+                                                in ErrorTaskReply (head ts) (bytesToWord32 (tt3,tt2,tt1,tt0)) (bytesToWord16 (tl1,tl0)) (bytesToWord16 (tp1,tp0)) td
       _                                      -> Unimplemented (Just (show cmd)) args
   | True
   = Unimplemented Nothing (cmdWord : args)
