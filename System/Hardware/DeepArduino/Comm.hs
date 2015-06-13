@@ -208,17 +208,22 @@ send conn commands =
       sendQuery :: ArduinoConnection -> Query a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendQuery c query k cmds = do
           sendToArduino c (B.append cmds (packageQuery query))
-          resp <- liftIO $ timeout 5000000 $ readChan $ deviceChannel c
-          case resp of 
-              Nothing -> die c "Response Timeout" 
-                               [ "Make sure your Arduino is running Standard or Configurable Firmata"]
-              Just r -> do 
-                  let qres = parseQueryResult query r
-                  case qres of
-                      -- TBD Ignore mismatched response and get the next one
-                      Nothing -> die c "Response Mismatch" 
-                               [ "Make sure your Arduino is running Standard or Configurable Firmata"]
-                      Just qr -> send' c (k qr) B.empty
+          wait c query k
+        where
+          wait :: ArduinoConnection -> Query a -> (a -> Arduino b) -> IO b
+          wait c query k = do
+            message c $ "Waiting for response"
+            resp <- liftIO $ timeout 5000000 $ readChan $ deviceChannel c
+            case resp of 
+                Nothing -> die c "Response Timeout" 
+                                 [ "Make sure your Arduino is running Standard or Configurable Firmata"]
+                Just r -> do 
+                    let qres = parseQueryResult query r
+                    case qres of
+                        -- Ignore responses that do not match expected response
+                        -- and wait for the next response.
+                        Nothing -> wait c query k
+                        Just qr -> send' c (k qr) B.empty
 
       send' :: ArduinoConnection -> Arduino a -> B.ByteString -> IO a
       send' c (Bind m k)            cmds = sendBind c m k cmds
