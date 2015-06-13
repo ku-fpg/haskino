@@ -343,7 +343,7 @@ waitAnyLow ps = Local $ WaitAnyLow ps
 -- in the pin first.
 runDigitalPinRead :: ArduinoConnection -> Pin -> IO Bool
 runDigitalPinRead c p' = do
-   (_, pd) <- convertAndCheckPin c "runDigitalPinRead" p' INPUT
+   (_, pd) <- convertAndCheckPin c "digitalPinRead" p' INPUT
    return $ case pinValue pd of
               Just (Left v) -> v
               _             -> False -- no (correctly-typed) value reported yet, default to False
@@ -354,7 +354,7 @@ runDigitalPinRead c p' = do
 -- sampling frequency.)
 runAnalogRead :: ArduinoConnection -> Pin -> IO Int
 runAnalogRead c p' = do
-   (_, pd) <- convertAndCheckPin c "runAnalogRead" p' ANALOG
+   (_, pd) <- convertAndCheckPin c "analogRead" p' ANALOG
    return $ case pinValue pd of
               Just (Right v) -> v
               _              -> 0 -- no (correctly-typed) value reported yet, default to 0
@@ -485,7 +485,7 @@ getPinData c p = do
   withMVar bs $ \bst ->
      case p `M.lookup` pinStates bst of
        Nothing -> err ("Trying to access " ++ show p ++ " without proper setup.")
-                      ["Make sure that you use 'digitalPinReport' to configure this pin first."]
+                      ["Make sure that you use 'setPinMode' to configure this pin first."]
        Just pd -> return pd
 
 -- | Keep track of listeners on a digital message
