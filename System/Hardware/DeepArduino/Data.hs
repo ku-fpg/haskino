@@ -430,6 +430,7 @@ data Query :: * -> * where
      AnalogMappingQuery :: Query [Word8]              -- ^ Query the mapping of analog pins
      Pulse :: IPin -> Bool -> Word32 -> Word32 -> Query Word32 -- ^ Request for a pulse reading on a pin, value, duration, timeout
      I2CRead :: I2CAddrMode -> SlaveAddress -> Maybe SlaveRegister -> Query [Word16]
+     -- TBD add one wire queries
      QueryAllTasks :: Query [TaskID]
      QueryTask :: TaskID -> Query (TaskID, TaskTime, TaskLength, TaskPos, [Word8])
 
