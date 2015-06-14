@@ -188,9 +188,9 @@ send conn commands =
           sendToArduino c cmds
           w <- runDigitalPortRead c p
           send' c (k w) B.empty
-      sendLocal c (DigitalPinRead p) k cmds = do
+      sendLocal c (DigitalRead p) k cmds = do
           sendToArduino c cmds
-          b <- runDigitalPinRead c p
+          b <- runDigitalRead c p
           send' c (k b) B.empty
       sendLocal c (WaitFor p) k cmds = do
           sendToArduino c cmds

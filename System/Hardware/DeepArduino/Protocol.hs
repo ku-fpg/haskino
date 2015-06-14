@@ -144,7 +144,7 @@ packageTaskData conn commands =
       packLocal c (DigitalPortRead _) k cmds = do
           cs <- cmds 
           packageTaskData' c (k 0) cs
-      packLocal c (DigitalPinRead _) k cmds = do
+      packLocal c (DigitalRead _) k cmds = do
           cs <- cmds 
           packageTaskData' c (k False) cs
 

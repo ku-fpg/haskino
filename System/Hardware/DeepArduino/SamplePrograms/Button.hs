@@ -35,14 +35,14 @@ button = do
     first <- send conn $ do 
       setPinMode but INPUT
       setPinMode led OUTPUT
-      digitalPinReport but True
-      cur <- digitalPinRead but
+      digitalReport but True
+      cur <- digitalRead but
       return cur
     
     loop conn but first led
   where
     loop conn pin cur led = do
-      new <- send conn (digitalPinRead pin)
+      new <- send conn (digitalRead pin)
       when (cur /= new) $ do 
             print new
             send conn $ digitalWrite led new

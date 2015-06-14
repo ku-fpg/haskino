@@ -210,7 +210,9 @@ type StepPerRev = Word16
 data I2CAddrMode = Bit7 | Bit10
       deriving Show
 data StepDelay = OneUs | TwoUs
+      deriving Show
 data StepDir = CW | CCW
+      deriving Show
 
 data Procedure =
        SystemReset                              -- ^ Send system reset
@@ -309,7 +311,7 @@ scheduleReset = Procedure ScheduleReset
 
 data Local :: * -> * where
      DigitalPortRead  :: Port -> Local Word8          -- ^ Read the values on a port digitally
-     DigitalPinRead   :: Pin -> Local Bool            -- ^ Read the avlue ona pin digitally
+     DigitalRead      :: Pin -> Local Bool            -- ^ Read the avlue ona pin digitally
      AnalogRead       :: Pin -> Local Word16          -- ^ Read the analog value on a pin
      WaitFor          :: Pin -> Local Bool
      WaitAny          :: [Pin] -> Local [Bool]
@@ -320,8 +322,8 @@ deriving instance Show a => Show (Local a)
 digitalPortRead :: Port -> Arduino Word8
 digitalPortRead p = Local $ DigitalPortRead p
 
-digitalPinRead :: Pin -> Arduino Bool
-digitalPinRead p = Local $ DigitalPinRead p
+digitalRead :: Pin -> Arduino Bool
+digitalRead p = Local $ DigitalRead p
 
 analogRead :: Pin -> Arduino Word16
 analogRead p = Local $ AnalogRead p
@@ -341,9 +343,9 @@ waitAnyLow ps = Local $ WaitAnyLow ps
 -- | Read the value of a pin in digital mode; this is a non-blocking call, returning
 -- the current value immediately. See 'waitFor' for a version that waits for a change
 -- in the pin first.
-runDigitalPinRead :: ArduinoConnection -> Pin -> IO Bool
-runDigitalPinRead c p' = do
-   (_, pd) <- convertAndCheckPin c "digitalPinRead" p' INPUT
+runDigitalRead :: ArduinoConnection -> Pin -> IO Bool
+runDigitalRead c p' = do
+   (_, pd) <- convertAndCheckPin c "digitalRead" p' INPUT
    return $ case pinValue pd of
               Just (Left v) -> v
               _             -> False -- no (correctly-typed) value reported yet, default to False
@@ -385,7 +387,7 @@ runWaitAny c ps = map snd `fmap` (runWaitGeneric c) ps
 -- Returns the new values.
 runWaitAnyHigh :: ArduinoConnection -> [Pin] -> IO [Bool]
 runWaitAnyHigh c ps = do
-   curVals <- mapM (runDigitalPinRead c) ps
+   curVals <- mapM (runDigitalRead c) ps
    when (and curVals) $ void $ runWaitAnyLow c ps   -- all are H to start with, wait for at least one to go low
    vs <- runWaitGeneric c ps  -- wait for some change
    if (False, True) `elem` vs
@@ -397,7 +399,7 @@ runWaitAnyHigh c ps = do
 -- Returns the new values.
 runWaitAnyLow :: ArduinoConnection -> [Pin] -> IO [Bool]
 runWaitAnyLow c ps = do
-   curVals <- mapM (runDigitalPinRead c) ps
+   curVals <- mapM (runDigitalRead c) ps
    unless (or curVals) $ void $ runWaitAnyHigh c ps   -- all are L to start with, wait for at least one to go high
    vs <- runWaitGeneric c ps  -- wait for some change
    if (True, False) `elem` vs
@@ -409,11 +411,11 @@ runWaitAnyLow c ps = do
 -- at least one returned pair have differing values.
 runWaitGeneric :: ArduinoConnection -> [Pin] -> IO [(Bool, Bool)]
 runWaitGeneric c ps = do
-   curVals <- mapM (runDigitalPinRead c) ps
+   curVals <- mapM (runDigitalRead c) ps
    semaphore <- newEmptyMVar
    let wait = do digitalWakeUp c semaphore
                  takeMVar semaphore
-                 newVals <- mapM (runDigitalPinRead c) ps
+                 newVals <- mapM (runDigitalRead c) ps
                  if curVals == newVals
                     then wait
                     else return $ zip curVals newVals
