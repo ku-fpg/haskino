@@ -16,8 +16,7 @@ module ScheduledBlink where
 
 import Control.Monad (forever)
 
-import System.Hardware.DeepArduino.Data
-import System.Hardware.DeepArduino.Comm
+import System.Hardware.DeepArduino
 
 -- Task which will execute on Arduino, blink on a second, off a second and
 -- repeat

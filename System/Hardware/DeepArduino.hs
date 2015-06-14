@@ -15,27 +15,37 @@
 -------------------------------------------------------------------------------
 module System.Hardware.DeepArduino (
   -- * Communication functions
-  openArduino, closeArduino, send, 
+  openArduino, closeArduino, withArduino, send
   -- * Deep embeddings
-  Arduino(..) , Procedure(..), Query(..), Local(..), TaskProcedure(..)
+  , Arduino(..) , Procedure(..), Query(..), Local(..)
   -- * Programming the Arduino
   -- ** Pins
-  , Pin(..), PinMode(..)--, setPinMode
-  -- , analog, digital, pin, Pin, PinMode(..)--, setPinMode
-  -- ** Analog input/output (PWM)
-  --, analogRead, analogWrite
-  -- ** Digital I/O
-  --, digitalWrite, digitalRead
+  , Pin, Port, pin, digital, analog, pinPort, PinMode(..), setPinMode
+  -- ** Gereral utils
+  , systemReset, queryFirmware, capabilityQuery, analogMappingQuery
+  ,samplingInterval
+  -- ** Digital IO
+  , digitalReport, digitalPortReport, digitalPortWrite, digitalWrite
+  , digitalPortRead, digitalRead 
   -- ** Programming with triggers
-  -- , waitFor, waitAny, waitAnyHigh, waitAnyLow
-  -- ** Receiving and sending pulses
-  --, pulse, pulseIn_hostTiming, pulseOut_hostTiming
-  -- * Misc utilities
-  --, setAnalogSamplingInterval, pullUpResistor, delay, time, timeOut
-  --, queryFirmware
+  , waitFor, waitAny, waitAnyHigh, waitAnyLow
+  -- ** Analog IO
+  , analogReport, analogPinWrite, analogPinExtendedWrite, analogRead
+  -- ** I2C
+  , SlaveAddress, SlaveRegister, I2CAddrMode(..), i2cRead, i2cWrite, i2cConfig
+  -- ** Pulse
+  , pulse
+  -- ** Servo
+  , MinPulse, MaxPulse, servoConfig
+  -- ** Scheduler
+  , TaskLength, TaskID, TaskTime, TaskPos, queryAllTasks, queryTask, createTask
+  , deleteTask, delay, scheduleTask, scheduleReset
+  -- ** Stepper
+  , StepDevice, NumSteps, StepSpeed, StepAccel, StepPerRev, StepDelay(..)
+  , StepDir(..), stepperConfig2Wire, stepperConfig4Wire, stepperConfigStepDir 
+  , stepperStep
  )
  where
 
 import System.Hardware.DeepArduino.Data
 import System.Hardware.DeepArduino.Comm
--- import System.Hardware.DeepArduino.Firmata

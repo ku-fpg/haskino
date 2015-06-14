@@ -12,8 +12,7 @@
 
 module System.Hardware.DeepArduino.SamplePrograms.Button where
 
-import System.Hardware.DeepArduino.Data
-import System.Hardware.DeepArduino.Comm
+import System.Hardware.DeepArduino
 
 -- | Wait for the value of a push-button (NO - normally open)
 -- connected to input pin 2 on the Arduino to change. We will 
@@ -34,7 +33,7 @@ buttonWait = do
     send conn $ do 
       setPinMode but INPUT
       setPinMode led OUTPUT
-      digitalPinReport but True
+      digitalReport but True
     
     loop conn but led
   where

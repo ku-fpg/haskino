@@ -14,8 +14,7 @@ module System.Hardware.DeepArduino.SamplePrograms.Analog where
 
 import Control.Monad (when)
 
-import System.Hardware.DeepArduino.Data
-import System.Hardware.DeepArduino.Comm
+import System.Hardware.DeepArduino
 
 -- | Read the value of an analog input line. We will print the value
 -- on the screen, and also blink a led on the Arduino based on the

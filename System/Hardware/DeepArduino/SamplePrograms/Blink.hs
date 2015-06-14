@@ -14,9 +14,7 @@ module Blink where
 
 import Control.Monad (forever)
 
-import System.Hardware.DeepArduino.Data
-import System.Hardware.DeepArduino.Comm
-
+import System.Hardware.DeepArduino
 
 blink :: IO ()
 blink = do

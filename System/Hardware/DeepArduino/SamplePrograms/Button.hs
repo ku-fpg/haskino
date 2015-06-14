@@ -14,8 +14,7 @@ module System.Hardware.DeepArduino.SamplePrograms.Button where
 
 import Control.Monad (when)
 
-import System.Hardware.DeepArduino.Data
-import System.Hardware.DeepArduino.Comm
+import System.Hardware.DeepArduino
 
 -- | Read the value of a push-button (NO - normally open)
 -- connected to input pin 2 on the Arduino. We will continuously
