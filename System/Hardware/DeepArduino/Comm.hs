@@ -158,19 +158,19 @@ send conn commands =
           registerPinMode c ipin pm
           proc <- packageProcedure c (SetPinMode p pm)
           send' c (k ()) (B.append cmds proc)
-      sendBind c (Procedure (DigitalReport p r)) k cmds = do
+      sendBind c (Procedure (DigitalPortReport p r)) k cmds = do
           shouldSend <- registerDigitalPortReport c p r
           if shouldSend 
           then do
-              proc <- packageProcedure c (DigitalReport p r) 
+              proc <- packageProcedure c (DigitalPortReport p r) 
               send' c (k ()) (B.append cmds proc)
           else send' c (k ()) cmds
-      sendBind c (Procedure (DigitalPinReport p r)) k cmds = do
+      sendBind c (Procedure (DigitalReport p r)) k cmds = do
           ipin <- getInternalPin c p
           shouldSend <- registerDigitalPinReport c ipin r
           if shouldSend 
           then do 
-              proc <- packageProcedure c (DigitalPinReport p r)
+              proc <- packageProcedure c (DigitalReport p r)
               send' c (k ()) (B.append cmds proc)
           else send' c (k ()) cmds
       sendBind c (Procedure cmd) k cmds = do 

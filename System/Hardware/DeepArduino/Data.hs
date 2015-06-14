@@ -216,14 +216,14 @@ data StepDir = CW | CCW
 
 data Procedure =
        SystemReset                              -- ^ Send system reset
-     | SetPinMode Pin PinMode                  -- ^ Set the mode on a pin
-     | DigitalReport Port Bool                  -- ^ Digital report values on port enable/disable
-     | DigitalPinReport Pin Bool                  -- ^ Digital report values on port enable/disable
-     | AnalogReport Pin Bool                   -- ^ Analog report values on pin enable/disable
+     | SetPinMode Pin PinMode                   -- ^ Set the mode on a pin
+     | DigitalPortReport Port Bool              -- ^ Digital report values on port enable/disable
+     | DigitalReport Pin Bool                   -- ^ Digital report values on port enable/disable
+     | AnalogReport Pin Bool                    -- ^ Analog report values on pin enable/disable
      | DigitalPortWrite Port Word8 Word8        -- ^ Set the values on a port digitally
      | DigitalWrite Pin Bool                    -- ^ Set the value on a pin digitally
-     | AnalogPinWrite Pin Word8 Word8          -- ^ Send an analog-write; used for servo control
-     | AnalogPinExtendedWrite Pin [Word8]      -- ^ 
+     | AnalogPinWrite Pin Word8 Word8           -- ^ Send an analog-write; used for servo control
+     | AnalogPinExtendedWrite Pin [Word8]       -- ^ 
      | SamplingInterval Word8 Word8             -- ^ Set the sampling interval
      | I2CWrite I2CAddrMode SlaveAddress [Word16]
      | I2CConfig Word16
@@ -246,11 +246,11 @@ systemReset = Procedure SystemReset
 setPinMode :: Pin -> PinMode -> Arduino ()
 setPinMode p pm = Procedure $ SetPinMode p pm
 
-digitalReport :: Port -> Bool -> Arduino ()
-digitalReport p b = Procedure $ DigitalReport p b
+digitalPortReport :: Port -> Bool -> Arduino ()
+digitalPortReport p b = Procedure $ DigitalPortReport p b
 
-digitalPinReport :: Pin -> Bool -> Arduino ()
-digitalPinReport p b = Procedure $ DigitalPinReport p b
+digitalReport :: Pin -> Bool -> Arduino ()
+digitalReport p b = Procedure $ DigitalReport p b
 
 analogReport :: Pin -> Bool -> Arduino ()
 analogReport p b = Procedure $ AnalogReport p b

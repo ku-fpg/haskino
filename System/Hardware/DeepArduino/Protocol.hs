@@ -50,9 +50,9 @@ packageProcedure c SystemReset =
 packageProcedure c (AnalogReport  p b) = do
     ipin <- getInternalPin c p
     return $ nonSysEx (REPORT_ANALOG_PIN ipin) [if b then 1 else 0]
-packageProcedure c (DigitalReport p b) = 
+packageProcedure c (DigitalPortReport p b) = 
     return $ nonSysEx (REPORT_DIGITAL_PORT p) [if b then 1 else 0]
-packageProcedure c (DigitalPinReport p b) = do
+packageProcedure c (DigitalReport p b) = do
     ipin <- getInternalPin c p
     return $ nonSysEx (REPORT_DIGITAL_PORT $ pinPort ipin) [if b then 1 else 0]
 packageProcedure c (SetPinMode p m) = do
