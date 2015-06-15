@@ -229,7 +229,7 @@ data Procedure =
      | I2CConfig Word16
      -- TBD add I2C continuous read
      | ServoConfig Pin MinPulse MaxPulse
-     -- TBD add one wire procedures
+     -- TBD add one wire and encoder procedures
      | StepperConfig2Wire StepDevice StepDelay StepPerRev Pin Pin
      | StepperConfig4Wire StepDevice StepDelay StepPerRev Pin Pin Pin Pin
      | StepperConfigStepDir StepDevice StepDelay StepPerRev Pin Pin
@@ -317,6 +317,8 @@ data Local :: * -> * where
      WaitAny          :: [Pin] -> Local [Bool]
      WaitAnyHigh      :: [Pin] -> Local [Bool]
      WaitAnyLow       :: [Pin] -> Local [Bool]
+     Debug            :: String -> Local ()
+     -- TBD Add pin reporting Local?
 deriving instance Show a => Show (Local a)
 
 digitalPortRead :: Port -> Arduino Word8
@@ -339,6 +341,9 @@ waitAnyHigh ps = Local $ WaitAnyHigh ps
 
 waitAnyLow :: [Pin] -> Arduino [Bool]
 waitAnyLow ps = Local $ WaitAnyLow ps
+
+debug :: String -> Arduino ()
+debug msg = Local $ Debug msg
 
 -- | Read the value of a pin in digital mode; this is a non-blocking call, returning
 -- the current value immediately. See 'waitFor' for a version that waits for a change

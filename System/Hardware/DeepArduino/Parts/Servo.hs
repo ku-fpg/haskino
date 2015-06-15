@@ -46,7 +46,9 @@ attach p mbMin mbMax =
     (Servo { servoPin = p , 
              minPulse = fromIntegral $ minPulse, 
              maxPulse = fromIntegral $ maxPulse },
-     servoConfig p minPulse maxPulse)
+     do servoConfig p minPulse maxPulse
+        debug $ "Attaching servo on pin: " ++ show p ++ " with parameters: " ++ show (minPulse, maxPulse)
+    )
   where
     defaultMin = 544
     defaultMax = 2400
@@ -63,4 +65,5 @@ setAngle Servo{servoPin, minPulse, maxPulse} angle
   = return ()
   | True
   = do let duration = minPulse + ((maxPulse - minPulse) * angle) `div` 180
+       debug $ "Setting servo on pin: " ++ show servoPin ++ " " ++ show angle ++ " degrees, via a pulse of " ++ show duration ++ " microseconds."
        analogPinWrite servoPin (fromIntegral $ minimum [duration,16383])

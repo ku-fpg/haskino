@@ -39,7 +39,9 @@ data Piezo = Piezo { piezoPin :: Pin      -- ^ The internal-pin that controls th
 speaker :: Word32         -- ^ Tempo. Higher numbers mean faster melodies; in general.
         -> Pin            -- ^ Pin controlling the piezo. Should be a pin that supports PWM mode.
         -> (Piezo, Arduino ())
-speaker t p = (Piezo { piezoPin = p, tempo = t }, setPinMode p PWM)
+speaker t p = (Piezo { piezoPin = p, tempo = t }, 
+               do debug $ "Attaching speaker on pin: " ++ show p
+                  setPinMode p PWM)
 
 -- | Musical notes, notes around middle-C
 data Note     = A | B | C | D | E | F | G | R  deriving (Eq, Show)  -- R is for rest

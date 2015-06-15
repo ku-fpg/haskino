@@ -208,6 +208,9 @@ send conn commands =
           sendToArduino c cmds
           bs <- runWaitAnyLow c ps
           send' c (k bs) B.empty
+      sendLocal c (Debug msg) k cmds = do
+          message c msg
+          send' c (k ()) cmds
 
       sendQuery :: ArduinoConnection -> Query a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendQuery c query k cmds = do
