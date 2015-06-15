@@ -52,3 +52,5 @@ scheduledBlink = do
         deleteTask 1
         return ()
 
+    closeArduino conn
+

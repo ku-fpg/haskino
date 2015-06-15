@@ -8,6 +8,7 @@
 --
 -- Demonstrates basic Servo motor control
 -------------------------------------------------------------------------------
+{-# LANGUAGE ScopedTypeVariables      #-}
 
 module System.Hardware.Arduino.SamplePrograms.Servo where
 
@@ -36,7 +37,7 @@ import System.Hardware.DeepArduino.Parts.Servo
 --  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/Servo.png>>
 servo :: IO ()
 servo = do
-    conn <- openArduino True "/dev/cu.usbmodem1421"
+    conn <- openArduino False "/dev/cu.usbmodem1421"
     -- Create the Servo structure and get the servo init function
     let (s,init) = attach (digital 9) (Just 600) (Just 2400)
     -- Send the servoinit to the arduino
@@ -46,14 +47,14 @@ servo = do
     demo c s = do 
         putStr "Enter l, r or the desired servo angle: "
         a <- getLine
-        let ang = read a
+        let ang = read a :: Int
             move a = do
                 setAngle s a
                 delay 100
             ms =  case (map toLower a, ang) of
                      ("l", _) -> mapM_ move [0 .. 180]
                      ("r", _) -> mapM_ move [180, 179 .. 0]
-                     (_,  [v]) | 0 <= v && v <= 180 -> setAngle s v
+                     (_,  v) | 0 <= v && v <= 180 -> setAngle s v
                      (_, _)  -> return ()
         send c ms
 
