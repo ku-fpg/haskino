@@ -66,4 +66,4 @@ setAngle Servo{servoPin, minPulse, maxPulse} angle
   | True
   = do let duration = minPulse + ((maxPulse - minPulse) * angle) `div` 180
        debug $ "Setting servo on pin: " ++ show servoPin ++ " " ++ show angle ++ " degrees, via a pulse of " ++ show duration ++ " microseconds."
-       analogPinWrite servoPin (fromIntegral $ minimum [duration,16383])
+       analogWrite servoPin (fromIntegral $ minimum [duration,16383])

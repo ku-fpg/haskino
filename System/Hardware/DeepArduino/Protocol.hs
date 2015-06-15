@@ -63,10 +63,10 @@ packageProcedure c (DigitalPortWrite p l m) =
 packageProcedure c (DigitalWrite p b)  = do
     ipin <- getInternalPin c p
     return $ nonSysEx SET_DIGITAL_PIN_VALUE [fromIntegral $ pinNo ipin, if b then 1 else 0]
-packageProcedure c (AnalogPinWrite p l m) = do
+packageProcedure c (AnalogWrite p l m) = do
     ipin <- getInternalPin c p
     return $ nonSysEx (ANALOG_MESSAGE ipin) [l, m]
-packageProcedure c (AnalogPinExtendedWrite p w8s) = do
+packageProcedure c (AnalogExtendedWrite p w8s) = do
     ipin <- getInternalPin c p
     return $ sysEx EXTENDED_ANALOG ([fromIntegral $ pinNo ipin] ++ (arduinoEncodedL w8s))
 packageProcedure c (SamplingInterval l m) =

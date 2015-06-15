@@ -63,11 +63,11 @@ interval p Eight   = tempo p
 
 -- | Turn the speaker off
 silence :: Piezo -> Arduino ()
-silence (Piezo p _) = analogPinWrite p 0
+silence (Piezo p _) = analogWrite p 0
 
 -- | Keep playing a given note on the piezo:
 setNote :: Piezo -> Note -> Arduino ()
-setNote (Piezo p _) n = analogPinWrite p (fromIntegral $ frequency n)
+setNote (Piezo p _) n = analogWrite p (fromIntegral $ frequency n)
 
 -- | Play the given note for the duration
 playNote :: Piezo -> (Note, Duration) -> Arduino ()

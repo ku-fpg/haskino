@@ -30,7 +30,7 @@ module System.Hardware.DeepArduino (
   -- ** Programming with triggers
   , waitFor, waitAny, waitAnyHigh, waitAnyLow
   -- ** Analog IO
-  , analogReport, analogPinWrite, analogPinExtendedWrite, analogRead
+  , analogReport, analogWrite, analogExtendedWrite, analogRead
   -- ** I2C
   , SlaveAddress, SlaveRegister, I2CAddrMode(..), i2cRead, i2cWrite, i2cConfig
   -- ** Pulse
