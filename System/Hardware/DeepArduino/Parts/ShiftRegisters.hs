@@ -1,9 +1,10 @@
 -------------------------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Arduino.Parts.ShiftRegisters
--- Copyright   :  (c) Levent Erkok
+-- Module      :  System.Hardware.DeepArduino.Pars.ShiftRegisters
+--                Based on System.Hardware.Arduino
+-- Copyright   :  (c) University of Kansas
+--                System.Hardware.Arduino (c) Levent Erkok
 -- License     :  BSD3
--- Maintainer  :  erkokl@gmail.com
 -- Stability   :  experimental
 --
 -- Abstractions for shift-register IC parts.

@@ -1,9 +1,10 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Arduino.SamplePrograms.Servo
--- Copyright   :  (c) Levent Erkok
+-- Module      :  System.Hardware.DeepArduino.SamplePrograms.Servo
+--                Based on System.Hardware.Arduino
+-- Copyright   :  (c) University of Kansas
+--                System.Hardware.Arduino (c) Levent Erkok
 -- License     :  BSD3
--- Maintainer  :  erkokl@gmail.com
 -- Stability   :  experimental
 --
 -- Demonstrates basic Servo motor control
@@ -58,23 +59,32 @@ servo = do
                      (_, _)  -> return ()
         send c ms
 
-{-
+
 -- | Control a servo, as guided by the input read from a potentiometer. The set-up is similar to the 'servo' example
 -- above, except instead of querying the user for the angle, we use the readings from a potentiometer connected to
 -- analog input number 2. We used a 10 KOhm potentiometer, but other pots would work just as well too:
 --
 --  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/ServoAnalog.png>>
 servoAnalog :: IO ()
-servoAnalog = withArduino False "/dev/cu.usbmodemfd131" $ do
-                 s <- attach (digital 9) (Just 600) (Just 2400)
-                 setPinMode pot ANALOG
-                 liftIO $ putStrLn "Adjust the potentiometer to control the servo!"
-                 forever (demo s)
- where pot = analog 2
-       demo s = do v <- analogRead pot
-                   setAngle s (cvt v)
-                   delay 100
-       -- Analog input will be from 0 to 1023; convert it to
-       -- angles, mapping 1023 to 0-degrees, and 0 to 180
-       cvt i = ((1023-i) * 180) `div` 1023
--}
+servoAnalog = do
+    conn <- openArduino False "/dev/cu.usbmodem1421"
+    -- Create the Servo structure and get the servo init function
+    let (s,init) = attach (digital 9) (Just 600) (Just 2400)
+        pot = analog 2
+    -- Send the servoinit to the arduino
+    send conn init
+    -- Setup the pot input
+    send conn $ do
+      setPinMode pot ANALOG
+      analogReport pot True
+    putStrLn "Adjust the potentiometer to control the servo!"
+    forever $ send conn (demo s pot)
+ where 
+    demo s pot = do 
+          v <- analogRead pot
+          setAngle s (fromIntegral $ cvt v)
+          delay 100
+    -- Analog input will be from 0 to 1023; convert it to
+    -- angles, mapping 1023 to 0-degrees, and 0 to 180
+    cvt i = ((1023-i) * 180) `div` 1023
+

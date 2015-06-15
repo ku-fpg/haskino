@@ -1,13 +1,14 @@
 -------------------------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Arduino.Parts.Servo
--- Copyright   :  (c) Levent Erkok
+-- Module      :  System.Hardware.DeepArduino.Parts.Servo
+--                Based on System.Hardware.Arduino
+-- Copyright   :  (c) University of Kansas
+--                System.Hardware.Arduino (c) Levent Erkok
 -- License     :  BSD3
--- Maintainer  :  erkokl@gmail.com
 -- Stability   :  experimental
 --
--- Abstractions for servo motors. See "System.Hardware.Arduino.SamplePrograms.Servo" for
--- example uses.
+-- Abstractions for servo motors. 
+-- See "System.Hardware.DeepArduino.SamplePrograms.Servo" for example uses.
 -------------------------------------------------------------------------------------------------
 
 {-# LANGUAGE NamedFieldPuns #-}
