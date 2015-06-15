@@ -152,7 +152,7 @@ send conn commands =
           sendToArduino c cmds
           message c $ "Delaying: " ++ show d
           threadDelay ((fromIntegral d)*1000)
-          send' c (k ()) cmds
+          send' c (k ()) B.empty
       sendBind c (Procedure (SetPinMode p pm)) k cmds = do
           ipin <- getInternalPin c p
           registerPinMode c ipin pm
