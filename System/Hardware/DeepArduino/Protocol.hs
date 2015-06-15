@@ -76,13 +76,13 @@ packageProcedure c (I2CWrite m sa w16s) =
                                (words16ToArduinoBytes w16s)) 
 packageProcedure c (I2CConfig d) = 
     return $ sysEx I2C_CONFIG (word16ToArduinoBytes d)
-packageProcedure c (StepperConfig2Wire dev d sr p1 p2) = do
+packageProcedure c (StepperConfig dev TwoWire d sr p1 p2 _ _) = do
     ipin1 <-  getInternalPin c p1 
     ipin2 <-  getInternalPin c p2
     let pn1 = fromIntegral $ pinNo ipin1
         pn2 = fromIntegral $ pinNo ipin2
-    return $ sysEx STEPPER_DATA ([dev,((stepDelayVal d) .|. 0x02)] ++ (word16ToArduinoBytes sr) ++ [pn1,pn2])
-packageProcedure c (StepperConfig4Wire dev d sr p1 p2 p3 p4) = do 
+    return $ sysEx STEPPER_DATA ([stepperCmdVal CONFIG_STEPPER,dev,((stepDelayVal d) .|. 0x02)] ++ (word16ToArduinoBytes sr) ++ [pn1,pn2])
+packageProcedure c (StepperConfig dev FourWire d sr p1 p2 (Just p3) (Just p4)) = do 
     ipin1 <-  getInternalPin c p1 
     ipin2 <-  getInternalPin c p2
     ipin3 <-  getInternalPin c p3 
@@ -91,15 +91,19 @@ packageProcedure c (StepperConfig4Wire dev d sr p1 p2 p3 p4) = do
         pn2 = fromIntegral $ pinNo ipin2
         pn3 = fromIntegral $ pinNo ipin3
         pn4 = fromIntegral $ pinNo ipin4
-    return $ sysEx STEPPER_DATA ([dev,((stepDelayVal d) .|. 0x04)] ++ (word16ToArduinoBytes sr) ++ [pn1,pn2,pn3,pn4])
-packageProcedure c (StepperConfigStepDir dev d sr dp sp) = do
+    return $ sysEx STEPPER_DATA ([stepperCmdVal CONFIG_STEPPER,dev,((stepDelayVal d) .|. 0x04)] ++ (word16ToArduinoBytes sr) ++ [pn1,pn2,pn3,pn4])
+packageProcedure c (StepperConfig _ FourWire _ _ _ _ _ _) = 
+    die c "DeepArduino: FourWire steppers require specification of 4 pins for config"  []
+packageProcedure c (StepperConfig dev StepDir d sr dp sp _ _) = do
     dipin <-  getInternalPin c dp 
     sipin <-  getInternalPin c sp
     let pnd = fromIntegral $ pinNo dipin
         pns = fromIntegral $ pinNo sipin
-    return $ sysEx STEPPER_DATA ([dev,((stepDelayVal d) .|. 0x01)] ++ (word16ToArduinoBytes sr) ++ [pnd,pns])
-packageProcedure c (StepperStep dev sd ns sp ac) =
-    return $ sysEx STEPPER_DATA ([dev,(stepDirVal sd)] ++ (word32To3ArduinoBytes ns) ++ (word16ToArduinoBytes sp) ++ (intTo4ArduinoBytes ac))
+    return $ sysEx STEPPER_DATA ([stepperCmdVal CONFIG_STEPPER,dev,((stepDelayVal d) .|. 0x01)] ++ (word16ToArduinoBytes sr) ++ [pnd,pns])
+packageProcedure c (StepperStep dev sd ns sp (Just ac)) =
+    return $ sysEx STEPPER_DATA ([stepperCmdVal STEP_STEPPER,dev,(stepDirVal sd)] ++ (word32To3ArduinoBytes ns) ++ (word16ToArduinoBytes sp) ++ (intTo4ArduinoBytes ac))
+packageProcedure c (StepperStep dev sd ns sp Nothing) =
+    return $ sysEx STEPPER_DATA ([stepperCmdVal STEP_STEPPER,dev,(stepDirVal sd)] ++ (word32To3ArduinoBytes ns) ++ (word16ToArduinoBytes sp))
 packageProcedure c (ServoConfig p min max)  = do
     ipin <- getInternalPin c p
     return $ sysEx SERVO_CONFIG ([fromIntegral $ pinNo ipin] ++ (word16ToArduinoBytes min) ++ (word16ToArduinoBytes max))

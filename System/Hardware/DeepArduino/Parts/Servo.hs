@@ -46,8 +46,8 @@ attach p mbMin mbMax =
     (Servo { servoPin = p , 
              minPulse = fromIntegral $ minPulse, 
              maxPulse = fromIntegral $ maxPulse },
-     do servoConfig p minPulse maxPulse
-        debug $ "Attaching servo on pin: " ++ show p ++ " with parameters: " ++ show (minPulse, maxPulse)
+     do debug $ "Attaching servo on pin: " ++ show p ++ " with parameters: " ++ show (minPulse, maxPulse)
+        servoConfig p minPulse maxPulse
     )
   where
     defaultMin = 544
@@ -62,7 +62,7 @@ attach p mbMin mbMax =
 setAngle :: Servo -> Int -> Arduino ()
 setAngle Servo{servoPin, minPulse, maxPulse} angle
   | angle < 0 || angle > 180
-  = return ()
+  = debug $ "Invalid servo angle " ++ show angle ++ " for Servo on pin " ++ show servoPin
   | True
   = do let duration = minPulse + ((maxPulse - minPulse) * angle) `div` 180
        debug $ "Setting servo on pin: " ++ show servoPin ++ " " ++ show angle ++ " degrees, via a pulse of " ++ show duration ++ " microseconds."

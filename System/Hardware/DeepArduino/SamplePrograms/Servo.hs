@@ -37,7 +37,7 @@ import System.Hardware.DeepArduino.Parts.Servo
 --  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/Servo.png>>
 servo :: IO ()
 servo = do
-    conn <- openArduino False "/dev/cu.usbmodem1421"
+    conn <- openArduino True "/dev/cu.usbmodem1421"
     -- Create the Servo structure and get the servo init function
     let (s,init) = attach (digital 9) (Just 600) (Just 2400)
     -- Send the servoinit to the arduino

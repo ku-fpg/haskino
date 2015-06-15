@@ -41,9 +41,8 @@ module System.Hardware.DeepArduino (
   , TaskLength, TaskID, TaskTime, TaskPos, queryAllTasks, queryTask, createTask
   , deleteTask, delay, scheduleTask, scheduleReset
   -- ** Stepper
-  , StepDevice, NumSteps, StepSpeed, StepAccel, StepPerRev, StepDelay(..)
-  , StepDir(..), stepperConfig2Wire, stepperConfig4Wire, stepperConfigStepDir 
-  , stepperStep
+  , StepDevice, StepType(..), NumSteps, StepSpeed, StepAccel, StepPerRev
+  , StepDelay(..), StepDir(..), stepperConfig, stepperStep
  )
  where
 

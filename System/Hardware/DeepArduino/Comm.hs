@@ -73,6 +73,7 @@ openArduino verbose fp = do
                                  , pinStates            = M.empty
                                  , portStates           = M.empty
                                  , digitalWakeUpQueue   = []
+                                 , nextStepperDevice    = 0
                                 }
           bs <- newMVar initBoardState
           dc <- newChan

@@ -213,6 +213,8 @@ data StepDelay = OneUs | TwoUs
       deriving Show
 data StepDir = CW | CCW
       deriving Show
+data StepType = TwoWire | FourWire | StepDir
+      deriving Show
 
 data Procedure =
        SystemReset                              -- ^ Send system reset
@@ -230,10 +232,8 @@ data Procedure =
      -- TBD add I2C continuous read
      | ServoConfig Pin MinPulse MaxPulse
      -- TBD add one wire and encoder procedures
-     | StepperConfig2Wire StepDevice StepDelay StepPerRev Pin Pin
-     | StepperConfig4Wire StepDevice StepDelay StepPerRev Pin Pin Pin Pin
-     | StepperConfigStepDir StepDevice StepDelay StepPerRev Pin Pin
-     | StepperStep StepDevice StepDir NumSteps StepSpeed StepAccel
+     | StepperConfig StepDevice StepType StepDelay StepPerRev Pin Pin (Maybe Pin) (Maybe Pin)
+     | StepperStep StepDevice StepDir NumSteps StepSpeed (Maybe StepAccel)
      | CreateTask TaskID (Arduino ())
      | DeleteTask TaskID
      | Delay TaskTime
@@ -285,16 +285,10 @@ i2cConfig w = Procedure $ I2CConfig w
 servoConfig :: Pin -> MinPulse -> MaxPulse -> Arduino ()
 servoConfig p min max = Procedure $ ServoConfig p min max
 
-stepperConfig2Wire :: StepDevice -> StepDelay -> StepPerRev -> Pin -> Pin -> Arduino ()
-stepperConfig2Wire dev d sr p1 p2 = Procedure $ StepperConfig2Wire dev d sr p1 p2
+stepperConfig :: StepDevice -> StepType -> StepDelay -> StepPerRev -> Pin -> Pin -> (Maybe Pin) -> (Maybe Pin) -> Arduino ()
+stepperConfig dev ty d sr p1 p2 p3 p4 = Procedure $ StepperConfig dev ty d sr p1 p2 p3 p4
 
-stepperConfig4Wire :: StepDevice -> StepDelay -> StepPerRev -> Pin -> Pin -> Pin -> Pin -> Arduino ()
-stepperConfig4Wire dev d sr p1 p2 p3 p4 = Procedure $ StepperConfig4Wire dev d sr p1 p2 p3 p4
-
-stepperConfigStepDir :: StepDevice -> StepDelay -> StepPerRev -> Pin -> Pin -> Arduino ()
-stepperConfigStepDir dev d sr dp sp = Procedure $ StepperConfigStepDir dev d sr dp sp
-
-stepperStep :: StepDevice -> StepDir -> NumSteps -> StepSpeed -> StepAccel -> Arduino ()
+stepperStep :: StepDevice -> StepDir -> NumSteps -> StepSpeed -> Maybe StepAccel -> Arduino ()
 stepperStep dev sd ns sp ac = Procedure $ StepperStep dev sd ns sp ac
 
 deleteTask :: TaskID -> Arduino ()
@@ -564,13 +558,22 @@ getSchedulerReply 0x0A = Right QUERY_TASK_REPLY
 getSchedulerReply 0x0B = Right ERROR_FIRMATA_TASK_REPLY
 getSchedulerReply n    = Left n
 
+-- | Firmata scheduler commands, see: https://github.com/firmata/protocol/blob/master/scheduler.md
+data StepperCmd = CONFIG_STEPPER    -- ^ @0x00@
+                | STEP_STEPPER      -- ^ @0x01@
+
+-- | Compute the numeric value of a scheduler command
+stepperCmdVal :: StepperCmd -> Word8
+stepperCmdVal CONFIG_STEPPER = 0x00
+stepperCmdVal STEP_STEPPER   = 0x01
+
 stepDelayVal :: StepDelay -> Word8
 stepDelayVal OneUs = 0x00
 stepDelayVal TwoUs = 0x10
 
 stepDirVal :: StepDir -> Word8
 stepDirVal CW = 0x00
-stepDirVal CCW = 0x10
+stepDirVal CCW = 0x01
 
 -- | Convert a byte to a Firmata command
 getFirmataCmd :: Word8 -> Either Word8 FirmataCmd
@@ -712,6 +715,7 @@ data BoardState = BoardState {
                   , pinStates            :: M.Map IPin PinData  -- ^ For-each pin, store its data
                   , portStates           :: M.Map Port Word8    -- ^ For-each digital port, store its data
                   , digitalWakeUpQueue   :: [MVar ()]           -- ^ Semaphore list to wake-up upon receiving a digital message
+                  , nextStepperDevice    :: Word8
                   }
 
 -- | State of the connection
