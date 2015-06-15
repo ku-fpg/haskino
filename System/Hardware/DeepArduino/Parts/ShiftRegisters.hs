@@ -72,7 +72,7 @@ instance ShiftRegister SR_74HC595 where
            clear sr
            enable sr
            forM_ mbBits (mapM_ (`setPinMode` INPUT))
-           mapM_ digitalReport mbBits
+           forM_ mbBits (mapM_ (`digitalReport` True))
   disable SR_74HC595{nEnable} = digitalWrite nEnable True
   enable  SR_74HC595{nEnable} = digitalWrite nEnable False
   clear SR_74HC595{nClear}    = do digitalWrite nClear False
@@ -80,7 +80,7 @@ instance ShiftRegister SR_74HC595 where
   push  SR_74HC595{serial, sClock} b = fallingEdge sClock $ digitalWrite serial b
   store SR_74HC595{rClock}           = fallingEdge rClock (return ())
   read  sr@SR_74HC595{mbBits} = case mbBits of
-                                Nothing  -> []
+                                Nothing  -> return []
                                 Just pins -> mapM digitalRead pins
 
 -- | Execute action, followed by a simulated falling edge on the given clock

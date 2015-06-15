@@ -14,7 +14,6 @@
 module System.Hardware.Arduino.SamplePrograms.Servo where
 
 import Control.Monad       (forever)
-import Control.Monad.Trans (liftIO)
 import Data.Char           (toLower)
 
 import System.Hardware.DeepArduino
