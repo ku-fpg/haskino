@@ -110,7 +110,7 @@ word32To3ArduinoBytes i = map fromIntegral [i .&. 0x7F, (i `shiftR` 7) .&. 0x7F,
 -- | Convert a word to it's bytes, as would be required by Arduino comms
 intTo4ArduinoBytes :: Int -> [Word8]
 intTo4ArduinoBytes i = 
-  if (i >= 0)
+  if (i < 0)
   then map fromIntegral [0, 0, i .&. 0x7F, (i `shiftR` 7) .&. 0x7F]
   else map fromIntegral [i .&. 0x7F, (i `shiftR` 7) .&. 0x7F, 0, 0]
 

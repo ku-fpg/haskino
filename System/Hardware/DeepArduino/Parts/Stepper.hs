@@ -18,9 +18,6 @@ module System.Hardware.DeepArduino.Parts.Stepper(
    ) where
 
 import Control.Concurrent   (putMVar, takeMVar)
-import Data.Bits     (shiftR, (.&.))
-import Data.Maybe    (fromMaybe)
-import Data.Word     (Word16)
 
 import System.Hardware.DeepArduino
 import System.Hardware.DeepArduino.Comm
@@ -35,18 +32,15 @@ data Stepper =
             , p3     :: Maybe Pin
             , p4     :: Maybe Pin}
 
--- | Create a stepper motor instance. The default values for the min/max angle pulse-widths, while typical,
--- may need to be adjusted based on the specs of the actual servo motor. Check the data-sheet for your
--- servo to find the proper values. The default values of @544@ and @2400@ microseconds are typical, so you might
--- want to start by passing 'Nothing' for both parameters and adjusting as necessary.
-attach :: ArduinoConnection
-       -> StepType
-       -> StepDelay
-       -> StepPerRev
-       -> Pin
-       -> Pin
-       -> Maybe Pin
-       -> Maybe Pin            -- ^ Pin controlling the servo. Should be a pin that supports SERVO mode.
+-- | Create and configure a stepper motor instance. 
+attach :: ArduinoConnection    -- ^ 
+       -> StepType             -- ^ Type of Stepper controller 4-Wire, 2-Wire, Step-Dir
+       -> StepDelay            -- ^ Step delay 1us or 2us
+       -> StepPerRev           -- ^ Steps per revolution
+       -> Pin                  -- ^ Pin 1 for 2 or 4 Wire, Direction Pin for Step-Dir
+       -> Pin                  -- ^ Pin 2 for 2 or 4 Wire, Step Pin for Step-Dir
+       -> Maybe Pin            -- ^ Pin 3 for 4 Wire
+       -> Maybe Pin            -- ^ Pin 3 for 4 Wire
        -> IO (Stepper, Arduino ())
 attach c ty d sr p1 p2 p3 p4 = do
     bs <- takeMVar (boardState c)
@@ -59,8 +53,11 @@ attach c ty d sr p1 p2 p3 p4 = do
                     " with delay: " ++ show d ++" and Steps/Rev: " ++ show sr
                stepperConfig nextStepper ty d sr p1 p2 p3 p4)
 
--- | Set the angle of the servo. The argument should be a number between 0 and 180,
--- indicating the desired angle setting in degrees.
+-- | Command the Stepper motor to step
+-- StepDir is either CCW or CW
+-- NumSteps is the number of times to step the motor
+-- Step Speed is speed in 0.01 rad/sec
+-- i.e. stepper CW 80 50
 step :: Stepper -> StepDir -> NumSteps -> StepSpeed -> Maybe StepAccel -> Arduino ()
 step Stepper{device, p1, p2, p3, p4} dir steps speed accel
   = do debug $ "Stepping stepper device " ++ show device ++ ": " ++ show steps ++ 

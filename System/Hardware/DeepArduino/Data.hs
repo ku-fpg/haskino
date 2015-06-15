@@ -569,7 +569,7 @@ stepperCmdVal STEP_STEPPER   = 0x01
 
 stepDelayVal :: StepDelay -> Word8
 stepDelayVal OneUs = 0x00
-stepDelayVal TwoUs = 0x10
+stepDelayVal TwoUs = 0x08
 
 stepDirVal :: StepDir -> Word8
 stepDirVal CW = 0x00
