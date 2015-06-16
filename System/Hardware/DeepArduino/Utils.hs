@@ -97,7 +97,7 @@ word16ToArduinoBytes i = map fromIntegral [i .&. 0x7F, (i `shiftR`  7) .&. 0x7F]
 
 -- | Convert words to it's bytes, as would be required by Arduino comms
 words16ToArduinoBytes :: [Word16] -> [Word8]
-words16ToArduinoBytes ws = concat $ map word16ToArduinoBytes ws
+words16ToArduinoBytes ws = concatMap word16ToArduinoBytes ws
 
 -- | Convert a word to it's bytes, as would be required by Arduino comms
 word32ToArduinoBytes :: Word32 -> [Word8]

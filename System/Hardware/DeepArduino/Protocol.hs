@@ -71,9 +71,9 @@ packageProcedure c (AnalogExtendedWrite p w8s) = do
     return $ sysEx EXTENDED_ANALOG ([fromIntegral $ pinNo ipin] ++ (arduinoEncodedL w8s))
 packageProcedure c (SamplingInterval l m) =
     return $ sysEx SAMPLING_INTERVAL [l, m]
-packageProcedure c (I2CWrite m sa w16s) = 
+packageProcedure c (I2CWrite m sa w8s) = 
     return $ sysEx I2C_REQUEST ((packageI2c m False sa Nothing) ++
-                               (words16ToArduinoBytes w16s)) 
+                               ( concatMap toArduinoBytes w8s)) 
 packageProcedure c (I2CConfig d) = 
     return $ sysEx I2C_CONFIG (word16ToArduinoBytes d)
 packageProcedure c (StepperConfig dev TwoWire d sr p1 p2 _ _) = do
@@ -207,7 +207,7 @@ unpackageSysEx (cmdWord:args)
       (ANALOG_MAPPING_RESPONSE, bs)          -> AnalogMapping bs
       (PULSE, xs) | length xs == 10          -> let [p, a, b, c, d] = fromArduinoBytes xs in PulseResponse (InternalPin p) (bytesToWord32 (a, b, c, d))
       (STRING_DATA, rest)                    -> StringMessage (getString rest)
-      (I2C_REPLY, xs)                        -> let (sa:sr:idata) = arduinoBytesToWords16 xs in I2CReply sa sr idata
+      (I2C_REPLY, xs)                        -> let (sal:sam:srl:srm:idata) = fromArduinoBytes xs in I2CReply (bytesToWord16 (sal, sam)) (bytesToWord16 (srl, srm)) idata
       (SCHEDULER_DATA, srWord : ts) | Right sr <- getSchedulerReply srWord
         -> case sr of 
           QUERY_ALL_TASKS_REPLY              -> QueryAllTasksReply ts

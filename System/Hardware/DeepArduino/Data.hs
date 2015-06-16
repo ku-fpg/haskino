@@ -227,7 +227,7 @@ data Procedure =
      | AnalogWrite Pin Word8 Word8              -- ^ Send an analog-write; used for servo control
      | AnalogExtendedWrite Pin [Word8]          -- ^ 
      | SamplingInterval Word8 Word8             -- ^ Set the sampling interval
-     | I2CWrite I2CAddrMode SlaveAddress [Word16]
+     | I2CWrite I2CAddrMode SlaveAddress [Word8]
      | I2CConfig Word16
      -- TBD add I2C continuous read
      | ServoConfig Pin MinPulse MaxPulse
@@ -276,7 +276,7 @@ samplingInterval w = Procedure $ SamplingInterval w1 w2
   where
     [w1, w2] = word16ToArduinoBytes w
 
-i2cWrite :: I2CAddrMode -> SlaveAddress -> [Word16] -> Arduino ()
+i2cWrite :: I2CAddrMode -> SlaveAddress -> [Word8] -> Arduino ()
 i2cWrite m sa ws = Procedure $ I2CWrite m sa ws
 
 i2cConfig :: Word16 -> Arduino ()
@@ -428,7 +428,7 @@ data Query :: * -> * where
      CapabilityQuery :: Query BoardCapabilities       -- ^ Query the capabilities of the board
      AnalogMappingQuery :: Query [Word8]              -- ^ Query the mapping of analog pins
      Pulse :: IPin -> Bool -> Word32 -> Word32 -> Query Word32 -- ^ Request for a pulse reading on a pin, value, duration, timeout
-     I2CRead :: I2CAddrMode -> SlaveAddress -> Maybe SlaveRegister -> Query [Word16]
+     I2CRead :: I2CAddrMode -> SlaveAddress -> Maybe SlaveRegister -> Query [Word8]
      -- TBD add one wire queries
      QueryAllTasks :: Query [TaskID]
      QueryTask :: TaskID -> Query (TaskID, TaskTime, TaskLength, TaskPos, [Word8])
@@ -447,7 +447,7 @@ analogMappingQuery = Query AnalogMappingQuery
 pulse :: IPin -> Bool -> Word32 -> Word32 -> Arduino Word32
 pulse p b w1 w2 = Query $ Pulse p b w1 w2
 
-i2cRead :: I2CAddrMode -> SlaveAddress -> Maybe SlaveRegister -> Arduino [Word16]
+i2cRead :: I2CAddrMode -> SlaveAddress -> Maybe SlaveRegister -> Arduino [Word8]
 i2cRead am sa sr = Query $ I2CRead am sa sr
 
 queryAllTasks :: Arduino [TaskID]
@@ -464,7 +464,7 @@ data Response = Firmware Word8 Word8 String          -- ^ Firmware version (maj/
               | AnalogMessage  IPin Word8 Word8      -- ^ Status of an analog pin
               | StringMessage  String                -- ^ String message from Firmata
               | PulseResponse  IPin Word32           -- ^ Repsonse to a PulseInCommand
-              | I2CReply Word16 Word16 [Word16]      -- ^ Response to a I2C Read
+              | I2CReply Word16 Word16 [Word8]       -- ^ Response to a I2C Read
               | QueryAllTasksReply [Word8]           -- ^ Response to Query All Tasks
               | QueryTaskReply TaskID TaskTime TaskLength TaskPos [Word8]
               | ErrorTaskReply TaskID TaskTime TaskLength TaskPos [Word8]
