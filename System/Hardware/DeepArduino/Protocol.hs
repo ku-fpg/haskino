@@ -71,8 +71,8 @@ packageProcedure c (AnalogExtendedWrite p w8s) = do
     return $ sysEx EXTENDED_ANALOG ([fromIntegral $ pinNo ipin] ++ (arduinoEncodedL w8s))
 packageProcedure c (SamplingInterval l m) =
     return $ sysEx SAMPLING_INTERVAL [l, m]
-packageProcedure c (I2CWrite m sa w8s) = 
-    return $ sysEx I2C_REQUEST ((packageI2c m False sa Nothing) ++
+packageProcedure c (I2CWrite sa w8s) = 
+    return $ sysEx I2C_REQUEST ((packageI2c True sa Nothing 0) ++
                                ( concatMap toArduinoBytes w8s)) 
 packageProcedure c (I2CConfig d) = 
     return $ sysEx I2C_CONFIG (word16ToArduinoBytes d)
@@ -182,19 +182,20 @@ packageQuery QueryFirmware            = sysEx    REPORT_FIRMWARE         []
 packageQuery CapabilityQuery          = sysEx    CAPABILITY_QUERY        []
 packageQuery AnalogMappingQuery       = sysEx    ANALOG_MAPPING_QUERY    []
 packageQuery (Pulse p b dur to)       = sysEx    PULSE                   ([fromIntegral (pinNo p), if b then 1 else 0] ++ concatMap toArduinoBytes (word32ToBytes dur ++ word32ToBytes to))
-packageQuery (I2CRead m sa sr)        = sysEx    I2C_REQUEST  (packageI2c m False sa sr)
+packageQuery (I2CRead sa sr cnt)      = sysEx    I2C_REQUEST  (packageI2c False sa sr cnt)
 packageQuery QueryAllTasks            = sysEx    SCHEDULER_DATA [schedulerCmdVal QUERY_ALL_TASKS]
 packageQuery (QueryTask tid)          = sysEx    SCHEDULER_DATA [schedulerCmdVal QUERY_TASK, tid]
 
-packageI2c :: I2CAddrMode -> Bool -> SlaveAddress -> Maybe SlaveRegister -> [Word8]
-packageI2c m w sa sr = [addrBytes !! 0, commandByte] ++ slaveBytes
+packageI2c :: Bool -> SlaveAddress -> Maybe SlaveRegister -> Word8 -> [Word8]
+packageI2c w sa sr cnt = [addrBytes !! 0, commandByte] ++ slaveBytes ++ countByte
   where
-    addrBytes = word16ToArduinoBytes sa
-    commandByte = (firmataI2CModeVal m) .&. writeByte .&. (addrBytes !! 1)
+    addrBytes = toArduinoBytes sa
+    commandByte = writeByte .|. (addrBytes !! 1)
     writeByte = if w then 0x00 else 0x08
+    countByte = if w then [] else toArduinoBytes cnt
     slaveBytes = case sr of 
                     Nothing -> []
-                    Just r  -> word16ToArduinoBytes r
+                    Just r  -> toArduinoBytes r
 
 -- | Unpackage a SysEx response
 unpackageSysEx :: [Word8] -> Response
@@ -207,7 +208,7 @@ unpackageSysEx (cmdWord:args)
       (ANALOG_MAPPING_RESPONSE, bs)          -> AnalogMapping bs
       (PULSE, xs) | length xs == 10          -> let [p, a, b, c, d] = fromArduinoBytes xs in PulseResponse (InternalPin p) (bytesToWord32 (a, b, c, d))
       (STRING_DATA, rest)                    -> StringMessage (getString rest)
-      (I2C_REPLY, xs)                        -> let (sal:sam:srl:srm:idata) = fromArduinoBytes xs in I2CReply (bytesToWord16 (sal, sam)) (bytesToWord16 (srl, srm)) idata
+      (I2C_REPLY, xs)                        -> let (sa:sr:idata) = fromArduinoBytes xs in I2CReply sa sr idata
       (SCHEDULER_DATA, srWord : ts) | Right sr <- getSchedulerReply srWord
         -> case sr of 
           QUERY_ALL_TASKS_REPLY              -> QueryAllTasksReply ts
@@ -229,7 +230,7 @@ parseQueryResult QueryFirmware (Firmware wa wb s) = Just (wa,wb,s)
 parseQueryResult CapabilityQuery (Capabilities bc) = Just bc
 parseQueryResult AnalogMappingQuery (AnalogMapping ms) = Just ms
 parseQueryResult (Pulse p b dur to) (PulseResponse p2 w) = Just w
-parseQueryResult (I2CRead am saq srq) (I2CReply sar srr ds) = Just ds
+parseQueryResult (I2CRead saq srq cnt) (I2CReply sar srr ds) = Just ds
 parseQueryResult QueryAllTasks (QueryAllTasksReply ts) = Just ts
 parseQueryResult (QueryTask tid) (QueryTaskReply tid' tt tl tp ws) = Just (tid',tt,tl,tp,ws)
 parseQueryResult q r = Nothing

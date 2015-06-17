@@ -15,7 +15,7 @@
 -------------------------------------------------------------------------------
 module System.Hardware.DeepArduino (
   -- * Communication functions
-  openArduino, closeArduino, withArduino, send
+  openArduino, closeArduino, withArduino, send, ArduinoConnection
   -- * Deep embeddings
   , Arduino(..) , Procedure(..), Query(..), Local(..)
   -- * Programming the Arduino
@@ -32,7 +32,7 @@ module System.Hardware.DeepArduino (
   -- ** Analog IO
   , analogReport, analogWrite, analogExtendedWrite, analogRead
   -- ** I2C
-  , SlaveAddress, SlaveRegister, I2CAddrMode(..), i2cRead, i2cWrite, i2cConfig
+  , SlaveAddress, SlaveRegister, i2cRead, i2cWrite, i2cConfig
   -- ** Pulse
   , pulse
   -- ** Servo

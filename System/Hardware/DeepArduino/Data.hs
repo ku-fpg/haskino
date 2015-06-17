@@ -222,8 +222,8 @@ instance Show BoardCapabilities where
     where sh (p, PinCapabilities{analogPinNumber, allowedModes}) = show p ++ sep ++ unwords [show md | (md, _) <- allowedModes]
              where sep = maybe ": " (\i -> "[A" ++ show i ++ "]: ") analogPinNumber
 
-type SlaveAddress = Word16
-type SlaveRegister = Word16
+type SlaveAddress = Word8
+type SlaveRegister = Word8
 type MinPulse = Word16
 type MaxPulse = Word16
 type TaskLength = Word16
@@ -235,8 +235,6 @@ type NumSteps = Word32
 type StepSpeed = Word16
 type StepAccel = Int
 type StepPerRev = Word16
-data I2CAddrMode = Bit7 | Bit10
-      deriving Show
 data StepDelay = OneUs | TwoUs
       deriving Show
 data StepDir = CW | CCW
@@ -255,7 +253,7 @@ data Procedure =
      | AnalogWrite Pin Word8 Word8              -- ^ Send an analog-write; used for servo control
      | AnalogExtendedWrite Pin [Word8]          -- ^ 
      | SamplingInterval Word8 Word8             -- ^ Set the sampling interval
-     | I2CWrite I2CAddrMode SlaveAddress [Word8]
+     | I2CWrite SlaveAddress [Word8]
      | I2CConfig Word16
      -- TBD add I2C continuous read
      | ServoConfig Pin MinPulse MaxPulse
@@ -304,8 +302,8 @@ samplingInterval w = Procedure $ SamplingInterval w1 w2
   where
     [w1, w2] = word16ToArduinoBytes w
 
-i2cWrite :: I2CAddrMode -> SlaveAddress -> [Word8] -> Arduino ()
-i2cWrite m sa ws = Procedure $ I2CWrite m sa ws
+i2cWrite :: SlaveAddress -> [Word8] -> Arduino ()
+i2cWrite sa ws = Procedure $ I2CWrite sa ws
 
 i2cConfig :: Word16 -> Arduino ()
 i2cConfig w = Procedure $ I2CConfig w
@@ -456,7 +454,7 @@ data Query :: * -> * where
      CapabilityQuery :: Query BoardCapabilities       -- ^ Query the capabilities of the board
      AnalogMappingQuery :: Query [Word8]              -- ^ Query the mapping of analog pins
      Pulse :: IPin -> Bool -> Word32 -> Word32 -> Query Word32 -- ^ Request for a pulse reading on a pin, value, duration, timeout
-     I2CRead :: I2CAddrMode -> SlaveAddress -> Maybe SlaveRegister -> Query [Word8]
+     I2CRead :: SlaveAddress -> Maybe SlaveRegister -> Word8 -> Query [Word8]
      -- TBD add one wire queries
      QueryAllTasks :: Query [TaskID]
      QueryTask :: TaskID -> Query (TaskID, TaskTime, TaskLength, TaskPos, [Word8])
@@ -475,8 +473,8 @@ analogMappingQuery = Query AnalogMappingQuery
 pulse :: IPin -> Bool -> Word32 -> Word32 -> Arduino Word32
 pulse p b w1 w2 = Query $ Pulse p b w1 w2
 
-i2cRead :: I2CAddrMode -> SlaveAddress -> Maybe SlaveRegister -> Arduino [Word8]
-i2cRead am sa sr = Query $ I2CRead am sa sr
+i2cRead :: SlaveAddress -> Maybe SlaveRegister -> Word8 -> Arduino [Word8]
+i2cRead sa sr cnt = Query $ I2CRead sa sr cnt
 
 queryAllTasks :: Arduino [TaskID]
 queryAllTasks = Query QueryAllTasks
@@ -492,7 +490,7 @@ data Response = Firmware Word8 Word8 String          -- ^ Firmware version (maj/
               | AnalogMessage  IPin Word8 Word8      -- ^ Status of an analog pin
               | StringMessage  String                -- ^ String message from Firmata
               | PulseResponse  IPin Word32           -- ^ Repsonse to a PulseInCommand
-              | I2CReply Word16 Word16 [Word8]       -- ^ Response to a I2C Read
+              | I2CReply Word8 Word8 [Word8]       -- ^ Response to a I2C Read
               | QueryAllTasksReply [Word8]           -- ^ Response to Query All Tasks
               | QueryTaskReply TaskID TaskTime TaskLength TaskPos [Word8]
               | ErrorTaskReply TaskID TaskTime TaskLength TaskPos [Word8]
@@ -549,11 +547,6 @@ firmataCmdVal SET_DIGITAL_PIN_VALUE   = 0xF5
 firmataCmdVal END_SYSEX               = 0xF7
 firmataCmdVal PROTOCOL_VERSION        = 0xF9
 firmataCmdVal SYSTEM_RESET            = 0xFF
-
--- | Compute the numeric value of a mode
-firmataI2CModeVal :: I2CAddrMode -> Word8
-firmataI2CModeVal Bit7            = 0x00
-firmataI2CModeVal Bit10           = 0x20
 
 -- | Firmata scheduler commands, see: https://github.com/firmata/protocol/blob/master/scheduler.md
 data SchedulerCmd = CREATE_TASK    -- ^ @0x00@
