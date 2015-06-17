@@ -51,12 +51,12 @@ import System.Hardware.DeepArduino.Parts.LCD
 hitachi :: LCDController
 -- Connections:                    ARDUINO        Hitachi   Description
 --------------------------------   -----------    ---------  ----------------
-hitachi = Hitachi44780 { lcdRS   = digital 12  --     4      Register-select
-                       , lcdEN   = digital 11  --     6      Enable
-                       , lcdD4   = digital  5  --    11      Data 4
-                       , lcdD5   = digital  4  --    12      Data 5
-                       , lcdD6   = digital  3  --    13      Data 6
-                       , lcdD7   = digital  2  --    14      Data 7
+hitachi = Hitachi44780 { lcdRS   = digital  8  --     4      Register-select
+                       , lcdEN   = digital  9  --     6      Enable
+                       , lcdD4   = digital  4  --    11      Data 4
+                       , lcdD5   = digital  5  --    12      Data 5
+                       , lcdD6   = digital  6  --    13      Data 6
+                       , lcdD7   = digital  7  --    14      Data 7
                        -- Other config variables for the display
                        , lcdRows     = 2    -- 2 rows
                        , lcdCols     = 16    -- of 16 columns
