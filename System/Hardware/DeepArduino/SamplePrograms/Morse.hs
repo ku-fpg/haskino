@@ -61,8 +61,8 @@ morsify = map t
 -- | Finally, turn a full sentence into a sequence of blink on/off codes
 transmit :: Pin -> String -> Arduino ()
 transmit p = sequence_ . concatMap code . morsify . decode
-  where code (Left i)  = [digitalWrite p True,  delay i, digitalWrite p False, delay i]
-        code (Right i) = [digitalWrite p False, delay i]
+  where code (Left i)  = [digitalWrite p True,  delay $ fromIntegral i, digitalWrite p False, delay $ fromIntegral i]
+        code (Right i) = [digitalWrite p False, delay $ fromIntegral i]
 
 -- | A simple demo driver. To run this example, you only need the Arduino connected to your
 -- computer, no other hardware is needed. We use the internal led on pin 13. Of course,
@@ -70,10 +70,11 @@ transmit p = sequence_ . concatMap code . morsify . decode
 --
 --  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/Blink.png>>
 morseDemo :: IO ()
-morseDemo = withArduino False "/dev/cu.usbmodemfd131" $ do
-                setPinMode led OUTPUT
-                forever send
+morseDemo = do
+    conn <- openArduino False "/dev/cu.usbmodem1421"
+    send conn $ setPinMode led OUTPUT
+    forever $ sendMorse conn
  where  led  = digital 13
-        send = do liftIO $ putStr "Message? "
-                  m <- liftIO getLine
-                  transmit led m
+        sendMorse c = do putStr "Message? "
+                         m <- getLine
+                         send c $ transmit led m
