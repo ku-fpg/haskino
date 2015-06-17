@@ -1,0 +1,43 @@
+-------------------------------------------------------------------------------
+-- |
+-- Module      :  System.Hardware.DeepArduino.SamplePrograms.Blink
+-- Copyright   :  (c) University of Kansas
+-- License     :  BSD3
+-- Stability   :  experimental
+--
+-- Abstractions for Microchip 24LC256 comaptible I2C EEPROM. 
+-- See "System.Hardware.DeepArduino.SamplePrograms.Eeprom" for example uses.
+-------------------------------------------------------------------------------
+
+module System.Hardware.DeepArduino.Parts.Eeprom(
+   -- * Reading and writing from an eeprom
+     eepromClear, eepromEnable, eepromRead, eepromWrite
+   ) where
+
+import Data.Bits     ((.&.), shiftR)
+import Data.Word     (Word8, Word16)
+
+import System.Hardware.DeepArduino
+
+eepromEnable :: Arduino ()
+eepromEnable = i2cConfig 0
+
+eepromRead :: SlaveAddress -> Word16 -> Word8 -> Arduino [Word8]
+eepromRead sa addr count = do
+        i2cWrite sa [fromIntegral hi, fromIntegral lo]
+        ws <- i2cRead sa Nothing count
+        return ws
+  where lo =  addr             .&. 0xFF   -- first eight bits
+        hi = (addr `shiftR` 8) .&. 0x7F   -- seven extra high-bits
+
+eepromWrite :: SlaveAddress -> Word16 -> [Word8] -> Arduino ()
+eepromWrite sa addr ws = do
+        i2cWrite sa ([fromIntegral hi, fromIntegral lo] ++ ws)
+        -- Delay 5ms for write to complete before attempting read
+        delay 5
+  where lo =  addr             .&. 0xFF   -- first eight bits
+        hi = (addr `shiftR` 8) .&. 0x7F   -- seven extra high-bits
+        count = length ws
+
+eepromClear :: SlaveAddress -> Word16 -> Int -> Arduino ()
+eepromClear sa addr count = eepromWrite sa addr $ take count $ repeat 0

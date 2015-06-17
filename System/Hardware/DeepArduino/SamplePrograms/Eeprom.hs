@@ -1,51 +1,32 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.SamplePrograms.Blink
---                Based on System.Hardware.Arduino
+-- Module      :  System.Hardware.DeepArduino.SamplePrograms.Eeprom
 -- Copyright   :  (c) University of Kansas
---                System.Hardware.Arduino (c) Levent Erkok
 -- License     :  BSD3
 -- Stability   :  experimental
 --
 -- The /hello world/ of the arduino world, blinking the led.
 -------------------------------------------------------------------------------
 
-module Eeprom where
-
-import Control.Monad (forever)
-import Data.Bits     ((.&.), shiftR)
-import Data.Word     (Word8, Word16)
+module System.Hardware.DeepArduino.SamplePrograms.Eeprom where
 
 import System.Hardware.DeepArduino
-
-i2CEnable :: ArduinoConnection -> IO ()
-i2CEnable c = send c $ i2cConfig 0
-
-eepromRead :: SlaveAddress -> Word8 -> Word8 -> Arduino [Word8]
-eepromRead sa addr count = do
-        i2cWrite sa [hi, lo]
-        ws <- i2cRead sa Nothing count
-        return ws
-  where lo =  addr             .&. 0xFF   -- first eight bits
-        hi = (addr `shiftR` 8) .&. 0x7F   -- seven extra high-bits
-
-eepromWrite :: SlaveAddress -> Word8 -> [Word8] -> Arduino ()
-eepromWrite sa addr ws = do
-        i2cWrite sa ([hi, lo] ++ ws)
-        delay 10
-  where lo =  addr             .&. 0xFF   -- first eight bits
-        hi = (addr `shiftR` 8) .&. 0x7F   -- seven extra high-bits
-        count = length ws
+import System.Hardware.DeepArduino.Parts.Eeprom
 
 eeprom :: IO ()
 eeprom = do
     conn <- openArduino False "/dev/cu.usbmodem1421"
 
-    i2CEnable conn
-
+    putStrLn "Clearing 16 bytes at address 0x100"
     eews <- send conn $ do
-        eepromWrite 0x50 4 [0xAA]
-        eepromRead 0x50 0 10
+        eepromEnable
+        eepromClear 0x50 0x100 16
+        eepromRead 0x50 0x100 16
+    print eews
+    putStrLn "Writing 16 bytes of [1,2,3,4,5,6,7,8] address 0x104"
+    eews <- send conn $ do
+        eepromWrite 0x50 0x104 [1,2,3,4,5,6,7,8]
+        eepromRead 0x50 0x100 16
     print eews
 
     closeArduino conn
