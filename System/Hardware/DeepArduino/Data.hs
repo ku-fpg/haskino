@@ -186,6 +186,34 @@ data PinData = PinData {
                }
                deriving Show
 
+-- | LCD's connected to the board
+newtype LCD = LCD Int
+            deriving (Eq, Ord, Show)
+
+-- | Hitachi LCD controller: See: <http://en.wikipedia.org/wiki/Hitachi_HD44780_LCD_controller>.
+-- We model only the 4-bit variant, with RS and EN lines only. (The most common Arduino usage.)
+-- The data sheet can be seen at: <http://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf>.
+data LCDController = Hitachi44780 {
+                       lcdRS       :: Pin  -- ^ Hitachi pin @ 4@: Register-select
+                     , lcdEN       :: Pin  -- ^ Hitachi pin @ 6@: Enable
+                     , lcdD4       :: Pin  -- ^ Hitachi pin @11@: Data line @4@
+                     , lcdD5       :: Pin  -- ^ Hitachi pin @12@: Data line @5@
+                     , lcdD6       :: Pin  -- ^ Hitachi pin @13@: Data line @6@
+                     , lcdD7       :: Pin  -- ^ Hitachi pin @14@: Data line @7@
+                     , lcdRows     :: Int  -- ^ Number of rows (typically 1 or 2, upto 4)
+                     , lcdCols     :: Int  -- ^ Number of cols (typically 16 or 20, upto 40)
+                     , dotMode5x10 :: Bool -- ^ Set to True if 5x10 dots are used
+                     }
+                     deriving Show
+
+-- | State of the LCD, a mere 8-bit word for the Hitachi
+data LCDData = LCDData {
+                  lcdDisplayMode    :: Word8         -- ^ Display mode (left/right/scrolling etc.)
+                , lcdDisplayControl :: Word8         -- ^ Display control (blink on/off, display on/off etc.)
+                , lcdGlyphCount     :: Word8         -- ^ Count of custom created glyphs (typically at most 8)
+                , lcdController     :: LCDController -- ^ Actual controller
+                }
+
 -- | What the board is capable of and current settings
 newtype BoardCapabilities = BoardCapabilities (M.Map IPin PinCapabilities)
 
@@ -716,6 +744,7 @@ data BoardState = BoardState {
                   , portStates           :: M.Map Port Word8    -- ^ For-each digital port, store its data
                   , digitalWakeUpQueue   :: [MVar ()]           -- ^ Semaphore list to wake-up upon receiving a digital message
                   , nextStepperDevice    :: Word8
+                  , lcds                 :: M.Map LCD LCDData   -- ^ LCD's attached to the board
                   }
 
 -- | State of the connection
