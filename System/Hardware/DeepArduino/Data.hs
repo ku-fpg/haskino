@@ -200,6 +200,7 @@ data LCDController = Hitachi44780 {
                      , lcdD5       :: Pin  -- ^ Hitachi pin @12@: Data line @5@
                      , lcdD6       :: Pin  -- ^ Hitachi pin @13@: Data line @6@
                      , lcdD7       :: Pin  -- ^ Hitachi pin @14@: Data line @7@
+                     , lcdBL       :: Maybe Pin -- ^ Backlight control pin (if present)
                      , lcdRows     :: Int  -- ^ Number of rows (typically 1 or 2, upto 4)
                      , lcdCols     :: Int  -- ^ Number of cols (typically 16 or 20, upto 40)
                      , dotMode5x10 :: Bool -- ^ Set to True if 5x10 dots are used

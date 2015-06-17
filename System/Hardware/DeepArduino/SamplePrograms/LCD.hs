@@ -57,6 +57,7 @@ hitachi = Hitachi44780 { lcdRS   = digital  8  --     4      Register-select
                        , lcdD5   = digital  5  --    12      Data 5
                        , lcdD6   = digital  6  --    13      Data 6
                        , lcdD7   = digital  7  --    14      Data 7
+                       , lcdBL   = Just (digital 10 ) --     Backlight Control
                        -- Other config variables for the display
                        , lcdRows     = 2    -- 2 rows
                        , lcdCols     = 16    -- of 16 columns
@@ -96,6 +97,7 @@ lcdDemo = do
     lcd <- lcdRegister conn hitachi
     happySymbol <- lcdCreateSymbol conn lcd happy
     sadSymbol <- lcdCreateSymbol conn lcd sad
+    lcdBacklightOn conn lcd
     lcdHome conn lcd
     putStrLn "Hitachi controller demo.."
     putStrLn ""
@@ -149,6 +151,8 @@ lcdDemo = do
                    , ("cursorOff",   ("",        "Do not display the cursor",   arg1 (lcdCursorOff conn)))
                    , ("displayOn",   ("",        "Turn the display on",         arg1 (lcdDisplayOn conn)))
                    , ("displayOff",  ("",        "Turn the display off",        arg1 (lcdDisplayOff conn)))
+                   , ("backlightOn", ("",        "Turn the backlight on",       arg1 (lcdBacklightOn conn)))
+                   , ("backlightOff",("",        "Turn the backlight off",      arg1 (lcdBacklightOff conn)))
                    , ("flash",       ("n",       "Flash the display n times",   arg2 flash))
                    , ("happy",       ("",        "Draw a smiling face",         arg3 (symbol True)))
                    , ("sad",         ("",        "Draw a sad face",             arg3 (symbol False)))
@@ -158,8 +162,8 @@ lcdDemo = do
                   case words m of
                     []       -> repl
                     ["quit"] -> do
+                        lcdBacklightOff conn lcd
                         closeArduino conn
-                        return ()
                     (cmd:_)    -> case cmd `lookup` commands of
                                     Nothing        -> do putStrLn $ "Unknown command '" ++ cmd ++ "', type ? for help."
                                                          repl

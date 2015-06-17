@@ -37,7 +37,7 @@ module System.Hardware.DeepArduino.Parts.LCD(
   -- Creating custom symbols
   , lcdCreateSymbol
   -- * Misc helpers
-  , lcdFlash
+  , lcdFlash, lcdBacklightOn, lcdBacklightOff
   )  where
 
 import Control.Concurrent  (modifyMVar, withMVar)
@@ -45,7 +45,7 @@ import Control.Monad       (when)
 import Control.Monad.State (gets, liftIO)
 import Data.Bits           (testBit, (.|.), (.&.), setBit, clearBit, shiftL, bit)
 import Data.Char           (ord, isSpace)
-import Data.Maybe          (fromMaybe)
+import Data.Maybe          (fromMaybe, isJust)
 import Data.Word           (Word8)
 
 import qualified Data.Map as M
@@ -96,9 +96,10 @@ getCmdVal Hitachi44780{lcdRows, dotMode5x10} = get
 -- | Initialize the LCD. Follows the data sheet <http://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf>,
 -- page 46; figure 24.
 initLCD :: ArduinoConnection -> LCD -> LCDController -> IO ()
-initLCD conn lcd c@Hitachi44780{lcdRS, lcdEN, lcdD4, lcdD5, lcdD6, lcdD7} = do
+initLCD conn lcd c@Hitachi44780{lcdRS, lcdEN, lcdD4, lcdD5, lcdD6, lcdD7, lcdBL} = do
     send conn $ do
         debug "Starting the LCD initialization sequence"
+        if isJust lcdBL then let Just p = lcdBL in setPinMode p OUTPUT else return ()
         mapM_ (`setPinMode` OUTPUT) [lcdRS, lcdEN, lcdD4, lcdD5, lcdD6, lcdD7]
         -- Wait for 50ms, data-sheet says at least 40ms for 2.7V version, so be safe
         delay 50
@@ -204,6 +205,23 @@ lcdRegister c controller = do
   case controller of
      Hitachi44780{} -> initLCD c lcd controller
   return lcd
+
+-- | Turn backlight on if there is one, otherwise do nothing
+lcdBacklightOn :: ArduinoConnection -> LCD -> IO()
+lcdBacklightOn c lcd = lcdBacklight c lcd True
+
+-- | Turn backlight off if there is one, otherwise do nothing
+lcdBacklightOff :: ArduinoConnection -> LCD -> IO()
+lcdBacklightOff c lcd = lcdBacklight c lcd False
+
+-- | Turn backlight on/off if there is one, otherwise do nothing
+lcdBacklight :: ArduinoConnection -> LCD -> Bool -> IO()
+lcdBacklight c lcd on = do
+   lcdc <- getController c lcd
+   let bl = lcdBL lcdc
+   if isJust bl 
+      then let Just p = bl in send c $ digitalWrite p on
+      else return()
 
 -- | Write a string on the LCD at the current cursor position
 lcdWrite :: ArduinoConnection -> LCD -> String -> IO ()
