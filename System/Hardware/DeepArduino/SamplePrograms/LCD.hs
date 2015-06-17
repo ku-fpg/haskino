@@ -49,10 +49,13 @@ import System.Hardware.DeepArduino.Parts.LCD
 --  * [If backlight is needed] LCD pin @16@ to GND via 220ohm resistor
 --
 --  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/LCD.png>>
-hitachi :: LCDController
+
+
+hitachiDigital :: LCDController
 -- Connections:                    ARDUINO        Hitachi   Description
 --------------------------------   -----------    ---------  ----------------
-hitachi = Hitachi44780 { lcdRS   = digital  8  --     4      Register-select
+hitachiDigital = 
+          Hitachi44780 { lcdRS   = digital  8  --     4      Register-select
                        , lcdEN   = digital  9  --     6      Enable
                        , lcdD4   = digital  4  --    11      Data 4
                        , lcdD5   = digital  5  --    12      Data 5
@@ -62,6 +65,14 @@ hitachi = Hitachi44780 { lcdRS   = digital  8  --     4      Register-select
                        -- Other config variables for the display
                        , lcdRows     = 2    -- 2 rows
                        , lcdCols     = 16    -- of 16 columns
+                       , dotMode5x10 = False -- Using the standard 5x8 dots
+                       }
+
+hitachiI2C = 
+          I2CHitachi44780 {
+                         address     = 27    -- I2C address of the device
+                       , lcdRows     = 4     -- 2 rows
+                       , lcdCols     = 20    -- of 16 columns
                        , dotMode5x10 = False -- Using the standard 5x8 dots
                        }
 
@@ -89,13 +100,19 @@ sad = [ "     "
       , "     "
       ]
 
+lcdDemoDigital :: IO ()
+lcdDemoDigital = runlcdDemo hitachiDigital
+
+lcdDemoI2C :: IO ()
+lcdDemoI2C = runlcdDemo hitachiI2C
+
 -- | Access the LCD connected to Arduino, making it show messages
 -- we read from the user and demonstrate other LCD control features offered
 -- by hArduino.
-lcdDemo :: IO ()
-lcdDemo = do
+runlcdDemo :: LCDController -> IO ()
+runlcdDemo h = do
     conn <- openArduino False "/dev/cu.usbmodem1421"
-    lcd <- lcdRegister conn hitachi
+    lcd <- lcdRegister conn h
     happySymbol <- lcdCreateSymbol conn lcd happy
     sadSymbol <- lcdCreateSymbol conn lcd sad
     lcdBacklightOn conn lcd

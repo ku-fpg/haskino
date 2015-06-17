@@ -7,7 +7,7 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- LCD (Liquid Crystal Display) parts supported by hArduino. The Haskell code
+-- LCD (Liquid Crystal Display) parts supported by DeepArduino. The Haskell code
 -- below has partly been implemented following the Arduino LiquidCrystal project
 -- source code: <http://code.google.com/p/arduino/source/browse/trunk/libraries/LiquidCrystal/>
 --
@@ -143,7 +143,7 @@ sendData lcd n = do debug $ "Transmitting LCD data: " ++ U.showByte n
                     transmit True lcd n
 
 -- | By controlling the enable-pin, indicate to the controller that
--- the data is ready for it to process.
+-- the data is ready for it to process - Done with Digtial writes
 pulseEnableDig :: LCDController -> Arduino ()
 pulseEnableDig Hitachi44780{lcdEN} = do
   debug "Sending LCD pulseEnable"
@@ -182,12 +182,14 @@ transmitDig mode c@Hitachi44780{lcdRS, lcdEN, lcdD4, lcdD5, lcdD6, lcdD7} val = 
 
 
 data LCD_I2C_Bits =
+  LCD_I2C_BACKLIGHT | 
   LCD_I2C_ENABLE |
   LCD_I2C_RS
 
 lcdI2CBitsToVal :: LCD_I2C_Bits -> Word8
-lcdI2CBitsToVal LCD_I2C_ENABLE = 4
-lcdI2CBitsToVal LCD_I2C_RS = 1
+lcdI2CBitsToVal LCD_I2C_BACKLIGHT = 8
+lcdI2CBitsToVal LCD_I2C_ENABLE    = 4
+lcdI2CBitsToVal LCD_I2C_RS        = 1
 
 -- | Transmit data down to the I2CLCD using I2C writes
 transmitI2C :: Bool -> LCDController -> Word8 -> Arduino ()
@@ -200,6 +202,8 @@ transmitI2C mode c@I2CHitachi44780{address} val = do
   where lo =  (val `shiftL` 4) .&. 0x0F -- lower four bits
         hi =  val .&. 0xF0               -- upper four bits
 
+-- | By controlling the enable-pin, indicate to the controller that
+-- the data is ready for it to process - Done with I2C writes
 pulseEnableI2C :: LCDController -> Word8 -> Arduino ()
 pulseEnableI2C c@I2CHitachi44780{address} d = do
   i2cWrite address [d .&. (lcdI2CBitsToVal LCD_I2C_ENABLE)]
