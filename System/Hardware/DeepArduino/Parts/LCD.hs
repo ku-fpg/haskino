@@ -1,9 +1,10 @@
 -------------------------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Arduino.Parts.LCD
--- Copyright   :  (c) Levent Erkok
+-- Module      :  System.Hardware.DeepArduino.Parts.LCD
+--                Based on System.Hardware.Arduino
+-- Copyright   :  (c) University of Kansas
+--                System.Hardware.Arduino (c) Levent Erkok
 -- License     :  BSD3
--- Maintainer  :  erkokl@gmail.com
 -- Stability   :  experimental
 --
 -- LCD (Liquid Crystal Display) parts supported by hArduino. The Haskell code

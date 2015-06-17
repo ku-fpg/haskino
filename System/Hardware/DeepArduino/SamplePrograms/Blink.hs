@@ -10,7 +10,7 @@
 -- The /hello world/ of the arduino world, blinking the led.
 -------------------------------------------------------------------------------
 
-module Blink where
+module System.Hardware.DeepArduino.SamplePrograms.Blink where
 
 import Control.Monad (forever)
 

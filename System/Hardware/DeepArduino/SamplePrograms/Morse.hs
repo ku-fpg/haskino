@@ -1,9 +1,10 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Arduino.SamplePrograms.Morse
--- Copyright   :  (c) Antoine R. Dumont, Levent Erkok
+-- Module      :  System.Hardware.DeepArduino.SamplePrograms.Morse
+--                Based on System.Hardware.Arduino
+-- Copyright   :  (c) University of Kansas
+--                System.Hardware.Arduino (c) Levent Erkok
 -- License     :  BSD3
--- Maintainer  :  erkokl@gmail.com
 -- Stability   :  experimental
 --
 -- Morse code blinker. Original by Antoine R. Dumont, modified to simplify

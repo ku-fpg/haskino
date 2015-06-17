@@ -1,11 +1,13 @@
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  System.Hardware.DeepArduino.SamplePrograms.Eeprom
+--                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
+--                System.Hardware.Arduino (c) Levent Erkok
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- The /hello world/ of the arduino world, blinking the led.
+-- Demo of Microchip 24LC256 comaptible I2C EEPROM.
 -------------------------------------------------------------------------------
 
 module System.Hardware.DeepArduino.SamplePrograms.Eeprom where

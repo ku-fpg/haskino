@@ -1,9 +1,10 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Arduino.SamplePrograms.LCD
--- Copyright   :  (c) Levent Erkok
+-- Module      :  System.Hardware.DeepArduino.SamplePrograms.LCD
+--                Based on System.Hardware.Arduino
+-- Copyright   :  (c) University of Kansas
+--                System.Hardware.Arduino (c) Levent Erkok
 -- License     :  BSD3
--- Maintainer  :  erkokl@gmail.com
 -- Stability   :  experimental
 --
 -- Basic demo of an Hitachi HD44780 LCD
