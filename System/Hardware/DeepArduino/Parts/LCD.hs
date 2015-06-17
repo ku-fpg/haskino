@@ -100,8 +100,9 @@ initLCD :: ArduinoConnection -> LCD -> LCDController -> IO ()
 initLCD conn lcd c@Hitachi44780{lcdRS, lcdEN, lcdD4, lcdD5, lcdD6, lcdD7, lcdBL} = do
     send conn $ do
         debug "Starting the LCD initialization sequence"
-        if isJust lcdBL then let Just p = lcdBL in setPinMode p OUTPUT else return ()
-        mapM_ (`setPinMode` OUTPUT) [lcdRS, lcdEN, lcdD4, lcdD5, lcdD6, lcdD7]
+        case c of 
+          Hitachi44780{} -> initLCDDigital conn lcd c
+          I2CHitachi44780{} -> i2cConfig 0
         -- Wait for 50ms, data-sheet says at least 40ms for 2.7V version, so be safe
         delay 50
         sendCmd c LCD_INITIALIZE
@@ -115,6 +116,13 @@ initLCD conn lcd c@Hitachi44780{lcdRS, lcdEN, lcdD4, lcdD5, lcdD6, lcdD7, lcdBL}
     lcdHome conn lcd
     lcdClear conn lcd
     lcdDisplayOn conn lcd
+
+-- | Initialize the LCD. Follows the data sheet <http://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf>,
+-- page 46; figure 24.
+initLCDDigital :: ArduinoConnection -> LCD -> LCDController -> Arduino ()
+initLCDDigital conn lcd c@Hitachi44780{lcdRS, lcdEN, lcdD4, lcdD5, lcdD6, lcdD7, lcdBL} = do
+    if isJust lcdBL then let Just p = lcdBL in setPinMode p OUTPUT else return ()
+    mapM_ (`setPinMode` OUTPUT) [lcdRS, lcdEN, lcdD4, lcdD5, lcdD6, lcdD7]
 
 -- | Get the controller associated with the LCD
 getController :: ArduinoConnection -> LCD -> IO LCDController
@@ -136,8 +144,8 @@ sendData lcd n = do debug $ "Transmitting LCD data: " ++ U.showByte n
 
 -- | By controlling the enable-pin, indicate to the controller that
 -- the data is ready for it to process.
-pulseEnable :: LCDController -> Arduino ()
-pulseEnable Hitachi44780{lcdEN} = do
+pulseEnableDig :: LCDController -> Arduino ()
+pulseEnableDig Hitachi44780{lcdEN} = do
   debug "Sending LCD pulseEnable"
   digitalWrite lcdEN False
   delay 1
@@ -148,7 +156,14 @@ pulseEnable Hitachi44780{lcdEN} = do
 
 -- | Transmit data down to the LCD
 transmit :: Bool -> LCDController -> Word8 -> Arduino ()
-transmit mode c@Hitachi44780{lcdRS, lcdEN, lcdD4, lcdD5, lcdD6, lcdD7} val = do
+transmit mode c val = do
+  case c of
+    Hitachi44780{}    -> transmitDig mode c val
+    I2CHitachi44780{} -> transmitI2C mode c val
+
+-- | Transmit data down to the LCD digital writes
+transmitDig :: Bool -> LCDController -> Word8 -> Arduino ()
+transmitDig mode c@Hitachi44780{lcdRS, lcdEN, lcdD4, lcdD5, lcdD6, lcdD7} val = do
   digitalWrite lcdRS mode
   digitalWrite lcdEN False
   let [b7, b6, b5, b4, b3, b2, b1, b0] = [val `testBit` i | i <- [7, 6 .. 0]]
@@ -157,13 +172,40 @@ transmit mode c@Hitachi44780{lcdRS, lcdEN, lcdD4, lcdD5, lcdD6, lcdD7} val = do
   digitalWrite lcdD5 b5
   digitalWrite lcdD6 b6
   digitalWrite lcdD7 b7
-  pulseEnable c
+  pulseEnableDig c
   -- Send down the remaining batch
   digitalWrite lcdD4 b0
   digitalWrite lcdD5 b1
   digitalWrite lcdD6 b2
   digitalWrite lcdD7 b3
-  pulseEnable c
+  pulseEnableDig c
+
+
+data LCD_I2C_Bits =
+  LCD_I2C_ENABLE |
+  LCD_I2C_RS
+
+lcdI2CBitsToVal :: LCD_I2C_Bits -> Word8
+lcdI2CBitsToVal LCD_I2C_ENABLE = 4
+lcdI2CBitsToVal LCD_I2C_RS = 1
+
+-- | Transmit data down to the I2CLCD using I2C writes
+transmitI2C :: Bool -> LCDController -> Word8 -> Arduino ()
+transmitI2C mode c@I2CHitachi44780{address} val = do
+    let rs = if mode then 0 else lcdI2CBitsToVal LCD_I2C_RS
+    i2cWrite address [hi .|. rs]
+    pulseEnableI2C c hi
+    i2cWrite address [lo .|. rs]
+    pulseEnableI2C c lo
+  where lo =  (val `shiftL` 4) .&. 0x0F -- lower four bits
+        hi =  val .&. 0xF0               -- upper four bits
+
+pulseEnableI2C :: LCDController -> Word8 -> Arduino ()
+pulseEnableI2C c@I2CHitachi44780{address} d = do
+  i2cWrite address [d .&. (lcdI2CBitsToVal LCD_I2C_ENABLE)]
+  delay 1
+  i2cWrite address [d]
+  delay 50
 
 -- | Helper function to simplify library programming, not exposed to the user.
 withLCD :: ArduinoConnection -> LCD -> String -> (LCDController -> Arduino a) -> IO a

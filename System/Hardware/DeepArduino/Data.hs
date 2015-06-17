@@ -205,6 +205,12 @@ data LCDController = Hitachi44780 {
                      , lcdCols     :: Int  -- ^ Number of cols (typically 16 or 20, upto 40)
                      , dotMode5x10 :: Bool -- ^ Set to True if 5x10 dots are used
                      }
+    | I2CHitachi44780 {
+                       address     :: Word8 -- ^ I2C Slave Address of LCD
+                     , lcdRows     :: Int  -- ^ Number of rows (typically 1 or 2, upto 4)
+                     , lcdCols     :: Int  -- ^ Number of cols (typically 16 or 20, upto 40)
+                     , dotMode5x10 :: Bool -- ^ Set to True if 5x10 dots are used
+                     }
                      deriving Show
 
 -- | State of the LCD, a mere 8-bit word for the Hitachi
