@@ -38,9 +38,6 @@ jingleBells =  m1 ++ m1 ++ m3 ++ m4 ++ wait ++ m5 ++ m6 ++ m7 ++ m8 ++ wait
 --
 --  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/Piezo.png>>
 main :: IO ()
-main = do
-    conn <- openArduino False "/dev/cu.usbmodem1421"
-    let (pz, init) = speaker 75 (pin 3)
-    send conn $ do
-        init
-        playNotes pz jingleBells
+main = withArduino False "/dev/cu.usbmodem1421" $ do
+                pz <- speaker 75 (pin 3)
+                playNotes pz jingleBells

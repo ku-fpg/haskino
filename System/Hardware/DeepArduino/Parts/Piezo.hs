@@ -1,9 +1,10 @@
 -------------------------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Arduino.Parts.Piezo
--- Copyright   :  (c) Levent Erkok
+-- Module      :  System.Hardware.DeepArduino.Parts.Piezo
+--                Based on System.Hardware.Arduino
+-- Copyright   :  (c) University of Kansas
+--                System.Hardware.Arduino (c) Levent Erkok
 -- License     :  BSD3
--- Maintainer  :  erkokl@gmail.com
 -- Stability   :  experimental
 --
 -- Abstractions for piezo speakers. 
@@ -38,10 +39,10 @@ data Piezo = Piezo { piezoPin :: Pin      -- ^ The internal-pin that controls th
 -- | Create a piezo speaker instance.
 speaker :: Word32         -- ^ Tempo. Higher numbers mean faster melodies; in general.
         -> Pin            -- ^ Pin controlling the piezo. Should be a pin that supports PWM mode.
-        -> (Piezo, Arduino ())
-speaker t p = (Piezo { piezoPin = p, tempo = t }, 
-               do debug $ "Attaching speaker on pin: " ++ show p
-                  setPinMode p PWM)
+        -> Arduino Piezo
+speaker t p = do debug $ "Attaching speaker on pin: " ++ show p
+                 setPinMode p PWM
+                 return Piezo { piezoPin = p, tempo = t }
 
 -- | Musical notes, notes around middle-C
 data Note     = A | B | C | D | E | F | G | R  deriving (Eq, Show)  -- R is for rest
