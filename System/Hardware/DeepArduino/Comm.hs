@@ -180,6 +180,9 @@ send conn commands =
           send' c (k ()) (B.append cmds proc)
       sendBind c (Local local)   k cmds = sendLocal c local k cmds
       sendBind c (Query query)   k cmds = sendQuery c query k cmds
+      sendBind c (LiftIO m) k cmds = do 
+          res <- m
+          send' c (k res) cmds
 
       sendLocal :: ArduinoConnection -> Local a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendLocal c (AnalogRead p) k cmds = do

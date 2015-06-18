@@ -20,6 +20,7 @@ import           Control.Concurrent (Chan, MVar, ThreadId, withMVar, modifyMVar,
                                      modifyMVar_, putMVar, takeMVar, readMVar,
                                      newEmptyMVar)
 import           Control.Monad (ap, liftM2, when, unless, void)
+import           Control.Monad.Trans
 
 import           Data.Bits ((.|.), (.&.), setBit)
 import           Data.List (intercalate)
@@ -40,6 +41,7 @@ data Arduino :: * -> * where
     Procedure      :: Procedure                       -> Arduino ()
     Local          :: Local a                         -> Arduino a
     Query          :: Query a                         -> Arduino a
+    LiftIO         :: IO a                            -> Arduino a
     Bind           :: Arduino a -> (a -> Arduino b)   -> Arduino b
     Return         :: a                               -> Arduino a
 
@@ -57,6 +59,12 @@ instance Functor Arduino where
 instance Monoid a => Monoid (Arduino a) where
   mappend = liftM2 mappend
   mempty  = return mempty
+
+instance MonadIO Arduino where
+  liftIO m = LiftIO m
+
+myLiftIO :: IO a -> Arduino a
+myLiftIO m = LiftIO m
 
 -- | A pin on the Arduino, as specified by the user via 'pin', 'digital', and 'analog' functions.
 data Pin = DigitalPin {userPinNo :: Word8}
