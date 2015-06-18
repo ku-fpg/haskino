@@ -202,7 +202,7 @@ pulseEnableI2C c@I2CHitachi44780{address} d = do
     i2cWrite address [d .|. en .|. (lcdI2CBitsToVal LCD_I2C_BACKLIGHT)]
     delay 1
     i2cWrite address [d .&. (complement en) .|. (lcdI2CBitsToVal LCD_I2C_BACKLIGHT)]
-    delay 50
+    delay 1
   where
     en = lcdI2CBitsToVal LCD_I2C_ENABLE
 

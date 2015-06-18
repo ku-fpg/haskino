@@ -179,6 +179,8 @@ runlcdDemo h = withArduino False "/dev/cu.usbmodem1421" $ do
                    , ("cursorOff",   ("",        "Do not display the cursor",   arg1 lcdCursorOff))
                    , ("displayOn",   ("",        "Turn the display on",         arg1 lcdDisplayOn))
                    , ("displayOff",  ("",        "Turn the display off",        arg1 lcdDisplayOff))
+                   , ("backlightOn", ("",        "Turn the backlight on",       arg1 lcdBacklightOn))
+                   , ("backlightOff",("",        "Turn the backlight off",      arg1 lcdBacklightOff))
                    , ("flash",       ("n",       "Flash the display n times",   arg2 flash))
                    , ("happy",       ("",        "Draw a smiling face",         arg3 (symbol True)))
                    , ("sad",         ("",        "Draw a sad face",             arg3 (symbol False)))
