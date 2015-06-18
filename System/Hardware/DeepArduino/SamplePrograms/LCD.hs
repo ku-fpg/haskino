@@ -108,84 +108,79 @@ lcdDemoI2C = runlcdDemo hitachiI2C
 
 -- | Access the LCD connected to Arduino, making it show messages
 -- we read from the user and demonstrate other LCD control features offered
--- by hArduino.
+-- by DeepArduino.
 runlcdDemo :: LCDController -> IO ()
-runlcdDemo h = do
-    conn <- openArduino False "/dev/cu.usbmodem1421"
-    lcd <- lcdRegister conn h
-    happySymbol <- lcdCreateSymbol conn lcd happy
-    sadSymbol <- lcdCreateSymbol conn lcd sad
-    lcdBacklightOn conn lcd
-    lcdHome conn lcd
-    putStrLn "Hitachi controller demo.."
-    putStrLn ""
-    putStrLn "Looking for an example? Try the following sequence:"
-    putStrLn "    cursor 5 0"
-    putStrLn "    happy"
-    putStrLn "    write _"
-    putStrLn "    happy"
-    putStrLn "    flash 5"
-    putStrLn ""
-    putStrLn "Type ? to see all available commands."
-    let help = do let (cmds, args, hlps) = unzip3 $ ("quit", "", "Quit the demo") : [(c, a, h) | (c, (a, h, _)) <- commands]
-                      clen = 1 + maximum (map length cmds)
-                      alen = 8 + maximum (map length args)
-                      pad l s = take l (s ++ repeat ' ')
-                      line (c, a, h) = putStrLn $ pad clen c ++ pad alen a ++ h
-                  mapM_ line $ zip3 cmds args hlps
+runlcdDemo h = withArduino False "/dev/cu.usbmodem1421" $ do
+              lcd <- lcdRegister h
+              happySymbol <- lcdCreateSymbol lcd happy
+              sadSymbol   <- lcdCreateSymbol lcd sad
+              lcdBacklightOn lcd
+              lcdHome lcd
+              liftIO $ do putStrLn "Hitachi controller demo.."
+                          putStrLn ""
+                          putStrLn "Looking for an example? Try the following sequence:"
+                          putStrLn "    cursor 5 0"
+                          putStrLn "    happy"
+                          putStrLn "    write _"
+                          putStrLn "    happy"
+                          putStrLn "    flash 5"
+                          putStrLn ""
+                          putStrLn "Type ? to see all available commands."
+              let repl = do liftIO $ putStr "LCD> "
+                            m <- liftIO getLine
+                            case words m of
+                              []       -> repl
+                              ["quit"] -> return ()
+                              (cmd:_)    -> case cmd `lookup` commands of
+                                              Nothing        -> do liftIO $ putStrLn $ "Unknown command '" ++ cmd ++ "', type ? for help."
+                                                                   repl
+                                              Just (_, _, c) -> do c lcd (dropWhile isSpace (drop (length cmd) m)) (happySymbol, sadSymbol)
+                                                                   repl
+              repl
+  where help = liftIO $ do let (cmds, args, hlps) = unzip3 $ ("quit", "", "Quit the demo") : [(c, a, h) | (c, (a, h, _)) <- commands]
+                               clen = 1 + maximum (map length cmds)
+                               alen = 8 + maximum (map length args)
+                               pad l s = take l (s ++ repeat ' ')
+                               line (c, a, h) = putStrLn $ pad clen c ++ pad alen a ++ h
+                           mapM_ line $ zip3 cmds args hlps
         arg0 f _   [] _ = f
-        arg0 _ _   a  _ = putStrLn $ "Unexpected arguments: " ++ show a
+        arg0 _ _   a  _ = liftIO $ putStrLn $ "Unexpected arguments: " ++ show a
         arg1 f lcd [] _ = f lcd
-        arg1 _ _   a  _ = putStrLn $ "Unexpected arguments: " ++ show a
+        arg1 _ _   a  _ = liftIO $ putStrLn $ "Unexpected arguments: " ++ show a
         arg2 f lcd a  _ = f lcd a
         arg3            = id
         grabNums n a f  = case [v | [(v, "")] <- map reads (words a)] of
-                            vs | length vs /= n -> putStrLn $ "Need " ++ show n ++ " numeric parameter" ++ if n == 1 then "." else "s."
+                            vs | length vs /= n -> liftIO $ putStrLn $ "Need " ++ show n ++ " numeric parameter" ++ if n == 1 then "." else "s."
                             vs                  -> f vs
-        symbol isHappy lcd _ (h, s) = lcdWriteSymbol conn lcd (if isHappy then h else s)
-        cursor lcd a = grabNums 2 a (\[col, row] -> lcdSetCursor conn lcd (col, row))
-        flash  lcd a = grabNums 1 a (\[n] -> lcdFlash conn lcd n 500)
-        code   lcd a = grabNums 1 a (\[n] -> do lcdClear conn lcd
-                                                lcdHome conn lcd
-                                                lcdWriteSymbol conn lcd (lcdInternalSymbol n)
-                                                lcdWrite conn lcd $ " (Code: 0x" ++ showHex n "" ++ ")")
-        scroll toLeft lcd a = grabNums 1 a (\[n] -> do let scr | toLeft = lcdScrollDisplayLeft conn
-                                                               | True   = lcdScrollDisplayRight conn
-                                                       sequence_ $ concat $ replicate n [scr lcd, send conn $ delay 500])
+        symbol isHappy lcd _ (h, s) = lcdWriteSymbol lcd (if isHappy then h else s)
+        cursor lcd a = grabNums 2 a (\[col, row] -> lcdSetCursor lcd (col, row))
+        flash  lcd a = grabNums 1 a (\[n] -> lcdFlash lcd n 500)
+        code   lcd a = grabNums 1 a (\[n] -> do lcdClear lcd
+                                                lcdHome lcd
+                                                lcdWriteSymbol lcd (lcdInternalSymbol n)
+                                                lcdWrite lcd $ " (Code: 0x" ++ showHex n "" ++ ")")
+        scroll toLeft lcd a = grabNums 1 a (\[n] -> do let scr | toLeft = lcdScrollDisplayLeft
+                                                               | True   = lcdScrollDisplayRight
+                                                       sequence_ $ concat $ replicate n [scr lcd, delay 500])
         commands = [ ("?",           ("",        "Display this help message",   arg0 help))
-                   , ("clear",       ("",        "Clear the LCD screen",        arg1 (lcdClear conn)))
-                   , ("write",       ("string",  "Write to the LCD",            arg2 (lcdWrite conn)))
-                   , ("home",        ("",        "Move cursor to home",         arg1 (lcdHome conn)))
+                   , ("clear",       ("",        "Clear the LCD screen",        arg1 lcdClear))
+                   , ("write",       ("string",  "Write to the LCD",            arg2 lcdWrite))
+                   , ("home",        ("",        "Move cursor to home",         arg1 lcdHome))
                    , ("cursor",      ("col row", "Move cursor to col row",      arg2 cursor))
-                   , ("scrollOff",   ("",        "Turn off auto-scroll",        arg1 (lcdAutoScrollOff conn)))
-                   , ("scrollOn",    ("",        "Turn on auto-scroll",         arg1 (lcdAutoScrollOn conn)))
+                   , ("scrollOff",   ("",        "Turn off auto-scroll",        arg1 lcdAutoScrollOff))
+                   , ("scrollOn",    ("",        "Turn on auto-scroll",         arg1 lcdAutoScrollOn))
                    , ("scrollLeft",  ("n",       "Scroll left by n chars",      arg2 (scroll True)))
                    , ("scrollRight", ("n",       "Scroll right by n char",      arg2 (scroll False)))
-                   , ("leftToRight", ("",        "Set left to right direction", arg1 (lcdLeftToRight conn)))
-                   , ("rightToLeft", ("",        "Set left to right direction", arg1 (lcdRightToLeft conn)))
-                   , ("blinkOn",     ("",        "Set blinking ON",             arg1 (lcdBlinkOn conn)))
-                   , ("blinkOff",    ("",        "Set blinking ON",             arg1 (lcdBlinkOff conn)))
-                   , ("cursorOn",    ("",        "Display the cursor",          arg1 (lcdCursorOn conn)))
-                   , ("cursorOff",   ("",        "Do not display the cursor",   arg1 (lcdCursorOff conn)))
-                   , ("displayOn",   ("",        "Turn the display on",         arg1 (lcdDisplayOn conn)))
-                   , ("displayOff",  ("",        "Turn the display off",        arg1 (lcdDisplayOff conn)))
-                   , ("backlightOn", ("",        "Turn the backlight on",       arg1 (lcdBacklightOn conn)))
-                   , ("backlightOff",("",        "Turn the backlight off",      arg1 (lcdBacklightOff conn)))
+                   , ("leftToRight", ("",        "Set left to right direction", arg1 lcdLeftToRight))
+                   , ("rightToLeft", ("",        "Set left to right direction", arg1 lcdRightToLeft))
+                   , ("blinkOn",     ("",        "Set blinking ON",             arg1 lcdBlinkOn))
+                   , ("blinkOff",    ("",        "Set blinking ON",             arg1 lcdBlinkOff))
+                   , ("cursorOn",    ("",        "Display the cursor",          arg1 lcdCursorOn))
+                   , ("cursorOff",   ("",        "Do not display the cursor",   arg1 lcdCursorOff))
+                   , ("displayOn",   ("",        "Turn the display on",         arg1 lcdDisplayOn))
+                   , ("displayOff",  ("",        "Turn the display off",        arg1 lcdDisplayOff))
                    , ("flash",       ("n",       "Flash the display n times",   arg2 flash))
                    , ("happy",       ("",        "Draw a smiling face",         arg3 (symbol True)))
                    , ("sad",         ("",        "Draw a sad face",             arg3 (symbol False)))
-                   , ("code",        ("n",       "Write symbol with code n",    arg2 code)) ]
-        repl = do putStr "LCD> "
-                  m <- getLine
-                  case words m of
-                    []       -> repl
-                    ["quit"] -> do
-                        lcdBacklightOff conn lcd
-                        closeArduino conn
-                    (cmd:_)    -> case cmd `lookup` commands of
-                                    Nothing        -> do putStrLn $ "Unknown command '" ++ cmd ++ "', type ? for help."
-                                                         repl
-                                    Just (_, _, c) -> do c lcd (dropWhile isSpace (drop (length cmd) m)) (happySymbol, sadSymbol)
-                                                         repl
-    repl
-
+                   , ("code",        ("n",       "Write symbol with code n",    arg2 code))
+                   ]
