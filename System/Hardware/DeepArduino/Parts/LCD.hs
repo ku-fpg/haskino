@@ -111,7 +111,6 @@ initLCD lcd = do
     delay 5
     sendCmd lcd c LCD_INITIALIZE_END
     sendCmd lcd c LCD_FUNCTIONSET
-    lcdBacklightOn lcd
     lcdCursorOff lcd
     lcdBlinkOff lcd
     lcdLeftToRight lcd
@@ -278,7 +277,6 @@ lcdBacklight lcd on = do
             return (lcdst', lcdst')
         -- Send a noop so backlight state line gets updated
         sendCmd lcd lcdc LCD_NOOP
-        return ()
 
 -- | Write a string on the LCD at the current cursor position
 lcdWrite :: LCD -> String -> Arduino ()
