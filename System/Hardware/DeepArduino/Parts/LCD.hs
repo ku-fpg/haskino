@@ -41,7 +41,7 @@ module System.Hardware.DeepArduino.Parts.LCD(
   , lcdFlash, lcdBacklightOn, lcdBacklightOff
   )  where
 
-import Control.Concurrent  (modifyMVar, withMVar, newMVar)
+import Control.Concurrent  (modifyMVar, withMVar, newMVar, readMVar)
 import Control.Monad       (when)
 import Control.Monad.State (gets, liftIO)
 import Data.Bits           (testBit, (.|.), (.&.), setBit, clearBit, shiftL, bit, complement)
@@ -105,10 +105,10 @@ initLCD lcd = do
         I2CHitachi44780{} -> i2cConfig 0
     -- Wait for 50ms, data-sheet says at least 40ms for 2.7V version, so be safe
     delay 50
-    sendCmd c LCD_INITIALIZE
+    sendCmd lcd c LCD_INITIALIZE
     delay 5
-    sendCmd c LCD_INITIALIZE_END
-    sendCmd c LCD_FUNCTIONSET
+    sendCmd lcd c LCD_INITIALIZE_END
+    sendCmd lcd c LCD_FUNCTIONSET
     lcdBacklightOn lcd
     lcdCursorOff lcd
     lcdBlinkOff lcd
@@ -126,13 +126,13 @@ initLCDDigital c@Hitachi44780{lcdRS, lcdEN, lcdD4, lcdD5, lcdD6, lcdD7, lcdBL} =
     mapM_ (`setPinMode` OUTPUT) [lcdRS, lcdEN, lcdD4, lcdD5, lcdD6, lcdD7]
 
 -- | Send a command to the LCD controller
-sendCmd :: LCDController -> Cmd -> Arduino ()
-sendCmd c = transmit False c . getCmdVal c
+sendCmd :: LCD -> LCDController -> Cmd -> Arduino ()
+sendCmd lcd c = transmit False lcd c . getCmdVal c
 
 -- | Send 4-bit data to the LCD controller
-sendData :: LCDController -> Word8 -> Arduino ()
-sendData lcd n = do debug $ "Transmitting LCD data: " ++ U.showByte n
-                    transmit True lcd n
+sendData :: LCD-> LCDController -> Word8 -> Arduino ()
+sendData lcd c n = do debug $ "Transmitting LCD data: " ++ U.showByte n
+                      transmit True lcd c n
 
 -- | By controlling the enable-pin, indicate to the controller that
 -- the data is ready for it to process - Done with Digtial writes
@@ -147,11 +147,11 @@ pulseEnableDig Hitachi44780{lcdEN} = do
   delay 1
 
 -- | Transmit data down to the LCD
-transmit :: Bool -> LCDController -> Word8 -> Arduino ()
-transmit mode c val = do
+transmit :: Bool -> LCD -> LCDController -> Word8 -> Arduino ()
+transmit mode lcd c val = do
   case c of
     Hitachi44780{}    -> transmitDig mode c val
-    I2CHitachi44780{} -> transmitI2C mode c val
+    I2CHitachi44780{} -> transmitI2C mode lcd c val
 
 -- | Transmit data down to the LCD digital writes
 transmitDig :: Bool -> LCDController -> Word8 -> Arduino ()
@@ -184,8 +184,14 @@ lcdI2CBitsToVal LCD_I2C_ENABLE    = 4
 lcdI2CBitsToVal LCD_I2C_RS        = 1
 
 -- | Transmit data down to the I2CLCD using I2C writes
-transmitI2C :: Bool -> LCDController -> Word8 -> Arduino ()
-transmitI2C mode c@I2CHitachi44780{address} val = do
+transmitI2C :: Bool -> LCD -> LCDController -> Word8 -> Arduino ()
+transmitI2C mode lcd c@I2CHitachi44780{address} val = do
+    lcdd <- liftIO $ readMVar (lcdState lcd)
+    let bl = if lcdBacklightState lcdd 
+                then lcdI2CBitsToVal LCD_I2C_BACKLIGHT
+                else 0
+        lors = lo .|. rs .|. bl
+        hirs = hi .|. rs .|. bl
     i2cWrite address [hirs]
     pulseEnableI2C c hirs
     i2cWrite address [lors]
@@ -193,16 +199,14 @@ transmitI2C mode c@I2CHitachi44780{address} val = do
   where rs = if mode then lcdI2CBitsToVal LCD_I2C_RS else 0
         lo =  (val `shiftL` 4) .&. 0xF0    -- lower four bits
         hi =  val .&. 0xF0                 -- upper four bits
-        lors = lo .|. rs .|. (lcdI2CBitsToVal LCD_I2C_BACKLIGHT)
-        hirs = hi .|. rs .|. (lcdI2CBitsToVal LCD_I2C_BACKLIGHT)
 
 -- | By controlling the enable-pin, indicate to the controller that
 -- the data is ready for it to process - Done with I2C writes
 pulseEnableI2C :: LCDController -> Word8 -> Arduino ()
 pulseEnableI2C c@I2CHitachi44780{address} d = do
-    i2cWrite address [d .|. en .|. (lcdI2CBitsToVal LCD_I2C_BACKLIGHT)]
+    i2cWrite address [d .|. en] -- .|. (lcdI2CBitsToVal LCD_I2C_BACKLIGHT)]
     delay 1
-    i2cWrite address [d .&. (complement en) .|. (lcdI2CBitsToVal LCD_I2C_BACKLIGHT)]
+    i2cWrite address [d .&. (complement en)] -- .|. (lcdI2CBitsToVal LCD_I2C_BACKLIGHT)]
     delay 1
   where
     en = lcdI2CBitsToVal LCD_I2C_ENABLE
@@ -261,27 +265,33 @@ lcdBacklight lcd on = do
    let lcdc = lcdController lcd
    case lcdc of 
       Hitachi44780{} -> do
-          let bl = lcdBL lcdc
-          if isJust bl 
-              then let Just p = bl in digitalWrite p on
-              else return()
-      I2CHitachi44780{} -> return ()
+        let bl = lcdBL lcdc
+        if isJust bl 
+            then let Just p = bl in digitalWrite p on
+            else return()
+      I2CHitachi44780{} -> do
+        let lcds = lcdState lcd
+        liftIO $ modifyMVar lcds $ \lcdst -> do
+            let lcdst' =  lcdst { lcdBacklightState = on}
+            return (lcdst', lcdst')
+        -- TBD send some sort of noop so backlight state line gets updated
+        return ()
 
 -- | Write a string on the LCD at the current cursor position
 lcdWrite :: LCD -> String -> Arduino ()
-lcdWrite lcd m = withLCD lcd ("Writing " ++ show m ++ " to LCD") $ \c -> mapM_ (sendData c) m'
+lcdWrite lcd m = withLCD lcd ("Writing " ++ show m ++ " to LCD") $ \c -> mapM_ (sendData lcd c) m'
    where m' = map (\ch -> fromIntegral (ord ch) .&. 0xFF) m
 
 -- | Clear the LCD
 lcdClear :: LCD -> Arduino ()
 lcdClear lcd = withLCD lcd "Sending clearLCD" $ \c ->
-                 do sendCmd c LCD_CLEARDISPLAY
+                 do sendCmd lcd c LCD_CLEARDISPLAY
                     delay 2 -- give some time to make sure LCD is really cleared
 
 -- | Send the cursor to home position
 lcdHome :: LCD -> Arduino ()
 lcdHome lcd = withLCD lcd "Sending the cursor home" $ \c ->
-                 do sendCmd c LCD_RETURNHOME
+                 do sendCmd lcd c LCD_RETURNHOME
                     delay 2
 
 -- | Set the cursor location. The pair of arguments is the new column and row numbers
@@ -296,7 +306,7 @@ lcdHome lcd = withLCD lcd "Sending the cursor home" $ \c ->
 --     possible location on the LCD.
 lcdSetCursor :: LCD -> (Int, Int) -> Arduino ()
 lcdSetCursor lcd (givenCol, givenRow) = withLCD lcd ("Sending the cursor to Row: " ++ show givenRow ++ " Col: " ++ show givenCol) set
-  where set c = sendCmd c (LCD_SETDDRAMADDR offset)
+  where set c = sendCmd lcd c (LCD_SETDDRAMADDR offset)
               where align :: Int -> Int -> Word8
                     align i m
                       | i < 0  = 0
@@ -312,12 +322,12 @@ lcdSetCursor lcd (givenCol, givenRow) = withLCD lcd ("Sending the cursor to Row:
 -- | Scroll the display to the left by 1 character. Project idea: Using a tilt sensor, scroll the contents of the display
 -- left/right depending on the tilt. 
 lcdScrollDisplayLeft :: LCD -> Arduino ()
-lcdScrollDisplayLeft lcd = withLCD lcd "Scrolling display to the left by 1" $ \c -> sendCmd c (LCD_CURSORSHIFT lcdMoveLeft)
+lcdScrollDisplayLeft lcd = withLCD lcd "Scrolling display to the left by 1" $ \c -> sendCmd lcd c (LCD_CURSORSHIFT lcdMoveLeft)
   where lcdMoveLeft = 0x00
 
 -- | Scroll the display to the right by 1 character
 lcdScrollDisplayRight :: LCD -> Arduino ()
-lcdScrollDisplayRight lcd = withLCD lcd "Scrolling display to the right by 1" $ \c -> sendCmd c (LCD_CURSORSHIFT lcdMoveRight)
+lcdScrollDisplayRight lcd = withLCD lcd "Scrolling display to the right by 1" $ \c -> sendCmd lcd c (LCD_CURSORSHIFT lcdMoveRight)
   where lcdMoveRight = 0x04
 
 -- | Display characteristics helper, set the new control/mode and send
@@ -334,9 +344,9 @@ updateDisplayData what (f, g) lcd = do
                                     }
                  return (lcdst', (lcdst, lcdst'))
    when (oldC /= newC) $ do debug what
-                            sendCmd c (LCD_DISPLAYCONTROL newC)
+                            sendCmd lcd c (LCD_DISPLAYCONTROL newC)
    when (oldM /= newM) $ do debug what
-                            sendCmd c (LCD_ENTRYMODESET   newM)
+                            sendCmd lcd c (LCD_ENTRYMODESET   newM)
 
 -- | Update the display control word
 updateDisplayControl :: String -> (Word8 -> Word8) -> LCD -> Arduino ()
@@ -469,16 +479,16 @@ lcdCreateSymbol lcd glyph
               do let lcdst' = lcdst { lcdGlyphCount = (lcdGlyphCount lcdst) + 1 }
                  return (lcdst', lcdGlyphCount lcdst)
        let create = do
-            sendCmd c (LCD_SETCGRAMADDR i)
+            sendCmd lcd c (LCD_SETCGRAMADDR i)
             let cvt :: String -> Word8
                 cvt s = foldr (.|.) 0 [bit p | (ch, p) <- zip (reverse s) [0..], not (isSpace ch)]
-            mapM_ (sendData c . cvt) glyph
+            mapM_ (sendData lcd c . cvt) glyph
        create
        return $ LCDSymbol i
 
 -- | Display a user created symbol on the LCD. (See 'lcdCreateSymbol' for details.)
 lcdWriteSymbol :: LCD -> LCDSymbol -> Arduino ()
-lcdWriteSymbol lcd (LCDSymbol i) = withLCD lcd ("Writing custom symbol " ++ show i ++ " to LCD") $ \c -> sendData c i
+lcdWriteSymbol lcd (LCDSymbol i) = withLCD lcd ("Writing custom symbol " ++ show i ++ " to LCD") $ \c -> sendData lcd c i
 
 -- | Access an internally stored symbol, one that is not available via its ASCII equivalent. See
 -- the Hitachi datasheet for possible values: <http://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf>, Table 4 on page 17.
