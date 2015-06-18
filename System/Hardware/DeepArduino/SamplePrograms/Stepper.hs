@@ -21,7 +21,7 @@ import System.Hardware.DeepArduino.Parts.Stepper
 -- | NumSteps is the number of times to step the motor
 -- | Step Speed is speed in 0.01 rad/sec
 -- | i.e. stepper CW 80 50
---  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/Stepper.png>>
+--  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/DeepArduino/SamplePrograms/Schematics/Stepper.png>>
 stepper :: StepDir -> NumSteps -> StepSpeed -> IO ()
 stepper sd ns ss = do
     conn <- openArduino True "/dev/cu.usbmodem1421"

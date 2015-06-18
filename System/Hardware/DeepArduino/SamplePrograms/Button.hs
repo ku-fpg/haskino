@@ -25,7 +25,7 @@ import System.Hardware.DeepArduino
 -- The wiring is straightforward: Simply put a push-button between
 -- digital input 2 and +5V, guarded by a 10K resistor:
 --
---  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/Button.png>>
+--  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/DeepArduino/SamplePrograms/Schematics/Button.png>>
 
 button :: IO ()
 button = withArduino False "/dev/cu.usbmodem1421" $ do

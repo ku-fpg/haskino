@@ -48,7 +48,7 @@ import System.Hardware.DeepArduino.Parts.LCD
 --
 --  * [If backlight is needed] LCD pin @16@ to GND via 220ohm resistor
 --
---  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/LCD.png>>
+--  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/DeepArduino/SamplePrograms/Schematics/LCD.png>>
 
 
 hitachiDigital :: LCDController

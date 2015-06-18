@@ -53,7 +53,7 @@ sr = SR_74HC595 { serial  = digital 8
 --     letters. That is, shift-registers @Q_A@ (Chip-pin 15) should connect to segment @A@; @Q_B@ (Chip-pin 1)
 --     to segment @B@, and so on. We do not use the shift-register @Q_H'@ (Chip-pin 9) in this design.
 --
---  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/SevenSegment.png>>
+--  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/DeepArduino/SamplePrograms/Schematics/SevenSegment.png>>
 sevenSegment :: IO ()
 sevenSegment = withArduino False "/dev/cu.usbmodem1421" $ do
                   initialize sr

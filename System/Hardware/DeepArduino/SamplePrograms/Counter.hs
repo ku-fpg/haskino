@@ -25,7 +25,7 @@ import System.Hardware.DeepArduino
 -- Wiring is very simple: Up-button connected to pin 4, Down-button connected
 -- to pin 2, and a led on pin 13.
 --
---  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/Counter.png>>
+--  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/DeepArduino/SamplePrograms/Schematics/Counter.png>>
 counter :: IO ()
 counter = do
        conn <- openArduino False "/dev/cu.usbmodem1421"

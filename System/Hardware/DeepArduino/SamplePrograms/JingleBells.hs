@@ -36,7 +36,7 @@ jingleBells =  m1 ++ m1 ++ m3 ++ m4 ++ wait ++ m5 ++ m6 ++ m7 ++ m8 ++ wait
 --
 -- The circuit simple has a piezo speaker attached to pin 3.
 --
---  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/Piezo.png>>
+--  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/DeepArduino/SamplePrograms/Schematics/Piezo.png>>
 main :: IO ()
 main = withArduino False "/dev/cu.usbmodem1421" $ do
                 pz <- speaker 75 (pin 3)

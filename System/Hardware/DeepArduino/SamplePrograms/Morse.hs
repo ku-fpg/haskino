@@ -68,7 +68,7 @@ transmit p = sequence_ . concatMap code . morsify . decode
 -- computer, no other hardware is needed. We use the internal led on pin 13. Of course,
 -- you can attach a led to pin 13 as well, for artistic effect.
 --
---  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/Blink.png>>
+--  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/DeepArduino/SamplePrograms/Schematics/Blink.png>>
 morseDemo :: IO ()
 morseDemo = withArduino False "/dev/cu.usbmodem1421" $ do
                 setPinMode led OUTPUT

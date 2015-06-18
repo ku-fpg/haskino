@@ -25,7 +25,7 @@ import System.Hardware.DeepArduino
 -- the wiper line connected to analog input 3. We also have a led between
 -- pin 13 and GND.
 --
---  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/Analog.png>>
+--  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/DeepArduino/SamplePrograms/Schematics/Analog.png>>
 analogVal :: IO ()
 analogVal = withArduino False "/dev/cu.usbmodem1421" $ do
                setPinMode led OUTPUT

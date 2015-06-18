@@ -35,7 +35,7 @@ import System.Hardware.DeepArduino.Parts.Servo
 -- To connect the servo to the Arduino, simply connect the VCC (red) and the GND (black) appropriately, and the signal line (white)
 -- to any SERVO capable pin, in this example we're using pin number 9:
 --
---  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/Servo.png>>
+--  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/DeepArduino/SamplePrograms/Schematics/Servo.png>>
 servo :: IO ()
 servo = withArduino False "/dev/cu.usbmodem1421" $ do
             s <- attach (digital 9) (Just 600) (Just 2400)
@@ -54,7 +54,7 @@ servo = withArduino False "/dev/cu.usbmodem1421" $ do
 -- above, except instead of querying the user for the angle, we use the readings from a potentiometer connected to
 -- analog input number 2. We used a 10 KOhm potentiometer, but other pots would work just as well too:
 --
---  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/ServoAnalog.png>>
+--  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/DeepArduino/SamplePrograms/Schematics/ServoAnalog.png>>
 servoAnalog :: IO ()
 servoAnalog = withArduino False "/dev/cu.usbmodem1421" $ do
                  s <- attach (digital 9) (Just 600) (Just 2400)
