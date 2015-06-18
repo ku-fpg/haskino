@@ -20,6 +20,7 @@ import Control.Concurrent   (Chan, MVar, ThreadId, newChan, newMVar,
                              newEmptyMVar, putMVar, takeMVar, writeChan, 
                              readChan, forkIO, modifyMVar_, tryTakeMVar, 
                              killThread, threadDelay)
+import Control.Exception    (tryJust, AsyncException(UserInterrupt))
 import Control.Monad.State  (liftIO)
 import Data.Bits            (testBit, (.&.))
 import Data.List            (intercalate)
@@ -140,8 +141,13 @@ withArduino :: Bool       -- ^ If 'True', debugging info will be printed
             -> IO ()
 withArduino verbose fp program = do 
       conn <- openArduino verbose fp
-      send conn program
+      res <- tryJust catchCtrlC $ send conn program
+      case res of
+        Left () -> putStrLn "DeepArduino: Caught Ctrl-C, quitting.."
+        _       -> return ()
       closeArduino conn  
+  where catchCtrlC UserInterrupt = Just ()
+        catchCtrlC _             = Nothing
 
 send :: ArduinoConnection -> Arduino a -> IO a
 send conn commands =
