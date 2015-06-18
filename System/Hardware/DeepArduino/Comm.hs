@@ -233,7 +233,7 @@ send conn commands =
             message c $ "Waiting for response"
             resp <- liftIO $ timeout 5000000 $ readChan $ deviceChannel c
             case resp of 
-                Nothing -> die c "Response Timeout" 
+                Nothing -> runDie c "Response Timeout" 
                                  [ "Make sure your Arduino is running Standard or Configurable Firmata"]
                 Just r -> do 
                     let qres = parseQueryResult query r

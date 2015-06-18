@@ -475,7 +475,7 @@ newtype LCDSymbol = LCDSymbol Word8
 lcdCreateSymbol :: ArduinoConnection -> LCD -> [String] -> IO LCDSymbol
 lcdCreateSymbol conn lcd glyph
   | length glyph /= 8 || any (/= 5) (map length glyph)
-  = die conn "DeepArduino: lcdCreateSymbol: Invalid glyph description: must be 8x5!" ("Received:" : glyph)
+  = runDie conn "DeepArduino: lcdCreateSymbol: Invalid glyph description: must be 8x5!" ("Received:" : glyph)
   | True
   = do let bs = boardState conn
        let err = bailOut conn

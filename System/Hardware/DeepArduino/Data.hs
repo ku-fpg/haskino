@@ -105,8 +105,8 @@ analog :: Word8 -> Pin
 analog = AnalogPin
 
 -- | Bailing out: print the given string on stdout and die
-die :: ArduinoConnection -> String -> [String] -> IO a
-die c m ms = do 
+runDie :: ArduinoConnection -> String -> [String] -> IO a
+runDie c m ms = do 
     let f = bailOut c
     f m ms
 
@@ -121,7 +121,7 @@ getInternalPin c (MixedPin p)   = return $ InternalPin p
 getInternalPin c (DigitalPin p) = return $ InternalPin p
 getInternalPin c (AnalogPin p)=
     case listToMaybe [realPin | (realPin, PinCapabilities{analogPinNumber = Just n}) <- M.toAscList caps, p == n] of
-         Nothing -> die c ("DeepArduino: " ++ show p ++ " is not a valid analog-pin on this board.")
+         Nothing -> runDie c ("DeepArduino: " ++ show p ++ " is not a valid analog-pin on this board.")
                         -- Try to be helpful in case they are trying to use a large value thinking it needs to be offset
                         ["Hint: To refer to analog pin number k, simply use 'pin k', not 'pin (k+noOfDigitalPins)'" | p > 13]
          Just rp -> return rp
@@ -138,7 +138,7 @@ convertAndCheckPin c what p' m = do
        bInfo
          | user == board = ""
          | True          = " (On board " ++ show p ++ ")"
-   when (pinMode pd /= m) $ die c ("Invalid " ++ what ++ " call on pin " ++ show p' ++ bInfo)
+   when (pinMode pd /= m) $ runDie c ("Invalid " ++ what ++ " call on pin " ++ show p' ++ bInfo)
                                 [ "The current mode for this pin is: " ++ show (pinMode pd)
                                 , "For " ++ what ++ ", it must be set to: " ++ show m
                                 , "via a proper call to setPinMode"
@@ -350,6 +350,7 @@ data Local :: * -> * where
      WaitAnyHigh      :: [Pin] -> Local [Bool]
      WaitAnyLow       :: [Pin] -> Local [Bool]
      Debug            :: String -> Local ()
+     Die              :: String -> [String] -> Local ()
      -- TBD Add pin reporting Local?
 deriving instance Show a => Show (Local a)
 
@@ -376,6 +377,9 @@ waitAnyLow ps = Local $ WaitAnyLow ps
 
 debug :: String -> Arduino ()
 debug msg = Local $ Debug msg
+
+die :: String -> [String] -> Arduino ()
+die msg msgs = Local $ Die msg msgs
 
 -- | Read the value of a pin in digital mode; this is a non-blocking call, returning
 -- the current value immediately. See 'waitFor' for a version that waits for a change
@@ -730,11 +734,11 @@ registerPinMode c p m = do
         let BoardCapabilities caps = capabilities c
         case p `M.lookup` caps of
           Nothing
-             -> die c ("Invalid access to unsupported pin: " ++ show p)
+             -> runDie c ("Invalid access to unsupported pin: " ++ show p)
                     ("Available pins are: " : ["  " ++ show k | (k, _) <- M.toAscList caps])
           Just PinCapabilities{allowedModes}
             | m `notElem` map fst allowedModes
-            -> die c ("Invalid mode " ++ show m ++ " set for " ++ show p)
+            -> runDie c ("Invalid mode " ++ show m ++ " set for " ++ show p)
                    ["Supported modes for this pin are: " ++ unwords (if null allowedModes then ["NONE"] else map show allowedModes)]
           _ -> return ()
         -- Modify the board state MVar for the mode change

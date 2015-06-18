@@ -93,7 +93,7 @@ packageProcedure c (StepperConfig dev FourWire d sr p1 p2 (Just p3) (Just p4)) =
         pn4 = fromIntegral $ pinNo ipin4
     return $ sysEx STEPPER_DATA ([stepperCmdVal CONFIG_STEPPER,dev,((stepDelayVal d) .|. 0x04)] ++ (word16ToArduinoBytes sr) ++ [pn1,pn2,pn3,pn4])
 packageProcedure c (StepperConfig _ FourWire _ _ _ _ _ _) = 
-    die c "DeepArduino: FourWire steppers require specification of 4 pins for config"  []
+    runDie c "DeepArduino: FourWire steppers require specification of 4 pins for config"  []
 packageProcedure c (StepperConfig dev StepDir d sr dp sp _ _) = do
     dipin <-  getInternalPin c dp 
     sipin <-  getInternalPin c sp
