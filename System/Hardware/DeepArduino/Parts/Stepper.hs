@@ -18,6 +18,7 @@ module System.Hardware.DeepArduino.Parts.Stepper(
    ) where
 
 import Control.Concurrent   (putMVar, takeMVar)
+import Control.Monad.Trans  (liftIO)
 
 import System.Hardware.DeepArduino
 import System.Hardware.DeepArduino.Comm
@@ -41,17 +42,17 @@ attach :: ArduinoConnection    -- ^
        -> Pin                  -- ^ Pin 2 for 2 or 4 Wire, Step Pin for Step-Dir
        -> Maybe Pin            -- ^ Pin 3 for 4 Wire
        -> Maybe Pin            -- ^ Pin 3 for 4 Wire
-       -> IO (Stepper, Arduino ())
+       -> Arduino Stepper
 attach c ty d sr p1 p2 p3 p4 = do
-    bs <- takeMVar (boardState c)
+    bs <- liftIO $ takeMVar (boardState c)
     let nextStepper = nextStepperDevice bs
-    putMVar (boardState c) bs {nextStepperDevice = nextStepper + 1}
-    return (Stepper { device = nextStepper, p1 = p1, p2 = p2, p3 = p3, p4 = p4 },
-            do debug $ "Attaching " ++ show ty ++ " stepper on pins: " ++ 
-                    show p1 ++ "," ++ show p2 ++ "," ++ show p3 ++ "," ++ 
-                    show p4 ++ " as device: " ++ show nextStepper ++ 
-                    " with delay: " ++ show d ++" and Steps/Rev: " ++ show sr
-               stepperConfig nextStepper ty d sr p1 p2 p3 p4)
+    liftIO $ putMVar (boardState c) bs {nextStepperDevice = nextStepper + 1}
+    debug $ "Attaching " ++ show ty ++ " stepper on pins: " ++ show p1 ++ "," ++
+            show p2 ++ "," ++ show p3 ++ "," ++ show p4 ++ " as device: " ++ 
+            show nextStepper ++ " with delay: " ++ show d ++" and Steps/Rev: " ++ 
+            show sr
+    stepperConfig nextStepper ty d sr p1 p2 p3 p4
+    return Stepper { device = nextStepper, p1 = p1, p2 = p2, p3 = p3, p4 = p4 }
 
 -- | Command the Stepper motor to step
 -- StepDir is either CCW or CW

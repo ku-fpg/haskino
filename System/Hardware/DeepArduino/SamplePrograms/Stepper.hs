@@ -23,6 +23,7 @@ import System.Hardware.DeepArduino.Parts.Stepper
 -- | i.e. stepper CW 80 50
 --  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/Stepper.png>>
 stepper :: StepDir -> NumSteps -> StepSpeed -> IO ()
+{-
 stepper sd ns ss = do
     conn <- openArduino True "/dev/cu.usbmodem1421"
     -- Create the Stepper structure and get the Stepper init function
@@ -31,4 +32,13 @@ stepper sd ns ss = do
     send conn init
     -- Execute the steps
     send conn (step s sd ns ss Nothing)
+    closeArduino conn
+-}
+stepper sd ns ss = do
+    conn <- openArduino True "/dev/cu.usbmodem1421"
+    send conn $ do
+        -- Create the Stepper structure and get the Stepper init function
+        s <- attach conn FourWire OneUs 8 (digital 8) (digital 9) (Just $ digital 10) (Just $ digital 11)
+        -- Execute the steps
+        step s sd ns ss Nothing
     closeArduino conn
