@@ -13,6 +13,7 @@
 module System.Hardware.DeepArduino.SamplePrograms.Button where
 
 import Control.Monad (when)
+import Control.Monad.Trans (liftIO)
 
 import System.Hardware.DeepArduino
 
@@ -25,24 +26,14 @@ import System.Hardware.DeepArduino
 -- digital input 2 and +5V, guarded by a 10K resistor:
 --
 --  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/Button.png>>
-button :: IO ()
-button = do
-    conn <- openArduino False "/dev/cu.usbmodem1421"
-    let but = digital 3
-    let led = digital 13
 
-    first <- send conn $ do 
-      setPinMode but INPUT
-      setPinMode led OUTPUT
-      digitalReport but True
-      cur <- digitalRead but
-      return cur
-    
-    loop conn but first led
-  where
-    loop conn pin cur led = do
-      new <- send conn (digitalRead pin)
-      when (cur /= new) $ do 
-            print new
-            send conn $ digitalWrite led new
-      loop conn pin new led
+button :: IO ()
+button = withArduino False "/dev/cu.usbmodemfd131" $ do
+            setPinMode led OUTPUT
+            setPinMode pb  INPUT
+            go =<< digitalRead pb
+ where pb   = digital 2
+       led  = digital 13
+       go s = do liftIO $ putStrLn $ "Button is currently " ++ if s then "ON" else "OFF"
+                 digitalWrite led s
+                 go =<< waitFor pb

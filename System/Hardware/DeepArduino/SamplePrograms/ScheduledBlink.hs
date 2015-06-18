@@ -13,6 +13,7 @@
 module ScheduledBlink where
 
 import Control.Monad (forever)
+import Control.Monad.Trans (liftIO)
 
 import System.Hardware.DeepArduino
 
@@ -27,28 +28,19 @@ myTask led = do
         return ()
 
 scheduledBlink :: IO ()
-scheduledBlink = do
-    conn <- openArduino False "/dev/cu.usbmodem1421"
+scheduledBlink = withArduino False "/dev/cu.usbmodem1421" $ do
     let led = digital 13
-
-    -- Set the pin mode to digital output
-    send conn (setPinMode led OUTPUT)
-    (tasks,task) <- send conn $ do
-        -- Create the task which blinks with a 2 second period
-        createTask 1 (myTask led)
-        -- Schedule the task to start in 5 seconds
-        scheduleTask 1 5000
-        ts <- queryAllTasks
-        -- Query to confirm task creation
-        t <- queryTask 1
-        return (ts,t)
-    putStrLn $ show (tasks,task)
-
+    setPinMode led OUTPUT
+    -- Create the task which blinks with a 2 second period
+    createTask 1 (myTask led)
+    -- Schedule the task to start in 5 seconds
+    scheduleTask 1 5000
+    tasks <- queryAllTasks
+    liftIO $ print tasks
+    -- Query to confirm task creation
+    task <- queryTask 1
+    liftIO $ print task
     -- Wait 10.5 seconds and delete the task
-    send conn $ do
-        delay 10500
-        deleteTask 1
-        return ()
-
-    closeArduino conn
+    delay 10500
+    deleteTask 1
 

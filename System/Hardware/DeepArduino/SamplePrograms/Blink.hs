@@ -17,15 +17,11 @@ import Control.Monad (forever)
 import System.Hardware.DeepArduino
 
 blink :: IO ()
-blink = do
-    conn <- openArduino False "/dev/cu.usbmodem1421"
-    let led = digital 13
-
-    send conn (setPinMode led OUTPUT)
-    forever $ do 
-        send conn $ do 
-            digitalWrite led True
-            delay 1000
-            digitalWrite led False
-            delay 1000
+blink = withArduino False "/dev/cu.usbmodem1421" $ do
+           let led = digital 13
+           setPinMode led OUTPUT
+           forever $ do digitalWrite led True
+                        delay 1000
+                        digitalWrite led False
+                        delay 1000
 
