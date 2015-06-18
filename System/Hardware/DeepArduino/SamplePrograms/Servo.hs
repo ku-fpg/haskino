@@ -58,6 +58,7 @@ servo = withArduino False "/dev/cu.usbmodem1421" $ do
 servoAnalog = withArduino False "/dev/cu.usbmodem1421" $ do
                  s <- attach (digital 9) (Just 600) (Just 2400)
                  setPinMode pot ANALOG
+                 analogReport pot True
                  liftIO $ putStrLn "Adjust the potentiometer to control the servo!"
                  forever (demo s)
  where pot = analog 2

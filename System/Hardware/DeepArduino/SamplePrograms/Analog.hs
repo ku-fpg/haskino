@@ -30,6 +30,7 @@ analogVal :: IO ()
 analogVal = withArduino False "/dev/cu.usbmodem1421" $ do
                setPinMode led OUTPUT
                setPinMode pot ANALOG
+               analogReport pot True
                cur <- analogRead pot
                liftIO $ print cur
                go cur
