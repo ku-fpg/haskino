@@ -44,7 +44,7 @@ module System.Hardware.DeepArduino.Parts.LCD(
 import Control.Concurrent  (modifyMVar, withMVar)
 import Control.Monad       (when)
 import Control.Monad.State (gets, liftIO)
-import Data.Bits           (testBit, (.|.), (.&.), setBit, clearBit, shiftL, bit)
+import Data.Bits           (testBit, (.|.), (.&.), setBit, clearBit, shiftL, bit, complement)
 import Data.Char           (ord, isSpace)
 import Data.Maybe          (fromMaybe, isJust)
 import Data.Word           (Word8)
@@ -97,7 +97,7 @@ getCmdVal c cmd = get cmd
 -- | Initialize the LCD. Follows the data sheet <http://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf>,
 -- page 46; figure 24.
 initLCD :: ArduinoConnection -> LCD -> LCDController -> IO ()
-initLCD conn lcd c@Hitachi44780{lcdRS, lcdEN, lcdD4, lcdD5, lcdD6, lcdD7, lcdBL} = do
+initLCD conn lcd c = do
     send conn $ do
         debug "Starting the LCD initialization sequence"
         case c of 
@@ -194,22 +194,26 @@ lcdI2CBitsToVal LCD_I2C_RS        = 1
 -- | Transmit data down to the I2CLCD using I2C writes
 transmitI2C :: Bool -> LCDController -> Word8 -> Arduino ()
 transmitI2C mode c@I2CHitachi44780{address} val = do
-    let rs = if mode then 0 else lcdI2CBitsToVal LCD_I2C_RS
-    i2cWrite address [hi .|. rs]
-    pulseEnableI2C c hi
-    i2cWrite address [lo .|. rs]
-    pulseEnableI2C c lo
-  where lo =  (val `shiftL` 4) .&. 0x0F -- lower four bits
-        hi =  val .&. 0xF0               -- upper four bits
+    i2cWrite address [hirs]
+    pulseEnableI2C c hirs
+    i2cWrite address [lors]
+    pulseEnableI2C c lors
+  where rs = if mode then 0 else lcdI2CBitsToVal LCD_I2C_RS
+        lo =  (val `shiftL` 4) .&. 0xF0    -- lower four bits
+        hi =  val .&. 0xF0                 -- upper four bits
+        lors = lo .|. rs
+        hirs = hi .|. rs
 
 -- | By controlling the enable-pin, indicate to the controller that
 -- the data is ready for it to process - Done with I2C writes
 pulseEnableI2C :: LCDController -> Word8 -> Arduino ()
 pulseEnableI2C c@I2CHitachi44780{address} d = do
-  i2cWrite address [d .&. (lcdI2CBitsToVal LCD_I2C_ENABLE)]
-  delay 1
-  i2cWrite address [d]
-  delay 50
+    i2cWrite address [d .|. en]
+    delay 1
+    i2cWrite address [d .&. (complement en)]
+    delay 50
+  where
+    en = lcdI2CBitsToVal LCD_I2C_ENABLE
 
 -- | Helper function to simplify library programming, not exposed to the user.
 withLCD :: ArduinoConnection -> LCD -> String -> (LCDController -> Arduino a) -> IO a
@@ -249,9 +253,7 @@ lcdRegister c controller = do
                                  , lcdController     = controller
                                  }
                 return (bst {lcds = M.insert (LCD n) ld (lcds bst)}, LCD n)
-  case controller of
-     Hitachi44780{}    -> initLCD c lcd controller
-     I2CHitachi44780{} -> return ()
+  initLCD c lcd controller
   return lcd
 
 -- | Turn backlight on if there is one, otherwise do nothing
