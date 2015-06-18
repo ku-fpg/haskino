@@ -55,6 +55,7 @@ servo = withArduino False "/dev/cu.usbmodem1421" $ do
 -- analog input number 2. We used a 10 KOhm potentiometer, but other pots would work just as well too:
 --
 --  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/ServoAnalog.png>>
+servoAnalog :: IO ()
 servoAnalog = withArduino False "/dev/cu.usbmodem1421" $ do
                  s <- attach (digital 9) (Just 600) (Just 2400)
                  setPinMode pot ANALOG
