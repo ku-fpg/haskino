@@ -28,9 +28,10 @@ import System.Hardware.DeepArduino
 --  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/Button.png>>
 
 button :: IO ()
-button = withArduino False "/dev/cu.usbmodemfd131" $ do
+button = withArduino False "/dev/cu.usbmodem1421" $ do
             setPinMode led OUTPUT
             setPinMode pb  INPUT
+            digitalReport pb True   
             go =<< digitalRead pb
  where pb   = digital 2
        led  = digital 13

@@ -10,6 +10,8 @@
 
 module System.Hardware.DeepArduino.SamplePrograms.Button where
 
+import Control.Monad.Trans (liftIO)
+
 import System.Hardware.DeepArduino
 
 -- | Wait for the value of a push-button (NO - normally open)
@@ -23,25 +25,19 @@ import System.Hardware.DeepArduino
 --
 --  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/Analog.png>>
 buttonWait :: IO ()
-buttonWait = do
-    conn <- openArduino False "/dev/cu.usbmodem1421"
+buttonWait = withArduino False "/dev/cu.usbmodem1421" $ do
     let but = digital 3
     let led = digital 13
-
-    send conn $ do 
-      setPinMode but INPUT
-      setPinMode led OUTPUT
-      digitalReport but True
-    
-    loop conn but led
+    setPinMode but INPUT
+    setPinMode led OUTPUT
+    digitalReport but True   
+    loop but led
   where
-    loop conn pin led = do
-      send conn $ do
+    loop pin led = do
         waitAnyHigh [pin]
         digitalWrite led True
-      putStrLn "Button Pressed"
-      send conn $ do 
+        liftIO $ putStrLn "Button Pressed"
         waitAnyLow [pin]
         digitalWrite led False
-      putStrLn "Button Released"
-      loop conn pin led
+        liftIO $ putStrLn "Button Released"
+        loop pin led
