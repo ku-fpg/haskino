@@ -72,6 +72,7 @@ data Cmd = LCD_INITIALIZE
          | LCD_SETDDRAMADDR   Word8
          | LCD_CURSORSHIFT    Word8
          | LCD_SETCGRAMADDR   Word8
+         | LCD_NOOP
 
 -- | Convert a command to a data-word
 getCmdVal :: LCDController -> Cmd -> Word8
@@ -83,6 +84,7 @@ getCmdVal c cmd = get cmd
           | (dotMode5x10 c) = 0x04 :: Word8
           | True        = 0x00 :: Word8
         displayFunction = multiLine .|. dotMode
+        get LCD_NOOP               = 0x00
         get LCD_INITIALIZE         = 0x33
         get LCD_INITIALIZE_END     = 0x32
         get LCD_FUNCTIONSET        = 0x20 .|. displayFunction
@@ -204,9 +206,9 @@ transmitI2C mode lcd c@I2CHitachi44780{address} val = do
 -- the data is ready for it to process - Done with I2C writes
 pulseEnableI2C :: LCDController -> Word8 -> Arduino ()
 pulseEnableI2C c@I2CHitachi44780{address} d = do
-    i2cWrite address [d .|. en] -- .|. (lcdI2CBitsToVal LCD_I2C_BACKLIGHT)]
+    i2cWrite address [d .|. en]
     delay 1
-    i2cWrite address [d .&. (complement en)] -- .|. (lcdI2CBitsToVal LCD_I2C_BACKLIGHT)]
+    i2cWrite address [d .&. (complement en)]
     delay 1
   where
     en = lcdI2CBitsToVal LCD_I2C_ENABLE
@@ -274,7 +276,8 @@ lcdBacklight lcd on = do
         liftIO $ modifyMVar lcds $ \lcdst -> do
             let lcdst' =  lcdst { lcdBacklightState = on}
             return (lcdst', lcdst')
-        -- TBD send some sort of noop so backlight state line gets updated
+        -- Send a noop so backlight state line gets updated
+        sendCmd lcd lcdc LCD_NOOP
         return ()
 
 -- | Write a string on the LCD at the current cursor position
