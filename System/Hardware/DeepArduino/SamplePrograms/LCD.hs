@@ -70,7 +70,7 @@ hitachiDigital =
 
 hitachiI2C = 
           I2CHitachi44780 {
-                         address     = 27    -- I2C address of the device
+                         address     = 0x27  -- I2C address of the device
                        , lcdRows     = 4     -- 2 rows
                        , lcdCols     = 20    -- of 16 columns
                        , dotMode5x10 = False -- Using the standard 5x8 dots

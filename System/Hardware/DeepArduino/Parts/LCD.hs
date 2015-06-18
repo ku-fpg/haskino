@@ -189,19 +189,19 @@ transmitI2C mode c@I2CHitachi44780{address} val = do
     pulseEnableI2C c hirs
     i2cWrite address [lors]
     pulseEnableI2C c lors
-  where rs = if mode then 0 else lcdI2CBitsToVal LCD_I2C_RS
+  where rs = if mode then lcdI2CBitsToVal LCD_I2C_RS else 0
         lo =  (val `shiftL` 4) .&. 0xF0    -- lower four bits
         hi =  val .&. 0xF0                 -- upper four bits
-        lors = lo .|. rs
-        hirs = hi .|. rs
+        lors = lo .|. rs .|. (lcdI2CBitsToVal LCD_I2C_BACKLIGHT)
+        hirs = hi .|. rs .|. (lcdI2CBitsToVal LCD_I2C_BACKLIGHT)
 
 -- | By controlling the enable-pin, indicate to the controller that
 -- the data is ready for it to process - Done with I2C writes
 pulseEnableI2C :: LCDController -> Word8 -> Arduino ()
 pulseEnableI2C c@I2CHitachi44780{address} d = do
-    i2cWrite address [d .|. en]
+    i2cWrite address [d .|. en .|. (lcdI2CBitsToVal LCD_I2C_BACKLIGHT)]
     delay 1
-    i2cWrite address [d .&. (complement en)]
+    i2cWrite address [d .&. (complement en) .|. (lcdI2CBitsToVal LCD_I2C_BACKLIGHT)]
     delay 50
   where
     en = lcdI2CBitsToVal LCD_I2C_ENABLE
