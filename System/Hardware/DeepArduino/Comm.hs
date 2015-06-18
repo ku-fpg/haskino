@@ -222,6 +222,9 @@ send conn commands =
       sendLocal c (Debug msg) k cmds = do
           message c msg
           send' c (k ()) cmds
+      sendLocal c (Die msg msgs) k cmds = do
+          runDie c msg msgs
+          send' c (k ()) cmds
 
       sendQuery :: ArduinoConnection -> Query a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendQuery c query k cmds = do
