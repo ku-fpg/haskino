@@ -226,7 +226,30 @@ data LCDData = LCDData {
                   lcdDisplayMode    :: Word8         -- ^ Display mode (left/right/scrolling etc.)
                 , lcdDisplayControl :: Word8         -- ^ Display control (blink on/off, display on/off etc.)
                 , lcdGlyphCount     :: Word8         -- ^ Count of custom created glyphs (typically at most 8)
+                , lcdBacklightState :: Bool
                 }
+
+-- | State of the board
+data BoardState = BoardState {
+                    boardCapabilities    :: BoardCapabilities   -- ^ Capabilities of the board
+                  , digitalReportingPins :: S.Set Word8         -- ^ Which digital pins are reporting
+                  , pinStates            :: M.Map IPin PinData  -- ^ For-each pin, store its data
+                  , portStates           :: M.Map Port Word8    -- ^ For-each digital port, store its data
+                  , digitalWakeUpQueue   :: [MVar ()]           -- ^ Semaphore list to wake-up upon receiving a digital message
+                  , nextStepperDevice    :: Word8
+                  }
+
+-- | State of the connection
+data ArduinoConnection = ArduinoConnection {
+                message       :: String -> IO ()                      -- ^ Current debugging routine
+              , bailOut       :: forall a. String -> [String] -> IO a -- ^ Clean-up and quit with a hopefully informative message
+              , port          :: SerialPort                           -- ^ Serial port we are communicating on
+              , firmataID     :: String                               -- ^ The ID of the board (as identified by the Board itself)
+              , boardState    :: MVar BoardState                      -- ^ Current state of the board
+              , deviceChannel :: Chan Response                        -- ^ Incoming messages from the board
+              , capabilities  :: BoardCapabilities                    -- ^ Capabilities of the board
+              , listenerTid   :: MVar ThreadId                        -- ^ ThreadId of the listener
+              }
 
 -- | What the board is capable of and current settings
 newtype BoardCapabilities = BoardCapabilities (M.Map IPin PinCapabilities)
@@ -746,25 +769,3 @@ registerPinMode c p m = do
         -- Modify the board state MVar for the mode change
         modifyMVar_ (boardState c) $ \bst -> return bst{pinStates = M.insert p PinData{pinMode = m, pinValue = Nothing} (pinStates bst) }
         return ()
-
--- | State of the board
-data BoardState = BoardState {
-                    boardCapabilities    :: BoardCapabilities   -- ^ Capabilities of the board
-                  , digitalReportingPins :: S.Set Word8         -- ^ Which digital pins are reporting
-                  , pinStates            :: M.Map IPin PinData  -- ^ For-each pin, store its data
-                  , portStates           :: M.Map Port Word8    -- ^ For-each digital port, store its data
-                  , digitalWakeUpQueue   :: [MVar ()]           -- ^ Semaphore list to wake-up upon receiving a digital message
-                  , nextStepperDevice    :: Word8
-                  }
-
--- | State of the connection
-data ArduinoConnection = ArduinoConnection {
-                message       :: String -> IO ()                      -- ^ Current debugging routine
-              , bailOut       :: forall a. String -> [String] -> IO a -- ^ Clean-up and quit with a hopefully informative message
-              , port          :: SerialPort                           -- ^ Serial port we are communicating on
-              , firmataID     :: String                               -- ^ The ID of the board (as identified by the Board itself)
-              , boardState    :: MVar BoardState                      -- ^ Current state of the board
-              , deviceChannel :: Chan Response                        -- ^ Incoming messages from the board
-              , capabilities  :: BoardCapabilities                    -- ^ Capabilities of the board
-              , listenerTid   :: MVar ThreadId                        -- ^ ThreadId of the listener
-              }

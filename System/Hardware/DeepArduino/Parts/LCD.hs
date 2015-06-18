@@ -109,6 +109,7 @@ initLCD lcd = do
     delay 5
     sendCmd c LCD_INITIALIZE_END
     sendCmd c LCD_FUNCTIONSET
+    lcdBacklightOn lcd
     lcdCursorOff lcd
     lcdBlinkOff lcd
     lcdLeftToRight lcd
@@ -237,6 +238,7 @@ lcdRegister controller = do
     let ld = LCDData { lcdDisplayMode    = 0
                      , lcdDisplayControl = 0
                      , lcdGlyphCount     = 0
+                     , lcdBacklightState = True
                      }
     ls <- liftIO $ newMVar ld
     let c = LCD { lcdController = controller
@@ -294,14 +296,14 @@ lcdHome lcd = withLCD lcd "Sending the cursor home" $ \c ->
 --     possible location on the LCD.
 lcdSetCursor :: LCD -> (Int, Int) -> Arduino ()
 lcdSetCursor lcd (givenCol, givenRow) = withLCD lcd ("Sending the cursor to Row: " ++ show givenRow ++ " Col: " ++ show givenCol) set
-  where set c@Hitachi44780{lcdRows, lcdCols} = sendCmd c (LCD_SETDDRAMADDR offset)
+  where set c = sendCmd c (LCD_SETDDRAMADDR offset)
               where align :: Int -> Int -> Word8
                     align i m
                       | i < 0  = 0
                       | i >= m = fromIntegral $ m-1
                       | True   = fromIntegral i
-                    col = align givenCol lcdCols
-                    row = align givenRow lcdRows
+                    col = align givenCol $ lcdCols c
+                    row = align givenRow $ lcdRows c
                     -- The magic row-offsets come from various web sources
                     -- I don't follow the logic in these numbers, but it seems to work
                     rowOffsets = [(0, 0), (1, 0x40), (2, 0x14), (3, 0x54)]
