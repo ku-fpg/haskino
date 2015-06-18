@@ -12,23 +12,24 @@
 
 module System.Hardware.DeepArduino.SamplePrograms.Eeprom where
 
+import Control.Monad.Trans (liftIO)
+
 import System.Hardware.DeepArduino
 import System.Hardware.DeepArduino.Parts.Eeprom
 
 eeprom :: IO ()
 eeprom = do
-    conn <- openArduino False "/dev/cu.usbmodem1421"
+    conn <- openArduino True "/dev/cu.usbmodem1421"
 
-    putStrLn "Clearing 16 bytes at address 0x100"
-    eews <- send conn $ do
+    send conn $ do
+        liftIO $ putStrLn "Clearing 16 bytes at address 0x100"
         eepromEnable
         eepromClear 0x50 0x100 16
-        eepromRead 0x50 0x100 16
-    print eews
-    putStrLn "Writing 16 bytes of [1,2,3,4,5,6,7,8] address 0x104"
-    eews <- send conn $ do
+        eews <- eepromRead 0x50 0x100 16
+        liftIO $ print eews
+        liftIO $ putStrLn "Writing 16 bytes of [1,2,3,4,5,6,7,8] address 0x104"
         eepromWrite 0x50 0x104 [1,2,3,4,5,6,7,8]
-        eepromRead 0x50 0x100 16
-    print eews
+        eews <- eepromRead 0x50 0x100 16
+        liftIO $ print eews
 
     closeArduino conn

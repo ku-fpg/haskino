@@ -63,9 +63,6 @@ instance Monoid a => Monoid (Arduino a) where
 instance MonadIO Arduino where
   liftIO m = LiftIO m
 
-myLiftIO :: IO a -> Arduino a
-myLiftIO m = LiftIO m
-
 -- | A pin on the Arduino, as specified by the user via 'pin', 'digital', and 'analog' functions.
 data Pin = DigitalPin {userPinNo :: Word8}
          | AnalogPin  {userPinNo :: Word8}
