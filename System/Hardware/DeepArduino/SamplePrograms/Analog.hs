@@ -13,6 +13,7 @@
 module System.Hardware.DeepArduino.SamplePrograms.Analog where
 
 import Control.Monad (when)
+import Control.Monad.Trans (liftIO)
 
 import System.Hardware.DeepArduino
 
@@ -26,29 +27,19 @@ import System.Hardware.DeepArduino
 --
 --  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/Analog.png>>
 analogVal :: IO ()
-analogVal = do
-    conn <- openArduino False "/dev/cu.usbmodem1421"
-    let led = digital 13
+analogVal = withArduino False "/dev/cu.usbmodem1421" $ do
+               setPinMode led OUTPUT
+               setPinMode pot ANALOG
+               cur <- analogRead pot
+               liftIO $ print cur
+               go cur
+  where led = digital 13
         pot = analog 3
-
-    first <- send conn $ do 
-      setPinMode led OUTPUT
-      setPinMode pot ANALOG
-      analogReport pot True
-      cur <- analogRead pot
-      return cur
-    
-    loop conn led first pot
-  where
-    loop conn pin cur pot = do
-      new <- send conn (analogRead pot)
-      when (cur /= new) $ print new
-      send conn $ blinkRate pin new
-      loop conn pin new pot 
-
-    blinkRate pin rate = do
-      digitalWrite pin True
-      delay $ fromIntegral rate
-      digitalWrite pin False
-      delay $ fromIntegral rate
+        go cur = do digitalWrite led True
+                    delay $ fromIntegral cur
+                    digitalWrite led False
+                    delay $ fromIntegral cur
+                    new <- analogRead pot
+                    when (cur /= new) $ liftIO $ print new
+                    go new
 
