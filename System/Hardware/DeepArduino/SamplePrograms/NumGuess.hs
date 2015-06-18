@@ -47,7 +47,7 @@ data Key = KeyRight
          | KeySelect
 
 -- | Initialize the shield. This is essentially simply registering the
--- lcd with the HArduino library. In addition, we return two values to
+-- lcd with the DeepArduino library. In addition, we return two values to
 -- the user:
 --
 --   * A function to control the back-light

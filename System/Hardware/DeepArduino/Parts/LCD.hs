@@ -459,7 +459,7 @@ lcdCreateSymbol :: LCD -> [String] -> Arduino LCDSymbol
 lcdCreateSymbol lcd glyph
   | length glyph /= 8 || any (/= 5) (map length glyph)
   = do die "DeepArduino: lcdCreateSymbol: Invalid glyph description: must be 8x5!" ("Received:" : glyph)
-       return $ LCDSymbol 666
+       return $ LCDSymbol 255
   | True
   = do let c = lcdController lcd 
        let lcds = lcdState lcd

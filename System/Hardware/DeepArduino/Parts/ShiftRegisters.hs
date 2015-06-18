@@ -24,7 +24,7 @@ import Data.Foldable (forM_)
 import System.Hardware.DeepArduino
 import System.Hardware.DeepArduino.Data (die)
 
--- | A shift-register class as supported by the hArduino library.
+-- | A shift-register class as supported by the DeepArduino library.
 class ShiftRegister a where
   -- | Capacity
   size :: a -> Int
