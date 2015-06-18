@@ -55,22 +55,18 @@ sr = SR_74HC595 { serial  = digital 8
 --
 --  <<http://github.com/LeventErkok/hArduino/raw/master/System/Hardware/Arduino/SamplePrograms/Schematics/SevenSegment.png>>
 sevenSegment :: IO ()
-sevenSegment = do
-    conn <- openArduino False "/dev/cu.usbmodem1421"
-    send conn (initialize sr)
-    hSetBuffering stdin NoBuffering
-    putStrLn "Seven-Segment-Display demo."
-    putStrLn "For each key-press, we will try to display it as a 7-segment character."
-    putStrLn "If there is no good mapping (which is common), we'll just display a dot."
-    putStrLn ""
-    putStrLn "Press-keys to be shown on the display, Ctrl-C to quit.."
-    forever $ repl conn
- where 
-    pushWord w = do mapM_ (push sr) [w `testBit` i | i <- [0..7]]
-                    store sr
-    aCmd c = case char2SS c of
-               Just w  -> pushWord w
-               Nothing -> pushWord (0x01::Word8) -- the dot, which also nicely covers the '.'
-    repl conn = do 
-        c <- getChar
-        send conn (aCmd c)
+sevenSegment = withArduino False "/dev/cu.usbmodem1421" $ do
+                  initialize sr
+                  liftIO $ do hSetBuffering stdin NoBuffering
+                              putStrLn "Seven-Segment-Display demo."
+                              putStrLn "For each key-press, we will try to display it as a 7-segment character."
+                              putStrLn "If there is no good mapping (which is common), we'll just display a dot."
+                              putStrLn ""
+                              putStrLn "Press-keys to be shown on the display, Ctrl-C to quit.."
+                  forever repl
+ where pushWord w = do mapM_ (push sr) [w `testBit` i | i <- [0..7]]
+                       store sr
+       repl = do c <- liftIO getChar
+                 case char2SS c of
+                   Just w  -> pushWord w
+                   Nothing -> pushWord (0x01::Word8) -- the dot, which also nicely covers the '.'
