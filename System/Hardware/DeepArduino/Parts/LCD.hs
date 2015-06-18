@@ -75,12 +75,12 @@ data Cmd = LCD_INITIALIZE
 
 -- | Convert a command to a data-word
 getCmdVal :: LCDController -> Cmd -> Word8
-getCmdVal Hitachi44780{lcdRows, dotMode5x10} = get
+getCmdVal c cmd = get cmd
   where multiLine -- bit 3
-          | lcdRows > 1 = 0x08 :: Word8
+          | (lcdRows c) > 1 = 0x08 :: Word8
           | True        = 0x00 :: Word8
         dotMode   -- bit 2
-          | dotMode5x10 = 0x04 :: Word8
+          | (dotMode5x10 c) = 0x04 :: Word8
           | True        = 0x00 :: Word8
         displayFunction = multiLine .|. dotMode
         get LCD_INITIALIZE         = 0x33
@@ -250,7 +250,8 @@ lcdRegister c controller = do
                                  }
                 return (bst {lcds = M.insert (LCD n) ld (lcds bst)}, LCD n)
   case controller of
-     Hitachi44780{} -> initLCD c lcd controller
+     Hitachi44780{}    -> initLCD c lcd controller
+     I2CHitachi44780{} -> return ()
   return lcd
 
 -- | Turn backlight on if there is one, otherwise do nothing
@@ -265,10 +266,13 @@ lcdBacklightOff c lcd = lcdBacklight c lcd False
 lcdBacklight :: ArduinoConnection -> LCD -> Bool -> IO()
 lcdBacklight c lcd on = do
    lcdc <- getController c lcd
-   let bl = lcdBL lcdc
-   if isJust bl 
-      then let Just p = bl in send c $ digitalWrite p on
-      else return()
+   case lcdc of 
+      Hitachi44780{} -> do
+          let bl = lcdBL lcdc
+          if isJust bl 
+              then let Just p = bl in send c $ digitalWrite p on
+              else return()
+      I2CHitachi44780{} -> return ()
 
 -- | Write a string on the LCD at the current cursor position
 lcdWrite :: ArduinoConnection -> LCD -> String -> IO ()
