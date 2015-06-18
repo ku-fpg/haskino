@@ -53,49 +53,48 @@ data Key = KeyRight
 --   * A function to control the back-light
 --
 --   * A function to read (if any) key-pressed
-initOSepp :: ArduinoConnection -> IO (LCD, Arduino (Maybe Key))
-initOSepp c = do lcd <- lcdRegister c osepp
-                 let button = analog 0
-                 send c $ setPinMode button ANALOG
-                 -- Analog values obtained from OSEPP site, seems reliable
-                 let threshHolds = [ (KeyRight,   30)
-                                   , (KeyUp,     150)
-                                   , (KeyDown,   360)
-                                   , (KeyLeft,   535)
-                                   , (KeySelect, 760)
-                                   ]
-                     readButton = do val <- analogRead button
-                                     let walk []            = Nothing
-                                         walk ((k, t):keys)
-                                           | val < t        = Just k
-                                           | True           = walk keys
-                                     return $ walk threshHolds
-                 return (lcd, readButton)
+initOSepp :: Arduino (LCD, Arduino (Maybe Key))
+initOSepp = do lcd <- lcdRegister osepp
+               let button = analog 0
+               setPinMode button ANALOG
+               -- Analog values obtained from OSEPP site, seems reliable
+               let threshHolds = [ (KeyRight,   30)
+                                 , (KeyUp,     150)
+                                 , (KeyDown,   360)
+                                 , (KeyLeft,   535)
+                                 , (KeySelect, 760)
+                                 ]
+                   readButton = do val <- analogRead button
+                                   let walk []            = Nothing
+                                       walk ((k, t):keys)
+                                         | val < t        = Just k
+                                         | True           = walk keys
+                                   return $ walk threshHolds
+               return (lcd, readButton)
 
 -- | Number guessing game, as a simple LCD demo. User thinks of a number
 -- between @0@ and @1000@, and the Arduino guesses it.
-numGuess :: ArduinoConnection -> LCD -> Arduino (Maybe Key) -> IO ()
-numGuess conn lcd readKey = game
-  where home  = lcdHome        conn lcd
-        write = lcdWrite       conn lcd
-        clear = lcdClear       conn lcd
-        go    = lcdSetCursor   conn lcd
-        light = lcdBacklightOn conn lcd
+numGuess :: LCD -> Arduino (Maybe Key) -> Arduino ()
+numGuess lcd readKey = game
+  where home  = lcdHome      lcd
+        write = lcdWrite     lcd
+        clear = lcdClear     lcd
+        go    = lcdSetCursor lcd
         at (r, c) s = go (c, r) >> write s
-        getKey = do mbK <- send conn readKey
+        getKey = do mbK <- readKey
                     case mbK of
                       Nothing -> getKey
-                      Just k  -> do send conn $ delay 500 -- stabilize by waiting 0.5s
+                      Just k  -> do delay 500 -- stabilize by waiting 0.5s
                                     return k
         game = do clear
                   home
-                  light
+                  lcdBacklightOn lcd
                   at (0, 2) "DeepArduino!"
                   at (1, 0) "# Guessing game"
-                  send conn $ delay 2000
+                  delay 2000
                   guess 1 0 1000
         newGame = getKey >> game
-        guess :: Int -> Int -> Int -> IO ()
+        guess :: Int -> Int -> Int -> Arduino ()
         guess rnd l h
           | h == l = do clear
                         at (0, 0) $ "It must be: " ++ show h
@@ -114,13 +113,12 @@ numGuess conn lcd readKey = game
                          KeySelect -> do at (1, 0) $ "Got it in " ++ show rnd ++ "!"
                                          newGame
                          _         -> do at (1, 0) "Use up/down/select only.."
-                                         send conn $ delay 1000
+                                         delay 1000
                                          guess rnd l h
 
 -- | Entry to the classing number guessing game. Simply initialize the
 -- shield and call our game function.
 guessGame :: IO ()
-guessGame = do
-    conn <- openArduino False "/dev/cu.usbmodem1421"
-    (lcd, readButton) <- initOSepp conn
-    numGuess conn lcd readButton
+guessGame = withArduino False "/dev/cu.usbmodem1421" $ do
+                 (lcd, readButton) <- initOSepp
+                 numGuess lcd readButton
