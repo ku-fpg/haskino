@@ -151,6 +151,24 @@ packageTaskData conn commands =
       packLocal c (DigitalRead _) k cmds = do
           cs <- cmds 
           packageTaskData' c (k False) cs
+      packLocal c (WaitFor _) k cmds = do
+          cs <- cmds 
+          packageTaskData' c (k False) cs
+      packLocal c (WaitAny _) k cmds = do
+          cs <- cmds 
+          packageTaskData' c (k []) cs
+      packLocal c (WaitAnyHigh _) k cmds = do
+          cs <- cmds 
+          packageTaskData' c (k []) cs
+      packLocal c (WaitAnyLow _) k cmds = do
+          cs <- cmds 
+          packageTaskData' c (k []) cs
+      packLocal c (Debug _) k cmds = do
+          cs <- cmds 
+          packageTaskData' c (k ()) cs
+      packLocal c (Die _ _) k cmds = do
+          cs <- cmds 
+          packageTaskData' c (k ()) cs
 
       packProcedure :: ArduinoConnection -> Procedure a -> (a -> Arduino b) -> IO B.ByteString -> IO B.ByteString
       packProcedure c QueryFirmware k cmds = do 
