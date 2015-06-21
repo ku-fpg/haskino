@@ -17,7 +17,7 @@ module System.Hardware.DeepArduino (
   -- * Communication functions
   openArduino, closeArduino, withArduino, send, ArduinoConnection
   -- * Deep embeddings
-  , Arduino(..) , Procedure(..), Query(..), Local(..)
+  , Arduino(..) , Command(..), Procedure(..), Local(..)
   -- * Programming the Arduino
   -- ** Pins
   , Pin, Port, pin, digital, analog, pinPort, PinMode(..), setPinMode

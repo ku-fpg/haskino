@@ -38,9 +38,9 @@ import Debug.Trace
 -----------------------------------------------------------------------------
 
 data Arduino :: * -> * where
-    Procedure      :: Procedure                       -> Arduino ()
+    Command        :: Command                         -> Arduino ()
     Local          :: Local a                         -> Arduino a
-    Query          :: Query a                         -> Arduino a
+    Procedure      :: Procedure a                     -> Arduino a
     LiftIO         :: IO a                            -> Arduino a
     Bind           :: Arduino a -> (a -> Arduino b)   -> Arduino b
     Return         :: a                               -> Arduino a
@@ -279,7 +279,7 @@ data StepDir = CW | CCW
 data StepType = TwoWire | FourWire | StepDir
       deriving Show
 
-data Procedure =
+data Command =
        SystemReset                              -- ^ Send system reset
      | SetPinMode Pin PinMode                   -- ^ Set the mode on a pin
      | DigitalPortReport Port Bool              -- ^ Digital report values on port enable/disable
@@ -304,67 +304,67 @@ data Procedure =
      | ScheduleReset
 
 systemReset :: Arduino ()
-systemReset = Procedure SystemReset
+systemReset = Command SystemReset
 
 setPinMode :: Pin -> PinMode -> Arduino ()
-setPinMode p pm = Procedure $ SetPinMode p pm
+setPinMode p pm = Command $ SetPinMode p pm
 
 digitalPortReport :: Port -> Bool -> Arduino ()
-digitalPortReport p b = Procedure $ DigitalPortReport p b
+digitalPortReport p b = Command $ DigitalPortReport p b
 
 digitalReport :: Pin -> Bool -> Arduino ()
-digitalReport p b = Procedure $ DigitalReport p b
+digitalReport p b = Command $ DigitalReport p b
 
 analogReport :: Pin -> Bool -> Arduino ()
-analogReport p b = Procedure $ AnalogReport p b
+analogReport p b = Command $ AnalogReport p b
 
 digitalPortWrite :: Port -> Word16 -> Arduino ()
-digitalPortWrite p w = Procedure $ DigitalPortWrite p w1 w2
+digitalPortWrite p w = Command $ DigitalPortWrite p w1 w2
   where
     [w1, w2] = word16ToArduinoBytes w
 
 digitalWrite :: Pin -> Bool -> Arduino ()
-digitalWrite p b = Procedure $ DigitalWrite p b
+digitalWrite p b = Command $ DigitalWrite p b
 
 analogWrite :: Pin -> Word16 -> Arduino ()
-analogWrite p w = Procedure $ AnalogWrite p w1 w2
+analogWrite p w = Command $ AnalogWrite p w1 w2
   where
     [w1, w2] = word16ToArduinoBytes w
 
 analogExtendedWrite :: Pin -> [Word8] -> Arduino ()
-analogExtendedWrite p ws = Procedure $ AnalogExtendedWrite p ws
+analogExtendedWrite p ws = Command $ AnalogExtendedWrite p ws
 
 samplingInterval :: Word16 -> Arduino ()
-samplingInterval w = Procedure $ SamplingInterval w1 w2
+samplingInterval w = Command $ SamplingInterval w1 w2
   where
     [w1, w2] = word16ToArduinoBytes w
 
 i2cWrite :: SlaveAddress -> [Word8] -> Arduino ()
-i2cWrite sa ws = Procedure $ I2CWrite sa ws
+i2cWrite sa ws = Command $ I2CWrite sa ws
 
 i2cConfig :: Word16 -> Arduino ()
-i2cConfig w = Procedure $ I2CConfig w
+i2cConfig w = Command $ I2CConfig w
 
 servoConfig :: Pin -> MinPulse -> MaxPulse -> Arduino ()
-servoConfig p min max = Procedure $ ServoConfig p min max
+servoConfig p min max = Command $ ServoConfig p min max
 
 stepperConfig :: StepDevice -> StepType -> StepDelay -> StepPerRev -> Pin -> Pin -> (Maybe Pin) -> (Maybe Pin) -> Arduino ()
-stepperConfig dev ty d sr p1 p2 p3 p4 = Procedure $ StepperConfig dev ty d sr p1 p2 p3 p4
+stepperConfig dev ty d sr p1 p2 p3 p4 = Command $ StepperConfig dev ty d sr p1 p2 p3 p4
 
 stepperStep :: StepDevice -> StepDir -> NumSteps -> StepSpeed -> Maybe StepAccel -> Arduino ()
-stepperStep dev sd ns sp ac = Procedure $ StepperStep dev sd ns sp ac
+stepperStep dev sd ns sp ac = Command $ StepperStep dev sd ns sp ac
 
 deleteTask :: TaskID -> Arduino ()
-deleteTask tid = Procedure $ DeleteTask tid
+deleteTask tid = Command $ DeleteTask tid
 
 delay :: TaskTime -> Arduino ()
-delay t = Procedure $ Delay t
+delay t = Command $ Delay t
 
 scheduleTask :: TaskID -> TaskTime -> Arduino ()
-scheduleTask tid tt = Procedure $ ScheduleTask tid tt
+scheduleTask tid tt = Command $ ScheduleTask tid tt
 
 scheduleReset :: Arduino ()
-scheduleReset = Procedure ScheduleReset
+scheduleReset = Command ScheduleReset
 
 data Local :: * -> * where
      DigitalPortRead  :: Port -> Local Word8          -- ^ Read the values on a port digitally
@@ -488,40 +488,40 @@ runWaitGeneric c ps = do
    wait
 
 createTask :: TaskID -> Arduino () -> Arduino ()
-createTask tid ps = Procedure (CreateTask tid ps)
+createTask tid ps = Command (CreateTask tid ps)
 
-data Query :: * -> * where
-     QueryFirmware  :: Query (Word8, Word8, String)   -- ^ Query the Firmata version installed
-     CapabilityQuery :: Query BoardCapabilities       -- ^ Query the capabilities of the board
-     AnalogMappingQuery :: Query [Word8]              -- ^ Query the mapping of analog pins
-     Pulse :: IPin -> Bool -> Word32 -> Word32 -> Query Word32 -- ^ Request for a pulse reading on a pin, value, duration, timeout
-     I2CRead :: SlaveAddress -> Maybe SlaveRegister -> Word8 -> Query [Word8]
+data Procedure :: * -> * where
+     QueryFirmware  :: Procedure (Word8, Word8, String)   -- ^ Query the Firmata version installed
+     CapabilityQuery :: Procedure BoardCapabilities       -- ^ Query the capabilities of the board
+     AnalogMappingQuery :: Procedure [Word8]              -- ^ Query the mapping of analog pins
+     Pulse :: IPin -> Bool -> Word32 -> Word32 -> Procedure Word32 -- ^ Request for a pulse reading on a pin, value, duration, timeout
+     I2CRead :: SlaveAddress -> Maybe SlaveRegister -> Word8 -> Procedure [Word8]
      -- TBD add one wire queries
-     QueryAllTasks :: Query [TaskID]
-     QueryTask :: TaskID -> Query (TaskID, TaskTime, TaskLength, TaskPos, [Word8])
+     QueryAllTasks :: Procedure [TaskID]
+     QueryTask :: TaskID -> Procedure (TaskID, TaskTime, TaskLength, TaskPos, [Word8])
 
-deriving instance Show a => Show (Query a)
+deriving instance Show a => Show (Procedure a)
 
 queryFirmware :: Arduino (Word8, Word8, String)
-queryFirmware = Query QueryFirmware
+queryFirmware = Procedure QueryFirmware
 
 capabilityQuery :: Arduino BoardCapabilities
-capabilityQuery = Query CapabilityQuery
+capabilityQuery = Procedure CapabilityQuery
 
 analogMappingQuery :: Arduino [Word8]
-analogMappingQuery = Query AnalogMappingQuery
+analogMappingQuery = Procedure AnalogMappingQuery
 
 pulse :: IPin -> Bool -> Word32 -> Word32 -> Arduino Word32
-pulse p b w1 w2 = Query $ Pulse p b w1 w2
+pulse p b w1 w2 = Procedure $ Pulse p b w1 w2
 
 i2cRead :: SlaveAddress -> Maybe SlaveRegister -> Word8 -> Arduino [Word8]
-i2cRead sa sr cnt = Query $ I2CRead sa sr cnt
+i2cRead sa sr cnt = Procedure $ I2CRead sa sr cnt
 
 queryAllTasks :: Arduino [TaskID]
-queryAllTasks = Query QueryAllTasks
+queryAllTasks = Procedure QueryAllTasks
 
 queryTask :: TaskID -> Arduino (TaskID, TaskTime, TaskLength, TaskPos, [Word8])
-queryTask tid = Query $ QueryTask tid
+queryTask tid = Procedure $ QueryTask tid
 
 -- | A response, as returned from the Arduino
 data Response = Firmware Word8 Word8 String          -- ^ Firmware version (maj/min and indentifier

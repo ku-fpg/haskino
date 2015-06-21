@@ -11,7 +11,7 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE GADTs      #-}
 
-module System.Hardware.DeepArduino.Protocol(packageProcedure, packageQuery, unpackageSysEx, unpackageNonSysEx, parseQueryResult) where
+module System.Hardware.DeepArduino.Protocol(packageCommand, packageProcedure, unpackageSysEx, unpackageNonSysEx, parseQueryResult) where
 
 import Data.Bits ((.|.), (.&.))
 import Data.Word (Word8)
@@ -44,45 +44,45 @@ nonSysEx cmd bs = B.pack $ firmataCmdVal cmd : bs
 
 -- | Package a request as a sequence of bytes to be sent to the board
 -- using the Firmata protocol.
-packageProcedure :: ArduinoConnection -> Procedure -> IO B.ByteString
-packageProcedure c SystemReset = 
+packageCommand :: ArduinoConnection -> Command -> IO B.ByteString
+packageCommand c SystemReset = 
     return $ nonSysEx SYSTEM_RESET []
-packageProcedure c (AnalogReport  p b) = do
+packageCommand c (AnalogReport  p b) = do
     ipin <- getInternalPin c p
     return $ nonSysEx (REPORT_ANALOG_PIN ipin) [if b then 1 else 0]
-packageProcedure c (DigitalPortReport p b) = 
+packageCommand c (DigitalPortReport p b) = 
     return $ nonSysEx (REPORT_DIGITAL_PORT p) [if b then 1 else 0]
-packageProcedure c (DigitalReport p b) = do
+packageCommand c (DigitalReport p b) = do
     ipin <- getInternalPin c p
     return $ nonSysEx (REPORT_DIGITAL_PORT $ pinPort ipin) [if b then 1 else 0]
-packageProcedure c (SetPinMode p m) = do
+packageCommand c (SetPinMode p m) = do
     ipin <- getInternalPin c p
     return $ nonSysEx SET_PIN_MODE [fromIntegral $ pinNo ipin, fromIntegral $ fromEnum m]
-packageProcedure c (DigitalPortWrite p l m) = 
+packageCommand c (DigitalPortWrite p l m) = 
     return $ nonSysEx (DIGITAL_MESSAGE p) [l, m]
-packageProcedure c (DigitalWrite p b)  = do
+packageCommand c (DigitalWrite p b)  = do
     ipin <- getInternalPin c p
     return $ nonSysEx SET_DIGITAL_PIN_VALUE [fromIntegral $ pinNo ipin, if b then 1 else 0]
-packageProcedure c (AnalogWrite p l m) = do
+packageCommand c (AnalogWrite p l m) = do
     ipin <- getInternalPin c p
     return $ nonSysEx (ANALOG_MESSAGE ipin) [l, m]
-packageProcedure c (AnalogExtendedWrite p w8s) = do
+packageCommand c (AnalogExtendedWrite p w8s) = do
     ipin <- getInternalPin c p
     return $ sysEx EXTENDED_ANALOG ([fromIntegral $ pinNo ipin] ++ (arduinoEncodedL w8s))
-packageProcedure c (SamplingInterval l m) =
+packageCommand c (SamplingInterval l m) =
     return $ sysEx SAMPLING_INTERVAL [l, m]
-packageProcedure c (I2CWrite sa w8s) = 
+packageCommand c (I2CWrite sa w8s) = 
     return $ sysEx I2C_REQUEST ((packageI2c True sa Nothing 0) ++
                                ( concatMap toArduinoBytes w8s)) 
-packageProcedure c (I2CConfig d) = 
+packageCommand c (I2CConfig d) = 
     return $ sysEx I2C_CONFIG (word16ToArduinoBytes d)
-packageProcedure c (StepperConfig dev TwoWire d sr p1 p2 _ _) = do
+packageCommand c (StepperConfig dev TwoWire d sr p1 p2 _ _) = do
     ipin1 <-  getInternalPin c p1 
     ipin2 <-  getInternalPin c p2
     let pn1 = fromIntegral $ pinNo ipin1
         pn2 = fromIntegral $ pinNo ipin2
     return $ sysEx STEPPER_DATA ([stepperCmdVal CONFIG_STEPPER,dev,((stepDelayVal d) .|. 0x02)] ++ (word16ToArduinoBytes sr) ++ [pn1,pn2])
-packageProcedure c (StepperConfig dev FourWire d sr p1 p2 (Just p3) (Just p4)) = do 
+packageCommand c (StepperConfig dev FourWire d sr p1 p2 (Just p3) (Just p4)) = do 
     ipin1 <-  getInternalPin c p1 
     ipin2 <-  getInternalPin c p2
     ipin3 <-  getInternalPin c p3 
@@ -92,28 +92,28 @@ packageProcedure c (StepperConfig dev FourWire d sr p1 p2 (Just p3) (Just p4)) =
         pn3 = fromIntegral $ pinNo ipin3
         pn4 = fromIntegral $ pinNo ipin4
     return $ sysEx STEPPER_DATA ([stepperCmdVal CONFIG_STEPPER,dev,((stepDelayVal d) .|. 0x04)] ++ (word16ToArduinoBytes sr) ++ [pn1,pn2,pn3,pn4])
-packageProcedure c (StepperConfig _ FourWire _ _ _ _ _ _) = 
+packageCommand c (StepperConfig _ FourWire _ _ _ _ _ _) = 
     runDie c "DeepArduino: FourWire steppers require specification of 4 pins for config"  []
-packageProcedure c (StepperConfig dev StepDir d sr dp sp _ _) = do
+packageCommand c (StepperConfig dev StepDir d sr dp sp _ _) = do
     dipin <-  getInternalPin c dp 
     sipin <-  getInternalPin c sp
     let pnd = fromIntegral $ pinNo dipin
         pns = fromIntegral $ pinNo sipin
     return $ sysEx STEPPER_DATA ([stepperCmdVal CONFIG_STEPPER,dev,((stepDelayVal d) .|. 0x01)] ++ (word16ToArduinoBytes sr) ++ [pnd,pns])
-packageProcedure c (StepperStep dev sd ns sp (Just ac)) =
+packageCommand c (StepperStep dev sd ns sp (Just ac)) =
     return $ sysEx STEPPER_DATA ([stepperCmdVal STEP_STEPPER,dev,(stepDirVal sd)] ++ (word32To3ArduinoBytes ns) ++ (word16ToArduinoBytes sp) ++ (intTo4ArduinoBytes ac))
-packageProcedure c (StepperStep dev sd ns sp Nothing) =
+packageCommand c (StepperStep dev sd ns sp Nothing) =
     return $ sysEx STEPPER_DATA ([stepperCmdVal STEP_STEPPER,dev,(stepDirVal sd)] ++ (word32To3ArduinoBytes ns) ++ (word16ToArduinoBytes sp))
-packageProcedure c (ServoConfig p min max)  = do
+packageCommand c (ServoConfig p min max)  = do
     ipin <- getInternalPin c p
     return $ sysEx SERVO_CONFIG ([fromIntegral $ pinNo ipin] ++ (word16ToArduinoBytes min) ++ (word16ToArduinoBytes max))
-packageProcedure c (DeleteTask tid)         = 
+packageCommand c (DeleteTask tid)         = 
     return $ sysEx SCHEDULER_DATA [schedulerCmdVal DELETE_TASK, tid]
-packageProcedure c (Delay tt)               = 
+packageCommand c (Delay tt)               = 
     return $ sysEx SCHEDULER_DATA ([schedulerCmdVal DELAY_TASK] ++ (word32ToArduinoBytes tt))
-packageProcedure c (ScheduleTask tid tt)    = 
+packageCommand c (ScheduleTask tid tt)    = 
     return $ sysEx SCHEDULER_DATA ([schedulerCmdVal SCHEDULE_TASK, tid] ++ (word32ToArduinoBytes tt))
-packageProcedure c (CreateTask tid m)       = do
+packageCommand c (CreateTask tid m)       = do
     td <- packageTaskData c m
     let taskSize = fromIntegral (B.length td)
     return $ sysEx SCHEDULER_DATA ([schedulerCmdVal CREATE_TASK, tid] ++ 
@@ -131,12 +131,12 @@ packageTaskData conn commands =
           cs <- cmds
           packageTaskData' c (k a) cs
       packBind c (Bind m k1)    k2 cmds = packBind c m (\ r -> Bind (k1 r) k2) cmds
-      packBind c (Procedure cmd) k cmds = do
-          proc <- packageProcedure c cmd
+      packBind c (Command cmd) k cmds = do
+          proc <- packageCommand c cmd
           cs <- cmds
           packageTaskData' c (k ()) (B.append cs proc)
-      packBind c (Local local)   k cmds = packLocal c local k cmds
-      packBind c (Query query)   k cmds = packQuery c query k cmds
+      packBind c (Local local) k cmds = packLocal c local k cmds
+      packBind c (Procedure procedure) k cmds = packProcedure c procedure k cmds
 
       -- For sending as part of a Scheduler task, locals make no sense.  
       -- Queries will work, but receiving them is problematic at the moment.
@@ -152,23 +152,23 @@ packageTaskData conn commands =
           cs <- cmds 
           packageTaskData' c (k False) cs
 
-      packQuery :: ArduinoConnection -> Query a -> (a -> Arduino b) -> IO B.ByteString -> IO B.ByteString
-      packQuery c QueryFirmware k cmds = do 
+      packProcedure :: ArduinoConnection -> Procedure a -> (a -> Arduino b) -> IO B.ByteString -> IO B.ByteString
+      packProcedure c QueryFirmware k cmds = do 
           cs <- cmds           
           packageTaskData' c (k (0,0,[])) cs
-      packQuery c CapabilityQuery k cmds = do
+      packProcedure c CapabilityQuery k cmds = do
           cs <- cmds
           packageTaskData' c (k (BoardCapabilities M.empty)) cs
-      packQuery c AnalogMappingQuery k cmds = do
+      packProcedure c AnalogMappingQuery k cmds = do
           cs <- cmds 
           packageTaskData' c (k ([])) cs
-      packQuery c (Pulse _ _ _ _) k cmds = do
+      packProcedure c (Pulse _ _ _ _) k cmds = do
           cs <- cmds 
           packageTaskData' c (k 0) cs
-      packQuery c QueryAllTasks k cmds = do
+      packProcedure c QueryAllTasks k cmds = do
           cs <- cmds
           packageTaskData' c (k ([])) cs
-      packQuery c (QueryTask _) k cmds = do
+      packProcedure c (QueryTask _) k cmds = do
           cs <- cmds
           packageTaskData' c (k (0,0,0,0,[])) cs
 
@@ -177,14 +177,14 @@ packageTaskData conn commands =
       packageTaskData' c (Return a) cmds = return cmds
       packageTaskData' c cmd        cmds = packBind c cmd Return (return cmds)
 
-packageQuery :: Query a -> B.ByteString
-packageQuery QueryFirmware            = sysEx    REPORT_FIRMWARE         []
-packageQuery CapabilityQuery          = sysEx    CAPABILITY_QUERY        []
-packageQuery AnalogMappingQuery       = sysEx    ANALOG_MAPPING_QUERY    []
-packageQuery (Pulse p b dur to)       = sysEx    PULSE                   ([fromIntegral (pinNo p), if b then 1 else 0] ++ concatMap toArduinoBytes (word32ToBytes dur ++ word32ToBytes to))
-packageQuery (I2CRead sa sr cnt)      = sysEx    I2C_REQUEST  (packageI2c False sa sr cnt)
-packageQuery QueryAllTasks            = sysEx    SCHEDULER_DATA [schedulerCmdVal QUERY_ALL_TASKS]
-packageQuery (QueryTask tid)          = sysEx    SCHEDULER_DATA [schedulerCmdVal QUERY_TASK, tid]
+packageProcedure :: Procedure a -> B.ByteString
+packageProcedure QueryFirmware            = sysEx    REPORT_FIRMWARE         []
+packageProcedure CapabilityQuery          = sysEx    CAPABILITY_QUERY        []
+packageProcedure AnalogMappingQuery       = sysEx    ANALOG_MAPPING_QUERY    []
+packageProcedure (Pulse p b dur to)       = sysEx    PULSE                   ([fromIntegral (pinNo p), if b then 1 else 0] ++ concatMap toArduinoBytes (word32ToBytes dur ++ word32ToBytes to))
+packageProcedure (I2CRead sa sr cnt)      = sysEx    I2C_REQUEST  (packageI2c False sa sr cnt)
+packageProcedure QueryAllTasks            = sysEx    SCHEDULER_DATA [schedulerCmdVal QUERY_ALL_TASKS]
+packageProcedure (QueryTask tid)          = sysEx    SCHEDULER_DATA [schedulerCmdVal QUERY_TASK, tid]
 
 packageI2c :: Bool -> SlaveAddress -> Maybe SlaveRegister -> Word8 -> [Word8]
 packageI2c w sa sr cnt = [addrBytes !! 0, commandByte] ++ slaveBytes ++ countByte
@@ -225,7 +225,7 @@ unpackageSysEx (cmdWord:args)
   = Unimplemented Nothing (cmdWord : args)
 
 -- This is how we match responses with queries
-parseQueryResult :: Query a -> Response -> Maybe a
+parseQueryResult :: Procedure a -> Response -> Maybe a
 parseQueryResult QueryFirmware (Firmware wa wb s) = Just (wa,wb,s)
 parseQueryResult CapabilityQuery (Capabilities bc) = Just bc
 parseQueryResult AnalogMappingQuery (AnalogMapping ms) = Just ms

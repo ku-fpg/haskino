@@ -155,36 +155,36 @@ send conn commands =
       sendBind :: ArduinoConnection -> Arduino a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendBind c (Return a)      k cmds = send' c (k a) cmds
       sendBind c (Bind m k1)    k2 cmds = sendBind c m (\ r -> Bind (k1 r) k2) cmds
-      sendBind c (Procedure (Delay d)) k cmds = do
+      sendBind c (Command (Delay d)) k cmds = do
           sendToArduino c cmds
           message c $ "Delaying: " ++ show d
           threadDelay ((fromIntegral d)*1000)
           send' c (k ()) B.empty
-      sendBind c (Procedure (SetPinMode p pm)) k cmds = do
+      sendBind c (Command (SetPinMode p pm)) k cmds = do
           ipin <- getInternalPin c p
           registerPinMode c ipin pm
-          proc <- packageProcedure c (SetPinMode p pm)
+          proc <- packageCommand c (SetPinMode p pm)
           send' c (k ()) (B.append cmds proc)
-      sendBind c (Procedure (DigitalPortReport p r)) k cmds = do
+      sendBind c (Command (DigitalPortReport p r)) k cmds = do
           shouldSend <- registerDigitalPortReport c p r
           if shouldSend 
           then do
-              proc <- packageProcedure c (DigitalPortReport p r) 
+              proc <- packageCommand c (DigitalPortReport p r) 
               send' c (k ()) (B.append cmds proc)
           else send' c (k ()) cmds
-      sendBind c (Procedure (DigitalReport p r)) k cmds = do
+      sendBind c (Command (DigitalReport p r)) k cmds = do
           ipin <- getInternalPin c p
           shouldSend <- registerDigitalPinReport c ipin r
           if shouldSend 
           then do 
-              proc <- packageProcedure c (DigitalReport p r)
+              proc <- packageCommand c (DigitalReport p r)
               send' c (k ()) (B.append cmds proc)
           else send' c (k ()) cmds
-      sendBind c (Procedure cmd) k cmds = do 
-          proc <- packageProcedure c cmd
+      sendBind c (Command cmd) k cmds = do 
+          proc <- packageCommand c cmd
           send' c (k ()) (B.append cmds proc)
       sendBind c (Local local)   k cmds = sendLocal c local k cmds
-      sendBind c (Query query)   k cmds = sendQuery c query k cmds
+      sendBind c (Procedure procedure) k cmds = sendProcedure c procedure k cmds
       sendBind c (LiftIO m) k cmds = do 
           res <- m
           send' c (k res) cmds
@@ -225,24 +225,24 @@ send conn commands =
           runDie c msg msgs
           send' c (k ()) cmds
 
-      sendQuery :: ArduinoConnection -> Query a -> (a -> Arduino b) -> B.ByteString -> IO b
-      sendQuery c query k cmds = do
-          sendToArduino c (B.append cmds (packageQuery query))
-          wait c query k
+      sendProcedure :: ArduinoConnection -> Procedure a -> (a -> Arduino b) -> B.ByteString -> IO b
+      sendProcedure c procedure k cmds = do
+          sendToArduino c (B.append cmds (packageProcedure procedure))
+          wait c procedure k
         where
-          wait :: ArduinoConnection -> Query a -> (a -> Arduino b) -> IO b
-          wait c query k = do
+          wait :: ArduinoConnection -> Procedure a -> (a -> Arduino b) -> IO b
+          wait c procedure k = do
             message c $ "Waiting for response"
             resp <- liftIO $ timeout 5000000 $ readChan $ deviceChannel c
             case resp of 
                 Nothing -> runDie c "Response Timeout" 
                                  [ "Make sure your Arduino is running Standard or Configurable Firmata"]
                 Just r -> do 
-                    let qres = parseQueryResult query r
+                    let qres = parseQueryResult procedure r
                     case qres of
                         -- Ignore responses that do not match expected response
                         -- and wait for the next response.
-                        Nothing -> wait c query k
+                        Nothing -> wait c procedure k
                         Just qr -> send' c (k qr) B.empty
 
       send' :: ArduinoConnection -> Arduino a -> B.ByteString -> IO a
