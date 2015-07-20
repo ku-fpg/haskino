@@ -22,6 +22,10 @@ import qualified Data.Map        as M
 import System.Hardware.DeepArduino.Data
 import System.Hardware.DeepArduino.Utils
 
+-- | Maximum size of a firmata message
+maxFirmataSize :: Int
+maxFirmataSize = 64
+
 -- | Wrap a sys-ex message to be sent to the board
 sysEx :: SysExCmd -> [Word8] -> B.ByteString
 sysEx cmd bs = B.pack $  firmataCmdVal START_SYSEX
@@ -39,8 +43,6 @@ startSysEx cmd bs = B.pack $  firmataCmdVal START_SYSEX
 -- | Construct a non sys-ex message
 nonSysEx :: FirmataCmd -> [Word8] -> B.ByteString
 nonSysEx cmd bs = B.pack $ firmataCmdVal cmd : bs
-
-
 
 -- | Package a request as a sequence of bytes to be sent to the board
 -- using the Firmata protocol.
@@ -118,9 +120,18 @@ packageCommand c (CreateTask tid m)       = do
     let taskSize = fromIntegral (B.length td)
     return $ sysEx SCHEDULER_DATA ([schedulerCmdVal CREATE_TASK, tid] ++ 
                                     (word16ToArduinoBytes taskSize))
-                                    `B.append` (startSysEx SCHEDULER_DATA [schedulerCmdVal ADD_TO_TASK, tid])
-                                    `B.append` (arduinoEncoded td)
-                                    `B.append` (B.singleton (firmataCmdVal END_SYSEX))
+                                    `B.append` (genAddToTaskCmds td)
+  where
+    -- Calculate maximum command - Data is encoded as 8 bytes for every 7
+    -- in original message due to 7 bit encoding.
+    maxCmdSize = ((maxFirmataSize - 5) `div` 8)  * 7
+    genAddToTaskCmds tds | fromIntegral (B.length tds) > maxCmdSize = 
+        addToTask (B.take maxCmdSize tds) 
+            `B.append` (genAddToTaskCmds (B.drop maxCmdSize tds))
+    genAddToTaskCmds tds = addToTask tds
+    addToTask td = (startSysEx SCHEDULER_DATA [schedulerCmdVal ADD_TO_TASK, tid])
+                      `B.append` (arduinoEncoded td)
+                      `B.append` (B.singleton (firmataCmdVal END_SYSEX))
 
 packageTaskData :: ArduinoConnection -> Arduino a -> IO B.ByteString
 packageTaskData conn commands =
