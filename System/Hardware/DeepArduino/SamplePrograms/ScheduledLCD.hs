@@ -5,8 +5,10 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Creates a scheduled task on the Arduino which alternates writing 'A' and 
--- 'B' to the LCD screen every second
+-- Creates a scheduled task on the Arduino which alternates writing 'Rock',
+-- 'Chalk' and 'Jayhawk' to the LCD screen every second and a half.
+-- Note: This example requires a Mega2560 board, as the Uno boards do not have
+-- enough RAM.
 -------------------------------------------------------------------------------
 
 module System.Hardware.DeepArduino.SamplePrograms.ScheduledLCD where
@@ -32,11 +34,14 @@ hitachi = Hitachi44780 { lcdRS = digital 8
 myTask :: LCD -> Arduino ()
 myTask lcd = do
     lcdHome lcd
-    lcdWrite lcd "A" 
-    delay 1000   
+    lcdWrite lcd "Rock   " 
+    delay 1500   
     lcdHome lcd
-    lcdWrite lcd "B" 
-    delay 1000   
+    lcdWrite lcd "Chalk  " 
+    delay 1500   
+    lcdHome lcd
+    lcdWrite lcd "Jayhawk" 
+    delay 1500   
 
 scheduledLCD :: IO ()
 scheduledLCD = withArduino True "/dev/cu.usbmodem1421" $ do
