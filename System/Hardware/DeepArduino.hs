@@ -43,6 +43,8 @@ module System.Hardware.DeepArduino (
   -- ** Stepper
   , StepDevice, StepType(..), NumSteps, StepSpeed, StepAccel, StepPerRev
   , StepDelay(..), StepDir(..), stepperConfig, stepperStep
+  -- ** Control structures
+  , loop
  )
  where
 

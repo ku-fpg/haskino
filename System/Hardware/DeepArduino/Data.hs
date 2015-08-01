@@ -38,6 +38,7 @@ import Debug.Trace
 -----------------------------------------------------------------------------
 
 data Arduino :: * -> * where
+    Control        :: Control                         -> Arduino ()
     Command        :: Command                         -> Arduino ()
     Local          :: Local a                         -> Arduino a
     Procedure      :: Procedure a                     -> Arduino a
@@ -354,6 +355,9 @@ stepperConfig dev ty d sr p1 p2 p3 p4 = Command $ StepperConfig dev ty d sr p1 p
 stepperStep :: StepDevice -> StepDir -> NumSteps -> StepSpeed -> Maybe StepAccel -> Arduino ()
 stepperStep dev sd ns sp ac = Command $ StepperStep dev sd ns sp ac
 
+createTask :: TaskID -> Arduino () -> Arduino ()
+createTask tid ps = Command (CreateTask tid ps)
+
 deleteTask :: TaskID -> Arduino ()
 deleteTask tid = Command $ DeleteTask tid
 
@@ -365,6 +369,12 @@ scheduleTask tid tt = Command $ ScheduleTask tid tt
 
 scheduleReset :: Arduino ()
 scheduleReset = Command ScheduleReset
+
+data Control =
+       Loop (Arduino ())
+
+loop :: Arduino () -> Arduino ()
+loop ps = Control (Loop ps)
 
 data Local :: * -> * where
      DigitalPortRead  :: Port -> Local Word8          -- ^ Read the values on a port digitally
@@ -486,9 +496,6 @@ runWaitGeneric c ps = do
                     then wait
                     else return $ zip curVals newVals
    wait
-
-createTask :: TaskID -> Arduino () -> Arduino ()
-createTask tid ps = Command (CreateTask tid ps)
 
 data Procedure :: * -> * where
      QueryFirmware  :: Procedure (Word8, Word8, String)   -- ^ Query the Firmata version installed

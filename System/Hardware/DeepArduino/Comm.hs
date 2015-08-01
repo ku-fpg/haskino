@@ -183,11 +183,17 @@ send conn commands =
       sendBind c (Command cmd) k cmds = do 
           proc <- packageCommand c cmd
           send' c (k ()) (B.append cmds proc)
+      sendBind c (Control ctrl)  k cmds = sendControl c ctrl k cmds
       sendBind c (Local local)   k cmds = sendLocal c local k cmds
       sendBind c (Procedure procedure) k cmds = sendProcedure c procedure k cmds
       sendBind c (LiftIO m) k cmds = do 
           res <- m
           send' c (k res) cmds
+
+      sendControl :: ArduinoConnection -> Control -> (a -> Arduino b) -> B.ByteString -> IO b
+      sendControl c (Loop ps) k cmds = do
+          send c ps
+          sendControl c (Loop ps) k cmds
 
       sendLocal :: ArduinoConnection -> Local a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendLocal c (AnalogRead p) k cmds = do
