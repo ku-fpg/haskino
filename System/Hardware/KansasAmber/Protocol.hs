@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.Comm
+-- Module      :  System.Hardware.KansasAmber.Comm
 --                Based on System.Hardware.Arduino.comm
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -11,7 +11,7 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE GADTs      #-}
 
-module System.Hardware.DeepArduino.Protocol(packageCommand, packageProcedure, unpackageSysEx, unpackageNonSysEx, parseQueryResult) where
+module System.Hardware.KansasAmber.Protocol(packageCommand, packageProcedure, unpackageSysEx, unpackageNonSysEx, parseQueryResult) where
 
 import Data.Bits ((.|.), (.&.))
 import Data.Word (Word8)
@@ -19,8 +19,8 @@ import Data.Word (Word8)
 import qualified Data.ByteString as B
 import qualified Data.Map        as M
 
-import System.Hardware.DeepArduino.Data
-import System.Hardware.DeepArduino.Utils
+import System.Hardware.KansasAmber.Data
+import System.Hardware.KansasAmber.Utils
 
 -- | Maximum size of a firmata message
 maxFirmataSize :: Int
@@ -95,7 +95,7 @@ packageCommand c (StepperConfig dev FourWire d sr p1 p2 (Just p3) (Just p4)) = d
         pn4 = fromIntegral $ pinNo ipin4
     return $ sysEx STEPPER_DATA ([stepperCmdVal CONFIG_STEPPER,dev,((stepDelayVal d) .|. 0x04)] ++ (word16ToArduinoBytes sr) ++ [pn1,pn2,pn3,pn4])
 packageCommand c (StepperConfig _ FourWire _ _ _ _ _ _) = 
-    runDie c "DeepArduino: FourWire steppers require specification of 4 pins for config"  []
+    runDie c "KansasAmber: FourWire steppers require specification of 4 pins for config"  []
 packageCommand c (StepperConfig dev StepDir d sr dp sp _ _) = do
     dipin <-  getInternalPin c dp 
     sipin <-  getInternalPin c sp

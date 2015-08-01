@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.SamplePrograms.NumGuess
+-- Module      :  System.Hardware.KansasAmber.SamplePrograms.NumGuess
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -12,10 +12,10 @@
 -- /Thanks to David Palmer for lending me his OSEPP shield to play with!/
 -------------------------------------------------------------------------------
 
-module System.Hardware.DeepArduino.SamplePrograms.NumGuess where
+module System.Hardware.KansasAmber.SamplePrograms.NumGuess where
 
-import System.Hardware.DeepArduino
-import System.Hardware.DeepArduino.Parts.LCD
+import System.Hardware.KansasAmber
+import System.Hardware.KansasAmber.Parts.LCD
 
 -- | The OSepp LCD Shield is a 16x2 LCD using a Hitachi Controller
 -- Furthermore, it has backlight, and 5 buttons. The hook-up is
@@ -47,7 +47,7 @@ data Key = KeyRight
          | KeySelect
 
 -- | Initialize the shield. This is essentially simply registering the
--- lcd with the DeepArduino library. In addition, we return two values to
+-- lcd with the KansasAmber library. In addition, we return two values to
 -- the user:
 --
 --   * A function to control the back-light
@@ -89,7 +89,7 @@ numGuess lcd readKey = game
         game = do clear
                   home
                   lcdBacklightOn lcd
-                  at (0, 2) "DeepArduino!"
+                  at (0, 2) "KansasAmber!"
                   at (1, 0) "# Guessing game"
                   delay 2000
                   guess 1 0 1000

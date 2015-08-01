@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.SamplePrograms.Servo
+-- Module      :  System.Hardware.KansasAmber.SamplePrograms.Servo
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -13,15 +13,15 @@
 
 module System.Hardware.Arduino.SamplePrograms.Stepper where
 
-import System.Hardware.DeepArduino
-import System.Hardware.DeepArduino.Parts.Stepper
+import System.Hardware.KansasAmber
+import System.Hardware.KansasAmber.Parts.Stepper
 
 -- | Control a stepper
 -- | StepDir is either CCW or CW
 -- | NumSteps is the number of times to step the motor
 -- | Step Speed is speed in 0.01 rad/sec
 -- | i.e. stepper CW 80 50
---  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/DeepArduino/SamplePrograms/Schematics/Stepper.png>>
+--  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/KansasAmber/SamplePrograms/Schematics/Stepper.png>>
 stepper :: StepDir -> NumSteps -> StepSpeed -> IO ()
 stepper sd ns ss = do
     conn <- openArduino True "/dev/cu.usbmodem1421"

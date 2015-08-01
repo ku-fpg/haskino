@@ -1,16 +1,16 @@
 -------------------------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.Parts.Stepper
+-- Module      :  System.Hardware.KansasAmber.Parts.Stepper
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
 --
 -- Abstractions for stepper motors. 
--- See "System.Hardware.DeepArduino.SamplePrograms.Stepper" for example uses.
+-- See "System.Hardware.KansasAmber.SamplePrograms.Stepper" for example uses.
 -------------------------------------------------------------------------------------------------
 
 {-# LANGUAGE NamedFieldPuns #-}
-module System.Hardware.DeepArduino.Parts.Stepper(
+module System.Hardware.KansasAmber.Parts.Stepper(
    -- * Attaching a stepper motor on a set of pins
      Stepper, attach
    -- * Stepping stepper position
@@ -20,9 +20,9 @@ module System.Hardware.DeepArduino.Parts.Stepper(
 import Control.Concurrent   (putMVar, takeMVar)
 import Control.Monad.Trans  (liftIO)
 
-import System.Hardware.DeepArduino
-import System.Hardware.DeepArduino.Comm
-import System.Hardware.DeepArduino.Data
+import System.Hardware.KansasAmber
+import System.Hardware.KansasAmber.Comm
+import System.Hardware.KansasAmber.Data
 
 -- | A stepper motor. Note that this type is abstract, use 'attach' to
 -- create an instance.

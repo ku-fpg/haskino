@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.Comm
+-- Module      :  System.Hardware.KansasAmber.Comm
 --                Based on System.Hardware.Arduino.comm
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -9,7 +9,7 @@
 --
 -- Internal utilities
 -------------------------------------------------------------------------------
-module System.Hardware.DeepArduino.Utils where
+module System.Hardware.KansasAmber.Utils where
 
 import Data.Bits          ((.|.), shiftL, (.&.), shiftR)
 import Data.Char          (isAlphaNum, isAscii, isSpace, chr)
@@ -32,7 +32,7 @@ mkDebugPrinter True  = do
                      tick <- utctDayTime `fmap` getCurrentTime
                      let precision = 1000000 :: Integer
                          micro = round . (fromIntegral precision *) . toRational $ tick
-                     putStrLn $ "[" ++ show i ++ ":" ++ show (micro :: Integer) ++ "] DeepArduino: " ++ s
+                     putStrLn $ "[" ++ show i ++ ":" ++ show (micro :: Integer) ++ "] KansasAmber: " ++ s
         return f
 
 -- | Show a byte in a visible format.

@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.SamplePrograms.ButtonWait
+-- Module      :  System.Hardware.KansasAmber.SamplePrograms.ButtonWait
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
@@ -8,11 +8,11 @@
 -- Reads the value of an analog input, controlled by a 10K potentiometer.
 -------------------------------------------------------------------------------
 
-module System.Hardware.DeepArduino.SamplePrograms.Button where
+module System.Hardware.KansasAmber.SamplePrograms.Button where
 
 import Control.Monad.Trans (liftIO)
 
-import System.Hardware.DeepArduino
+import System.Hardware.KansasAmber
 
 -- | Wait for the value of a push-button (NO - normally open)
 -- connected to input pin 2 on the Arduino to change. We will 
@@ -23,7 +23,7 @@ import System.Hardware.DeepArduino
 -- The wiring is straightforward: Simply put a push-button between
 -- digital input 2 and +5V, guarded by a 10K resistor:
 --
---  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/DeepArduino/SamplePrograms/Schematics/Analog.png>>
+--  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/KansasAmber/SamplePrograms/Schematics/Analog.png>>
 buttonWait :: IO ()
 buttonWait = withArduino False "/dev/cu.usbmodem1421" $ do
     let but = digital 3

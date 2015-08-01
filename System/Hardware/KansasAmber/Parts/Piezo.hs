@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.Parts.Piezo
+-- Module      :  System.Hardware.KansasAmber.Parts.Piezo
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -11,7 +11,7 @@
 -------------------------------------------------------------------------------------------------
 
 {-# LANGUAGE NamedFieldPuns #-}
-module System.Hardware.DeepArduino.Parts.Piezo(
+module System.Hardware.KansasAmber.Parts.Piezo(
    -- * Declaring a piezo speaker
      Piezo, speaker
    -- * Notes you can play, and durations
@@ -26,9 +26,9 @@ import Data.Bits  (shiftR, (.&.))
 import Data.Maybe (fromMaybe)
 import Data.Word (Word8, Word16, Word32)
 
-import System.Hardware.DeepArduino
-import System.Hardware.DeepArduino.Comm
-import System.Hardware.DeepArduino.Data
+import System.Hardware.KansasAmber
+import System.Hardware.KansasAmber.Comm
+import System.Hardware.KansasAmber.Data
 
 -- | A piezo speaker. Note that this type is abstract, use 'speaker' to
 -- create an instance.

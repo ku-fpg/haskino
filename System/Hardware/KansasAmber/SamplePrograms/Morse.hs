@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.SamplePrograms.Morse
+-- Module      :  System.Hardware.KansasAmber.SamplePrograms.Morse
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -10,7 +10,7 @@
 -- Morse code blinker. Original by Antoine R. Dumont, modified to simplify
 -- and fit into the existing examples structure.
 -------------------------------------------------------------------------------
-module System.Hardware.DeepArduino.SamplePrograms.Morse where
+module System.Hardware.KansasAmber.SamplePrograms.Morse where
 
 import Control.Monad       (forever)
 import Control.Monad.Trans (liftIO)
@@ -18,7 +18,7 @@ import Data.Char           (toUpper)
 import Data.List           (intercalate)
 import Data.Maybe          (fromMaybe)
 
-import System.Hardware.DeepArduino
+import System.Hardware.KansasAmber
 
 -- | A dit or a dah is all we need for Morse:
 -- A @dit@ is a dot; and a @dah@ is a dash in the Morsian world.
@@ -68,7 +68,7 @@ transmit p = sequence_ . concatMap code . morsify . decode
 -- computer, no other hardware is needed. We use the internal led on pin 13. Of course,
 -- you can attach a led to pin 13 as well, for artistic effect.
 --
---  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/DeepArduino/SamplePrograms/Schematics/Blink.png>>
+--  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/KansasAmber/SamplePrograms/Schematics/Blink.png>>
 morseDemo :: IO ()
 morseDemo = withArduino False "/dev/cu.usbmodem1421" $ do
                 setPinMode led OUTPUT

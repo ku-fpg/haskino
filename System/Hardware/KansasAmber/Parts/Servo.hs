@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.Parts.Servo
+-- Module      :  System.Hardware.KansasAmber.Parts.Servo
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -8,11 +8,11 @@
 -- Stability   :  experimental
 --
 -- Abstractions for servo motors. 
--- See "System.Hardware.DeepArduino.SamplePrograms.Servo" for example uses.
+-- See "System.Hardware.KansasAmber.SamplePrograms.Servo" for example uses.
 -------------------------------------------------------------------------------------------------
 
 {-# LANGUAGE NamedFieldPuns #-}
-module System.Hardware.DeepArduino.Parts.Servo(
+module System.Hardware.KansasAmber.Parts.Servo(
    -- * Attaching a servo motor on a pin
      Servo, attach
    -- * Setting servo position
@@ -24,9 +24,9 @@ import Data.Maybe    (fromMaybe)
 import Control.Monad (when)
 import Data.Word     (Word16)
 
-import System.Hardware.DeepArduino
-import System.Hardware.DeepArduino.Comm
-import System.Hardware.DeepArduino.Data
+import System.Hardware.KansasAmber
+import System.Hardware.KansasAmber.Comm
+import System.Hardware.KansasAmber.Data
 
 -- | A servo motor. Note that this type is abstract, use 'attach' to
 -- create an instance.

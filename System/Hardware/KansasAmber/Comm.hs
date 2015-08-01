@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.Comm
+-- Module      :  System.Hardware.KansasAmber.Comm
 --                Based on System.Hardware.Arduino.comm
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -13,7 +13,7 @@
 {-# LANGUAGE NamedFieldPuns      #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE GADTs #-}
-module System.Hardware.DeepArduino.Comm where
+module System.Hardware.KansasAmber.Comm where
 
 import Control.Monad        (when, forever)
 import Control.Concurrent   (Chan, MVar, ThreadId, newChan, newMVar, 
@@ -40,9 +40,9 @@ import qualified System.Hardware.Serialport as S (openSerial, closeSerial,
                                                   CommSpeed(CS57600), commSpeed,
                                                   recv, send)
 
-import System.Hardware.DeepArduino.Data
-import System.Hardware.DeepArduino.Utils
-import System.Hardware.DeepArduino.Protocol
+import System.Hardware.KansasAmber.Data
+import System.Hardware.KansasAmber.Utils
+import System.Hardware.KansasAmber.Protocol
 
 -- | Open the connection to control the board:
 --
@@ -55,7 +55,7 @@ import System.Hardware.DeepArduino.Protocol
 --      is typically less-than-useful, but it might point to the root
 --      cause of the problem.
 --
--- See "System.Hardware.DeepArduino.Examples.Blink" for a simple example.
+-- See "System.Hardware.KansasAmber.Examples.Blink" for a simple example.
 openArduino :: Bool                 -- ^ If 'True', debugging info will be printed
             -> FilePath             -- ^ Path to the Serial port
             -> IO ArduinoConnection
@@ -66,7 +66,7 @@ openArduino verbose fp = do
       portTry <- tryIOError (S.openSerial fp S.defaultSerialSettings{S.commSpeed = S.CS57600})
       case portTry of 
         Left e -> 
-          error $ "\n*** DeepArduino:ERROR:\n*** Make sure your Arduino is connected to " ++ fp
+          error $ "\n*** KansasAmber:ERROR:\n*** Make sure your Arduino is connected to " ++ fp
         Right port -> do
           let initBoardState = BoardState {
                                    boardCapabilities    = BoardCapabilities M.empty
@@ -112,7 +112,7 @@ openArduino verbose fp = do
           return openState
   where
       bailOut tid m ms = do cleanUpArduino tid
-                            error $ "\n*** DeepArduino:ERROR: " ++ intercalate "\n*** " (m:ms)
+                            error $ "\n*** KansasAmber:ERROR: " ++ intercalate "\n*** " (m:ms)
       mapAnalog as p c
           | i < rl && m /= 0x7f
           = c{analogPinNumber = Just m}
@@ -142,7 +142,7 @@ withArduino verbose fp program = do
       conn <- openArduino verbose fp
       res <- tryJust catchCtrlC $ send conn program
       case res of
-        Left () -> putStrLn "DeepArduino: Caught Ctrl-C, quitting.."
+        Left () -> putStrLn "KansasAmber: Caught Ctrl-C, quitting.."
         _       -> return ()
       closeArduino conn  
   where catchCtrlC UserInterrupt = Just ()

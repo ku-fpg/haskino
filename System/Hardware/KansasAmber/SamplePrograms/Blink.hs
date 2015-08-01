@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.SamplePrograms.Blink
+-- Module      :  System.Hardware.KansasAmber.SamplePrograms.Blink
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -10,11 +10,11 @@
 -- The /hello world/ of the arduino world, blinking the led.
 -------------------------------------------------------------------------------
 
-module System.Hardware.DeepArduino.SamplePrograms.Blink where
+module System.Hardware.KansasAmber.SamplePrograms.Blink where
 
 import Control.Monad (forever)
 
-import System.Hardware.DeepArduino
+import System.Hardware.KansasAmber
 
 blink :: IO ()
 blink = withArduino False "/dev/cu.usbmodem1421" $ do

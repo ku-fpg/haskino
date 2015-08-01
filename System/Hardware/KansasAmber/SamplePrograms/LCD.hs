@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.SamplePrograms.LCD
+-- Module      :  System.Hardware.KansasAmber.SamplePrograms.LCD
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -16,8 +16,8 @@ import Control.Monad.Trans (liftIO)
 import Data.Char           (isSpace)
 import Numeric             (showHex)
 
-import System.Hardware.DeepArduino
-import System.Hardware.DeepArduino.Parts.LCD
+import System.Hardware.KansasAmber
+import System.Hardware.KansasAmber.Parts.LCD
 
 -- | Connections for a basic hitachi controller.
 -- See <http://en.wikipedia.org/wiki/Hitachi_HD44780_LCD_controller> for
@@ -48,7 +48,7 @@ import System.Hardware.DeepArduino.Parts.LCD
 --
 --  * [If backlight is needed] LCD pin @16@ to GND via 220ohm resistor
 --
---  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/DeepArduino/SamplePrograms/Schematics/LCD.png>>
+--  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/KansasAmber/SamplePrograms/Schematics/LCD.png>>
 
 
 hitachiDigital :: LCDController
@@ -108,7 +108,7 @@ lcdDemoI2C = runlcdDemo hitachiI2C
 
 -- | Access the LCD connected to Arduino, making it show messages
 -- we read from the user and demonstrate other LCD control features offered
--- by DeepArduino.
+-- by KansasAmber.
 runlcdDemo :: LCDController -> IO ()
 runlcdDemo h = withArduino False "/dev/cu.usbmodem1421" $ do
               lcd <- lcdRegister h

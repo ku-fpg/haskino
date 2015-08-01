@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.SamplePrograms.Servo
+-- Module      :  System.Hardware.KansasAmber.SamplePrograms.Servo
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -17,8 +17,8 @@ import Control.Monad       (forever)
 import Control.Monad.Trans (liftIO)
 import Data.Char           (toLower)
 
-import System.Hardware.DeepArduino
-import System.Hardware.DeepArduino.Parts.Servo
+import System.Hardware.KansasAmber
+import System.Hardware.KansasAmber.Parts.Servo
 
 -- | Control a servo, by executing user requests of blade movement.  We allow 3 user commands:
 --
@@ -35,7 +35,7 @@ import System.Hardware.DeepArduino.Parts.Servo
 -- To connect the servo to the Arduino, simply connect the VCC (red) and the GND (black) appropriately, and the signal line (white)
 -- to any SERVO capable pin, in this example we're using pin number 9:
 --
---  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/DeepArduino/SamplePrograms/Schematics/Servo.png>>
+--  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/KansasAmber/SamplePrograms/Schematics/Servo.png>>
 servo :: IO ()
 servo = withArduino False "/dev/cu.usbmodem1421" $ do
             s <- attach (digital 9) (Just 600) (Just 2400)
@@ -54,7 +54,7 @@ servo = withArduino False "/dev/cu.usbmodem1421" $ do
 -- above, except instead of querying the user for the angle, we use the readings from a potentiometer connected to
 -- analog input number 2. We used a 10 KOhm potentiometer, but other pots would work just as well too:
 --
---  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/DeepArduino/SamplePrograms/Schematics/ServoAnalog.png>>
+--  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/KansasAmber/SamplePrograms/Schematics/ServoAnalog.png>>
 servoAnalog :: IO ()
 servoAnalog = withArduino False "/dev/cu.usbmodem1421" $ do
                  s <- attach (digital 9) (Just 600) (Just 2400)

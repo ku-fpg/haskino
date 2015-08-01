@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.Pars.ShiftRegisters
+-- Module      :  System.Hardware.KansasAmber.Pars.ShiftRegisters
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -11,7 +11,7 @@
 -------------------------------------------------------------------------------------------------
 
 {-# LANGUAGE NamedFieldPuns #-}
-module System.Hardware.DeepArduino.Parts.ShiftRegisters(
+module System.Hardware.KansasAmber.Parts.ShiftRegisters(
      -- * Shift register abstraction
      ShiftRegister(..)
      -- * Supported shift-registers
@@ -21,10 +21,10 @@ module System.Hardware.DeepArduino.Parts.ShiftRegisters(
 
 import Data.Foldable (forM_)
 
-import System.Hardware.DeepArduino
-import System.Hardware.DeepArduino.Data (die)
+import System.Hardware.KansasAmber
+import System.Hardware.KansasAmber.Data (die)
 
--- | A shift-register class as supported by the DeepArduino library.
+-- | A shift-register class as supported by the KansasAmber library.
 class ShiftRegister a where
   -- | Capacity
   size :: a -> Int

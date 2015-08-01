@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.Comm
+-- Module      :  System.Hardware.KansasAmber.Comm
 --                Based on System.Hardware.Arduino.comm
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -13,7 +13,7 @@
              OverloadedStrings, ScopedTypeVariables, StandaloneDeriving,
              GeneralizedNewtypeDeriving, NamedFieldPuns #-}
 
-module System.Hardware.DeepArduino.Data where
+module System.Hardware.KansasAmber.Data where
 
 import           Control.Applicative
 import           Control.Concurrent (Chan, MVar, ThreadId, withMVar, modifyMVar, 
@@ -32,7 +32,7 @@ import           Data.Word (Word8, Word16, Word32)
 
 import           System.Hardware.Serialport (SerialPort)
 
-import           System.Hardware.DeepArduino.Utils
+import           System.Hardware.KansasAmber.Utils
 
 import Debug.Trace
 -----------------------------------------------------------------------------
@@ -122,7 +122,7 @@ getInternalPin c (MixedPin p)   = return $ InternalPin p
 getInternalPin c (DigitalPin p) = return $ InternalPin p
 getInternalPin c (AnalogPin p)=
     case listToMaybe [realPin | (realPin, PinCapabilities{analogPinNumber = Just n}) <- M.toAscList caps, p == n] of
-         Nothing -> runDie c ("DeepArduino: " ++ show p ++ " is not a valid analog-pin on this board.")
+         Nothing -> runDie c ("KansasAmber: " ++ show p ++ " is not a valid analog-pin on this board.")
                         -- Try to be helpful in case they are trying to use a large value thinking it needs to be offset
                         ["Hint: To refer to analog pin number k, simply use 'pin k', not 'pin (k+noOfDigitalPins)'" | p > 13]
          Just rp -> return rp

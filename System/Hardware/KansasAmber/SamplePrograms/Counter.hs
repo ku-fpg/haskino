@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.SamplePrograms.Counter
+-- Module      :  System.Hardware.KansasAmber.SamplePrograms.Counter
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -10,11 +10,11 @@
 -- Demonstrates using two push-buttons to count up and down.
 -------------------------------------------------------------------------------
 
-module System.Hardware.DeepArduino.SamplePrograms.Counter where
+module System.Hardware.KansasAmber.SamplePrograms.Counter where
 
 import Control.Monad.Trans (liftIO)
 
-import System.Hardware.DeepArduino
+import System.Hardware.KansasAmber
 
 -- | Two push-button switches, controlling a counter value. We will increment
 -- the counter if the first one ('bUp') is pressed, and decrement the value if the
@@ -25,7 +25,7 @@ import System.Hardware.DeepArduino
 -- Wiring is very simple: Up-button connected to pin 4, Down-button connected
 -- to pin 2, and a led on pin 13.
 --
---  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/DeepArduino/SamplePrograms/Schematics/Counter.png>>
+--  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/KansasAmber/SamplePrograms/Schematics/Counter.png>>
 counter :: IO ()
 counter = do
        conn <- openArduino False "/dev/cu.usbmodem1421"

@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.SamplePrograms.ScheduledLCD
+-- Module      :  System.Hardware.KansasAmber.SamplePrograms.ScheduledLCD
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
@@ -11,10 +11,10 @@
 -- enough RAM.
 -------------------------------------------------------------------------------
 
-module System.Hardware.DeepArduino.SamplePrograms.ScheduledLCD where
+module System.Hardware.KansasAmber.SamplePrograms.ScheduledLCD where
 
-import System.Hardware.DeepArduino
-import System.Hardware.DeepArduino.Parts.LCD
+import System.Hardware.KansasAmber
+import System.Hardware.KansasAmber.Parts.LCD
 
 hitachi :: LCDController
 hitachi = Hitachi44780 { lcdRS = digital 8

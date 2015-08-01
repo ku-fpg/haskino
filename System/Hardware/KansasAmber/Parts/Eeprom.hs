@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.Parts.Eeprom
+-- Module      :  System.Hardware.KansasAmber.Parts.Eeprom
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -8,10 +8,10 @@
 -- Stability   :  experimental
 --
 -- Abstractions for Microchip 24LC256 comaptible I2C EEPROM. 
--- See "System.Hardware.DeepArduino.SamplePrograms.Eeprom" for example uses.
+-- See "System.Hardware.KansasAmber.SamplePrograms.Eeprom" for example uses.
 -------------------------------------------------------------------------------
 
-module System.Hardware.DeepArduino.Parts.Eeprom(
+module System.Hardware.KansasAmber.Parts.Eeprom(
    -- * Reading and writing from an eeprom
      eepromClear, eepromEnable, eepromRead, eepromWrite
    ) where
@@ -19,7 +19,7 @@ module System.Hardware.DeepArduino.Parts.Eeprom(
 import Data.Bits     ((.&.), shiftR)
 import Data.Word     (Word8, Word16)
 
-import System.Hardware.DeepArduino
+import System.Hardware.KansasAmber
 
 eepromEnable :: Arduino ()
 eepromEnable = i2cConfig 0

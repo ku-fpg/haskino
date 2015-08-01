@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.Pars.SevenSegmentCodes
+-- Module      :  System.Hardware.KansasAmber.Pars.SevenSegmentCodes
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -10,7 +10,7 @@
 -- Character to 7-segment display conversion.
 -------------------------------------------------------------------------------------------------
 
-module System.Hardware.DeepArduino.Parts.SevenSegmentCodes(char2SS) where
+module System.Hardware.KansasAmber.Parts.SevenSegmentCodes(char2SS) where
 
 import Data.Word (Word8)
 

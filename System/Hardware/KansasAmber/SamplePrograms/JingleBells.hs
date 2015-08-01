@@ -9,10 +9,10 @@
 -- A (pretty bad!) rendering of Jingle Bells on a piezo speaker
 -------------------------------------------------------------------------------
 
-module System.Hardware.DeepArduino.SamplePrograms.JingleBells where
+module System.Hardware.KansasAmber.SamplePrograms.JingleBells where
 
-import System.Hardware.DeepArduino
-import System.Hardware.DeepArduino.Parts.Piezo
+import System.Hardware.KansasAmber
+import System.Hardware.KansasAmber.Parts.Piezo
 
 -- | Notes for jingle-bells. Expecting a nice rendering from this encoding
 -- on a piezo speaker would be naive.. However, it's still recognizable!
@@ -36,7 +36,7 @@ jingleBells =  m1 ++ m1 ++ m3 ++ m4 ++ wait ++ m5 ++ m6 ++ m7 ++ m8 ++ wait
 --
 -- The circuit simple has a piezo speaker attached to pin 3.
 --
---  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/DeepArduino/SamplePrograms/Schematics/Piezo.png>>
+--  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/KansasAmber/SamplePrograms/Schematics/Piezo.png>>
 main :: IO ()
 main = withArduino False "/dev/cu.usbmodem1421" $ do
                 pz <- speaker 75 (pin 3)

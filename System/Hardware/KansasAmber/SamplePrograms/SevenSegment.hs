@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.SamplePrograms.SevenSegment
+-- Module      :  System.Hardware.KansasAmber.SamplePrograms.SevenSegment
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -12,7 +12,7 @@
 -- pins we need on the Arduino to control the display.
 -------------------------------------------------------------------------------
 
-module System.Hardware.DeepArduino.SamplePrograms.SevenSegment  where
+module System.Hardware.KansasAmber.SamplePrograms.SevenSegment  where
 
 import Control.Monad       (forever)
 import Control.Monad.Trans (liftIO)
@@ -20,9 +20,9 @@ import Data.Bits           (testBit)
 import Data.Word           (Word8)
 import System.IO           (hSetBuffering, stdin, BufferMode(NoBuffering))
 
-import System.Hardware.DeepArduino
-import System.Hardware.DeepArduino.Parts.ShiftRegisters
-import System.Hardware.DeepArduino.Parts.SevenSegmentCodes
+import System.Hardware.KansasAmber
+import System.Hardware.KansasAmber.Parts.ShiftRegisters
+import System.Hardware.KansasAmber.Parts.SevenSegmentCodes
 
 -- | Connections for the Texas Instruments 74HC595 shift-register. Datasheet: <http://www.ti.com/lit/ds/symlink/sn74hc595.pdf>.
 -- In our circuit, we merely use pins 8 thru 12 on the Arduino to control the 'serial', 'enable', 'rClock', 'sClock', and 'nClear'
@@ -53,7 +53,7 @@ sr = SR_74HC595 { serial  = digital 8
 --     letters. That is, shift-registers @Q_A@ (Chip-pin 15) should connect to segment @A@; @Q_B@ (Chip-pin 1)
 --     to segment @B@, and so on. We do not use the shift-register @Q_H'@ (Chip-pin 9) in this design.
 --
---  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/DeepArduino/SamplePrograms/Schematics/SevenSegment.png>>
+--  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/KansasAmber/SamplePrograms/Schematics/SevenSegment.png>>
 sevenSegment :: IO ()
 sevenSegment = withArduino False "/dev/cu.usbmodem1421" $ do
                   initialize sr

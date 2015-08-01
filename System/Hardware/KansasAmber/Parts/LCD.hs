@@ -1,13 +1,13 @@
 -------------------------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.Parts.LCD
+-- Module      :  System.Hardware.KansasAmber.Parts.LCD
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- LCD (Liquid Crystal Display) parts supported by DeepArduino. The Haskell code
+-- LCD (Liquid Crystal Display) parts supported by KansasAmber. The Haskell code
 -- below has partly been implemented following the Arduino LiquidCrystal project
 -- source code: <http://code.google.com/p/arduino/source/browse/trunk/libraries/LiquidCrystal/>
 --
@@ -18,7 +18,7 @@
 
 {-# LANGUAGE NamedFieldPuns #-}
 
-module System.Hardware.DeepArduino.Parts.LCD(
+module System.Hardware.KansasAmber.Parts.LCD(
   -- * LCD types and registration
   LCD, LCDController(..), lcdRegister
   -- * Writing text on the LCD
@@ -51,11 +51,11 @@ import Data.Word           (Word8)
 
 import qualified Data.Map as M
 
-import System.Hardware.DeepArduino.Comm
-import System.Hardware.DeepArduino.Data
-import System.Hardware.DeepArduino.Protocol
+import System.Hardware.KansasAmber.Comm
+import System.Hardware.KansasAmber.Data
+import System.Hardware.KansasAmber.Protocol
 
-import qualified System.Hardware.DeepArduino.Utils as U
+import qualified System.Hardware.KansasAmber.Utils as U
 
 ---------------------------------------------------------------------------------------
 -- Low level interface, not available to the user
@@ -471,7 +471,7 @@ newtype LCDSymbol = LCDSymbol Word8
 lcdCreateSymbol :: LCD -> [String] -> Arduino LCDSymbol
 lcdCreateSymbol lcd glyph
   | length glyph /= 8 || any (/= 5) (map length glyph)
-  = do die "DeepArduino: lcdCreateSymbol: Invalid glyph description: must be 8x5!" ("Received:" : glyph)
+  = do die "KansasAmber: lcdCreateSymbol: Invalid glyph description: must be 8x5!" ("Received:" : glyph)
        return $ LCDSymbol 255
   | True
   = do let c = lcdController lcd 

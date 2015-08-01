@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.SamplePrograms.Analog
+-- Module      :  System.Hardware.KansasAmber.SamplePrograms.Analog
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -10,12 +10,12 @@
 -- Reads the value of an analog input, controlled by a 10K potentiometer.
 -------------------------------------------------------------------------------
 
-module System.Hardware.DeepArduino.SamplePrograms.Analog where
+module System.Hardware.KansasAmber.SamplePrograms.Analog where
 
 import Control.Monad (when)
 import Control.Monad.Trans (liftIO)
 
-import System.Hardware.DeepArduino
+import System.Hardware.KansasAmber
 
 -- | Read the value of an analog input line. We will print the value
 -- on the screen, and also blink a led on the Arduino based on the
@@ -25,7 +25,7 @@ import System.Hardware.DeepArduino
 -- the wiper line connected to analog input 3. We also have a led between
 -- pin 13 and GND.
 --
---  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/DeepArduino/SamplePrograms/Schematics/Analog.png>>
+--  <<http://http://github.com/ku-fpg/arduino-lab/raw/master/System/Hardware/KansasAmber/SamplePrograms/Schematics/Analog.png>>
 analogVal :: IO ()
 analogVal = withArduino False "/dev/cu.usbmodem1421" $ do
                setPinMode led OUTPUT

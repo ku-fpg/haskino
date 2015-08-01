@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.SamplePrograms.Eeprom
+-- Module      :  System.Hardware.KansasAmber.SamplePrograms.Eeprom
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -10,12 +10,12 @@
 -- Demo of Microchip 24LC256 comaptible I2C EEPROM.
 -------------------------------------------------------------------------------
 
-module System.Hardware.DeepArduino.SamplePrograms.Eeprom where
+module System.Hardware.KansasAmber.SamplePrograms.Eeprom where
 
 import Control.Monad.Trans (liftIO)
 
-import System.Hardware.DeepArduino
-import System.Hardware.DeepArduino.Parts.Eeprom
+import System.Hardware.KansasAmber
+import System.Hardware.KansasAmber.Parts.Eeprom
 
 eeprom :: IO ()
 eeprom = do

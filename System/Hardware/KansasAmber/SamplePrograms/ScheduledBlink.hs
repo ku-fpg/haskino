@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.DeepArduino.SamplePrograms.ScheduledBlink
+-- Module      :  System.Hardware.KansasAmber.SamplePrograms.ScheduledBlink
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
@@ -15,7 +15,7 @@ module ScheduledBlink where
 import Control.Monad (forever)
 import Control.Monad.Trans (liftIO)
 
-import System.Hardware.DeepArduino
+import System.Hardware.KansasAmber
 
 -- Task which will execute on Arduino, blink on a second, off a second and
 -- repeat
