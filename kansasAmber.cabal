@@ -2,9 +2,9 @@ Name:          KansasAmber
 Version:       0.1
 Category:      Hardware
 Synopsis:      Control your Arduino board from Haskell using Deep Embedding
-Description:   KansasAmber allows Haskell programs to control Arduino boards (<http://www.arduino.cc>)
-               and peripherals, using the Firmata protocol (<http://firmata.org>).
-               .
+Description:   KansasAmber allows Haskell programs to control Arduino boards
+               (<http://www.arduino.cc>) and peripherals, using the Firmata
+               protocol (<http://firmata.org>).
                For details, see: <http://kufpg.github.com/KansasAmber>.
 Copyright:     University of Kansas, 2015
 License:       BSD3

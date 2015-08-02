@@ -60,19 +60,19 @@ packageCommand c (DigitalReport p b) = do
 packageCommand c (SetPinMode p m) = do
     ipin <- getInternalPin c p
     return $ nonSysEx SET_PIN_MODE [fromIntegral $ pinNo ipin, fromIntegral $ fromEnum m]
-packageCommand c (DigitalPortWrite p l m) = 
-    return $ nonSysEx (DIGITAL_MESSAGE p) [l, m]
+packageCommand c (DigitalPortWrite p w) = 
+    return $ nonSysEx (DIGITAL_MESSAGE p) (toArduinoBytes w)
 packageCommand c (DigitalWrite p b)  = do
     ipin <- getInternalPin c p
     return $ nonSysEx SET_DIGITAL_PIN_VALUE [fromIntegral $ pinNo ipin, if b then 1 else 0]
-packageCommand c (AnalogWrite p l m) = do
+packageCommand c (AnalogWrite p w) = do
     ipin <- getInternalPin c p
-    return $ nonSysEx (ANALOG_MESSAGE ipin) [l, m]
+    return $ nonSysEx (ANALOG_MESSAGE ipin) (word16ToArduinoBytes w)
 packageCommand c (AnalogExtendedWrite p w8s) = do
     ipin <- getInternalPin c p
     return $ sysEx EXTENDED_ANALOG ([fromIntegral $ pinNo ipin] ++ (arduinoEncodedL w8s))
-packageCommand c (SamplingInterval l m) =
-    return $ sysEx SAMPLING_INTERVAL [l, m]
+packageCommand c (SamplingInterval w) =
+    return $ sysEx SAMPLING_INTERVAL (word16ToArduinoBytes w)
 packageCommand c (I2CWrite sa w8s) = 
     return $ sysEx I2C_REQUEST ((packageI2c True sa Nothing 0) ++
                                ( concatMap toArduinoBytes w8s)) 

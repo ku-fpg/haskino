@@ -286,11 +286,11 @@ data Command =
      | DigitalPortReport Port Bool              -- ^ Digital report values on port enable/disable
      | DigitalReport Pin Bool                   -- ^ Digital report values on port enable/disable
      | AnalogReport Pin Bool                    -- ^ Analog report values on pin enable/disable
-     | DigitalPortWrite Port Word8 Word8        -- ^ Set the values on a port digitally
+     | DigitalPortWrite Port Word8              -- ^ Set the values on a port digitally
      | DigitalWrite Pin Bool                    -- ^ Set the value on a pin digitally
-     | AnalogWrite Pin Word8 Word8              -- ^ Send an analog-write; used for servo control
+     | AnalogWrite Pin Word16                   -- ^ Send an analog-write; used for servo control
      | AnalogExtendedWrite Pin [Word8]          -- ^ 
-     | SamplingInterval Word8 Word8             -- ^ Set the sampling interval
+     | SamplingInterval Word16                  -- ^ Set the sampling interval
      | I2CWrite SlaveAddress [Word8]
      | I2CConfig Word16
      -- TBD add I2C continuous read
@@ -319,26 +319,20 @@ digitalReport p b = Command $ DigitalReport p b
 analogReport :: Pin -> Bool -> Arduino ()
 analogReport p b = Command $ AnalogReport p b
 
-digitalPortWrite :: Port -> Word16 -> Arduino ()
-digitalPortWrite p w = Command $ DigitalPortWrite p w1 w2
-  where
-    [w1, w2] = word16ToArduinoBytes w
+digitalPortWrite :: Port -> Word8 -> Arduino ()
+digitalPortWrite p w = Command $ DigitalPortWrite p w
 
 digitalWrite :: Pin -> Bool -> Arduino ()
 digitalWrite p b = Command $ DigitalWrite p b
 
 analogWrite :: Pin -> Word16 -> Arduino ()
-analogWrite p w = Command $ AnalogWrite p w1 w2
-  where
-    [w1, w2] = word16ToArduinoBytes w
+analogWrite p w = Command $ AnalogWrite p w
 
 analogExtendedWrite :: Pin -> [Word8] -> Arduino ()
 analogExtendedWrite p ws = Command $ AnalogExtendedWrite p ws
 
 samplingInterval :: Word16 -> Arduino ()
-samplingInterval w = Command $ SamplingInterval w1 w2
-  where
-    [w1, w2] = word16ToArduinoBytes w
+samplingInterval w = Command $ SamplingInterval w
 
 i2cWrite :: SlaveAddress -> [Word8] -> Arduino ()
 i2cWrite sa ws = Command $ I2CWrite sa ws
