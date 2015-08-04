@@ -31,6 +31,7 @@ Library
                     , mtl
                     , containers
                     , time
+                    , base16-bytestring
   Exposed-modules   : System.Hardware.KansasAmber
                     , System.Hardware.KansasAmber.Parts.Eeprom
                     , System.Hardware.KansasAmber.Parts.LCD
