@@ -2,6 +2,7 @@
 #include <HardwareSerial.h>
 #include "AmberAnalog.h"
 #include "AmberBoardControl.h"
+#include "AmberBoardStatus.h"
 #include "AmberCommands.h"
 #include "AmberComm.h"
 #include "AmberDigital.h"
@@ -18,9 +19,9 @@
 static int messageCount = 0;
 static int processingMessageState = 0;
 static int processingEscapeState = 0;
-static char inputData[MESSAGE_MAX_SIZE];
+static unsigned char inputData[MESSAGE_MAX_SIZE];
 
-static void parseMessage(int size, char *msg);
+static void parseMessage(int size, unsigned char *msg);
 static void processChar(char c);
 
 int processingMessage() 
@@ -28,12 +29,15 @@ int processingMessage()
     return processingMessageState;
     }
 
-static void parseMessage(int size, char *msg)
+static void parseMessage(int size, unsigned char *msg)
     {
     switch (msg[0] & CMD_TYPE_MASK) 
         {
         case BC_CMD_MASK:
             parseBoardControlMessage(size, msg);
+            break;
+        case BS_CMD_MASK:
+            parseBoardStatusMessage(size, msg);
             break;
         case DIG_CMD_MASK:
             parseDigitalMessage(size, msg);
@@ -59,7 +63,7 @@ static void parseMessage(int size, char *msg)
         }
     }
 
-static void processChar(char c)
+static void processChar(unsigned char c)
     {
     if (processingMessageState) 
         {
@@ -95,13 +99,13 @@ void handleInput()
     int input = Serial.read();
     if (input != -1) 
         {
-        processChar((char) input);
+        processChar((unsigned char) input);
         }  
     }
 
-void sendReply(int count, char *reply)
+void sendReply(int count, unsigned char *reply)
     {
-    char *nextChar = reply;
+    unsigned char *nextChar = reply;
     int i;
 
     for (i=0; i < count; i++, nextChar++) 
