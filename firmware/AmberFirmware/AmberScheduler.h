@@ -1,6 +1,6 @@
 #ifndef AmberSchedulerH
 #define AmberSchedulerH
 
-void parseSchedulerMessage(int size, unsigned char *msg);
+void parseSchedulerMessage(int size, byte *msg);
 
 #endif /* AmberSchedulerH */

@@ -1,6 +1,6 @@
 #ifndef AmberOneWireH
 #define AmberOneWireH
 
-void parseOneWireMessage(int size, unsigned char *msg);
+void parseOneWireMessage(int size, byte *msg);
 
 #endif /* AmberOneWireH */

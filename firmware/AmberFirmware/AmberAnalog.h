@@ -1,6 +1,6 @@
 #ifndef AmberAnalogH
 #define AmberAnalogH
 
-void parseAnalogMessage(int size, unsigned char *msg);
+void parseAnalogMessage(int size, byte *msg);
 
 #endif /* AmberAnalogH */

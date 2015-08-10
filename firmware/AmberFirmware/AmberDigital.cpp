@@ -3,12 +3,12 @@
 #include "AmberCommands.h"
 #include "AmberDigital.h"
 
-static void handleReadPin(int size, unsigned char *msg);
-static void handleWritePin(int size, unsigned char *msg);
+static void handleReadPin(int size, byte *msg);
+static void handleWritePin(int size, byte *msg);
 
-void parseDigitalMessage(int size, unsigned char *msg)
+void parseDigitalMessage(int size, byte *msg)
     {
-    switch (msg[0] ) 
+    switch (msg[0]) 
         {
         case DIG_CMD_READ_PIN:
             handleReadPin(size, msg);
@@ -19,17 +19,18 @@ void parseDigitalMessage(int size, unsigned char *msg)
         }
     }
 
-static void handleReadPin(int size, unsigned char *msg)
+static void handleReadPin(int size, byte *msg)
     {
-    unsigned char digitalReply[2];
+    byte pinNo = msg[1];
+    byte digitalReply = digitalRead(pinNo);
 
-    digitalReply[0] = DIG_RESP_READ_PIN;
-    digitalReply[1] = digitalRead(msg[1]);
-    sendReply(sizeof(digitalReply), digitalReply);
+    sendReply(sizeof(digitalReply), DIG_RESP_READ_PIN, &digitalReply);
     }
 
-static void handleWritePin(int size, unsigned char *msg)
+static void handleWritePin(int size, byte *msg)
     {
-    digitalWrite(msg[1],msg[2]);
-    }
+    byte pinNo = msg[1];
+    byte value = msg[2];
 
+    digitalWrite(pinNo, value);
+    }

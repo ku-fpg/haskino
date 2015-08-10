@@ -1,6 +1,6 @@
 #ifndef AmberDigitalH
 #define AmberDigitalH
 
-void parseDigitalMessage(int size, unsigned char *msg);
+void parseDigitalMessage(int size, byte *msg);
 
 #endif /* AmberDigitalH */

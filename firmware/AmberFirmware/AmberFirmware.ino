@@ -1,4 +1,6 @@
-#include "AmberBoardControl.h"
+#include <Wire.h>
+
+#include <Arduino.h>
 #include "AmberComm.h"
 #include "AmberCommands.h"
 
@@ -16,8 +18,6 @@
 
 void setup()
 {
-    // ToDo Firmata.setFirmwareVersion(FIRMATA_MAJOR_VERSION, FIRMATA_MINOR_VERSION);
-
     // start up the default Firmata using Serial interface:
     Serial.begin(57600);
 }

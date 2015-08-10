@@ -5,6 +5,7 @@
 
 int  processingMessage();
 void handleInput();
-void sendReply(int count, unsigned char *reply);
+void sendReply(int count, byte replyType, byte *reply);
+void sendString(char *string);
 
 #endif /* AmberCommH */

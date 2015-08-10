@@ -19,9 +19,9 @@
 static int messageCount = 0;
 static int processingMessageState = 0;
 static int processingEscapeState = 0;
-static unsigned char inputData[MESSAGE_MAX_SIZE];
+static byte inputData[MESSAGE_MAX_SIZE];
 
-static void parseMessage(int size, unsigned char *msg);
+static void parseMessage(int size, byte *msg);
 static void processChar(char c);
 
 int processingMessage() 
@@ -29,41 +29,41 @@ int processingMessage()
     return processingMessageState;
     }
 
-static void parseMessage(int size, unsigned char *msg)
+static void parseMessage(int size, byte *msg)
     {
     switch (msg[0] & CMD_TYPE_MASK) 
         {
-        case BC_CMD_MASK:
+        case BC_CMD_TYPE:
             parseBoardControlMessage(size, msg);
             break;
-        case BS_CMD_MASK:
+        case BS_CMD_TYPE:
             parseBoardStatusMessage(size, msg);
             break;
-        case DIG_CMD_MASK:
+        case DIG_CMD_TYPE:
             parseDigitalMessage(size, msg);
             break;
-        case ALG_CMD_MASK:
+        case ALG_CMD_TYPE:
             parseAnalogMessage(size, msg);
             break;
-        case I2C_CMD_MASK:
+        case I2C_CMD_TYPE:
             parseI2CMessage(size, msg);
             break;
-        case ONEW_CMD_MASK:
+        case ONEW_CMD_TYPE:
             parseOneWireMessage(size, msg);
             break;
-        case SRVO_CMD_MASK:
+        case SRVO_CMD_TYPE:
             parseServoMessage(size, msg);
             break;
-        case STEP_CMD_MASK:
+        case STEP_CMD_TYPE:
             parseStepperMessage(size, msg);
             break;
-        case SCHED_CMD_MASK:
+        case SCHED_CMD_TYPE:
             parseSchedulerMessage(size, msg);
             break;
         }
     }
 
-static void processChar(unsigned char c)
+static void processChar(byte c)
     {
     if (processingMessageState) 
         {
@@ -99,15 +99,17 @@ void handleInput()
     int input = Serial.read();
     if (input != -1) 
         {
-        processChar((unsigned char) input);
+        processChar((byte) input);
         }  
     }
 
-void sendReply(int count, unsigned char *reply)
+void sendReply(int count, byte replyType, byte *reply)
     {
-    unsigned char *nextChar = reply;
+    byte *nextChar = reply;
     int i;
 
+    Serial.write(HDLC_FRAME_FLAG);
+    Serial.write(replyType);
     for (i=0; i < count; i++, nextChar++) 
         {
         if (*nextChar == HDLC_FRAME_FLAG || 
@@ -121,4 +123,10 @@ void sendReply(int count, unsigned char *reply)
             Serial.write(*nextChar);
             }
         }
+    Serial.write(HDLC_FRAME_FLAG);
+    }
+
+void sendString(char *reply)
+    {
+    sendReply(strlen(reply), BS_RESP_STRING, (byte *) reply);
     }

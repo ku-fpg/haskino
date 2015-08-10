@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include "AmberServo.h"
 
-void parseServoMessage(int size, unsigned char *msg)
+void parseServoMessage(int size, byte *msg)
     {
     }

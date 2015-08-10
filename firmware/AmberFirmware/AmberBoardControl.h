@@ -1,6 +1,6 @@
 #ifndef AmberBoardControlH
 #define AmberBoardControlH
 
-void parseBoardControlMessage(int size, unsigned char *msg);
+void parseBoardControlMessage(int size, byte *msg);
 
 #endif /* AmberBoardControlH */

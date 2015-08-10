@@ -5,12 +5,12 @@
 #include "AmberFirmware.h"
 #include "SoftReset.h"
 
-static void handleSetPinMode(int size, unsigned char *msg);
-static void handleDelayMillis(int size, unsigned char *msg);
-static void handleDelayMicros(int size, unsigned char *msg);
-static void handleSystemReset(int size, unsigned char *msg);
+static void handleSetPinMode(int size, byte *msg);
+static void handleDelayMillis(int size, byte *msg);
+static void handleDelayMicros(int size, byte *msg);
+static void handleSystemReset(int size, byte *msg);
 
-void parseBoardControlMessage(int size, unsigned char *msg)
+void parseBoardControlMessage(int size, byte *msg)
     {
     switch (msg[0] ) 
         {
@@ -29,26 +29,26 @@ void parseBoardControlMessage(int size, unsigned char *msg)
         }
     }
 
-static void handleSetPinMode(int size, unsigned char *msg)
+static void handleSetPinMode(int size, byte *msg)
     {
     pinMode(msg[1], msg[2]);   
     }
 
-static void handleDelayMillis(int size, unsigned char *msg)
+static void handleDelayMillis(int size, byte *msg)
     {
     unsigned long millis;
     memcpy(&millis, &msg[1], 4);
     delay(millis);
     }
 
-static void handleDelayMicros(int size, unsigned char *msg)
+static void handleDelayMicros(int size, byte *msg)
     {
     unsigned long millis;
     memcpy(&millis, &msg[1], 4);
     delay(millis);
     }
 
-static void handleSystemReset(int size, unsigned char *msg)
+static void handleSystemReset(int size, byte *msg)
     {
     soft_restart();
     }

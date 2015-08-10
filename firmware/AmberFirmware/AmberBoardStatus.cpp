@@ -4,16 +4,20 @@
 #include "AmberCommands.h"
 #include "AmberFirmware.h"
 
-static void handleRequestVersion(int size, unsigned char *msg);
-static void handleRequestMicros(int size, unsigned char *msg);
-static void handleRequestMillis(int size, unsigned char *msg);
+static void handleRequestVersion(int size, byte *msg);
+static void handleRequestType(int size, byte *msg);
+static void handleRequestMicros(int size, byte *msg);
+static void handleRequestMillis(int size, byte *msg);
 
-void parseBoardStatusMessage(int size, unsigned char *msg)
+void parseBoardStatusMessage(int size, byte *msg)
     {
     switch (msg[0] ) 
         {
         case BS_CMD_REQUEST_VERSION:
             handleRequestVersion(size, msg);
+            break;
+        case BS_CMD_REQUEST_TYPE:
+            handleRequestType(size, msg);
             break;
         case BS_CMD_REQUEST_MICROS:
             handleRequestMicros(size, msg);
@@ -24,33 +28,55 @@ void parseBoardStatusMessage(int size, unsigned char *msg)
         }
     }
 
-static void handleRequestVersion(int size, unsigned char *msg)
+static void handleRequestVersion(int size, byte *msg)
     {
-    static unsigned char versionReply[3] = {BS_RESP_VERSION,
-                                            FIRMWARE_MAJOR,
-                                            FIRMWARE_MINOR};
+    static byte versionReply[2] = {FIRMWARE_MAJOR,
+                                   FIRMWARE_MINOR};
         
-    sendReply(sizeof(versionReply), versionReply);
+    sendReply(sizeof(versionReply), BS_RESP_VERSION, versionReply);
     }
 
-static void handleRequestMicros(int size, unsigned char *msg)
+static void handleRequestType(int size, byte *msg)
     {
-    unsigned char microReply[5];
-    unsigned long m;
-
-    microReply[0] = BS_RESP_MICROS;
-    m = micros();
-    memcpy(&microReply[1], &m, 4);
-    sendReply(sizeof(microReply), microReply);
+    static byte typeReply[1] = {
+#if defined(__AVR_ATmega8__)
+                                ATmega8_TYPE};
+#elif defined(__AVR_ATmega168__)
+                                ATmega168_TYPE};
+#elif defined(__AVR_ATmega328P__)
+                                ATmega328P_TYPE};
+#elif defined(__AVR_ATmega1280__)
+                                ATmega1280_TYPE};
+#elif defined(__AVR_ATmega2560__)
+                                ATmega256_TYPE};
+#elif defined(__AVR_ATmega32U4__)
+                                ATmega32U4_TYPE};
+#elif defined(__AVR_ATmega644P__)
+                                ATmega644P_TYPE};
+#elif defined(__AVR_ATmega644__)
+                                ATmega644_TYPE};
+#elif defined(__AVR_ATmega645__)
+                                ATmega645_TYPE};
+#elif defined(__SAM3X8E__)
+                                SAM3X8E_TYPE};
+#elif defined(ARDUINO_LINUX)
+                                X86_TYPE};
+#else
+#error "Please define a new processor type board"
+#endif
+    sendReply(sizeof(typeReply), BS_RESP_TYPE, typeReply);
     }
 
-static void handleRequestMillis(int size, unsigned char *msg)
+static void handleRequestMicros(int size, byte *msg)
     {
-    unsigned char milliReply[5];
-    unsigned long m;
+    uint32_t microReply = micros();
 
-    milliReply[0] = BS_RESP_MILLIS;
-    m = millis();
-    memcpy(&milliReply[1], &m, 4);
-    sendReply(sizeof(milliReply), milliReply);
+    sendReply(sizeof(uint32_t), BS_RESP_MICROS, (byte *) &microReply);
+    }
+
+static void handleRequestMillis(int size, byte *msg)
+    {
+    uint32_t milliReply = millis();
+
+    sendReply(sizeof(uint32_t), BS_RESP_MILLIS, (byte *) &milliReply);
     }
