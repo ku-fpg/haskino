@@ -5,50 +5,54 @@
 #include "AmberFirmware.h"
 #include "SoftReset.h"
 
-static void handleSetPinMode(int size, byte *msg);
-static void handleDelayMillis(int size, byte *msg);
-static void handleDelayMicros(int size, byte *msg);
-static void handleSystemReset(int size, byte *msg);
+static int handleSetPinMode(int size, byte *msg);
+static int handleDelayMillis(int size, byte *msg);
+static int handleDelayMicros(int size, byte *msg);
+static int handleSystemReset(int size, byte *msg);
 
-void parseBoardControlMessage(int size, byte *msg)
+int parseBoardControlMessage(int size, byte *msg)
     {
     switch (msg[0] ) 
         {
         case BC_CMD_SET_PIN_MODE:
-            handleSetPinMode(size, msg);
+            return handleSetPinMode(size, msg);
             break;
         case BC_CMD_DELAY_MILLIS:
-            handleDelayMillis(size, msg);
+            return handleDelayMillis(size, msg);
             break;
         case BC_CMD_DELAY_MICROS:
-            handleDelayMicros(size, msg);
+            return handleDelayMicros(size, msg);
             break;
         case BC_CMD_SYSTEM_RESET:
-            handleSystemReset(size, msg);
+            return handleSystemReset(size, msg);
             break;
         }
     }
 
-static void handleSetPinMode(int size, byte *msg)
+static int handleSetPinMode(int size, byte *msg)
     {
-    pinMode(msg[1], msg[2]);   
+    pinMode(msg[1], msg[2]);
+    return 3;   
     }
 
-static void handleDelayMillis(int size, byte *msg)
-    {
-    unsigned long millis;
-    memcpy(&millis, &msg[1], 4);
-    delay(millis);
-    }
-
-static void handleDelayMicros(int size, byte *msg)
+static int handleDelayMillis(int size, byte *msg)
     {
     unsigned long millis;
     memcpy(&millis, &msg[1], 4);
     delay(millis);
+    return 5;
     }
 
-static void handleSystemReset(int size, byte *msg)
+static int handleDelayMicros(int size, byte *msg)
+    {
+    unsigned long millis;
+    memcpy(&millis, &msg[1], 4);
+    delay(millis);
+    return 5;
+    }
+
+static int handleSystemReset(int size, byte *msg)
     {
     soft_restart();
+    return 1;
     }

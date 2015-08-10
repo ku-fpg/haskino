@@ -1,60 +1,71 @@
 #include <Arduino.h>
 #include <Wire.h>
+#include "AmberComm.h"
 #include "AmberCommands.h"
 #include "AmberI2C.h"
 
-static void handleRead(int size, byte *msg);
-static void handleReadReg(int size, byte *msg);
-static void handleWrite(int size, byte *msg);
+static int handleRead(int size, byte *msg);
+static int handleReadReg(int size, byte *msg);
+static int handleWrite(int size, byte *msg);
 
-void parseI2CMessage(int size, byte *msg)
+int parseI2CMessage(int size, byte *msg)
     {
     switch (msg[0] ) 
         {
         case I2C_CMD_READ:
-            handleRead(size, msg);
+            return handleRead(size, msg);
             break;
         case I2C_CMD_READ_REG:
-            handleReadReg(size, msg);
+            return handleReadReg(size, msg);
             break;
         case I2C_CMD_WRITE:
-            handleWrite(size, msg);
+            return handleWrite(size, msg);
             break;
         }
     }
 
-static void readFrom()
+static int readFrom(byte address, byte wordCount)
     {
+    int byteAvail;
 
+    Wire.requestFrom((int) address, (int) wordCount*2);
+    byteAvail = Wire.available();
+
+    startReplyFrame(I2C_RESP_READ);
+
+    endReplyFrame();
+    
+    for (int i = 0; i < byteAvail; i++) 
+        {
+        sendReplyByte(Wire.read());
+        }
     }
 
-static void handleRead(int size, byte *msg)
+static int handleRead(int size, byte *msg)
     {
-#if 0
     byte slaveAddress = msg[1];
     byte wordCount = msg[2];
 
-    sendReply(sizeof(i2cReply), I2C_RESP_READ, i2cReply);
-#endif
+    readFrom(slaveAddress, wordCount);
+    return 3;
     }
 
-static void handleReadReg(int size, byte *msg)
+static int handleReadReg(int size, byte *msg)
     {
-#if 0
     byte slaveAddress = msg[1];
     uint16_t slaveRegister = msg[2] + msg[3] << 8;
     byte wordCount = msg[3];
 
     Wire.beginTransmission(slaveAddress);
-    Wire.write(slaveRegister);
+    Wire.write(slaveRegister); // TBD size and byte order
     Wire.endTransmission();
     delayMicroseconds(70);
 
-    sendReply(sizeof(i2cReply), I2C_RESP_READ, i2cReply);
-#endif
+    readFrom(slaveAddress, wordCount);
+    return 4;
     }
 
-static void handleWrite(int size, byte *msg)
+static int handleWrite(int size, byte *msg)
     {
     byte slaveAddress = msg[1];
     byte wordCount = msg[2];
@@ -70,4 +81,5 @@ static void handleWrite(int size, byte *msg)
         }
     Wire.endTransmission();
     delayMicroseconds(70);
+    return 3 + wordCount*2;
     }

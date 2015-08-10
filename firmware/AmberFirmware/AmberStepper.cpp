@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include "AmberStepper.h"
 
-void parseStepperMessage(int size, byte *msg)
+int parseStepperMessage(int size, byte *msg)
     {
     }

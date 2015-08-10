@@ -4,39 +4,40 @@
 #include "AmberCommands.h"
 #include "AmberFirmware.h"
 
-static void handleRequestVersion(int size, byte *msg);
-static void handleRequestType(int size, byte *msg);
-static void handleRequestMicros(int size, byte *msg);
-static void handleRequestMillis(int size, byte *msg);
+static int handleRequestVersion(int size, byte *msg);
+static int handleRequestType(int size, byte *msg);
+static int handleRequestMicros(int size, byte *msg);
+static int handleRequestMillis(int size, byte *msg);
 
-void parseBoardStatusMessage(int size, byte *msg)
+int parseBoardStatusMessage(int size, byte *msg)
     {
     switch (msg[0] ) 
         {
         case BS_CMD_REQUEST_VERSION:
-            handleRequestVersion(size, msg);
+            return handleRequestVersion(size, msg);
             break;
         case BS_CMD_REQUEST_TYPE:
-            handleRequestType(size, msg);
+            return handleRequestType(size, msg);
             break;
         case BS_CMD_REQUEST_MICROS:
-            handleRequestMicros(size, msg);
+            return handleRequestMicros(size, msg);
             break;
         case BS_CMD_REQUEST_MILLIS:
-            handleRequestMillis(size, msg);
+            return handleRequestMillis(size, msg);
             break;
         }
     }
 
-static void handleRequestVersion(int size, byte *msg)
+static int handleRequestVersion(int size, byte *msg)
     {
     static byte versionReply[2] = {FIRMWARE_MAJOR,
                                    FIRMWARE_MINOR};
         
     sendReply(sizeof(versionReply), BS_RESP_VERSION, versionReply);
+    return 1;
     }
 
-static void handleRequestType(int size, byte *msg)
+static int handleRequestType(int size, byte *msg)
     {
     static byte typeReply[1] = {
 #if defined(__AVR_ATmega8__)
@@ -65,18 +66,21 @@ static void handleRequestType(int size, byte *msg)
 #error "Please define a new processor type board"
 #endif
     sendReply(sizeof(typeReply), BS_RESP_TYPE, typeReply);
+    return 1;
     }
 
-static void handleRequestMicros(int size, byte *msg)
+static int handleRequestMicros(int size, byte *msg)
     {
     uint32_t microReply = micros();
 
     sendReply(sizeof(uint32_t), BS_RESP_MICROS, (byte *) &microReply);
+    return 1;
     }
 
-static void handleRequestMillis(int size, byte *msg)
+static int handleRequestMillis(int size, byte *msg)
     {
     uint32_t milliReply = millis();
 
     sendReply(sizeof(uint32_t), BS_RESP_MILLIS, (byte *) &milliReply);
+    return 1;
     }

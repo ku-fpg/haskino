@@ -21,7 +21,7 @@ static int processingMessageState = 0;
 static int processingEscapeState = 0;
 static byte inputData[MESSAGE_MAX_SIZE];
 
-static void parseMessage(int size, byte *msg);
+static int parseMessage(int size, byte *msg);
 static void processChar(char c);
 
 int processingMessage() 
@@ -29,36 +29,36 @@ int processingMessage()
     return processingMessageState;
     }
 
-static void parseMessage(int size, byte *msg)
+static int parseMessage(int size, byte *msg)
     {
     switch (msg[0] & CMD_TYPE_MASK) 
         {
         case BC_CMD_TYPE:
-            parseBoardControlMessage(size, msg);
+            return parseBoardControlMessage(size, msg);
             break;
         case BS_CMD_TYPE:
-            parseBoardStatusMessage(size, msg);
+            return parseBoardStatusMessage(size, msg);
             break;
         case DIG_CMD_TYPE:
-            parseDigitalMessage(size, msg);
+            return parseDigitalMessage(size, msg);
             break;
         case ALG_CMD_TYPE:
-            parseAnalogMessage(size, msg);
+            return parseAnalogMessage(size, msg);
             break;
         case I2C_CMD_TYPE:
-            parseI2CMessage(size, msg);
+            return parseI2CMessage(size, msg);
             break;
         case ONEW_CMD_TYPE:
-            parseOneWireMessage(size, msg);
+            return parseOneWireMessage(size, msg);
             break;
         case SRVO_CMD_TYPE:
-            parseServoMessage(size, msg);
+            return parseServoMessage(size, msg);
             break;
         case STEP_CMD_TYPE:
-            parseStepperMessage(size, msg);
+            return parseStepperMessage(size, msg);
             break;
         case SCHED_CMD_TYPE:
-            parseSchedulerMessage(size, msg);
+            return parseSchedulerMessage(size, msg);
             break;
         }
     }
@@ -103,27 +103,42 @@ void handleInput()
         }  
     }
 
+void startReplyFrame(byte replyType)
+    {
+    Serial.write(HDLC_FRAME_FLAG);
+    Serial.write(replyType);
+    }
+
+void endReplyFrame()
+    {
+    Serial.write(HDLC_FRAME_FLAG);
+    }
+
+void sendReplyByte(byte replyByte)
+    {
+    if (replyByte == HDLC_FRAME_FLAG || 
+        replyByte == HDLC_ESCAPE) 
+        {
+        Serial.write(HDLC_ESCAPE);
+        Serial.write(replyByte ^ HDLC_ESCAPE);
+        }
+    else
+        {
+        Serial.write(replyByte);
+        }
+    }
+
 void sendReply(int count, byte replyType, byte *reply)
     {
     byte *nextChar = reply;
     int i;
 
-    Serial.write(HDLC_FRAME_FLAG);
-    Serial.write(replyType);
-    for (i=0; i < count; i++, nextChar++) 
+    startReplyFrame(replyType);
+    for (i=0; i < count; i++) 
         {
-        if (*nextChar == HDLC_FRAME_FLAG || 
-            *nextChar == HDLC_ESCAPE) 
-            {
-            Serial.write(HDLC_ESCAPE);
-            Serial.write(*nextChar ^ HDLC_ESCAPE);
-            }
-        else
-            {
-            Serial.write(*nextChar);
-            }
+        sendReplyByte(*nextChar++);
         }
-    Serial.write(HDLC_FRAME_FLAG);
+    endReplyFrame();
     }
 
 void sendString(char *reply)

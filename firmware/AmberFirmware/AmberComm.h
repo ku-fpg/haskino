@@ -5,6 +5,9 @@
 
 int  processingMessage();
 void handleInput();
+void startReplyFrame(byte replyType);
+void endReplyFrame();
+void sendReplyByte(byte replyByte);
 void sendReply(int count, byte replyType, byte *reply);
 void sendString(char *string);
 

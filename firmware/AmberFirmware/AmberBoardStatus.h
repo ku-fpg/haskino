@@ -13,6 +13,6 @@
 #define SAM3X8E_TYPE        9
 #define X86_TYPE            10
 
-void parseBoardStatusMessage(int size, byte *msg);
+int parseBoardStatusMessage(int size, byte *msg);
 
 #endif /* AmberBoardStatusH */
