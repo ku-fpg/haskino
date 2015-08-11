@@ -200,13 +200,25 @@ send conn commands =
           sendToArduino c cmds
           a <- runAnalogRead c p
           send' c (k (fromIntegral a)) B.empty
+      sendLocal c (AnalogReadE p) k cmds = do
+          sendToArduino c cmds
+          a <- runAnalogReadE c p
+          send' c (k a) B.empty
       sendLocal c (DigitalPortRead p) k cmds = do
           sendToArduino c cmds
           w <- runDigitalPortRead c p
           send' c (k w) B.empty
+      sendLocal c (DigitalPortReadE p) k cmds = do
+          sendToArduino c cmds
+          w <- runDigitalPortReadE c p
+          send' c (k w) B.empty
       sendLocal c (DigitalRead p) k cmds = do
           sendToArduino c cmds
           b <- runDigitalRead c p
+          send' c (k b) B.empty
+      sendLocal c (DigitalReadE p) k cmds = do
+          sendToArduino c cmds
+          b <- runDigitalReadE c p
           send' c (k b) B.empty
       sendLocal c (WaitFor p) k cmds = do
           sendToArduino c cmds

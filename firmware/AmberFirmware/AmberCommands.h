@@ -80,6 +80,7 @@
 #define SCHED_CMD_SCHED_TASK    (SCHED_CMD_TYPE | 0x4)
 #define SCHED_CMD_QUERY         (SCHED_CMD_TYPE | 0x5)
 #define SCHED_CMD_QUERY_ALL     (SCHED_CMD_TYPE | 0x6)
+#define SCHED_CMD_RESET         (SCHED_CMD_TYPE | 0x7)
 
 // Scheduler responses
 #define SCHED_RESP_QUERY        (SCHED_CMD_TYPE | 0x8)

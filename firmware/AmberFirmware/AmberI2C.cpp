@@ -33,12 +33,12 @@ static int readFrom(byte address, byte wordCount)
 
     startReplyFrame(I2C_RESP_READ);
 
-    endReplyFrame();
-    
     for (int i = 0; i < byteAvail; i++) 
         {
         sendReplyByte(Wire.read());
         }
+
+    endReplyFrame();    
     }
 
 static int handleRead(int size, byte *msg)

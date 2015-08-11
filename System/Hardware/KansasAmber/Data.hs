@@ -37,6 +37,22 @@ import           System.Hardware.KansasAmber.Utils
 import Debug.Trace
 -----------------------------------------------------------------------------
 
+type BoolE   = Expr Bool
+type Word8E  = Expr Word8
+type Word16E = Expr Word16
+
+data Expr a where
+  LitBool   :: Bool      -> Expr Bool
+  LitWord8  :: Word8     -> Expr Word8
+  LitWord16 :: Word16    -> Expr Word16
+  LitBoolL  :: [Bool]    -> Expr [Bool]
+  LitWord8L :: [Word8]   -> Expr [Word8]
+  VarBool   :: String    -> Expr String
+  VarWord8  :: String    -> Expr String
+  VarWord16 :: String    -> Expr String
+  Not       :: Expr Bool -> Expr Bool
+--  Add       :: 
+
 data Arduino :: * -> * where
     Control        :: Control                         -> Arduino ()
     Command        :: Command                         -> Arduino ()
@@ -287,12 +303,18 @@ data Command =
      | DigitalReport Pin Bool                   -- ^ Digital report values on port enable/disable
      | AnalogReport Pin Bool                    -- ^ Analog report values on pin enable/disable
      | DigitalPortWrite Port Word8              -- ^ Set the values on a port digitally
+     | DigitalPortWriteE Port (Expr Word8)
      | DigitalWrite Pin Bool                    -- ^ Set the value on a pin digitally
+     | DigitalWriteE Pin (Expr Bool)              
      | AnalogWrite Pin Word16                   -- ^ Send an analog-write; used for servo control
+     | AnalogWriteE Pin (Expr Word16)
      | AnalogExtendedWrite Pin [Word8]          -- ^ 
+     | AnalogExtendedWriteE Pin (Expr [Word8])  -- ^ 
      | SamplingInterval Word16                  -- ^ Set the sampling interval
      | I2CWrite SlaveAddress [Word8]
+     | I2CWriteE SlaveAddress (Expr [Word8])
      | I2CConfig Word16
+     | I2CConfigE (Expr Word16)
      -- TBD add I2C continuous read
      | ServoConfig Pin MinPulse MaxPulse
      -- TBD add one wire and encoder procedures
@@ -301,6 +323,7 @@ data Command =
      | CreateTask TaskID (Arduino ())
      | DeleteTask TaskID
      | Delay TaskTime
+     | DelayE (Expr TaskTime)
      | ScheduleTask TaskID TaskTime
      | ScheduleReset
 
@@ -322,14 +345,26 @@ analogReport p b = Command $ AnalogReport p b
 digitalPortWrite :: Port -> Word8 -> Arduino ()
 digitalPortWrite p w = Command $ DigitalPortWrite p w
 
+digitalPortWriteE :: Port -> (Expr Word8) -> Arduino ()
+digitalPortWriteE p w = Command $ DigitalPortWriteE p w
+
 digitalWrite :: Pin -> Bool -> Arduino ()
 digitalWrite p b = Command $ DigitalWrite p b
+
+digitalWriteE :: Pin -> (Expr Bool) -> Arduino ()
+digitalWriteE p b = Command $ DigitalWriteE p b
 
 analogWrite :: Pin -> Word16 -> Arduino ()
 analogWrite p w = Command $ AnalogWrite p w
 
+analogWriteE :: Pin -> (Expr Word16) -> Arduino ()
+analogWriteE p w = Command $ AnalogWriteE p w
+
 analogExtendedWrite :: Pin -> [Word8] -> Arduino ()
 analogExtendedWrite p ws = Command $ AnalogExtendedWrite p ws
+
+analogExtendedWriteE :: Pin -> (Expr [Word8]) -> Arduino ()
+analogExtendedWriteE p ws = Command $ AnalogExtendedWriteE p ws
 
 samplingInterval :: Word16 -> Arduino ()
 samplingInterval w = Command $ SamplingInterval w
@@ -337,8 +372,14 @@ samplingInterval w = Command $ SamplingInterval w
 i2cWrite :: SlaveAddress -> [Word8] -> Arduino ()
 i2cWrite sa ws = Command $ I2CWrite sa ws
 
+i2cWriteE :: SlaveAddress -> (Expr [Word8]) -> Arduino ()
+i2cWriteE sa ws = Command $ I2CWriteE sa ws
+
 i2cConfig :: Word16 -> Arduino ()
 i2cConfig w = Command $ I2CConfig w
+
+i2cConfigE :: (Expr Word16) -> Arduino ()
+i2cConfigE w = Command $ I2CConfigE w
 
 servoConfig :: Pin -> MinPulse -> MaxPulse -> Arduino ()
 servoConfig p min max = Command $ ServoConfig p min max
@@ -358,6 +399,9 @@ deleteTask tid = Command $ DeleteTask tid
 delay :: TaskTime -> Arduino ()
 delay t = Command $ Delay t
 
+delayE :: (Expr TaskTime) -> Arduino ()
+delayE t = Command $ DelayE t
+
 scheduleTask :: TaskID -> TaskTime -> Arduino ()
 scheduleTask tid tt = Command $ ScheduleTask tid tt
 
@@ -372,8 +416,11 @@ loop ps = Control (Loop ps)
 
 data Local :: * -> * where
      DigitalPortRead  :: Port -> Local Word8          -- ^ Read the values on a port digitally
+     DigitalPortReadE :: Port -> Local (Expr Word8)
      DigitalRead      :: Pin -> Local Bool            -- ^ Read the avlue ona pin digitally
+     DigitalReadE     :: Pin -> Local (Expr Bool)
      AnalogRead       :: Pin -> Local Word16          -- ^ Read the analog value on a pin
+     AnalogReadE      :: Pin -> Local (Expr Word16)          
      WaitFor          :: Pin -> Local Bool
      WaitAny          :: [Pin] -> Local [Bool]
      WaitAnyHigh      :: [Pin] -> Local [Bool]
@@ -386,11 +433,20 @@ deriving instance Show a => Show (Local a)
 digitalPortRead :: Port -> Arduino Word8
 digitalPortRead p = Local $ DigitalPortRead p
 
+digitalPortReadE :: Port -> Arduino (Expr Word8)
+digitalPortReadE p = Local $ DigitalPortReadE p
+
 digitalRead :: Pin -> Arduino Bool
 digitalRead p = Local $ DigitalRead p
 
+digitalReadE :: Pin -> Arduino (Expr Bool)
+digitalReadE p = Local $ DigitalReadE p
+
 analogRead :: Pin -> Arduino Word16
 analogRead p = Local $ AnalogRead p
+
+analogReadE :: Pin -> Arduino (Expr Word16)
+analogReadE p = Local $ AnalogReadE p
 
 waitFor :: Pin -> Arduino Bool
 waitFor p = Local $ WaitFor p
@@ -420,16 +476,30 @@ runDigitalRead c p' = do
               Just (Left v) -> v
               _             -> False -- no (correctly-typed) value reported yet, default to False
 
+runDigitalReadE :: ArduinoConnection -> Pin -> IO (Expr Bool)
+runDigitalReadE c p' = do
+   (_, pd) <- convertAndCheckPin c "digitalRead" p' INPUT
+   return $ case pinValue pd of
+              Just (Left v) -> LitBool v
+              _             -> LitBool False -- no (correctly-typed) value reported yet, default to False
+
 -- | Read the value of a pin in analog mode; this is a non-blocking call, immediately
 -- returning the last sampled value. It returns @0@ if the voltage on the pin
 -- is 0V, and @1023@ if it is 5V, properly scaled. (See `setAnalogSamplingInterval` for
 -- sampling frequency.)
-runAnalogRead :: ArduinoConnection -> Pin -> IO Int
+runAnalogRead :: ArduinoConnection -> Pin -> IO Word16
 runAnalogRead c p' = do
    (_, pd) <- convertAndCheckPin c "analogRead" p' ANALOG
    return $ case pinValue pd of
-              Just (Right v) -> v
+              Just (Right v) -> fromIntegral v
               _              -> 0 -- no (correctly-typed) value reported yet, default to 0
+
+runAnalogReadE :: ArduinoConnection -> Pin -> IO (Expr Word16)
+runAnalogReadE c p' = do
+   (_, pd) <- convertAndCheckPin c "analogRead" p' ANALOG
+   return $ case pinValue pd of
+              Just (Right v) -> LitWord16 (fromIntegral v)
+              _              -> LitWord16 0 -- no (correctly-typed) value reported yet, default to 0
 
 -- | Read the value of a port in digital mode; this is a non-blocking call, returning
 -- the current value immediately. See 'waitAny' for a version that waits for a change
@@ -440,6 +510,13 @@ runDigitalPortRead c p = do
     let err = bailOut c
     withMVar bs $ \bst ->
        return $ M.findWithDefault 0 p (portStates bst)
+
+runDigitalPortReadE :: ArduinoConnection -> Port -> IO (Expr Word8)
+runDigitalPortReadE c p = do
+    let bs = boardState c
+    let err = bailOut c
+    withMVar bs $ \bst ->
+       return $ LitWord8 $ M.findWithDefault 0 p (portStates bst)
 
 -- | Wait for a change in the value of the digital input pin. Returns the new value.
 -- Note that this is a blocking call. For a non-blocking version, see 'digitalRead', which returns the current
