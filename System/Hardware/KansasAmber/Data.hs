@@ -268,21 +268,14 @@ data ArduinoConnection = ArduinoConnection {
               , listenerTid   :: MVar ThreadId                        -- ^ ThreadId of the listener
               }
 
--- | What the board is capable of and current settings
-newtype BoardCapabilities = BoardCapabilities (M.Map IPin PinCapabilities)
-
-instance Show BoardCapabilities where
-  show (BoardCapabilities m) = intercalate "\n" (map sh (M.toAscList m))
-    where sh (p, PinCapabilities{analogPinNumber, allowedModes}) = show p ++ sep ++ unwords [show md | (md, _) <- allowedModes]
-             where sep = maybe ": " (\i -> "[A" ++ show i ++ "]: ") analogPinNumber
-
 type SlaveAddress = Word8
 type SlaveRegister = Word8
 type MinPulse = Word16
 type MaxPulse = Word16
 type TaskLength = Word16
 type TaskID = Word8
-type TaskTime = Word32
+type TimeMillis = Word32
+type TimeMicros = Word32
 type TaskPos = Word16
 type StepDevice = Word8
 type NumSteps = Word32
@@ -299,32 +292,26 @@ data StepType = TwoWire | FourWire | StepDir
 data Command =
        SystemReset                              -- ^ Send system reset
      | SetPinMode Pin PinMode                   -- ^ Set the mode on a pin
-     | DigitalPortReport Port Bool              -- ^ Digital report values on port enable/disable
-     | DigitalReport Pin Bool                   -- ^ Digital report values on port enable/disable
-     | AnalogReport Pin Bool                    -- ^ Analog report values on pin enable/disable
-     | DigitalPortWrite Port Word8              -- ^ Set the values on a port digitally
-     | DigitalPortWriteE Port (Expr Word8)
+--     | DigitalPortWrite Port Word8              -- ^ Set the values on a port digitally
+--     | DigitalPortWriteE Port (Expr Word8)
      | DigitalWrite Pin Bool                    -- ^ Set the value on a pin digitally
-     | DigitalWriteE Pin (Expr Bool)              
+--     | DigitalWriteE Pin (Expr Bool)              
      | AnalogWrite Pin Word16                   -- ^ Send an analog-write; used for servo control
-     | AnalogWriteE Pin (Expr Word16)
-     | AnalogExtendedWrite Pin [Word8]          -- ^ 
-     | AnalogExtendedWriteE Pin (Expr [Word8])  -- ^ 
-     | SamplingInterval Word16                  -- ^ Set the sampling interval
+--     | AnalogWriteE Pin (Expr Word16)
      | I2CWrite SlaveAddress [Word8]
-     | I2CWriteE SlaveAddress (Expr [Word8])
+--     | I2CWriteE SlaveAddress (Expr [Word8])
      | I2CConfig Word16
-     | I2CConfigE (Expr Word16)
-     -- TBD add I2C continuous read
-     | ServoConfig Pin MinPulse MaxPulse
+--     | I2CConfigE (Expr Word16)
+--     | ServoConfig Pin MinPulse MaxPulse
      -- TBD add one wire and encoder procedures
-     | StepperConfig StepDevice StepType StepDelay StepPerRev Pin Pin (Maybe Pin) (Maybe Pin)
-     | StepperStep StepDevice StepDir NumSteps StepSpeed (Maybe StepAccel)
+--     | StepperConfig StepDevice StepType StepDelay StepPerRev Pin Pin (Maybe Pin) (Maybe Pin)
+--     | StepperStep StepDevice StepDir NumSteps StepSpeed (Maybe StepAccel)
      | CreateTask TaskID (Arduino ())
      | DeleteTask TaskID
-     | Delay TaskTime
-     | DelayE (Expr TaskTime)
-     | ScheduleTask TaskID TaskTime
+     | DelayMillis TimeMillis
+     | DelayMicros TimeMicros
+--     | DelayE (Expr TaskTime)
+     | ScheduleTask TaskID TimeMillis
      | ScheduleReset
 
 systemReset :: Arduino ()
@@ -333,62 +320,44 @@ systemReset = Command SystemReset
 setPinMode :: Pin -> PinMode -> Arduino ()
 setPinMode p pm = Command $ SetPinMode p pm
 
-digitalPortReport :: Port -> Bool -> Arduino ()
-digitalPortReport p b = Command $ DigitalPortReport p b
+-- digitalPortWrite :: Port -> Word8 -> Arduino ()
+-- digitalPortWrite p w = Command $ DigitalPortWrite p w
 
-digitalReport :: Pin -> Bool -> Arduino ()
-digitalReport p b = Command $ DigitalReport p b
-
-analogReport :: Pin -> Bool -> Arduino ()
-analogReport p b = Command $ AnalogReport p b
-
-digitalPortWrite :: Port -> Word8 -> Arduino ()
-digitalPortWrite p w = Command $ DigitalPortWrite p w
-
-digitalPortWriteE :: Port -> (Expr Word8) -> Arduino ()
-digitalPortWriteE p w = Command $ DigitalPortWriteE p w
+-- digitalPortWriteE :: Port -> (Expr Word8) -> Arduino ()
+-- digitalPortWriteE p w = Command $ DigitalPortWriteE p w
 
 digitalWrite :: Pin -> Bool -> Arduino ()
 digitalWrite p b = Command $ DigitalWrite p b
 
-digitalWriteE :: Pin -> (Expr Bool) -> Arduino ()
-digitalWriteE p b = Command $ DigitalWriteE p b
+-- digitalWriteE :: Pin -> (Expr Bool) -> Arduino ()
+-- digitalWriteE p b = Command $ DigitalWriteE p b
 
 analogWrite :: Pin -> Word16 -> Arduino ()
 analogWrite p w = Command $ AnalogWrite p w
 
-analogWriteE :: Pin -> (Expr Word16) -> Arduino ()
-analogWriteE p w = Command $ AnalogWriteE p w
-
-analogExtendedWrite :: Pin -> [Word8] -> Arduino ()
-analogExtendedWrite p ws = Command $ AnalogExtendedWrite p ws
-
-analogExtendedWriteE :: Pin -> (Expr [Word8]) -> Arduino ()
-analogExtendedWriteE p ws = Command $ AnalogExtendedWriteE p ws
-
-samplingInterval :: Word16 -> Arduino ()
-samplingInterval w = Command $ SamplingInterval w
+-- analogWriteE :: Pin -> (Expr Word16) -> Arduino ()
+-- analogWriteE p w = Command $ AnalogWriteE p w
 
 i2cWrite :: SlaveAddress -> [Word8] -> Arduino ()
 i2cWrite sa ws = Command $ I2CWrite sa ws
 
-i2cWriteE :: SlaveAddress -> (Expr [Word8]) -> Arduino ()
-i2cWriteE sa ws = Command $ I2CWriteE sa ws
+-- i2cWriteE :: SlaveAddress -> (Expr [Word8]) -> Arduino ()
+-- i2cWriteE sa ws = Command $ I2CWriteE sa ws
 
 i2cConfig :: Word16 -> Arduino ()
 i2cConfig w = Command $ I2CConfig w
 
-i2cConfigE :: (Expr Word16) -> Arduino ()
-i2cConfigE w = Command $ I2CConfigE w
+-- i2cConfigE :: (Expr Word16) -> Arduino ()
+-- i2cConfigE w = Command $ I2CConfigE w
 
-servoConfig :: Pin -> MinPulse -> MaxPulse -> Arduino ()
-servoConfig p min max = Command $ ServoConfig p min max
+-- servoConfig :: Pin -> MinPulse -> MaxPulse -> Arduino ()
+-- servoConfig p min max = Command $ ServoConfig p min max
 
-stepperConfig :: StepDevice -> StepType -> StepDelay -> StepPerRev -> Pin -> Pin -> (Maybe Pin) -> (Maybe Pin) -> Arduino ()
-stepperConfig dev ty d sr p1 p2 p3 p4 = Command $ StepperConfig dev ty d sr p1 p2 p3 p4
+-- stepperConfig :: StepDevice -> StepType -> StepDelay -> StepPerRev -> Pin -> Pin -> (Maybe Pin) -> (Maybe Pin) -> Arduino ()
+-- stepperConfig dev ty d sr p1 p2 p3 p4 = Command $ StepperConfig dev ty d sr p1 p2 p3 p4
 
-stepperStep :: StepDevice -> StepDir -> NumSteps -> StepSpeed -> Maybe StepAccel -> Arduino ()
-stepperStep dev sd ns sp ac = Command $ StepperStep dev sd ns sp ac
+-- stepperStep :: StepDevice -> StepDir -> NumSteps -> StepSpeed -> Maybe StepAccel -> Arduino ()
+-- stepperStep dev sd ns sp ac = Command $ StepperStep dev sd ns sp ac
 
 createTask :: TaskID -> Arduino () -> Arduino ()
 createTask tid ps = Command (CreateTask tid ps)
@@ -396,11 +365,14 @@ createTask tid ps = Command (CreateTask tid ps)
 deleteTask :: TaskID -> Arduino ()
 deleteTask tid = Command $ DeleteTask tid
 
-delay :: TaskTime -> Arduino ()
-delay t = Command $ Delay t
+delayMillis :: TimeMillis -> Arduino ()
+delayMillis t = Command $ DelayMillis t
 
-delayE :: (Expr TaskTime) -> Arduino ()
-delayE t = Command $ DelayE t
+delayMicros :: TimeMicros -> Arduino ()
+delayMicros t = Command $ DelayMicros t
+
+-- delayE :: (Expr TaskTime) -> Arduino ()
+-- delayE t = Command $ DelayE t
 
 scheduleTask :: TaskID -> TaskTime -> Arduino ()
 scheduleTask tid tt = Command $ ScheduleTask tid tt
@@ -409,56 +381,15 @@ scheduleReset :: Arduino ()
 scheduleReset = Command ScheduleReset
 
 data Control =
-       Loop (Arduino ())
+     Loop (Arduino ())
 
 loop :: Arduino () -> Arduino ()
 loop ps = Control (Loop ps)
 
 data Local :: * -> * where
-     DigitalPortRead  :: Port -> Local Word8          -- ^ Read the values on a port digitally
-     DigitalPortReadE :: Port -> Local (Expr Word8)
-     DigitalRead      :: Pin -> Local Bool            -- ^ Read the avlue ona pin digitally
-     DigitalReadE     :: Pin -> Local (Expr Bool)
-     AnalogRead       :: Pin -> Local Word16          -- ^ Read the analog value on a pin
-     AnalogReadE      :: Pin -> Local (Expr Word16)          
-     WaitFor          :: Pin -> Local Bool
-     WaitAny          :: [Pin] -> Local [Bool]
-     WaitAnyHigh      :: [Pin] -> Local [Bool]
-     WaitAnyLow       :: [Pin] -> Local [Bool]
      Debug            :: String -> Local ()
      Die              :: String -> [String] -> Local ()
-     -- TBD Add pin reporting Local?
-deriving instance Show a => Show (Local a)
-
-digitalPortRead :: Port -> Arduino Word8
-digitalPortRead p = Local $ DigitalPortRead p
-
-digitalPortReadE :: Port -> Arduino (Expr Word8)
-digitalPortReadE p = Local $ DigitalPortReadE p
-
-digitalRead :: Pin -> Arduino Bool
-digitalRead p = Local $ DigitalRead p
-
-digitalReadE :: Pin -> Arduino (Expr Bool)
-digitalReadE p = Local $ DigitalReadE p
-
-analogRead :: Pin -> Arduino Word16
-analogRead p = Local $ AnalogRead p
-
-analogReadE :: Pin -> Arduino (Expr Word16)
-analogReadE p = Local $ AnalogReadE p
-
-waitFor :: Pin -> Arduino Bool
-waitFor p = Local $ WaitFor p
-
-waitAny :: [Pin] -> Arduino [Bool]
-waitAny ps = Local $ WaitAny ps
-
-waitAnyHigh :: [Pin] -> Arduino [Bool]
-waitAnyHigh ps = Local $ WaitAnyHigh ps
-
-waitAnyLow :: [Pin] -> Arduino [Bool]
-waitAnyLow ps = Local $ WaitAnyLow ps
+  deriving instance Show a => Show (Local a)
 
 debug :: String -> Arduino ()
 debug msg = Local $ Debug msg
@@ -466,128 +397,48 @@ debug msg = Local $ Debug msg
 die :: String -> [String] -> Arduino ()
 die msg msgs = Local $ Die msg msgs
 
--- | Read the value of a pin in digital mode; this is a non-blocking call, returning
--- the current value immediately. See 'waitFor' for a version that waits for a change
--- in the pin first.
-runDigitalRead :: ArduinoConnection -> Pin -> IO Bool
-runDigitalRead c p' = do
-   (_, pd) <- convertAndCheckPin c "digitalRead" p' INPUT
-   return $ case pinValue pd of
-              Just (Left v) -> v
-              _             -> False -- no (correctly-typed) value reported yet, default to False
-
-runDigitalReadE :: ArduinoConnection -> Pin -> IO (Expr Bool)
-runDigitalReadE c p' = do
-   (_, pd) <- convertAndCheckPin c "digitalRead" p' INPUT
-   return $ case pinValue pd of
-              Just (Left v) -> LitBool v
-              _             -> LitBool False -- no (correctly-typed) value reported yet, default to False
-
--- | Read the value of a pin in analog mode; this is a non-blocking call, immediately
--- returning the last sampled value. It returns @0@ if the voltage on the pin
--- is 0V, and @1023@ if it is 5V, properly scaled. (See `setAnalogSamplingInterval` for
--- sampling frequency.)
-runAnalogRead :: ArduinoConnection -> Pin -> IO Word16
-runAnalogRead c p' = do
-   (_, pd) <- convertAndCheckPin c "analogRead" p' ANALOG
-   return $ case pinValue pd of
-              Just (Right v) -> fromIntegral v
-              _              -> 0 -- no (correctly-typed) value reported yet, default to 0
-
-runAnalogReadE :: ArduinoConnection -> Pin -> IO (Expr Word16)
-runAnalogReadE c p' = do
-   (_, pd) <- convertAndCheckPin c "analogRead" p' ANALOG
-   return $ case pinValue pd of
-              Just (Right v) -> LitWord16 (fromIntegral v)
-              _              -> LitWord16 0 -- no (correctly-typed) value reported yet, default to 0
-
--- | Read the value of a port in digital mode; this is a non-blocking call, returning
--- the current value immediately. See 'waitAny' for a version that waits for a change
--- in the port first.
-runDigitalPortRead :: ArduinoConnection -> Port -> IO Word8
-runDigitalPortRead c p = do
-    let bs = boardState c
-    let err = bailOut c
-    withMVar bs $ \bst ->
-       return $ M.findWithDefault 0 p (portStates bst)
-
-runDigitalPortReadE :: ArduinoConnection -> Port -> IO (Expr Word8)
-runDigitalPortReadE c p = do
-    let bs = boardState c
-    let err = bailOut c
-    withMVar bs $ \bst ->
-       return $ LitWord8 $ M.findWithDefault 0 p (portStates bst)
-
--- | Wait for a change in the value of the digital input pin. Returns the new value.
--- Note that this is a blocking call. For a non-blocking version, see 'digitalRead', which returns the current
--- value of a pin immediately.
-runWaitFor :: ArduinoConnection -> Pin -> IO Bool
-runWaitFor c p = head `fmap` (runWaitAny c) [p]
-
--- | Wait for a change in any of the given pins. Once a change is detected, all the new values are
--- returned. Similar to 'waitFor', but is useful when we are watching multiple digital inputs.
-runWaitAny :: ArduinoConnection -> [Pin] -> IO [Bool]
-runWaitAny c ps = map snd `fmap` (runWaitGeneric c) ps
-
--- | Wait for any of the given pins to go from low to high. If all of the pins are high to start
--- with, then we first wait for one of them to go low, and then wait for one of them to go back high.
--- Returns the new values.
-runWaitAnyHigh :: ArduinoConnection -> [Pin] -> IO [Bool]
-runWaitAnyHigh c ps = do
-   curVals <- mapM (runDigitalRead c) ps
-   when (and curVals) $ void $ runWaitAnyLow c ps   -- all are H to start with, wait for at least one to go low
-   vs <- runWaitGeneric c ps  -- wait for some change
-   if (False, True) `elem` vs
-      then return $ map snd vs
-      else runWaitAnyHigh c ps
-
--- | Wait for any of the given pins to go from high to low. If all of the pins are low to start
--- with, then we first wait for one of them to go high, and then wait for one of them to go back low.
--- Returns the new values.
-runWaitAnyLow :: ArduinoConnection -> [Pin] -> IO [Bool]
-runWaitAnyLow c ps = do
-   curVals <- mapM (runDigitalRead c) ps
-   unless (or curVals) $ void $ runWaitAnyHigh c ps   -- all are L to start with, wait for at least one to go high
-   vs <- runWaitGeneric c ps  -- wait for some change
-   if (True, False) `elem` vs
-      then return $ map snd vs
-      else runWaitAnyLow c ps
-
--- | A utility function, waits for any change on any given pin
--- and returns both old and new values. It's guaranteed that
--- at least one returned pair have differing values.
-runWaitGeneric :: ArduinoConnection -> [Pin] -> IO [(Bool, Bool)]
-runWaitGeneric c ps = do
-   curVals <- mapM (runDigitalRead c) ps
-   semaphore <- newEmptyMVar
-   let wait = do digitalWakeUp c semaphore
-                 takeMVar semaphore
-                 newVals <- mapM (runDigitalRead c) ps
-                 if curVals == newVals
-                    then wait
-                    else return $ zip curVals newVals
-   wait
-
 data Procedure :: * -> * where
-     QueryFirmware  :: Procedure (Word8, Word8, String)   -- ^ Query the Firmata version installed
-     CapabilityQuery :: Procedure BoardCapabilities       -- ^ Query the capabilities of the board
-     AnalogMappingQuery :: Procedure [Word8]              -- ^ Query the mapping of analog pins
+     QueryFirmware  :: Procedure (Word8, Word8        )   -- ^ Query the Firmata version installed
+     QueryProcessor :: Procedure Processor                -- ^ Query the type of processor on 
+--     DigitalPortRead  :: Port -> Procedure Word8          -- ^ Read the values on a port digitally
+--     DigitalPortReadE :: Port -> Procedure (Expr Word8)
+     DigitalRead    :: Pin -> Procedure Bool            -- ^ Read the avlue ona pin digitally
+--     DigitalReadE     :: Pin -> Procedure (Expr Bool)
+     AnalogRead     :: Pin -> Procedure Word16          -- ^ Read the analog value on a pin
+--     AnalogReadE      :: Pin -> Procedure (Expr Word16)          
      Pulse :: IPin -> Bool -> Word32 -> Word32 -> Procedure Word32 -- ^ Request for a pulse reading on a pin, value, duration, timeout
      I2CRead :: SlaveAddress -> Maybe SlaveRegister -> Word8 -> Procedure [Word8]
-     -- TBD add one wire queries
+     -- Todo: add one wire queries
      QueryAllTasks :: Procedure [TaskID]
      QueryTask :: TaskID -> Procedure (TaskID, TaskTime, TaskLength, TaskPos, [Word8])
-
-deriving instance Show a => Show (Procedure a)
+  deriving instance Show a => Show (Procedure a)
 
 queryFirmware :: Arduino (Word8, Word8, String)
 queryFirmware = Procedure QueryFirmware
 
-capabilityQuery :: Arduino BoardCapabilities
-capabilityQuery = Procedure CapabilityQuery
+queryProcessor :: Arduino Proessor
+queryProcessor = Procedure QueryProcessor
 
-analogMappingQuery :: Arduino [Word8]
-analogMappingQuery = Procedure AnalogMappingQuery
+-- ToDo: Do some sort of analog mapping locally?
+
+
+-- digitalPortRead :: Port -> Arduino Word8
+-- digitalPortRead p = Procedure $ DigitalPortRead p
+
+-- digitalPortReadE :: Port -> Arduino (Expr Word8)
+-- digitalPortReadE p = Procedure $ DigitalPortReadE p
+
+digitalRead :: Pin -> Arduino Bool
+digitalRead p = Procedure $ DigitalRead p
+
+-- digitalReadE :: Pin -> Arduino (Expr Bool)
+-- digitalReadE p = Procedure $ DigitalReadE p
+
+analogRead :: Pin -> Arduino Word16
+analogRead p = Procedure $ AnalogRead p
+
+-- analogReadE :: Pin -> Arduino (Expr Word16)
+-- analogReadE p = Procedure $ AnalogReadE p
 
 pulse :: IPin -> Bool -> Word32 -> Word32 -> Arduino Word32
 pulse p b w1 w2 = Procedure $ Pulse p b w1 w2
@@ -602,248 +453,125 @@ queryTask :: TaskID -> Arduino (TaskID, TaskTime, TaskLength, TaskPos, [Word8])
 queryTask tid = Procedure $ QueryTask tid
 
 -- | A response, as returned from the Arduino
-data Response = Firmware Word8 Word8 String          -- ^ Firmware version (maj/min and indentifier
-              | Capabilities BoardCapabilities       -- ^ Capabilities report
-              | AnalogMapping [Word8]                -- ^ Analog pin mappings
-              | DigitalMessage Port Word8 Word8      -- ^ Status of a port
-              | AnalogMessage  IPin Word8 Word8      -- ^ Status of an analog pin
+data Response = Firmware Word8 Word8                 -- ^ Firmware version (maj/min and indentifier
+              | ProcessorType Word8                  -- ^ Processor report
+              | MicrosReply Word32                   -- ^ Elapsed Microseconds
+              | MillisReply Word32                   -- ^ Elapsed Milliseconds
+              | DigitalReply Word8                   -- ^ Status of a pin
+              | AnalogReply Word16                   -- ^ Status of an analog pin
               | StringMessage  String                -- ^ String message from Firmata
               | PulseResponse  IPin Word32           -- ^ Repsonse to a PulseInCommand
-              | I2CReply Word8 Word8 [Word8]       -- ^ Response to a I2C Read
+              | I2CReply [Word8]                     -- ^ Response to a I2C Read
               | QueryAllTasksReply [Word8]           -- ^ Response to Query All Tasks
-              | QueryTaskReply TaskID TaskTime TaskLength TaskPos [Word8]
-              | ErrorTaskReply TaskID TaskTime TaskLength TaskPos [Word8]
+              | QueryTaskReply (Maybe TaskID) TaskTime TaskLength TaskPos
               | Unimplemented (Maybe String) [Word8] -- ^ Represents messages currently unsupported
     deriving Show
 
--- | Which modes does this pin support?
-getPinModes :: ArduinoConnection -> IPin -> IO [PinMode]
-getPinModes c p = do
-  let BoardCapabilities caps = capabilities c
-  case p `M.lookup` caps of
-    Nothing                            -> return []
-    Just PinCapabilities{allowedModes} -> return $ map fst allowedModes
-
--- | Current state of the pin
-getPinData :: ArduinoConnection -> IPin -> IO PinData
-getPinData c p = do
-  let bs = boardState c
-  let err = bailOut c
-  withMVar bs $ \bst ->
-     case p `M.lookup` pinStates bst of
-       Nothing -> err ("Trying to access " ++ show p ++ " without proper setup.")
-                      ["Make sure that you use 'setPinMode' to configure this pin first."]
-       Just pd -> return pd
-
--- | Keep track of listeners on a digital message
-digitalWakeUp :: ArduinoConnection -> MVar () -> IO ()
-digitalWakeUp c semaphore = do
-    let bs = boardState c
-    modifyMVar_ bs $ \bst -> return bst{digitalWakeUpQueue = semaphore : digitalWakeUpQueue bst}
-
--- | Firmata commands, see: http://firmata.org/wiki/Protocol#Message_Types
-data FirmataCmd = ANALOG_MESSAGE      IPin -- ^ @0xE0@ pin
-                | DIGITAL_MESSAGE     Port -- ^ @0x90@ port
-                | REPORT_ANALOG_PIN   IPin -- ^ @0xC0@ pin
-                | REPORT_DIGITAL_PORT Port -- ^ @0xD0@ port
-                | START_SYSEX              -- ^ @0xF0@
-                | SET_PIN_MODE             -- ^ @0xF4@
-                | SET_DIGITAL_PIN_VALUE    -- ^ @0xF5@
-                | END_SYSEX                -- ^ @0xF7@
-                | PROTOCOL_VERSION         -- ^ @0xF9@
-                | SYSTEM_RESET             -- ^ @0xFF@
+-- | Amber Firmware commands, see: http://tbd
+data FirwareCmd = BC_CMD_SET_PIN_MODE
+                | BC_CMD_DELAY_MILLIS
+                | BC_CMD_DELAY_MICROS
+                | BC_CMD_SYSTEM_RESET
+                | BS_CMD_REQUEST_VERSION
+                | BS_CMD_REQUEST_TYPE
+                | BS_CMD_REQUEST_MICROS
+                | BS_CMD_REQUEST_MILLIS
+                | DIG_CMD_READ_PIN
+                | DIG_CMD_WRITE_PIN
+                | ALG_CMD_READ_PIN
+                | ALG_CMD_WRITE_PIN
+                | I2C_CMD_READ
+                | I2C_CMD_READ_REG
+                | I2C_CMD_WRITE
+                | SCHED_CMD_CREATE_TASK
+                | SCHED_CMD_DELETE_TASK
+                | SCHED_CMD_ADD_TO_TASK
+                | SCHED_CMD_SCHED_TASK
+                | SCHED_CMD_QUERY
+                | SCHED_CMD_QUERY_ALL
+                | SCHED_CMD_RESET
                 deriving Show
 
 -- | Compute the numeric value of a command
-firmataCmdVal :: FirmataCmd -> Word8
-firmataCmdVal (ANALOG_MESSAGE      p) = 0xE0 .|. pinNo  p
-firmataCmdVal (DIGITAL_MESSAGE     p) = 0x90 .|. portNo p
-firmataCmdVal (REPORT_ANALOG_PIN   p) = 0xC0 .|. pinNo  p
-firmataCmdVal (REPORT_DIGITAL_PORT p) = 0xD0 .|. portNo p
-firmataCmdVal START_SYSEX             = 0xF0
-firmataCmdVal SET_PIN_MODE            = 0xF4
-firmataCmdVal SET_DIGITAL_PIN_VALUE   = 0xF5
-firmataCmdVal END_SYSEX               = 0xF7
-firmataCmdVal PROTOCOL_VERSION        = 0xF9
-firmataCmdVal SYSTEM_RESET            = 0xFF
+firmwareCmdVal :: FirwareCmd -> Word8
+firmwareCmdVal BC_CMD_SET_PIN_MODE    = 0x00
+firmwareCmdVal BC_CMD_DELAY_MILLIS    = 0x01
+firmwareCmdVal BC_CMD_DELAY_MICROS    = 0x02
+firmwareCmdVal BC_CMD_SYSTEM_RESET    = 0x03
+firmwareCmdVal BS_CMD_REQUEST_VERSION = 0x10
+firmwareCmdVal BS_CMD_REQUEST_TYPE    = 0x11
+firmwareCmdVal BS_CMD_REQUEST_MILLIS  = 0x12
+firmwareCmdVal DIG_CMD_READ_PIN       = 0x20
+firmwareCmdVal DIG_CMD_WRITE_PIN      = 0x21
+firmwareCmdVal ALG_CMD_READ_PIN       = 0x30
+firmwareCmdVal ALG_CMD_WRITE_PIN      = 0x31
+firmwareCmdVal I2C_CMD_READ           = 0x40
+firmwareCmdVal I2C_CMD_READ_REG       = 0x41
+firmwareCmdVal I2C_CMD_WRITE          = 0x42
+firmwareCmdVal SCHED_CMD_CREATE_TASK  = 0x90
+firmwareCmdVal SCHED_CMD_DELETE_TASK  = 0x91
+firmwareCmdVal SCHED_CMD_ADD_TO_TASK  = 0x92
+firmwareCmdVal SCHED_CMD_SCHED_TASK   = 0x93
+firmwareCmdVal SCHED_CMD_QUERY        = 0x94
+firmwareCmdVal SCHED_CMD_QUERY_ALL    = 0x95
+firmwareCmdVal SCHED_CMD_RESET        = 0x96
 
--- | Firmata scheduler commands, see: https://github.com/firmata/protocol/blob/master/scheduler.md
-data SchedulerCmd = CREATE_TASK    -- ^ @0x00@
-                | DELETE_TASK      -- ^ @0x01@
-                | ADD_TO_TASK      -- ^ @0x02@
-                | DELAY_TASK       -- ^ @0x03@
-                | SCHEDULE_TASK    -- ^ @0x04@
-                | QUERY_ALL_TASKS  -- ^ @0x05@
-                | QUERY_TASK       -- ^ @0x06@
-                | SCHEDULER_RESET  -- ^ @0x07@
+-- | Firmware replies, see: https:tbd
+data FirmwareReply = BS_RESP_VERSION
+                     BS_RESP_TYPE
+                     BS_RESP_MICROS
+                     BS_RESP_MILLIS
+                     BS_RESP_STRING
+                     DIG_RESP_READ_PIN
+                     ALG_RESP_READ_PIN
+                     I2C_RESP_READ
+                     SCHED_RESP_QUERY
+                     SCHED_RESP_QUERY_ALL
+                deriving Show
 
--- | Compute the numeric value of a scheduler command
-schedulerCmdVal :: SchedulerCmd -> Word8
-schedulerCmdVal CREATE_TASK     = 0x00
-schedulerCmdVal DELETE_TASK     = 0x01
-schedulerCmdVal ADD_TO_TASK     = 0x02
-schedulerCmdVal DELAY_TASK      = 0x03
-schedulerCmdVal SCHEDULE_TASK   = 0x04
-schedulerCmdVal QUERY_ALL_TASKS = 0x05
-schedulerCmdVal QUERY_TASK      = 0x06
-schedulerCmdVal SCHEDULER_RESET = 0x07
+getFirmwareReply :: Word8 -> Either Word8 FirmwareReply
+getFirmwareReply 0x18 = Right BS_RESP_VERSION
+getFirmwareReply 0x19 = Right BS_RESP_TYPE
+getFirmwareReply 0x1A = Right BS_RESP_MICROS
+getFirmwareReply 0x1B = Right BS_RESP_MILLIS
+getFirmwareReply 0x1C = Right BS_RESP_STRING
+getFirmwareReply 0x28 = Right DIG_RESP_READ_PIN
+getFirmwareReply 0x38 = Right ALG_RESP_READ_PIN
+getFirmwareReply 0x48 = Right I2C_RESP_READ
+getFirmwareReply 0x98 = Right SCHED_RESP_QUERY
+getFirmwareReply 0x99 = Right SCHED_RESP_QUERY_ALL
+getFirmwareReply n    = Left n
 
-data SchedulerReply = QUERY_ALL_TASKS_REPLY
-                | QUERY_TASK_REPLY
-                | ERROR_FIRMATA_TASK_REPLY
+--stepDelayVal :: StepDelay -> Word8
+--stepDelayVal OneUs = 0x00
+--stepDelayVal TwoUs = 0x08
 
-getSchedulerReply :: Word8 -> Either Word8 SchedulerReply
-getSchedulerReply 0x09 = Right QUERY_ALL_TASKS_REPLY
-getSchedulerReply 0x0A = Right QUERY_TASK_REPLY
-getSchedulerReply 0x0B = Right ERROR_FIRMATA_TASK_REPLY
-getSchedulerReply n    = Left n
+--stepDirVal :: StepDir -> Word8
+--stepDirVal CW = 0x00
+--stepDirVal CCW = 0x01
 
--- | Firmata scheduler commands, see: https://github.com/firmata/protocol/blob/master/scheduler.md
-data StepperCmd = CONFIG_STEPPER    -- ^ @0x00@
-                | STEP_STEPPER      -- ^ @0x01@
+data Processor = ATMEGA8
+               | ATMEGA168
+               | ATMEGA328P
+               | ATMEGA1280
+               | ATMEGA256
+               | ATMEGA32U4
+               | ATMEGA644P
+               | ATMEGA644
+               | ATMEGA645
+               | SAM3X8E
+               | X86
 
--- | Compute the numeric value of a scheduler command
-stepperCmdVal :: StepperCmd -> Word8
-stepperCmdVal CONFIG_STEPPER = 0x00
-stepperCmdVal STEP_STEPPER   = 0x01
-
-stepDelayVal :: StepDelay -> Word8
-stepDelayVal OneUs = 0x00
-stepDelayVal TwoUs = 0x08
-
-stepDirVal :: StepDir -> Word8
-stepDirVal CW = 0x00
-stepDirVal CCW = 0x01
-
--- | Convert a byte to a Firmata command
-getFirmataCmd :: Word8 -> Either Word8 FirmataCmd
-getFirmataCmd w = classify
-  where extract m | w .&. m == m = Just $ fromIntegral (w .&. 0x0F)
-                  | True         = Nothing
-        classify | w == 0xF0              = Right START_SYSEX
-                 | w == 0xF4              = Right SET_PIN_MODE
-                 | w == 0xF5              = Right SET_DIGITAL_PIN_VALUE
-                 | w == 0xF7              = Right END_SYSEX
-                 | w == 0xF9              = Right PROTOCOL_VERSION
-                 | w == 0xFF              = Right SYSTEM_RESET
-                 | Just i <- extract 0xE0 = Right $ ANALOG_MESSAGE      (InternalPin i)
-                 | Just i <- extract 0x90 = Right $ DIGITAL_MESSAGE     (Port i)
-                 | Just i <- extract 0xC0 = Right $ REPORT_ANALOG_PIN   (InternalPin i)
-                 | Just i <- extract 0xD0 = Right $ REPORT_DIGITAL_PORT (Port i)
-                 | True                   = Left w
-
--- | Sys-ex commands, see: https://github.com/firmata/protocol/blob/master/protocol.md
-data SysExCmd = RESERVED_COMMAND        -- ^ @0x00@  2nd SysEx data byte is a chip-specific command (AVR, PIC, TI, etc).
-              | ANALOG_MAPPING_QUERY    -- ^ @0x69@  ask for mapping of analog to pin numbers
-              | ANALOG_MAPPING_RESPONSE -- ^ @0x6A@  reply with mapping info
-              | CAPABILITY_QUERY        -- ^ @0x6B@  ask for supported modes and resolution of all pins
-              | CAPABILITY_RESPONSE     -- ^ @0x6C@  reply with supported modes and resolution
-              | PIN_STATE_QUERY         -- ^ @0x6D@  ask for a pin's current mode and value
-              | PIN_STATE_RESPONSE      -- ^ @0x6E@  reply with a pin's current mode and value
-              | EXTENDED_ANALOG         -- ^ @0x6F@  analog write (PWM, Servo, etc) to any pin
-              | SERVO_CONFIG            -- ^ @0x70@  set max angle, minPulse, maxPulse, freq
-              | STRING_DATA             -- ^ @0x71@  a string message with 14-bits per char
-              | STEPPER_DATA            -- ^ @0x72@  a stepper motor config or step command
-              | PULSE                   -- ^ @0x74@  Pulse, see: https://github.com/rwldrn/johnny-five/issues/18
-              | SHIFT_DATA              -- ^ @0x75@  shiftOut config/data message (34 bits)
-              | I2C_REQUEST             -- ^ @0x76@  I2C request messages from a host to an I/O board
-              | I2C_REPLY               -- ^ @0x77@  I2C reply messages from an I/O board to a host
-              | I2C_CONFIG              -- ^ @0x78@  Configure special I2C settings such as power pins and delay times
-              | REPORT_FIRMWARE         -- ^ @0x79@  report name and version of the firmware
-              | SAMPLING_INTERVAL       -- ^ @0x7A@  sampling interval
-              | SCHEDULER_DATA          -- ^ @0x7B@  Scheduling commands
-              | SYSEX_NON_REALTIME      -- ^ @0x7E@  MIDI Reserved for non-realtime messages
-              | SYSEX_REALTIME          -- ^ @0x7F@  MIDI Reserved for realtime messages
-              deriving Show
-
--- | Convert a 'SysExCmd' to a byte
-sysExCmdVal :: SysExCmd -> Word8
-sysExCmdVal RESERVED_COMMAND        = 0x00
-sysExCmdVal ANALOG_MAPPING_QUERY    = 0x69
-sysExCmdVal ANALOG_MAPPING_RESPONSE = 0x6A
-sysExCmdVal CAPABILITY_QUERY        = 0x6B
-sysExCmdVal CAPABILITY_RESPONSE     = 0x6C
-sysExCmdVal PIN_STATE_QUERY         = 0x6D
-sysExCmdVal PIN_STATE_RESPONSE      = 0x6E
-sysExCmdVal EXTENDED_ANALOG         = 0x6F
-sysExCmdVal SERVO_CONFIG            = 0x70
-sysExCmdVal STRING_DATA             = 0x71
-sysExCmdVal STEPPER_DATA            = 0x72
-sysExCmdVal PULSE                   = 0x74
-sysExCmdVal SHIFT_DATA              = 0x75
-sysExCmdVal I2C_REQUEST             = 0x76
-sysExCmdVal I2C_REPLY               = 0x77
-sysExCmdVal I2C_CONFIG              = 0x78
-sysExCmdVal REPORT_FIRMWARE         = 0x79
-sysExCmdVal SAMPLING_INTERVAL       = 0x7A
-sysExCmdVal SCHEDULER_DATA          = 0x7B
-sysExCmdVal SYSEX_NON_REALTIME      = 0x7E
-sysExCmdVal SYSEX_REALTIME          = 0x7F
-
--- | Convert a byte into a 'SysExCmd'
-getSysExCommand :: Word8 -> Either Word8 SysExCmd
-getSysExCommand 0x00 = Right RESERVED_COMMAND
-getSysExCommand 0x69 = Right ANALOG_MAPPING_QUERY
-getSysExCommand 0x6A = Right ANALOG_MAPPING_RESPONSE
-getSysExCommand 0x6B = Right CAPABILITY_QUERY
-getSysExCommand 0x6C = Right CAPABILITY_RESPONSE
-getSysExCommand 0x6D = Right PIN_STATE_QUERY
-getSysExCommand 0x6E = Right PIN_STATE_RESPONSE
-getSysExCommand 0x6F = Right EXTENDED_ANALOG
-getSysExCommand 0x70 = Right SERVO_CONFIG
-getSysExCommand 0x71 = Right STRING_DATA
-getSysExCommand 0x72 = Right STEPPER_DATA
-getSysExCommand 0x75 = Right SHIFT_DATA
-getSysExCommand 0x76 = Right I2C_REQUEST
-getSysExCommand 0x77 = Right I2C_REPLY
-getSysExCommand 0x78 = Right I2C_CONFIG
-getSysExCommand 0x79 = Right REPORT_FIRMWARE
-getSysExCommand 0x7A = Right SAMPLING_INTERVAL
-getSysExCommand 0x7B = Right SCHEDULER_DATA
-getSysExCommand 0x7E = Right SYSEX_NON_REALTIME
-getSysExCommand 0x7F = Right SYSEX_REALTIME
-getSysExCommand 0x74 = Right PULSE
-getSysExCommand n    = Left n
-
-registerDigitalPinReport :: ArduinoConnection -> IPin -> Bool -> IO Bool
-registerDigitalPinReport c p r = registerDigitalReport c pins portNo r 
-  where
-    pn = pinNo p
-    pins = S.singleton pn
-    portNo = pinNoPortNo pn
-
-registerDigitalPortReport :: ArduinoConnection -> Port -> Bool -> IO Bool
-registerDigitalPortReport c p r = registerDigitalReport c pins pn r 
-  where
-    pn = portNo p
-    pins = S.fromList [(pn*8)..((pn*8+7))]
-
-registerDigitalReport :: ArduinoConnection -> S.Set Word8 -> Word8 -> Bool -> IO Bool
-registerDigitalReport c pins portNo r = do
-    bs <- takeMVar (boardState c)
-    let oldPins = digitalReportingPins bs
-    let newPins = if r then S.union oldPins pins else S.difference oldPins pins
-    putMVar (boardState c) bs {digitalReportingPins = newPins}
-    return $ if (r) then notEl oldPins
-                    else (el oldPins) && (notEl newPins) 
-  where
-    notEl ps = portNo `notElem` map pinNoPortNo (S.elems ps)
-    el ps = portNo `elem` map pinNoPortNo (S.elems ps)
-
--- | Keep track of pin-mode changes
-registerPinMode :: ArduinoConnection -> IPin -> PinMode -> IO ()
-registerPinMode c p m = do
-        -- first check that the requested mode is supported for this pin
-        let BoardCapabilities caps = capabilities c
-        case p `M.lookup` caps of
-          Nothing
-             -> runDie c ("Invalid access to unsupported pin: " ++ show p)
-                    ("Available pins are: " : ["  " ++ show k | (k, _) <- M.toAscList caps])
-          Just PinCapabilities{allowedModes}
-            | m `notElem` map fst allowedModes
-            -> runDie c ("Invalid mode " ++ show m ++ " set for " ++ show p)
-                   ["Supported modes for this pin are: " ++ unwords (if null allowedModes then ["NONE"] else map show allowedModes)]
-          _ -> return ()
-        -- Modify the board state MVar for the mode change
-        modifyMVar_ (boardState c) $ \bst -> return bst{pinStates = M.insert p PinData{pinMode = m, pinValue = Nothing} (pinStates bst) }
-        return ()
+getProcessor :: Word8 -> Either Word8 Processor
+getProcessor  0 = Right ATMEGA8
+getProcessor  1 = Right ATMEGA168
+getProcessor  2 = Right ATMEGA328P
+getProcessor  3 = Right ATMEGA1280
+getProcessor  4 = Right ATMEGA256
+getProcessor  5 = Right ATMEGA32U4
+getProcessor  6 = Right ATMEGA644P
+getProcessor  7 = Right ATMEGA644
+getProcessor  8 = Right ATMEGA645
+getProcessor  9 = Right SAM3X8E
+getProcessor 10 = Right X86
+getProcessor  n = Left n
