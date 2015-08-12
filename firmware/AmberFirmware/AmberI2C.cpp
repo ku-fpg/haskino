@@ -54,7 +54,7 @@ static int handleReadReg(int size, byte *msg)
     {
     byte slaveAddress = msg[1];
     uint16_t slaveRegister = msg[2] + msg[3] << 8;
-    byte wordCount = msg[3];
+    byte wordCount = msg[4];
 
     Wire.beginTransmission(slaveAddress);
     Wire.write(slaveRegister); // TBD size and byte order
