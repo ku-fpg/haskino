@@ -69,23 +69,23 @@ openArduino verbose fp = do
           error $ "\n*** KansasAmber:ERROR:\n*** Make sure your Arduino is connected to " ++ fp
         Right port -> do
           dc <- newChan
-          tid <- setupListener port debugger dc bs
+          tid <- setupListener port debugger dc
           liftIO $ putMVar listenerTid tid
           debugger $ "Started listener thread: " ++ show tid
           let initState = ArduinoConnection {
                              message       = debugger
                            , bailOut       = bailOut listenerTid
                            , port          = port
-                           , firmataID     = "Unknown"
+                           , firmwareID    = "Unknown"
                            , processor     = UNKNOWN_PROCESSOR 255
                            , deviceChannel = dc
                            , listenerTid   = listenerTid
                         }
           -- Step 1: Send a reset to get things going
-          send initState systemReset
+          -- send initState systemReset
           -- Step 2: Send query-firmware, and wait until we get a response
           (v1, v2) <- send initState queryFirmware
-          let versionState = initState {firmataID = "Firmware v" ++ show v1 ++ "." ++ show v2 }
+          let versionState = initState {firmwareID = "Firmware v" ++ show v1 ++ "." ++ show v2 }
           -- Step 3: Send a capabilities request
           p <- send versionState queryProcessor
           -- Update the connection state with the processor
@@ -138,11 +138,6 @@ send conn commands =
           message c $ "Delaying: " ++ show d
           threadDelay (fromIntegral d)
           send' c (k ()) B.empty
-      sendBind c (Command (SetPinMode p pm)) k cmds = do
-          ipin <- getInternalPin c p
-          registerPinMode c ipin pm
-          proc <- packageCommand c (SetPinMode p pm)
-          send' c (k ()) (B.append cmds proc)
       sendBind c (Command cmd) k cmds = do 
           proc <- packageCommand c cmd
           send' c (k ()) (B.append cmds proc)
@@ -206,26 +201,28 @@ send conn commands =
 -- | Start a thread to listen to the board and populate the channel with incoming queries.
 setupListener :: SerialPort -> (String -> IO ()) -> Chan Response -> IO ThreadId
 setupListener serial dbg chan = do
-        let getByte = S.recv serial 1
-            waitForFrame = do [b] <- getByte
-                                if b == hdlcFrameFlag
-                                   then return ()
-                                   else waitForFrame
-            collectFrame sofar = do [b] <- getByte
-                                    if b == hdlcFrameFlag
-                                       then return $ reverse sofar
-                                       else if b == hdlcEscFlag
-                                            then do [e] <- getByte
-                                                    return $ collectFrame (e : sofar)
-                                            else collectFrame (b : sofar)
+        let getByte = do bs <- S.recv serial 1
+                         case B.length bs of
+                            0 -> getByte
+                            1 -> return $ B.head bs 
+            waitForFrame = do b <- getByte
+                              case b of
+                                hdlcFrameFlag -> return ()
+                                _             -> waitForFrame
+            collectFrame sofar = do b <- getByte
+                                    case b of
+                                      hdlcFrameFlag -> return $ reverse sofar
+                                      hdlcFrameEsc  -> do e <- getByte
+                                                          collectFrame (e : sofar)
+                                      _             -> collectFrame (b : sofar)
             listener = do
                 waitForFrame
                 frame  <- collectFrame []
                 resp <- case frame of 
                            [] -> return $ EmptyFrame
-                           fs -> case getFirmwareCmd $ head fs of
+                           fs -> case getFirmwareReply $ head fs of
                                     Left  unknown  -> return $ Unimplemented (Just (show unknown)) []
-                                    Right c        -> unpackageResponse cmd
+                                    Right c        -> return $ unpackageResponse fs
                 case resp of
                   EmptyFrame           -> dbg $ "Ignoring empty received frame"
                   Unimplemented{}      -> dbg $ "Ignoring the received response: " ++ show resp

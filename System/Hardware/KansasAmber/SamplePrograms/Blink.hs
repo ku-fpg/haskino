@@ -17,11 +17,11 @@ import Control.Monad (forever)
 import System.Hardware.KansasAmber
 
 blink :: IO ()
-blink = withArduino False "/dev/cu.usbmodem1421" $ do
-           let led = digital 13
+blink = withArduino True "/dev/cu.usbmodem1421" $ do
+           let led = 13
            setPinMode led OUTPUT
            loop $ do digitalWrite led True
-                     delay 1000
+                     delayMillis 1000
                      digitalWrite led False
-                     delay 1000
+                     delayMillis 1000
 

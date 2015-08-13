@@ -157,7 +157,7 @@ data ArduinoConnection = ArduinoConnection {
               }
 
 type SlaveAddress = Word8
-type SlaveRegister = Word8
+type SlaveRegister = Word16
 type MinPulse = Word16
 type MaxPulse = Word16
 type TaskLength = Word16
@@ -299,7 +299,7 @@ data Procedure :: * -> * where
      I2CRead :: SlaveAddress -> Maybe SlaveRegister -> Word8 -> Procedure [Word8]
      -- Todo: add one wire queries
      QueryAllTasks :: Procedure [TaskID]
-     QueryTask :: TaskID -> Procedure (TaskID, TimeMillis, TaskLength, TaskPos, [Word8])
+     QueryTask :: TaskID -> Procedure (Maybe (TaskID, TimeMillis, TaskLength, TaskPos))
 
 deriving instance Show a => Show (Procedure a)
 
@@ -339,7 +339,7 @@ i2cRead sa sr cnt = Procedure $ I2CRead sa sr cnt
 queryAllTasks :: Arduino [TaskID]
 queryAllTasks = Procedure QueryAllTasks
 
-queryTask :: TaskID -> Arduino (TaskID, TimeMillis, TaskLength, TaskPos, [Word8])
+queryTask :: TaskID -> Arduino (Maybe (TaskID, TimeMillis, TaskLength, TaskPos))
 queryTask tid = Procedure $ QueryTask tid
 
 -- | A response, as returned from the Arduino
@@ -353,38 +353,38 @@ data Response = Firmware Word8 Word8                 -- ^ Firmware version (maj/
 --              | PulseResponse  IPin Word32           -- ^ Repsonse to a PulseInCommand
               | I2CReply [Word8]                     -- ^ Response to a I2C Read
               | QueryAllTasksReply [Word8]           -- ^ Response to Query All Tasks
-              | QueryTaskReply (Maybe TaskID) TimeMillis TaskLength TaskPos
+              | QueryTaskReply (Maybe (TaskID, TimeMillis, TaskLength, TaskPos))
               | Unimplemented (Maybe String) [Word8] -- ^ Represents messages currently unsupported
               | EmptyFrame
     deriving Show
 
 -- | Amber Firmware commands, see: http://tbd
-data FirwareCmd = BC_CMD_SET_PIN_MODE
-                | BC_CMD_DELAY_MILLIS
-                | BC_CMD_DELAY_MICROS
-                | BC_CMD_SYSTEM_RESET
-                | BS_CMD_REQUEST_VERSION
-                | BS_CMD_REQUEST_TYPE
-                | BS_CMD_REQUEST_MICROS
-                | BS_CMD_REQUEST_MILLIS
-                | DIG_CMD_READ_PIN
-                | DIG_CMD_WRITE_PIN
-                | ALG_CMD_READ_PIN
-                | ALG_CMD_WRITE_PIN
-                | I2C_CMD_READ
-                | I2C_CMD_READ_REG
-                | I2C_CMD_WRITE
-                | SCHED_CMD_CREATE_TASK
-                | SCHED_CMD_DELETE_TASK
-                | SCHED_CMD_ADD_TO_TASK
-                | SCHED_CMD_SCHED_TASK
-                | SCHED_CMD_QUERY
-                | SCHED_CMD_QUERY_ALL
-                | SCHED_CMD_RESET
+data FirmwareCmd = BC_CMD_SET_PIN_MODE
+                 | BC_CMD_DELAY_MILLIS
+                 | BC_CMD_DELAY_MICROS
+                 | BC_CMD_SYSTEM_RESET
+                 | BS_CMD_REQUEST_VERSION
+                 | BS_CMD_REQUEST_TYPE
+                 | BS_CMD_REQUEST_MICROS
+                 | BS_CMD_REQUEST_MILLIS
+                 | DIG_CMD_READ_PIN
+                 | DIG_CMD_WRITE_PIN
+                 | ALG_CMD_READ_PIN
+                 | ALG_CMD_WRITE_PIN
+                 | I2C_CMD_READ
+                 | I2C_CMD_READ_REG
+                 | I2C_CMD_WRITE
+                 | SCHED_CMD_CREATE_TASK
+                 | SCHED_CMD_DELETE_TASK
+                 | SCHED_CMD_ADD_TO_TASK
+                 | SCHED_CMD_SCHED_TASK
+                 | SCHED_CMD_QUERY
+                 | SCHED_CMD_QUERY_ALL
+                 | SCHED_CMD_RESET
                 deriving Show
 
 -- | Compute the numeric value of a command
-firmwareCmdVal :: FirwareCmd -> Word8
+firmwareCmdVal :: FirmwareCmd -> Word8
 firmwareCmdVal BC_CMD_SET_PIN_MODE    = 0x00
 firmwareCmdVal BC_CMD_DELAY_MILLIS    = 0x01
 firmwareCmdVal BC_CMD_DELAY_MICROS    = 0x02

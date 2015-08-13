@@ -20,29 +20,27 @@ module System.Hardware.KansasAmber (
   , Arduino(..) , Command(..), Procedure(..), Local(..)
   -- * Programming the Arduino
   -- ** Pins
-  , Pin, Port, pin, digital, analog, pinPort, PinMode(..), setPinMode
+  , Pin, PinMode(..), setPinMode
   -- ** Gereral utils
-  , systemReset, queryFirmware, capabilityQuery, analogMappingQuery
-  ,samplingInterval
+  , systemReset, queryFirmware
   -- ** Digital IO
-  , digitalReport, digitalPortReport, digitalPortWrite, digitalWrite
-  , digitalPortRead, digitalRead 
+  , digitalWrite, digitalRead 
   -- ** Programming with triggers
-  , waitFor, waitAny, waitAnyHigh, waitAnyLow
+  --, waitFor, waitAny, waitAnyHigh, waitAnyLow
   -- ** Analog IO
-  , analogReport, analogWrite, analogExtendedWrite, analogRead
+  , analogWrite, analogRead
   -- ** I2C
   , SlaveAddress, SlaveRegister, i2cRead, i2cWrite, i2cConfig
   -- ** Pulse
-  , pulse
+  --, pulse
   -- ** Servo
-  , MinPulse, MaxPulse, servoConfig
+  --, MinPulse, MaxPulse, servoConfig
   -- ** Scheduler
-  , TaskLength, TaskID, TaskTime, TaskPos, queryAllTasks, queryTask, createTask
-  , deleteTask, delay, scheduleTask, scheduleReset
+  , TaskLength, TaskID, TimeMillis, TimeMicros, TaskPos, queryAllTasks, queryTask
+  , createTask, deleteTask, delayMillis, delayMicros, scheduleTask, scheduleReset
   -- ** Stepper
-  , StepDevice, StepType(..), NumSteps, StepSpeed, StepAccel, StepPerRev
-  , StepDelay(..), StepDir(..), stepperConfig, stepperStep
+  --, StepDevice, StepType(..), NumSteps, StepSpeed, StepAccel, StepPerRev
+  --, StepDelay(..), StepDir(..), stepperConfig, stepperStep
   -- ** Control structures
   , loop
  )

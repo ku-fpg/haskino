@@ -11,8 +11,10 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE GADTs      #-}
 
-module System.Hardware.KansasAmber.Protocol(packageCommand, packageProcedure, unpackageSysEx, unpackageNonSysEx, parseQueryResult) where
+module System.Hardware.KansasAmber.Protocol(packageCommand, packageProcedure, unpackageResponse, parseQueryResult,
+                                            hdlcFrameFlag, hdlcFrameEsc) where
 
+import Data.Bits            (xor)
 import Data.Word (Word8)
 
 import qualified Data.ByteString as B
@@ -34,12 +36,12 @@ hdlcMask :: Word8
 hdlcMask = 0x20
 
 hdlcFrameCommand :: [Word8] -> [Word8]
-hdlcFrameCommand cs = hdlcFrameFlag :: (concatMap escape cs) ++ [hdlcFrameFlag]
+hdlcFrameCommand cs = (hdlcFrameFlag : (concatMap escape cs)) ++ [hdlcFrameFlag]
   where
     escape :: Word8 -> [Word8]
-    escape hdlcFrameFlag = [hdlcFrameEsc, xor hdlcFrameFlag hdlcMask]
-    escape hdlcFrameEsc  = [hdlcFrameEsc, xor hdlcFrameEsc hdlcMask]
-    escape c             = [c]
+    escape c = if c == hdlcFrameFlag || c == hdlcFrameEsc
+               then [hdlcFrameEsc, xor c hdlcMask]
+               else [c]
 
 buildCommand :: FirmwareCmd -> [Word8] -> B.ByteString
 buildCommand cmd bs = B.pack $ hdlcFrameCommand $ firmwareCmdVal cmd : bs
@@ -48,36 +50,36 @@ buildCommand cmd bs = B.pack $ hdlcFrameCommand $ firmwareCmdVal cmd : bs
 -- using the Firmata protocol.
 packageCommand :: ArduinoConnection -> Command -> IO B.ByteString
 packageCommand c SystemReset = 
-    buildCommand SCHED_CMD_RESET []
+    return $ buildCommand SCHED_CMD_RESET []
 packageCommand c (SetPinMode p m) = do
-    buildCommand BC_CMD_SET_PIN_MODE [p, fromIntegral $ fromEnum m]
+    return $ buildCommand BC_CMD_SET_PIN_MODE [p, fromIntegral $ fromEnum m]
 packageCommand c (DigitalWrite p b)  = do
-    buildCommand DIG_CMD_WRITE_PIN [p, if b then 1 else 0]
+    return $ buildCommand DIG_CMD_WRITE_PIN [p, if b then 1 else 0]
 packageCommand c (AnalogWrite p w) = do
-    buildCommand ALG_CMD_WRITE_PIN (p :: (word16ToBytes w))
+    return $ buildCommand ALG_CMD_WRITE_PIN (p : (word16ToBytes w))
 packageCommand c (I2CWrite sa w8s) = 
-    buildCommand I2C_WRITE (sa :: w8s)
+    return $ buildCommand I2C_CMD_WRITE (sa : w8s)
 packageCommand c (DeleteTask tid) = 
-    buildCommand SCHED_CMD_DELETE_TASK [tid]
+    return $ buildCommand SCHED_CMD_DELETE_TASK [tid]
 packageCommand c (DelayMillis ms) = 
-    buildCommand BC_CMD_DELAY_MILLIS (word32ToArduinoBytes ms)
+    return $ buildCommand BC_CMD_DELAY_MILLIS (word32ToArduinoBytes ms)
 packageCommand c (DelayMicros ms) = 
-    buildCommand BC_CMD_DELAY_MICROS (word32ToArduinoBytes ms)
+    return $ buildCommand BC_CMD_DELAY_MICROS (word32ToArduinoBytes ms)
 packageCommand c (ScheduleTask tid tt)    = 
-    buildCommand SCHED_CMD_DELETE_TASK [tid] ++ word32ToBytes
+    return $ buildCommand SCHED_CMD_DELETE_TASK (tid : word32ToBytes tt)
 packageCommand c (CreateTask tid m)       = do
     td <- packageTaskData c m
     let taskSize = fromIntegral (B.length td)
-    return $ buildCommand SCHED_CMD_CREATE_TASK ([tid] ++ 
-                                    (word16ToBytes taskSize))
+    return $ buildCommand SCHED_CMD_CREATE_TASK (tid : (word16ToBytes taskSize))
                                     `B.append` (genAddToTaskCmds td)
   where
-    maxCmdSize = maxFirmataSize - 3
+    maxCmdSize = maxFirmwareSize - 3
     genAddToTaskCmds tds | fromIntegral (B.length tds) > maxCmdSize = 
         addToTask (B.take maxCmdSize tds) 
             `B.append` (genAddToTaskCmds (B.drop maxCmdSize tds))
-    genAddToTaskCmds tds = (buildCommand SCHED_CMD_ADD_TO_TASK [tid]) 
-                           `B.append` tds
+    genAddToTaskCmds tds = addToTask tds
+    addToTask tds' = (buildCommand SCHED_CMD_ADD_TO_TASK [tid]) 
+                           `B.append` tds'
 {- 
 packageCommand c (StepperConfig dev TwoWire d sr p1 p2 _ _) = do
     ipin1 <-  getInternalPin c p1 
@@ -144,25 +146,22 @@ packageTaskData conn commands =
           packageTaskData' c (k (0,0)) cs
       packProcedure c QueryProcessor k cmds = do 
           cs <- cmds           
-          packageTaskData' c (k 0) cs
+          packageTaskData' c (k ATMEGA8) cs
       packProcedure c (DigitalRead _) k cmds = do 
           cs <- cmds           
-          packageTaskData' c (k 0) cs
+          packageTaskData' c (k False) cs
       packProcedure c (AnalogRead _) k cmds = do 
           cs <- cmds           
           packageTaskData' c (k 0) cs
-      packProcedure c AnalogMappingQuery k cmds = do
-          cs <- cmds 
-          packageTaskData' c (k ([])) cs
-      packProcedure c (Pulse _ _ _ _) k cmds = do
-          cs <- cmds 
-          packageTaskData' c (k 0) cs
+--      packProcedure c (Pulse _ _ _ _) k cmds = do
+--          cs <- cmds 
+--          packageTaskData' c (k 0) cs
       packProcedure c QueryAllTasks k cmds = do
           cs <- cmds
           packageTaskData' c (k ([])) cs
       packProcedure c (QueryTask _) k cmds = do
           cs <- cmds
-          packageTaskData' c (k (0,0,0,0,[])) cs
+          packageTaskData' c (k Nothing) cs
 
       packageTaskData' :: ArduinoConnection -> Arduino a -> B.ByteString -> IO B.ByteString
       packageTaskData' c (Bind m k) cmds = packBind c m k (return cmds)
@@ -170,28 +169,23 @@ packageTaskData conn commands =
       packageTaskData' c cmd        cmds = packBind c cmd Return (return cmds)
 
 packageProcedure :: Procedure a -> B.ByteString
-packageProcedure QueryFirmware       = buildCommand BS_CMD_REQUEST_VERSION []
-packageProcedure QueryProcessor      = buildCommand BS_CMD_REQUEST_TYPE []
-packageProcedure (DigitalRead p)     = buildCommand DIG_CMD_READ_PIN [p]
-packageProcedure (AnalogRead p)      = buildCommand ALG_CMD_READ_PIN [p]
+packageProcedure QueryFirmware       = 
+    buildCommand BS_CMD_REQUEST_VERSION []
+packageProcedure QueryProcessor      = 
+    buildCommand BS_CMD_REQUEST_TYPE []
+packageProcedure (DigitalRead p)     = 
+    buildCommand DIG_CMD_READ_PIN [p]
+packageProcedure (AnalogRead p)      = 
+    buildCommand ALG_CMD_READ_PIN [p]
 packageProcedure (I2CRead sa Nothing cnt)    = 
-    buildCommand I2C_CMD_READ [sa cnt]
-packageProcedure (I2CRead sa (Maybe sr) cnt) = 
-    buildCommand I2C_CMD_READ_REG (sa : (word16ToBytes sr) ++ [cnt])
-packageProcedure QueryAllTasks       = buildCommand SCHED_CMD_QUERY_ALL []
-packageProcedure (QueryTask tid)     = buildCommand SCHED_CMD_QUERY [tid]
+    buildCommand I2C_CMD_READ [sa,cnt]
+packageProcedure (I2CRead sa (Just sr) cnt) = 
+    buildCommand I2C_CMD_READ_REG ((sa : (word16ToBytes sr)) ++ [cnt])
+packageProcedure QueryAllTasks       = 
+    buildCommand SCHED_CMD_QUERY_ALL []
+packageProcedure (QueryTask tid)     = 
+    buildCommand SCHED_CMD_QUERY [tid]
 -- packageProcedure (Pulse p b dur to)       = sysEx    PULSE                   ([fromIntegral (pinNo p), if b then 1 else 0] ++ concatMap toArduinoBytes (word32ToBytes dur ++ word32ToBytes to))
-
-getFirmwareReply 0x18 = Right BS_RESP_VERSION
-getFirmwareReply 0x19 = Right BS_RESP_TYPE
-getFirmwareReply 0x1A = Right BS_RESP_MICROS
-getFirmwareReply 0x1B = Right BS_RESP_MILLIS
-getFirmwareReply 0x1C = Right BS_RESP_STRING
-getFirmwareReply 0x28 = Right DIG_RESP_READ_PIN
-getFirmwareReply 0x38 = Right ALG_RESP_READ_PIN
-getFirmwareReply 0x48 = Right I2C_RESP_READ
-getFirmwareReply 0x98 = Right SCHED_RESP_QUERY
-getFirmwareReply 0x99 = Right SCHED_RESP_QUERY_ALL
 
 -- | Unpackage a SysEx response
 unpackageResponse :: [Word8] -> Response
@@ -199,19 +193,19 @@ unpackageResponse [] = Unimplemented (Just "<EMPTY-REPLY>") []
 unpackageResponse (cmdWord:args)
   | Right cmd <- getFirmwareReply cmdWord
   = case (cmd, args) of
-      (BS_RESP_VERSION, majV : minV)  -> Firmware majV minV
-      (BS_RESP_TYPE, p)               -> ProcessorType p2
+      (BS_RESP_VERSION, [majV, minV]) -> Firmware majV minV
+      (BS_RESP_TYPE, [p])               -> ProcessorType p
 --      (PULSE, xs) | length xs == 10          -> let [p, a, b, c, d] = fromArduinoBytes xs in PulseResponse (InternalPin p) (bytesToWord32 (a, b, c, d))
       (BS_RESP_STRING, rest)          -> StringMessage (getString rest)
       (I2C_RESP_READ, xs)             -> I2CReply xs
       (SCHED_RESP_QUERY_ALL, ts)      -> QueryAllTasksReply ts
       (SCHED_RESP_QUERY, ts) | length ts == 0 -> 
-          QueryTaskReply Nothing 0 0 0
+          QueryTaskReply Nothing
       -- TBD Fix reply decode
-      (SCHED_RESP_QUERY, ts) | length ts == 9 -> 
-          let tt0:tt1:tt2:tt3:tl0:tl1:tp0:tp1 = tail ts
-          in QueryTaskReply (Just (head ts)) (bytesToWord32 (tt3,tt2,tt1,tt0)) 
-                            (bytesToWord16 (tl1,tl0)) (bytesToWord16 (tp1,tp0)) td
+      (SCHED_RESP_QUERY, ts) | length ts >= 9 -> 
+          let tid:tt0:tt1:tt2:tt3:tl0:tl1:tp0:tp1:rest = ts
+          in QueryTaskReply (Just (tid, bytesToWord32 (tt3,tt2,tt1,tt0),  
+                              bytesToWord16 (tl1,tl0), bytesToWord16 (tp1,tp0)))
       _                               -> Unimplemented (Just (show cmd)) args
   | True
   = Unimplemented Nothing (cmdWord : args)
@@ -219,12 +213,11 @@ unpackageResponse (cmdWord:args)
 -- This is how we match responses with queries
 parseQueryResult :: Procedure a -> Response -> Maybe a
 parseQueryResult QueryFirmware (Firmware wa wb) = Just (wa,wb)
-parseQueryResult QueryProcessor (ProcessorType pt) = Just pt
-parseQueryResult DigitalRead (DigitalReply d) = Just d
-parseQueryResult AnalogRead (AnalogReply a) = Just a
+parseQueryResult QueryProcessor (ProcessorType pt) = Just $ getProcessor pt
+parseQueryResult (DigitalRead p) (DigitalReply d) = Just (if d == 0 then False else True)
+parseQueryResult (AnalogRead p) (AnalogReply a) = Just a
 -- parseQueryResult (Pulse p b dur to) (PulseResponse p2 w) = Just w
-parseQueryResult (I2CRead saq cnt) (I2CReply ds) = Just ds
-parseQueryResult (I2CReadReg saq srq cnt) (I2CReply ds) = Just ds
+parseQueryResult (I2CRead saq srq cnt) (I2CReply ds) = Just ds
 parseQueryResult QueryAllTasks (QueryAllTasksReply ts) = Just ts
-parseQueryResult (QueryTask tid) (QueryTaskReply tid' tt tl tp ws) = Just (tid',tt,tl,tp,ws)
+parseQueryResult (QueryTask tid) (QueryTaskReply tr) = Just tr
 parseQueryResult q r = Nothing
