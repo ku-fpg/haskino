@@ -68,15 +68,6 @@ openArduino verbose fp = do
         Left e -> 
           error $ "\n*** KansasAmber:ERROR:\n*** Make sure your Arduino is connected to " ++ fp
         Right port -> do
-          let initBoardState = BoardState {
-                                   boardCapabilities    = BoardCapabilities M.empty
-                                 , digitalReportingPins = S.empty
-                                 , pinStates            = M.empty
-                                 , portStates           = M.empty
-                                 , digitalWakeUpQueue   = []
-                                 , nextStepperDevice    = 0
-                                }
-          bs <- newMVar initBoardState
           dc <- newChan
           tid <- setupListener port debugger dc bs
           liftIO $ putMVar listenerTid tid
@@ -86,41 +77,23 @@ openArduino verbose fp = do
                            , bailOut       = bailOut listenerTid
                            , port          = port
                            , firmataID     = "Unknown"
-                           , capabilities  = BoardCapabilities M.empty
-                           , boardState    = bs
+                           , processor     = UNKNOWN_PROCESSOR 255
                            , deviceChannel = dc
                            , listenerTid   = listenerTid
                         }
           -- Step 1: Send a reset to get things going
           send initState systemReset
           -- Step 2: Send query-firmware, and wait until we get a response
-          (v1, v2, s) <- send initState queryFirmware
-          let versionState = initState {firmataID = "Firmware v" ++ show v1 ++ "." ++ show v2 ++ "(" ++ s ++ ")"}
+          (v1, v2) <- send initState queryFirmware
+          let versionState = initState {firmataID = "Firmware v" ++ show v1 ++ "." ++ show v2 }
           -- Step 3: Send a capabilities request
-          bc <- send versionState capabilityQuery
-          -- Step 4: Send an analog mapping query
-          am <- send versionState analogMappingQuery
-          -- Use the board capabilities and the analog mapping to create new
-          -- board capabilities
-          let BoardCapabilities m = bc
-          let newBc = BoardCapabilities (M.mapWithKey (mapAnalog am) m)
-          -- Update the capabilities in the connection state
-          let openState = versionState {capabilities = newBc}
-          -- Update the capabilities in the board state, and put new 
-          -- board state in the connetion state
-          modifyMVar_ (boardState openState) $ \bst -> return initBoardState {boardCapabilities = newBc}
+          p <- send versionState queryProcessor
+          -- Update the connection state with the processor
+          let openState = versionState {processor = p}
           return openState
   where
       bailOut tid m ms = do cleanUpArduino tid
                             error $ "\n*** KansasAmber:ERROR: " ++ intercalate "\n*** " (m:ms)
-      mapAnalog as p c
-          | i < rl && m /= 0x7f
-          = c{analogPinNumber = Just m}
-          | True             -- out-of-bounds, or not analog; ignore
-          = c
-        where rl = length as
-              i  = fromIntegral (pinNo p)
-              m  = as !! i
 
 closeArduino :: ArduinoConnection -> IO ()
 closeArduino conn = do
@@ -155,31 +128,21 @@ send conn commands =
       sendBind :: ArduinoConnection -> Arduino a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendBind c (Return a)      k cmds = send' c (k a) cmds
       sendBind c (Bind m k1)    k2 cmds = sendBind c m (\ r -> Bind (k1 r) k2) cmds
-      sendBind c (Command (Delay d)) k cmds = do
+      sendBind c (Command (DelayMillis d)) k cmds = do
           sendToArduino c cmds
           message c $ "Delaying: " ++ show d
           threadDelay ((fromIntegral d)*1000)
+          send' c (k ()) B.empty
+      sendBind c (Command (DelayMicros d)) k cmds = do
+          sendToArduino c cmds
+          message c $ "Delaying: " ++ show d
+          threadDelay (fromIntegral d)
           send' c (k ()) B.empty
       sendBind c (Command (SetPinMode p pm)) k cmds = do
           ipin <- getInternalPin c p
           registerPinMode c ipin pm
           proc <- packageCommand c (SetPinMode p pm)
           send' c (k ()) (B.append cmds proc)
-      sendBind c (Command (DigitalPortReport p r)) k cmds = do
-          shouldSend <- registerDigitalPortReport c p r
-          if shouldSend 
-          then do
-              proc <- packageCommand c (DigitalPortReport p r) 
-              send' c (k ()) (B.append cmds proc)
-          else send' c (k ()) cmds
-      sendBind c (Command (DigitalReport p r)) k cmds = do
-          ipin <- getInternalPin c p
-          shouldSend <- registerDigitalPinReport c ipin r
-          if shouldSend 
-          then do 
-              proc <- packageCommand c (DigitalReport p r)
-              send' c (k ()) (B.append cmds proc)
-          else send' c (k ()) cmds
       sendBind c (Command cmd) k cmds = do 
           proc <- packageCommand c cmd
           send' c (k ()) (B.append cmds proc)
@@ -196,46 +159,6 @@ send conn commands =
           sendControl c (Loop ps) k cmds
 
       sendLocal :: ArduinoConnection -> Local a -> (a -> Arduino b) -> B.ByteString -> IO b
-      sendLocal c (AnalogRead p) k cmds = do
-          sendToArduino c cmds
-          a <- runAnalogRead c p
-          send' c (k (fromIntegral a)) B.empty
-      sendLocal c (AnalogReadE p) k cmds = do
-          sendToArduino c cmds
-          a <- runAnalogReadE c p
-          send' c (k a) B.empty
-      sendLocal c (DigitalPortRead p) k cmds = do
-          sendToArduino c cmds
-          w <- runDigitalPortRead c p
-          send' c (k w) B.empty
-      sendLocal c (DigitalPortReadE p) k cmds = do
-          sendToArduino c cmds
-          w <- runDigitalPortReadE c p
-          send' c (k w) B.empty
-      sendLocal c (DigitalRead p) k cmds = do
-          sendToArduino c cmds
-          b <- runDigitalRead c p
-          send' c (k b) B.empty
-      sendLocal c (DigitalReadE p) k cmds = do
-          sendToArduino c cmds
-          b <- runDigitalReadE c p
-          send' c (k b) B.empty
-      sendLocal c (WaitFor p) k cmds = do
-          sendToArduino c cmds
-          b <- runWaitFor c p
-          send' c (k b) B.empty
-      sendLocal c (WaitAny ps) k cmds = do
-          sendToArduino c cmds
-          bs <- runWaitAny c ps
-          send' c (k bs) B.empty
-      sendLocal c (WaitAnyHigh ps) k cmds = do
-          sendToArduino c cmds
-          bs <- runWaitAnyHigh c ps
-          send' c (k bs) B.empty
-      sendLocal c (WaitAnyLow ps) k cmds = do
-          sendToArduino c cmds
-          bs <- runWaitAnyLow c ps
-          send' c (k bs) B.empty
       sendLocal c (Debug msg) k cmds = do
           message c msg
           send' c (k ()) cmds
@@ -281,59 +204,33 @@ send conn commands =
           lp = B.length cmds
 
 -- | Start a thread to listen to the board and populate the channel with incoming queries.
-setupListener :: SerialPort -> (String -> IO ()) -> Chan Response -> MVar BoardState -> IO ThreadId
-setupListener serial dbg chan bs = do
-        let getBytes n = do let go need sofar
-                                 | need <= 0  = return $ reverse sofar
-                                 | True       = do b <- S.recv serial need
-                                                   case B.length b of
-                                                     0 -> go need sofar
-                                                     l -> go (need - l) (b : sofar)
-                            chunks <- go n []
-                            return $ concatMap B.unpack chunks
-            collectSysEx sofar = do [b] <- getBytes 1
-                                    if b == firmataCmdVal END_SYSEX
+setupListener :: SerialPort -> (String -> IO ()) -> Chan Response -> IO ThreadId
+setupListener serial dbg chan = do
+        let getByte = S.recv serial 1
+            waitForFrame = do [b] <- getByte
+                                if b == hdlcFrameFlag
+                                   then return ()
+                                   else waitForFrame
+            collectFrame sofar = do [b] <- getByte
+                                    if b == hdlcFrameFlag
                                        then return $ reverse sofar
-                                       else collectSysEx (b : sofar)
-            listener bs = do
-                [cmd] <- getBytes 1
-                resp  <- case getFirmataCmd cmd of
-                           Left  unknown     -> return $ Unimplemented (Just (show unknown)) []
-                           Right START_SYSEX -> unpackageSysEx `fmap` collectSysEx []
-                           Right nonSysEx    -> unpackageNonSysEx getBytes nonSysEx
+                                       else if b == hdlcEscFlag
+                                            then do [e] <- getByte
+                                                    return $ collectFrame (e : sofar)
+                                            else collectFrame (b : sofar)
+            listener = do
+                waitForFrame
+                frame  <- collectFrame []
+                resp <- case frame of 
+                           [] -> return $ EmptyFrame
+                           fs -> case getFirmwareCmd $ head fs of
+                                    Left  unknown  -> return $ Unimplemented (Just (show unknown)) []
+                                    Right c        -> unpackageResponse cmd
                 case resp of
+                  EmptyFrame           -> dbg $ "Ignoring empty received frame"
                   Unimplemented{}      -> dbg $ "Ignoring the received response: " ++ show resp
                   StringMessage{}      -> dbg $ "Received " ++ show resp
-                  -- NB. When Firmata sends back AnalogMessage, it uses the number in A0-A1-A2, etc., i.e., 0-1-2; which we
-                  -- need to properly interpret in our own pin mapping schema, where analogs come after digitals.
-                  AnalogMessage mp l h -> modifyMVar_ bs $ \bst ->
-                                           do let BoardCapabilities caps = boardCapabilities bst
-                                                  mbP = listToMaybe [mappedPin | (mappedPin, PinCapabilities{analogPinNumber = Just mp'}) <- M.assocs caps, pinNo mp == mp']
-                                              case mbP of
-                                                Nothing -> return bst -- Mapping hasn't happened yet
-                                                Just p  -> do
-                                                   let v = (128 * fromIntegral (h .&. 0x07) + fromIntegral (l .&. 0x7f)) :: Int
-                                                   case pinValue `fmap` (p `M.lookup` pinStates bst) of
-                                                     Just (Just (Right v'))
-                                                       | abs (v - v') < 10  -> return () -- be quiet, otherwise prints too much
-                                                     _                      -> dbg $ "Updating analog pin " ++ show p ++ " values with " ++ showByteList [l,h] ++ " (" ++ show v ++ ")"
-                                                   return bst{ pinStates = M.insert p PinData{pinMode = ANALOG, pinValue = Just (Right v)} (pinStates bst) }
-                  DigitalMessage p l h -> do dbg $ "Updating digital port " ++ show p ++ " values with " ++ showByteList [l,h]
-                                             modifyMVar_ bs $ \bst -> do
-                                                  let upd o od | p /= pinPort o               = od   -- different port, no change
-                                                               | pinMode od `notElem` [INPUT] = od   -- not an input pin, ignore
-                                                               | True                         = od{pinValue = Just (Left newVal)}
-                                                        where idx = pinPortIndex o
-                                                              newVal | idx <= 6 = l `testBit` fromIntegral idx
-                                                                     | True     = h `testBit` fromIntegral (idx - 7)
-                                                  let wakeUpQ = digitalWakeUpQueue bst
-                                                      bst' = bst{ pinStates          = M.mapWithKey upd (pinStates bst)
-                                                                , portStates         = M.insert p (fromArduinoByte (l,h)) (portStates bst)
-                                                                , digitalWakeUpQueue = []
-                                                                }
-                                                  mapM_ (`putMVar` ()) wakeUpQ
-                                                  return bst'
                   _                    -> do dbg $ "Received " ++ show resp
                                              writeChan chan resp
-        tid <- liftIO $ forkIO $ forever (listener bs)
+        tid <- liftIO $ forkIO $ forever listener
         return tid

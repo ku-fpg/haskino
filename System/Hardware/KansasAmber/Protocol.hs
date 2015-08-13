@@ -24,8 +24,25 @@ import System.Hardware.KansasAmber.Utils
 maxFirmwareSize :: Int
 maxFirmwareSize = 128
 
+hdlcFrameFlag :: Word8
+hdlcFrameFlag = 0x7E
+
+hdlcFrameEsc :: Word8
+hdlcFrameEsc = 0x7D
+
+hdlcMask :: Word8
+hdlcMask = 0x20
+
+hdlcFrameCommand :: [Word8] -> [Word8]
+hdlcFrameCommand cs = hdlcFrameFlag :: (concatMap escape cs) ++ [hdlcFrameFlag]
+  where
+    escape :: Word8 -> [Word8]
+    escape hdlcFrameFlag = [hdlcFrameEsc, xor hdlcFrameFlag hdlcMask]
+    escape hdlcFrameEsc  = [hdlcFrameEsc, xor hdlcFrameEsc hdlcMask]
+    escape c             = [c]
+
 buildCommand :: FirmwareCmd -> [Word8] -> B.ByteString
-buildCommand cmd bs = B.pack $ firmwareCmdVal cmd : bs
+buildCommand cmd bs = B.pack $ hdlcFrameCommand $ firmwareCmdVal cmd : bs
 
 -- | Package a request as a sequence of bytes to be sent to the board
 -- using the Firmata protocol.
@@ -33,8 +50,7 @@ packageCommand :: ArduinoConnection -> Command -> IO B.ByteString
 packageCommand c SystemReset = 
     buildCommand SCHED_CMD_RESET []
 packageCommand c (SetPinMode p m) = do
-    ipin <- getInternalPin c p
-    return $ nonSysEx SET_PIN_MODE [fromIntegral $ pinNo ipin, fromIntegral $ fromEnum m]
+    buildCommand BC_CMD_SET_PIN_MODE [p, fromIntegral $ fromEnum m]
 packageCommand c (DigitalWrite p b)  = do
     buildCommand DIG_CMD_WRITE_PIN [p, if b then 1 else 0]
 packageCommand c (AnalogWrite p w) = do
@@ -160,7 +176,7 @@ packageProcedure (DigitalRead p)     = buildCommand DIG_CMD_READ_PIN [p]
 packageProcedure (AnalogRead p)      = buildCommand ALG_CMD_READ_PIN [p]
 packageProcedure (I2CRead sa Nothing cnt)    = 
     buildCommand I2C_CMD_READ [sa cnt]
-packageProcedure (I2CRead [sa (Maybe sr) cnt) = 
+packageProcedure (I2CRead sa (Maybe sr) cnt) = 
     buildCommand I2C_CMD_READ_REG (sa : (word16ToBytes sr) ++ [cnt])
 packageProcedure QueryAllTasks       = buildCommand SCHED_CMD_QUERY_ALL []
 packageProcedure (QueryTask tid)     = buildCommand SCHED_CMD_QUERY [tid]

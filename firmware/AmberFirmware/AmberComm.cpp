@@ -120,7 +120,7 @@ void sendReplyByte(byte replyByte)
         replyByte == HDLC_ESCAPE) 
         {
         Serial.write(HDLC_ESCAPE);
-        Serial.write(replyByte ^ HDLC_ESCAPE);
+        Serial.write(replyByte ^ HDLC_MASK);
         }
     else
         {

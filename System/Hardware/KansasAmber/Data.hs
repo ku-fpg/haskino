@@ -80,46 +80,7 @@ instance Monoid a => Monoid (Arduino a) where
 instance MonadIO Arduino where
   liftIO m = LiftIO m
 
--- | A pin on the Arduino, as specified by the user via 'pin', 'digital', and 'analog' functions.
-data Pin = DigitalPin {userPinNo :: Word8}
-         | AnalogPin  {userPinNo :: Word8}
-         | MixedPin   {userPinNo :: Word8}
-         deriving Show
-
--- | A pin on the Arduino, as viewed by the library; i.e., real-pin numbers
-data IPin = InternalPin { pinNo :: Word8 }
-          deriving (Eq, Ord, Show)
-
--- | A port (containing 8 pins)
-data Port = Port { portNo :: Word8 } 
-          deriving (Eq, Ord, Show)
-
--- | Declare a pin by its index. For maximum portability, prefer 'digital'
--- and 'analog' functions, which will adjust pin indexes properly based on
--- which board the program is running on at run-time, as Arduino boards
--- differ in their pin numbers. This function is provided for cases where
--- a pin is used in mixed-mode, i.e., both for digital and analog purposes,
--- as Arduino does not really distinguish pin usage. In these cases, the
--- user has the proof obligation to make sure that the index used is supported
--- on the board with appropriate capabilities.
-pin :: Word8 -> Pin
-pin = MixedPin
-
--- | Declare an digital pin on the board. For instance, to refer to digital pin no 12
--- use 'digital' @12@.
-digital :: Word8 -> Pin
-digital = DigitalPin
-
--- | Declare an analog pin on the board. For instance, to refer to analog pin no 0
--- simply use 'analog' @0@.
---
--- Note that 'analog' @0@ on an Arduino UNO will be appropriately adjusted
--- internally to refer to pin 14, since UNO has 13 digital pins, while on an
--- Arduino MEGA, it will refer to internal pin 55, since MEGA has 54 digital pins;
--- and similarly for other boards depending on their capabilities.
--- (Also see the note on 'pin' for pin mappings.)
-analog :: Word8 -> Pin
-analog = AnalogPin
+type Pin = Word8
 
 -- | Bailing out: print the given string on stdout and die
 runDie :: ArduinoConnection -> String -> [String] -> IO a
@@ -127,86 +88,24 @@ runDie c m ms = do
     let f = bailOut c
     f m ms
 
--- | On the arduino, digital pin numbers are in 1-to-1 match with
--- the board pins. However, ANALOG pins come at an offset, determined by
--- the capabilities query. Users of the library refer to these pins
--- simply by their natural numbers, which makes for portable programs
--- between boards that have different number of digital pins. We adjust
--- for this shift here.
-getInternalPin :: ArduinoConnection -> Pin -> IO IPin
-getInternalPin c (MixedPin p)   = return $ InternalPin p
-getInternalPin c (DigitalPin p) = return $ InternalPin p
-getInternalPin c (AnalogPin p)=
-    case listToMaybe [realPin | (realPin, PinCapabilities{analogPinNumber = Just n}) <- M.toAscList caps, p == n] of
-         Nothing -> runDie c ("KansasAmber: " ++ show p ++ " is not a valid analog-pin on this board.")
-                        -- Try to be helpful in case they are trying to use a large value thinking it needs to be offset
-                        ["Hint: To refer to analog pin number k, simply use 'pin k', not 'pin (k+noOfDigitalPins)'" | p > 13]
-         Just rp -> return rp
-  where 
-    BoardCapabilities caps = capabilities c
-
--- | Similar to getInternalPin above, except also makes sure the pin is in a required mode.
-convertAndCheckPin :: ArduinoConnection -> String -> Pin -> PinMode -> IO (IPin, PinData)
-convertAndCheckPin c what p' m = do
-   p  <- getInternalPin c p'
-   pd <- getPinData c p
-   let user = userPinNo p'
-       board = pinNo p
-       bInfo
-         | user == board = ""
-         | True          = " (On board " ++ show p ++ ")"
-   when (pinMode pd /= m) $ runDie c ("Invalid " ++ what ++ " call on pin " ++ show p' ++ bInfo)
-                                [ "The current mode for this pin is: " ++ show (pinMode pd)
-                                , "For " ++ what ++ ", it must be set to: " ++ show m
-                                , "via a proper call to setPinMode"
-                                ]
-   return (p, pd)
-
-
--- | On the Arduino, pins are grouped into banks of 8.
--- Given a pin, this function determines which port it belongs to
-pinPort :: IPin -> Port
-pinPort p = Port $ pinNoPortNo $ pinNo p
-
 -- Given a pin number, this function determines which port it belongs to
-pinNoPortNo :: Word8 -> Word8
+pinNoPortNo :: Pin -> Word8
 pinNoPortNo n = n `quot` 8
 
 -- | On the Arduino, pins are grouped into banks of 8.
 -- Given a pin, this function determines which index it belongs to in its port
-pinPortIndex :: IPin -> Word8
-pinPortIndex p = pinNo p `rem` 8
+pinPortIndex :: Pin -> Word8
+pinPortIndex p = p `rem` 8
 
 -- | The mode for a pin.
-data PinMode = INPUT    -- ^ Digital input
-             | OUTPUT   -- ^ Digital output
-             | ANALOG   -- ^ Analog input
-             | PWM      -- ^ PWM (Pulse-Width-Modulation) output 
-             | SERVO    -- ^ Servo Motor controller
-             | SHIFT    -- ^ Shift controller
-             | I2C      -- ^ I2C (Inter-Integrated-Circuit) connection
-             | ONEWIRE  -- ^ pin configured for 1-wire
-             | STEPPER  -- ^ pin configured for stepper motor
-             | ENCODER  -- ^ pin configured for encoders
-             deriving (Eq, Show, Enum)
+data PinMode = INPUT
+             | OUTPUT
+             | INPUT_PULLUP
+        deriving (Eq, Show, Enum)
 
 -- | Resolution, as referred to in http://firmata.org/wiki/Protocol#Capability_Query
 -- TODO: Not quite sure how this is used, so merely keep it as a Word8 now
 type Resolution = Word8
-
--- | Capabilities of a pin
-data PinCapabilities  = PinCapabilities {
-                          analogPinNumber :: Maybe Word8              -- ^ Analog pin number, if any
-                        , allowedModes    :: [(PinMode, Resolution)]  -- ^ Allowed modes and resolutions
-                        }
-    deriving Show
-
--- | Data associated with a pin
-data PinData = PinData {
-                 pinMode  :: PinMode
-               , pinValue :: Maybe (Either Bool Int)
-               }
-               deriving Show
 
 -- | LCD's connected to the board
 data LCD = LCD {
@@ -246,25 +145,14 @@ data LCDData = LCDData {
                 , lcdBacklightState :: Bool
                 }
 
--- | State of the board
-data BoardState = BoardState {
-                    boardCapabilities    :: BoardCapabilities   -- ^ Capabilities of the board
-                  , digitalReportingPins :: S.Set Word8         -- ^ Which digital pins are reporting
-                  , pinStates            :: M.Map IPin PinData  -- ^ For-each pin, store its data
-                  , portStates           :: M.Map Port Word8    -- ^ For-each digital port, store its data
-                  , digitalWakeUpQueue   :: [MVar ()]           -- ^ Semaphore list to wake-up upon receiving a digital message
-                  , nextStepperDevice    :: Word8
-                  }
-
 -- | State of the connection
 data ArduinoConnection = ArduinoConnection {
                 message       :: String -> IO ()                      -- ^ Current debugging routine
               , bailOut       :: forall a. String -> [String] -> IO a -- ^ Clean-up and quit with a hopefully informative message
               , port          :: SerialPort                           -- ^ Serial port we are communicating on
-              , firmataID     :: String                               -- ^ The ID of the board (as identified by the Board itself)
-              , boardState    :: MVar BoardState                      -- ^ Current state of the board
+              , firmwareID    :: String                               -- ^ The ID of the board (as identified by the Board itself)
               , deviceChannel :: Chan Response                        -- ^ Incoming messages from the board
-              , capabilities  :: BoardCapabilities                    -- ^ Capabilities of the board
+              , processor     :: Processor                            -- ^ Type of processor on board
               , listenerTid   :: MVar ThreadId                        -- ^ ThreadId of the listener
               }
 
@@ -374,7 +262,7 @@ delayMicros t = Command $ DelayMicros t
 -- delayE :: (Expr TaskTime) -> Arduino ()
 -- delayE t = Command $ DelayE t
 
-scheduleTask :: TaskID -> TaskTime -> Arduino ()
+scheduleTask :: TaskID -> TimeMillis -> Arduino ()
 scheduleTask tid tt = Command $ ScheduleTask tid tt
 
 scheduleReset :: Arduino ()
@@ -389,7 +277,8 @@ loop ps = Control (Loop ps)
 data Local :: * -> * where
      Debug            :: String -> Local ()
      Die              :: String -> [String] -> Local ()
-  deriving instance Show a => Show (Local a)
+
+deriving instance Show a => Show (Local a)
 
 debug :: String -> Arduino ()
 debug msg = Local $ Debug msg
@@ -406,17 +295,18 @@ data Procedure :: * -> * where
 --     DigitalReadE     :: Pin -> Procedure (Expr Bool)
      AnalogRead     :: Pin -> Procedure Word16          -- ^ Read the analog value on a pin
 --     AnalogReadE      :: Pin -> Procedure (Expr Word16)          
-     Pulse :: IPin -> Bool -> Word32 -> Word32 -> Procedure Word32 -- ^ Request for a pulse reading on a pin, value, duration, timeout
+--     Pulse :: Pin -> Bool -> Word32 -> Word32 -> Procedure Word32 -- ^ Request for a pulse reading on a pin, value, duration, timeout
      I2CRead :: SlaveAddress -> Maybe SlaveRegister -> Word8 -> Procedure [Word8]
      -- Todo: add one wire queries
      QueryAllTasks :: Procedure [TaskID]
-     QueryTask :: TaskID -> Procedure (TaskID, TaskTime, TaskLength, TaskPos, [Word8])
-  deriving instance Show a => Show (Procedure a)
+     QueryTask :: TaskID -> Procedure (TaskID, TimeMillis, TaskLength, TaskPos, [Word8])
 
-queryFirmware :: Arduino (Word8, Word8, String)
+deriving instance Show a => Show (Procedure a)
+
+queryFirmware :: Arduino (Word8, Word8)
 queryFirmware = Procedure QueryFirmware
 
-queryProcessor :: Arduino Proessor
+queryProcessor :: Arduino Processor
 queryProcessor = Procedure QueryProcessor
 
 -- ToDo: Do some sort of analog mapping locally?
@@ -440,8 +330,8 @@ analogRead p = Procedure $ AnalogRead p
 -- analogReadE :: Pin -> Arduino (Expr Word16)
 -- analogReadE p = Procedure $ AnalogReadE p
 
-pulse :: IPin -> Bool -> Word32 -> Word32 -> Arduino Word32
-pulse p b w1 w2 = Procedure $ Pulse p b w1 w2
+-- pulse :: Pin -> Bool -> Word32 -> Word32 -> Arduino Word32
+-- pulse p b w1 w2 = Procedure $ Pulse p b w1 w2
 
 i2cRead :: SlaveAddress -> Maybe SlaveRegister -> Word8 -> Arduino [Word8]
 i2cRead sa sr cnt = Procedure $ I2CRead sa sr cnt
@@ -449,7 +339,7 @@ i2cRead sa sr cnt = Procedure $ I2CRead sa sr cnt
 queryAllTasks :: Arduino [TaskID]
 queryAllTasks = Procedure QueryAllTasks
 
-queryTask :: TaskID -> Arduino (TaskID, TaskTime, TaskLength, TaskPos, [Word8])
+queryTask :: TaskID -> Arduino (TaskID, TimeMillis, TaskLength, TaskPos, [Word8])
 queryTask tid = Procedure $ QueryTask tid
 
 -- | A response, as returned from the Arduino
@@ -460,11 +350,12 @@ data Response = Firmware Word8 Word8                 -- ^ Firmware version (maj/
               | DigitalReply Word8                   -- ^ Status of a pin
               | AnalogReply Word16                   -- ^ Status of an analog pin
               | StringMessage  String                -- ^ String message from Firmata
-              | PulseResponse  IPin Word32           -- ^ Repsonse to a PulseInCommand
+--              | PulseResponse  IPin Word32           -- ^ Repsonse to a PulseInCommand
               | I2CReply [Word8]                     -- ^ Response to a I2C Read
               | QueryAllTasksReply [Word8]           -- ^ Response to Query All Tasks
-              | QueryTaskReply (Maybe TaskID) TaskTime TaskLength TaskPos
+              | QueryTaskReply (Maybe TaskID) TimeMillis TaskLength TaskPos
               | Unimplemented (Maybe String) [Word8] -- ^ Represents messages currently unsupported
+              | EmptyFrame
     deriving Show
 
 -- | Amber Firmware commands, see: http://tbd
@@ -517,16 +408,16 @@ firmwareCmdVal SCHED_CMD_QUERY_ALL    = 0x95
 firmwareCmdVal SCHED_CMD_RESET        = 0x96
 
 -- | Firmware replies, see: https:tbd
-data FirmwareReply = BS_RESP_VERSION
-                     BS_RESP_TYPE
-                     BS_RESP_MICROS
-                     BS_RESP_MILLIS
-                     BS_RESP_STRING
-                     DIG_RESP_READ_PIN
-                     ALG_RESP_READ_PIN
-                     I2C_RESP_READ
-                     SCHED_RESP_QUERY
-                     SCHED_RESP_QUERY_ALL
+data FirmwareReply =  BS_RESP_VERSION
+                   |  BS_RESP_TYPE
+                   |  BS_RESP_MICROS
+                   |  BS_RESP_MILLIS
+                   |  BS_RESP_STRING
+                   |  DIG_RESP_READ_PIN
+                   |  ALG_RESP_READ_PIN
+                   |  I2C_RESP_READ
+                   |  SCHED_RESP_QUERY
+                   |  SCHED_RESP_QUERY_ALL
                 deriving Show
 
 getFirmwareReply :: Word8 -> Either Word8 FirmwareReply
@@ -561,17 +452,19 @@ data Processor = ATMEGA8
                | ATMEGA645
                | SAM3X8E
                | X86
+               | UNKNOWN_PROCESSOR Word8
+    deriving Show
 
-getProcessor :: Word8 -> Either Word8 Processor
-getProcessor  0 = Right ATMEGA8
-getProcessor  1 = Right ATMEGA168
-getProcessor  2 = Right ATMEGA328P
-getProcessor  3 = Right ATMEGA1280
-getProcessor  4 = Right ATMEGA256
-getProcessor  5 = Right ATMEGA32U4
-getProcessor  6 = Right ATMEGA644P
-getProcessor  7 = Right ATMEGA644
-getProcessor  8 = Right ATMEGA645
-getProcessor  9 = Right SAM3X8E
-getProcessor 10 = Right X86
-getProcessor  n = Left n
+getProcessor :: Word8 -> Processor
+getProcessor  0 = ATMEGA8
+getProcessor  1 = ATMEGA168
+getProcessor  2 = ATMEGA328P
+getProcessor  3 = ATMEGA1280
+getProcessor  4 = ATMEGA256
+getProcessor  5 = ATMEGA32U4
+getProcessor  6 = ATMEGA644P
+getProcessor  7 = ATMEGA644
+getProcessor  8 = ATMEGA645
+getProcessor  9 = SAM3X8E
+getProcessor 10 = X86
+getProcessor  n = UNKNOWN_PROCESSOR n
