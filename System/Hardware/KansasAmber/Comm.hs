@@ -150,6 +150,7 @@ send conn commands =
 
       sendControl :: ArduinoConnection -> Control -> (a -> Arduino b) -> B.ByteString -> IO b
       sendControl c (Loop ps) k cmds = do
+          sendToArduino c cmds
           send c ps
           sendControl c (Loop ps) k cmds
 

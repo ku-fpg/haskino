@@ -20,8 +20,8 @@ blink :: IO ()
 blink = withArduino True "/dev/cu.usbmodem1421" $ do
            let led = 13
            setPinMode led OUTPUT
-           forever $ do digitalWrite led True
-                        delayMillis 1000
-                        digitalWrite led False
-                        delayMillis 1000
+           loop $ do digitalWrite led True
+                     delayMillis 1000
+                     digitalWrite led False
+                     delayMillis 1000
 
