@@ -26,7 +26,7 @@ maxFirmwareSize :: Int
 maxFirmwareSize = 128
 
 hdlcFrameCommand :: [Word8] -> [Word8]
-hdlcFrameCommand cs = (0x7E : (concatMap escape cs)) ++ [0x7E]
+hdlcFrameCommand cs = (concatMap escape cs) ++ [0x7E]
   where
     escape :: Word8 -> [Word8]
     escape c = if c == 0x7E || c == 0x7D

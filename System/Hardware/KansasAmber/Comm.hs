@@ -153,7 +153,7 @@ send conn commands =
       sendControl c (Loop ps) k cmds = do
           sendToArduino c cmds
           send c ps
-          sendControl c (Loop ps) k cmds
+          sendControl c (Loop ps) k B.empty
 
       sendLocal :: ArduinoConnection -> Local a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendLocal c (Debug msg) k cmds = do
