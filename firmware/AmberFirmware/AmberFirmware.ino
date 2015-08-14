@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include "AmberComm.h"
 #include "AmberCommands.h"
+#include "AmberBoardStatus.h"
 
 /*
  
@@ -15,11 +16,10 @@
 /*==============================================================================
  * SETUP()
  *============================================================================*/
-
 void setup()
 {
-    // start up the default Firmata using Serial interface:
     Serial.begin(57600);
+    sendVersionReply();
 }
 
 /*==============================================================================
@@ -27,17 +27,20 @@ void setup()
  *============================================================================*/
 void loop()
 {
-    while (Serial.available()) {
+    while (Serial.available()) 
+        {
         handleInput();
-        if (!processingMessage()) {
+        if (!processingMessage()) 
+            {
 #if 0
             schedulerRunTasks();
 #endif    
+            }
         }
-    }
-    if (!processingMessage()) {
+    if (!processingMessage()) 
+        {
 #if 0
         schedulerRunTasks();
-    #endif
-    }
+#endif
+        }
 }

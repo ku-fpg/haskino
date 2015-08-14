@@ -84,6 +84,7 @@ openArduino verbose fp = do
           -- Step 1: Send a reset to get things going
           -- send initState systemReset
           -- Step 2: Send query-firmware, and wait until we get a response
+          S.send port (B.pack [0x73,0x10,0x73])
           (v1, v2) <- send initState queryFirmware
           let versionState = initState {firmwareID = "Firmware v" ++ show v1 ++ "." ++ show v2 }
           -- Step 3: Send a capabilities request
@@ -179,7 +180,8 @@ send conn commands =
                     case qres of
                         -- Ignore responses that do not match expected response
                         -- and wait for the next response.
-                        Nothing -> wait c procedure k
+                        Nothing -> do message c $ "Unmatched response" ++ show r
+                                      wait c procedure k
                         Just qr -> send' c (k qr) B.empty
 
       send' :: ArduinoConnection -> Arduino a -> B.ByteString -> IO a
@@ -206,10 +208,6 @@ setupListener serial dbg chan = do
                          case B.length bs of
                             0 -> getByte
                             1 -> return $ B.head bs 
-            waitForFrame = do b <- getByte
-                              case b of
-                                0x7E -> return ()
-                                _    -> waitForFrame
             collectFrame sofar = do b <- getByte
                                     case b of
                                       0x7E -> return $ reverse sofar
@@ -217,7 +215,6 @@ setupListener serial dbg chan = do
                                                  collectFrame ((xor e 0x20) : sofar)
                                       _    -> collectFrame (b : sofar)
             listener = do
-                waitForFrame
                 frame  <- collectFrame []
                 resp <- case frame of 
                            [] -> return $ EmptyFrame

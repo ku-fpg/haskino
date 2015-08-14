@@ -40,7 +40,7 @@ buildCommand cmd bs = B.pack $ hdlcFrameCommand $ firmwareCmdVal cmd : bs
 -- using the Firmata protocol.
 packageCommand :: ArduinoConnection -> Command -> IO B.ByteString
 packageCommand c SystemReset = 
-    return $ buildCommand SCHED_CMD_RESET []
+    return $ buildCommand BC_CMD_SYSTEM_RESET []
 packageCommand c (SetPinMode p m) = do
     return $ buildCommand BC_CMD_SET_PIN_MODE [p, fromIntegral $ fromEnum m]
 packageCommand c (DigitalWrite p b)  = do

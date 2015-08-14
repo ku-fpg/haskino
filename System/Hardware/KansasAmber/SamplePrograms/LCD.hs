@@ -55,13 +55,13 @@ hitachiDigital :: LCDController
 -- Connections:                    ARDUINO        Hitachi   Description
 --------------------------------   -----------    ---------  ----------------
 hitachiDigital = 
-          Hitachi44780 { lcdRS   = digital  8  --     4      Register-select
-                       , lcdEN   = digital  9  --     6      Enable
-                       , lcdD4   = digital  4  --    11      Data 4
-                       , lcdD5   = digital  5  --    12      Data 5
-                       , lcdD6   = digital  6  --    13      Data 6
-                       , lcdD7   = digital  7  --    14      Data 7
-                       , lcdBL   = Just (digital 10 ) --     Backlight Control
+          Hitachi44780 { lcdRS   = 8  --             4      Register-select
+                       , lcdEN   = 9  --             6      Enable
+                       , lcdD4   = 4  --            11      Data 4
+                       , lcdD5   = 5  --            12      Data 5
+                       , lcdD6   = 6  --            13      Data 6
+                       , lcdD7   = 7  --            14      Data 7
+                       , lcdBL   = Just ( 10 )      --    Backlight Control
                        -- Other config variables for the display
                        , lcdRows     = 2    -- 2 rows
                        , lcdCols     = 16    -- of 16 columns
@@ -161,7 +161,7 @@ runlcdDemo h = withArduino False "/dev/cu.usbmodem1421" $ do
                                                 lcdWrite lcd $ " (Code: 0x" ++ showHex n "" ++ ")")
         scroll toLeft lcd a = grabNums 1 a (\[n] -> do let scr | toLeft = lcdScrollDisplayLeft
                                                                | True   = lcdScrollDisplayRight
-                                                       sequence_ $ concat $ replicate n [scr lcd, delay 500])
+                                                       sequence_ $ concat $ replicate n [scr lcd, delayMillis 500])
         commands = [ ("?",           ("",        "Display this help message",   arg0 help))
                    , ("clear",       ("",        "Clear the LCD screen",        arg1 lcdClear))
                    , ("write",       ("string",  "Write to the LCD",            arg2 lcdWrite))

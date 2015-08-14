@@ -28,12 +28,17 @@ int parseBoardStatusMessage(int size, byte *msg)
         }
     }
 
-static int handleRequestVersion(int size, byte *msg)
+void sendVersionReply()
     {
     static byte versionReply[2] = {FIRMWARE_MAJOR,
                                    FIRMWARE_MINOR};
         
     sendReply(sizeof(versionReply), BS_RESP_VERSION, versionReply);
+    }
+
+static int handleRequestVersion(int size, byte *msg)
+    {
+    sendVersionReply();
     return 1;
     }
 

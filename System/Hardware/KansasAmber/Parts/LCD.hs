@@ -106,9 +106,9 @@ initLCD lcd = do
         Hitachi44780{} -> initLCDDigital c
         I2CHitachi44780{} -> i2cConfig 0
     -- Wait for 50ms, data-sheet says at least 40ms for 2.7V version, so be safe
-    delay 50
+    delayMillis 50
     sendCmd lcd c LCD_INITIALIZE
-    delay 5
+    delayMillis 5
     sendCmd lcd c LCD_INITIALIZE_END
     sendCmd lcd c LCD_FUNCTIONSET
     lcdCursorOff lcd
@@ -141,11 +141,11 @@ pulseEnableDig :: LCDController -> Arduino ()
 pulseEnableDig Hitachi44780{lcdEN} = do
   debug "Sending LCD pulseEnable"
   digitalWrite lcdEN False
-  delay 1
+  delayMillis 1
   digitalWrite lcdEN True
-  delay 1
+  delayMillis 1
   digitalWrite lcdEN False
-  delay 1
+  delayMillis 1
 
 -- | Transmit data down to the LCD
 transmit :: Bool -> LCD -> LCDController -> Word8 -> Arduino ()
@@ -206,9 +206,9 @@ transmitI2C mode lcd c@I2CHitachi44780{address} val = do
 pulseEnableI2C :: LCDController -> Word8 -> Arduino ()
 pulseEnableI2C c@I2CHitachi44780{address} d = do
     i2cWrite address [d .|. en]
-    delay 1
+    delayMillis 1
     i2cWrite address [d .&. (complement en)]
-    delay 1
+    delayMillis 1
   where
     en = lcdI2CBitsToVal LCD_I2C_ENABLE
 
@@ -287,13 +287,13 @@ lcdWrite lcd m = withLCD lcd ("Writing " ++ show m ++ " to LCD") $ \c -> mapM_ (
 lcdClear :: LCD -> Arduino ()
 lcdClear lcd = withLCD lcd "Sending clearLCD" $ \c ->
                  do sendCmd lcd c LCD_CLEARDISPLAY
-                    delay 2 -- give some time to make sure LCD is really cleared
+                    delayMillis 2 -- give some time to make sure LCD is really cleared
 
 -- | Send the cursor to home position
 lcdHome :: LCD -> Arduino ()
 lcdHome lcd = withLCD lcd "Sending the cursor home" $ \c ->
                  do sendCmd lcd c LCD_RETURNHOME
-                    delay 2
+                    delayMillis 2
 
 -- | Set the cursor location. The pair of arguments is the new column and row numbers
 -- respectively:
@@ -441,7 +441,7 @@ lcdFlash :: LCD
          -> Int  -- ^ Flash count
          -> Int  -- ^ Delay amount (in milli-seconds)
          -> Arduino ()
-lcdFlash lcd n d = sequence_ $ concat $ replicate n [lcdDisplayOff lcd, delay $ fromIntegral d, lcdDisplayOn lcd, delay $ fromIntegral d]
+lcdFlash lcd n d = sequence_ $ concat $ replicate n [lcdDisplayOff lcd, delayMillis $ fromIntegral d, lcdDisplayOn lcd, delayMillis $ fromIntegral d]
 
 -- | An abstract symbol type for user created symbols
 newtype LCDSymbol = LCDSymbol Word8

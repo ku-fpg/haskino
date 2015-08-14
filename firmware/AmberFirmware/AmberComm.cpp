@@ -12,12 +12,7 @@
 #include "AmberServo.h"
 #include "AmberStepper.h"
 
-#define HDLC_FRAME_FLAG  0x7E
-#define HDLC_ESCAPE      0x7D
-#define HDLC_MASK        0x20
-
 static int messageCount = 0;
-static int processingMessageState = 0;
 static int processingEscapeState = 0;
 static byte inputData[MESSAGE_MAX_SIZE];
 
@@ -26,7 +21,7 @@ static void processChar(char c);
 
 int processingMessage() 
     {
-    return processingMessageState;
+    return (messageCount != 0);
     }
 
 static int parseMessage(int size, byte *msg)
@@ -65,33 +60,28 @@ static int parseMessage(int size, byte *msg)
 
 static void processChar(byte c)
     {
-    if (processingMessageState) 
+    if (c == HDLC_FRAME_FLAG) 
         {
-        if (c == HDLC_FRAME_FLAG) 
+        processingEscapeState = 0;
+        if (messageCount > 0)
             {
-            processingMessageState = 0;
-            processingEscapeState = 0;
             parseMessage(messageCount, inputData);
-            messageCount = 0;
-            } 
-        else if (c == HDLC_ESCAPE) 
-            {
-            processingEscapeState = 1;
-            } 
-        else if (processingEscapeState) 
-            {
-            processingEscapeState = 0;
-            inputData[messageCount++] = c ^ HDLC_MASK;
             }
-        else
-            {
-            inputData[messageCount++] = c;
-            }
-        }
-    else if (c == HDLC_FRAME_FLAG) 
+        messageCount = 0;
+        } 
+    else if (c == HDLC_ESCAPE) 
         {
-        processingMessageState = 1;
-        }  
+        processingEscapeState = 1;
+        } 
+    else if (processingEscapeState) 
+        {
+        processingEscapeState = 0;
+        inputData[messageCount++] = c ^ HDLC_MASK;
+        }
+    else
+        {
+        inputData[messageCount++] = c;
+        }
     }
 
 void handleInput()
@@ -105,7 +95,6 @@ void handleInput()
 
 void startReplyFrame(byte replyType)
     {
-    Serial.write(HDLC_FRAME_FLAG);
     Serial.write(replyType);
     }
 
