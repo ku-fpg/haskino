@@ -37,7 +37,7 @@ import qualified Data.Map                   as M (empty, mapWithKey, insert,
 import qualified Data.Set                   as S (empty)
 import qualified System.Hardware.Serialport as S (openSerial, closeSerial, 
                                                   defaultSerialSettings, 
-                                                  CommSpeed(CS57600), commSpeed,
+                                                  CommSpeed(CS115200), commSpeed,
                                                   recv, send)
 
 import System.Hardware.KansasAmber.Data
@@ -63,7 +63,7 @@ openArduino verbose fp = do
       debugger <- mkDebugPrinter verbose
       debugger $ "Accessing arduino located at: " ++ show fp
       listenerTid <- newEmptyMVar
-      portTry <- tryIOError (S.openSerial fp S.defaultSerialSettings{S.commSpeed = S.CS57600})
+      portTry <- tryIOError (S.openSerial fp S.defaultSerialSettings{S.commSpeed = S.CS115200})
       case portTry of 
         Left e -> 
           error $ "\n*** KansasAmber:ERROR: Missing Port\n*** Make sure your Arduino is connected to " ++ fp
