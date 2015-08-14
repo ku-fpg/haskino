@@ -19,10 +19,10 @@
 
 // Board Status commands
 #define BS_CMD_TYPE             0x10
-#define BS_CMD_REQUEST_VERSION  (BS_CMD_TYPE | 0x1)
-#define BS_CMD_REQUEST_TYPE     (BS_CMD_TYPE | 0x2)
-#define BS_CMD_REQUEST_MICROS   (BS_CMD_TYPE | 0x3)
-#define BS_CMD_REQUEST_MILLIS   (BS_CMD_TYPE | 0x4)
+#define BS_CMD_REQUEST_VERSION  (BS_CMD_TYPE | 0x0)
+#define BS_CMD_REQUEST_TYPE     (BS_CMD_TYPE | 0x1)
+#define BS_CMD_REQUEST_MICROS   (BS_CMD_TYPE | 0x2)
+#define BS_CMD_REQUEST_MILLIS   (BS_CMD_TYPE | 0x3)
 
 // Board Status responses
 #define BS_RESP_VERSION         (BS_CMD_TYPE | 0x8)

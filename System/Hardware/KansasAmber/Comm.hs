@@ -22,7 +22,7 @@ import Control.Concurrent   (Chan, MVar, ThreadId, newChan, newMVar,
                              killThread, threadDelay)
 import Control.Exception    (tryJust, AsyncException(UserInterrupt))
 import Control.Monad.State  (liftIO)
-import Data.Bits            (testBit, (.&.))
+import Data.Bits            (testBit, (.&.), xor)
 import Data.List            (intercalate)
 import Data.Maybe           (listToMaybe)
 import System.Hardware.Serialport (SerialPort)
@@ -66,7 +66,7 @@ openArduino verbose fp = do
       portTry <- tryIOError (S.openSerial fp S.defaultSerialSettings{S.commSpeed = S.CS57600})
       case portTry of 
         Left e -> 
-          error $ "\n*** KansasAmber:ERROR:\n*** Make sure your Arduino is connected to " ++ fp
+          error $ "\n*** KansasAmber:ERROR: Missing Port\n*** Make sure your Arduino is connected to " ++ fp
         Right port -> do
           dc <- newChan
           tid <- setupListener port debugger dc
@@ -172,7 +172,7 @@ send conn commands =
             resp <- liftIO $ timeout 5000000 $ readChan $ deviceChannel c
             case resp of 
                 Nothing -> runDie c "Response Timeout" 
-                                 [ "Make sure your Arduino is running Standard or Configurable Firmata"]
+                                 [ "Make sure your Arduino is running Amber Firmware"]
                 Just r -> do 
                     let qres = parseQueryResult procedure r
                     case qres of
@@ -207,14 +207,14 @@ setupListener serial dbg chan = do
                             1 -> return $ B.head bs 
             waitForFrame = do b <- getByte
                               case b of
-                                hdlcFrameFlag -> return ()
-                                _             -> waitForFrame
+                                0x7E -> return ()
+                                _    -> waitForFrame
             collectFrame sofar = do b <- getByte
                                     case b of
-                                      hdlcFrameFlag -> return $ reverse sofar
-                                      hdlcFrameEsc  -> do e <- getByte
-                                                          collectFrame (e : sofar)
-                                      _             -> collectFrame (b : sofar)
+                                      0x7E -> return $ reverse sofar
+                                      0x7D -> do e <- getByte
+                                                 collectFrame ((xor e 0x20) : sofar)
+                                      _    -> collectFrame (b : sofar)
             listener = do
                 waitForFrame
                 frame  <- collectFrame []

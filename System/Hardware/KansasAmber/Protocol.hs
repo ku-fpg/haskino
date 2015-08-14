@@ -11,8 +11,7 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE GADTs      #-}
 
-module System.Hardware.KansasAmber.Protocol(packageCommand, packageProcedure, unpackageResponse, parseQueryResult,
-                                            hdlcFrameFlag, hdlcFrameEsc) where
+module System.Hardware.KansasAmber.Protocol(packageCommand, packageProcedure, unpackageResponse, parseQueryResult) where
 
 import Data.Bits            (xor)
 import Data.Word (Word8)
@@ -26,21 +25,12 @@ import System.Hardware.KansasAmber.Utils
 maxFirmwareSize :: Int
 maxFirmwareSize = 128
 
-hdlcFrameFlag :: Word8
-hdlcFrameFlag = 0x7E
-
-hdlcFrameEsc :: Word8
-hdlcFrameEsc = 0x7D
-
-hdlcMask :: Word8
-hdlcMask = 0x20
-
 hdlcFrameCommand :: [Word8] -> [Word8]
-hdlcFrameCommand cs = (hdlcFrameFlag : (concatMap escape cs)) ++ [hdlcFrameFlag]
+hdlcFrameCommand cs = (0x7E : (concatMap escape cs)) ++ [0x7E]
   where
     escape :: Word8 -> [Word8]
-    escape c = if c == hdlcFrameFlag || c == hdlcFrameEsc
-               then [hdlcFrameEsc, xor c hdlcMask]
+    escape c = if c == 0x7E || c == 0x7D
+               then [0x7D, xor c 0x20]
                else [c]
 
 buildCommand :: FirmwareCmd -> [Word8] -> B.ByteString
@@ -67,6 +57,7 @@ packageCommand c (DelayMicros ms) =
     return $ buildCommand BC_CMD_DELAY_MICROS (word32ToArduinoBytes ms)
 packageCommand c (ScheduleTask tid tt)    = 
     return $ buildCommand SCHED_CMD_DELETE_TASK (tid : word32ToBytes tt)
+{-
 packageCommand c (CreateTask tid m)       = do
     td <- packageTaskData c m
     let taskSize = fromIntegral (B.length td)
@@ -80,6 +71,7 @@ packageCommand c (CreateTask tid m)       = do
     genAddToTaskCmds tds = addToTask tds
     addToTask tds' = (buildCommand SCHED_CMD_ADD_TO_TASK [tid]) 
                            `B.append` tds'
+-}
 {- 
 packageCommand c (StepperConfig dev TwoWire d sr p1 p2 _ _) = do
     ipin1 <-  getInternalPin c p1 
