@@ -27,13 +27,13 @@ import System.Hardware.KansasAmber.Parts.LCD
 -- the SainSmart LCD Keypad Shield. More information on this shield can be found at:
 --     <http://www.sainsmart.com/sainsmart-1602-lcd-keypad-shield-for-arduino-duemilanove-uno-mega2560-mega1280.html>
 osepp :: LCDController
-osepp = Hitachi44780 { lcdRS = digital 8
-                     , lcdEN = digital 9
-                     , lcdD4 = digital 4
-                     , lcdD5 = digital 5
-                     , lcdD6 = digital 6
-                     , lcdD7 = digital 7
-                     , lcdBL   = Just (digital 10 )
+osepp = Hitachi44780 { lcdRS = 8
+                     , lcdEN = 9
+                     , lcdD4 = 4
+                     , lcdD5 = 5
+                     , lcdD6 = 6
+                     , lcdD7 = 7
+                     , lcdBL   = Just 10
                      , lcdRows = 2
                      , lcdCols = 16
                      , dotMode5x10 = False
@@ -55,8 +55,8 @@ data Key = KeyRight
 --   * A function to read (if any) key-pressed
 initOSepp :: Arduino (LCD, Arduino (Maybe Key))
 initOSepp = do lcd <- lcdRegister osepp
-               let button = analog 0
-               setPinMode button ANALOG
+               let button = 0
+               setPinMode button INPUT
                -- Analog values obtained from OSEPP site, seems reliable
                let threshHolds = [ (KeyRight,   30)
                                  , (KeyUp,     150)
@@ -84,14 +84,14 @@ numGuess lcd readKey = game
         getKey = do mbK <- readKey
                     case mbK of
                       Nothing -> getKey
-                      Just k  -> do delay 500 -- stabilize by waiting 0.5s
+                      Just k  -> do delayMillis 500 -- stabilize by waiting 0.5s
                                     return k
         game = do clear
                   home
                   lcdBacklightOn lcd
                   at (0, 2) "KansasAmber!"
                   at (1, 0) "# Guessing game"
-                  delay 2000
+                  delayMillis 2000
                   guess 1 0 1000
         newGame = getKey >> game
         guess :: Int -> Int -> Int -> Arduino ()
@@ -113,7 +113,7 @@ numGuess lcd readKey = game
                          KeySelect -> do at (1, 0) $ "Got it in " ++ show rnd ++ "!"
                                          newGame
                          _         -> do at (1, 0) "Use up/down/select only.."
-                                         delay 1000
+                                         delayMillis 1000
                                          guess rnd l h
 
 -- | Entry to the classing number guessing game. Simply initialize the

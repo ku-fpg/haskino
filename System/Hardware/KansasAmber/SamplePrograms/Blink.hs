@@ -17,7 +17,7 @@ import Control.Monad (forever)
 import System.Hardware.KansasAmber
 
 blink :: IO ()
-blink = withArduino True "/dev/cu.usbmodem1421" $ do
+blink = withArduino False "/dev/cu.usbmodem1421" $ do
            let led = 13
            setPinMode led OUTPUT
            loop $ do digitalWrite led True

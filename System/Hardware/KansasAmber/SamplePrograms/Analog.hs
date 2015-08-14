@@ -29,17 +29,16 @@ import System.Hardware.KansasAmber
 analogVal :: IO ()
 analogVal = withArduino False "/dev/cu.usbmodem1421" $ do
                setPinMode led OUTPUT
-               setPinMode pot ANALOG
-               analogReport pot True
+               setPinMode pot INPUT
                cur <- analogRead pot
                liftIO $ print cur
                go cur
-  where led = digital 13
-        pot = analog 3
+  where led = 13
+        pot = 3
         go cur = do digitalWrite led True
-                    delay $ fromIntegral cur
+                    delayMillis $ fromIntegral cur
                     digitalWrite led False
-                    delay $ fromIntegral cur
+                    delayMillis $ fromIntegral cur
                     new <- analogRead pot
                     when (cur /= new) $ liftIO $ print new
                     go new

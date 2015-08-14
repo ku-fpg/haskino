@@ -36,7 +36,7 @@ eepromWrite :: SlaveAddress -> Word16 -> [Word8] -> Arduino ()
 eepromWrite sa addr ws = do
         i2cWrite sa ([fromIntegral hi, fromIntegral lo] ++ ws)
         -- Delay 10ms for write to complete before attempting read
-        delay 10
+        delayMillis 10
   where lo =  addr             .&. 0xFF   -- first eight bits
         hi = (addr `shiftR` 8) .&. 0x7F   -- seven extra high-bits
         count = length ws

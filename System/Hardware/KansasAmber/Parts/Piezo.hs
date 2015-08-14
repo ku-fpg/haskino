@@ -41,7 +41,7 @@ speaker :: Word32         -- ^ Tempo. Higher numbers mean faster melodies; in ge
         -> Pin            -- ^ Pin controlling the piezo. Should be a pin that supports PWM mode.
         -> Arduino Piezo
 speaker t p = do debug $ "Attaching speaker on pin: " ++ show p
-                 setPinMode p PWM
+                 setPinMode p OUTPUT
                  return Piezo { piezoPin = p, tempo = t }
 
 -- | Musical notes, notes around middle-C
@@ -73,7 +73,7 @@ setNote (Piezo p _) n = analogWrite p (fromIntegral $ frequency n)
 -- | Play the given note for the duration
 playNote :: Piezo -> (Note, Duration) -> Arduino ()
 playNote pz (n, d) = do setNote pz n
-                        delay (interval pz d)
+                        delayMillis (interval pz d)
                         silence pz
 
 -- | Play a sequence of notes with given durations:
@@ -81,9 +81,9 @@ playNotes :: Piezo -> [(Note, Duration)] -> Arduino ()
 playNotes pz = go
   where go []            = silence pz
         go (nd@(_, d):r) = do playNote pz nd
-                              delay (interval pz d `div` 3) -- heuristically found.. :-)
+                              delayMillis (interval pz d `div` 3) -- heuristically found.. :-)
                               go r
 
 -- | Rest for a given duration:
 rest :: Piezo -> Duration -> Arduino ()
-rest pz d = delay (interval pz d)
+rest pz d = delayMillis (interval pz d)
