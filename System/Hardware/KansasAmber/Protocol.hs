@@ -105,9 +105,9 @@ packageTaskData conn commands =
           packageTaskData' c (k a) cs
       packBind c (Bind m k1)    k2 cmds = packBind c m (\ r -> Bind (k1 r) k2) cmds
       packBind c (Command cmd) k cmds = do
-          proc <- packageCommand c cmd
+          packCmd <- packageCommand c cmd
           cs <- cmds
-          packageTaskData' c (k ()) (B.append cs proc)
+          packageTaskData' c (k ()) (B.append cs (lenPackage packCmd))
       packBind c (Local local) k cmds = packLocal c local k cmds
       packBind c (Procedure procedure) k cmds = packProcedure c procedure k cmds
 
@@ -148,6 +148,9 @@ packageTaskData conn commands =
       packageTaskData' c (Bind m k) cmds = packBind c m k (return cmds)
       packageTaskData' c (Return a) cmds = return cmds
       packageTaskData' c cmd        cmds = packBind c cmd Return (return cmds)
+
+      lenPackage :: B.ByteString -> B.ByteString
+      lenPackage package = B.cons (fromIntegral $ B.length package) package      
 
 packageProcedure :: Procedure a -> B.ByteString
 packageProcedure QueryFirmware       = 
