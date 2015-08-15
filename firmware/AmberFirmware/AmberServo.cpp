@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "AmberServo.h"
 
-int parseServoMessage(int size, byte *msg)
+bool parseServoMessage(int size, byte *msg)
     {
+    return false;
     }

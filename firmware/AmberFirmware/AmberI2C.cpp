@@ -4,11 +4,11 @@
 #include "AmberCommands.h"
 #include "AmberI2C.h"
 
-static int handleRead(int size, byte *msg);
-static int handleReadReg(int size, byte *msg);
-static int handleWrite(int size, byte *msg);
+static bool handleRead(int size, byte *msg);
+static bool handleReadReg(int size, byte *msg);
+static bool handleWrite(int size, byte *msg);
 
-int parseI2CMessage(int size, byte *msg)
+bool parseI2CMessage(int size, byte *msg)
     {
     switch (msg[0] ) 
         {
@@ -22,6 +22,7 @@ int parseI2CMessage(int size, byte *msg)
             return handleWrite(size, msg);
             break;
         }
+    return false;
     }
 
 static int readFrom(byte address, byte wordCount)
@@ -41,16 +42,16 @@ static int readFrom(byte address, byte wordCount)
     endReplyFrame();    
     }
 
-static int handleRead(int size, byte *msg)
+static bool handleRead(int size, byte *msg)
     {
     byte slaveAddress = msg[1];
     byte wordCount = msg[2];
 
     readFrom(slaveAddress, wordCount);
-    return 3;
+    return false;
     }
 
-static int handleReadReg(int size, byte *msg)
+static bool handleReadReg(int size, byte *msg)
     {
     byte slaveAddress = msg[1];
     uint16_t slaveRegister = msg[2] + msg[3] << 8;
@@ -62,10 +63,10 @@ static int handleReadReg(int size, byte *msg)
     delayMicroseconds(70);
 
     readFrom(slaveAddress, wordCount);
-    return 4;
+    return false;
     }
 
-static int handleWrite(int size, byte *msg)
+static bool handleWrite(int size, byte *msg)
     {
     byte slaveAddress = msg[1];
     byte wordCount = msg[2];
@@ -81,5 +82,5 @@ static int handleWrite(int size, byte *msg)
         }
     Wire.endTransmission();
     delayMicroseconds(70);
-    return 3 + wordCount*2;
+    return false;
     }

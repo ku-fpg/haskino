@@ -12,23 +12,24 @@ typedef struct task_t
     uint16_t       currLen;
     uint16_t       currPos;
     uint32_t       millis;
+    byte          *endData;
     byte           data[];
     } TASK;
 
-static int handleCreateTask(int size, byte *msg);
-static int handleDeleteTask(int size, byte *msg);
-static int handleAddToTask(int size, byte *msg);
-static int handleScheduleTask(int size, byte *msg);
-static int handleQuery(int size, byte *msg);
-static int handleQueryAll(int size, byte *msg);
-static int handleReset(int size, byte *msg);
+static bool handleCreateTask(int size, byte *msg);
+static bool handleDeleteTask(int size, byte *msg);
+static bool handleAddToTask(int size, byte *msg);
+static bool handleScheduleTask(int size, byte *msg);
+static bool handleQuery(int size, byte *msg);
+static bool handleQueryAll(int size, byte *msg);
+static bool handleReset(int size, byte *msg);
 static void deleteTask(TASK* task);
 static TASK *findTask(int id);
+static bool executeTask(TASK *task);
 
 static TASK *firstTask = NULL;
-static int taskCount = 0;
 
-int parseSchedulerMessage(int size, byte *msg)
+bool parseSchedulerMessage(int size, byte *msg)
     {
     switch (msg[0]) 
         {
@@ -54,6 +55,7 @@ int parseSchedulerMessage(int size, byte *msg)
             return handleReset(size, msg);
             break;
         }
+    return false;
     }
 
 static TASK *findTask(int id)
@@ -69,25 +71,25 @@ static TASK *findTask(int id)
     return NULL;
     }
 
-static int handleCreateTask(int size, byte *msg)
+static bool handleCreateTask(int size, byte *msg)
     {
     byte id = msg[1];
-    uint16_t *taskSize = (uint16_t *) msg[2];
+    uint16_t taskSize = msg[2] + (msg[3] << 8);
     TASK *newTask;
 
-    if (!(findTask(id) != NULL ||
-         ((newTask = (TASK *) malloc(*taskSize + sizeof(TASK))) == NULL )))
+    if ((findTask(id) == NULL) &&
+         ((newTask = (TASK *) malloc(taskSize + sizeof(TASK))) != NULL ))
         {
         newTask->next = firstTask;
         newTask->prev = NULL;
         firstTask = newTask;
         newTask->id = id;
-        newTask->size = *taskSize;
+        newTask->size = taskSize;
         newTask->currLen = 0;
         newTask->currPos = 0;
-        taskCount++;
+        newTask->endData = newTask->data + newTask->size;
         }
-    return 4;
+    return false;
     }
 
 static void deleteTask(TASK* task)
@@ -99,10 +101,9 @@ static void deleteTask(TASK* task)
     if (task->next != NULL)
         task->next->prev = task->prev;
     free(task);
-    taskCount--;
     }
 
-static int handleDeleteTask(int size, byte *msg)
+static bool handleDeleteTask(int size, byte *msg)
     {
     byte id = msg[1];
     TASK *task;
@@ -111,10 +112,10 @@ static int handleDeleteTask(int size, byte *msg)
         {
         deleteTask(task);
         }
-    return 2;
+    return false;
     }
 
-static int handleAddToTask(int size, byte *msg)
+static bool handleAddToTask(int size, byte *msg)
     {
     byte id = msg[1];
     byte addSize = msg[2];
@@ -129,23 +130,24 @@ static int handleAddToTask(int size, byte *msg)
             task->currLen += addSize;
             }
         }
-    return 3 + addSize;
+    return false;
     }
 
-static int handleScheduleTask(int size, byte *msg)
+static bool handleScheduleTask(int size, byte *msg)
     {
     byte id = msg[1];
-    uint32_t *deltaMillis = (uint32_t *) &msg[2];
+    uint32_t deltaMillis = msg[2] + (msg[3] << 8) + 
+                           (msg[4] << 16) + (msg[5] << 24);
     TASK *task;
 
     if ((task = findTask(id)) != NULL)
         {
-        task->millis = millis() + *deltaMillis;
+        task->millis = millis() + deltaMillis;
         }
-    return 6;
+    return false;
     }
 
-static int handleQuery(int size, byte *msg)
+static bool handleQuery(int size, byte *msg)
     {
     byte queryReply[10];
     uint16_t *sizeReply = (uint16_t *) queryReply;
@@ -167,32 +169,87 @@ static int handleQuery(int size, byte *msg)
         {
         sendReply(0, SCHED_RESP_QUERY, queryReply);
         }
-    return 2;
+    return false;
     }
 
-static int handleQueryAll(int size, byte *msg)
+static bool handleQueryAll(int size, byte *msg)
     {
     TASK *task = firstTask;
 
     startReplyFrame(SCHED_RESP_QUERY_ALL);
-    sendReplyByte(taskCount);
 
-    while(task)
+    while(task != NULL)
         {
         sendReplyByte(task->id);
         task = task->next;
         }
 
     endReplyFrame();    
-    return 1;
+    return false;
     }
 
-static int handleReset(int size, byte *msg)
+static bool handleReset(int size, byte *msg)
     {
     while(firstTask != NULL)
         {
         deleteTask(firstTask);
         }
-    return 1;
+    return false;
     }
 
+void schedulerRunTasks()
+    {
+    if (firstTask) 
+        {
+        long now = millis();
+        TASK *current = firstTask;
+        TASK *next = NULL;
+
+        while (current) 
+            {
+            next = current->next;
+            if (current->millis > 0 && current->millis < now) 
+                { // ToDo: handle overflow
+                if (!executeTask(current)) 
+                    {
+                    deleteTask(current);
+                    }
+                }
+            current = next;
+            }
+        }
+    }
+
+static bool executeTask(TASK *task)
+    {
+    // Find end of next command
+    byte *msg = &task->data[task->currPos];
+    byte *search = msg;
+    int cmdSize;
+    bool taskRescheduled = false;
+
+    while (*search != HDLC_FRAME_FLAG && search != task->endData)
+        {
+        search++;
+        }
+
+    if ((cmdSize = search - msg - 1) != 0)
+        {
+        taskRescheduled = parseMessage(cmdSize, msg);  
+        } 
+
+    task->currPos += cmdSize + 1;
+    if (task->currPos >= task->size)
+        {
+        if (taskRescheduled)
+            {
+            task->currPos = 0;
+            return true;
+            }
+        else
+            {
+            return false;
+            }
+        }
+    return true;
+    }

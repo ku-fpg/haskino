@@ -1,6 +1,7 @@
 #ifndef AmberSchedulerH
 #define AmberSchedulerH
 
-int parseSchedulerMessage(int size, byte *msg);
+bool parseSchedulerMessage(int size, byte *msg);
+void schedulerRunTasks();
 
 #endif /* AmberSchedulerH */

@@ -4,12 +4,12 @@
 #include "AmberCommands.h"
 #include "AmberFirmware.h"
 
-static int handleRequestVersion(int size, byte *msg);
-static int handleRequestType(int size, byte *msg);
-static int handleRequestMicros(int size, byte *msg);
-static int handleRequestMillis(int size, byte *msg);
+static bool handleRequestVersion(int size, byte *msg);
+static bool handleRequestType(int size, byte *msg);
+static bool handleRequestMicros(int size, byte *msg);
+static bool handleRequestMillis(int size, byte *msg);
 
-int parseBoardStatusMessage(int size, byte *msg)
+bool parseBoardStatusMessage(int size, byte *msg)
     {
     switch (msg[0] ) 
         {
@@ -26,6 +26,7 @@ int parseBoardStatusMessage(int size, byte *msg)
             return handleRequestMillis(size, msg);
             break;
         }
+    return false;
     }
 
 void sendVersionReply()
@@ -36,13 +37,13 @@ void sendVersionReply()
     sendReply(sizeof(versionReply), BS_RESP_VERSION, versionReply);
     }
 
-static int handleRequestVersion(int size, byte *msg)
+static bool handleRequestVersion(int size, byte *msg)
     {
     sendVersionReply();
-    return 1;
+    return false;
     }
 
-static int handleRequestType(int size, byte *msg)
+static bool handleRequestType(int size, byte *msg)
     {
     static byte typeReply[1] = {
 #if defined(__AVR_ATmega8__)
@@ -71,21 +72,21 @@ static int handleRequestType(int size, byte *msg)
 #error "Please define a new processor type board"
 #endif
     sendReply(sizeof(typeReply), BS_RESP_TYPE, typeReply);
-    return 1;
+    return false;
     }
 
-static int handleRequestMicros(int size, byte *msg)
+static bool handleRequestMicros(int size, byte *msg)
     {
     uint32_t microReply = micros();
 
     sendReply(sizeof(uint32_t), BS_RESP_MICROS, (byte *) &microReply);
-    return 1;
+    return false;
     }
 
-static int handleRequestMillis(int size, byte *msg)
+static bool handleRequestMillis(int size, byte *msg)
     {
     uint32_t milliReply = millis();
 
     sendReply(sizeof(uint32_t), BS_RESP_MILLIS, (byte *) &milliReply);
-    return 1;
+    return false;
     }

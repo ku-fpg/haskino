@@ -16,7 +16,6 @@ static int messageCount = 0;
 static int processingEscapeState = 0;
 static byte inputData[MESSAGE_MAX_SIZE];
 
-static int parseMessage(int size, byte *msg);
 static void processChar(char c);
 
 int processingMessage() 
@@ -24,7 +23,7 @@ int processingMessage()
     return (messageCount != 0);
     }
 
-static int parseMessage(int size, byte *msg)
+bool parseMessage(int size, byte *msg)
     {
     switch (msg[0] & CMD_TYPE_MASK) 
         {
@@ -56,6 +55,7 @@ static int parseMessage(int size, byte *msg)
             return parseSchedulerMessage(size, msg);
             break;
         }
+        return false;
     }
 
 static void processChar(byte c)

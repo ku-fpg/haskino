@@ -1,6 +1,6 @@
 #ifndef AmberStepperH
 #define AmberStepperH
 
-int parseStepperMessage(int size, byte *msg);
+bool parseStepperMessage(int size, byte *msg);
 
 #endif /* AmberStepperH */

@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "AmberStepper.h"
 
-int parseStepperMessage(int size, byte *msg)
+bool parseStepperMessage(int size, byte *msg)
     {
+    return false;
     }

@@ -14,5 +14,6 @@ void endReplyFrame();
 void sendReplyByte(byte replyByte);
 void sendReply(int count, byte replyType, byte *reply);
 void sendString(char *string);
+bool parseMessage(int size, byte *msg);
 
 #endif /* AmberCommH */
