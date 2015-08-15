@@ -25,16 +25,8 @@ import System.Hardware.KansasAmber.Utils
 maxFirmwareSize :: Int
 maxFirmwareSize = 128
 
-hdlcFrameCommand :: [Word8] -> [Word8]
-hdlcFrameCommand cs = (concatMap escape cs) ++ [0x7E]
-  where
-    escape :: Word8 -> [Word8]
-    escape c = if c == 0x7E || c == 0x7D
-               then [0x7D, xor c 0x20]
-               else [c]
-
 buildCommand :: FirmwareCmd -> [Word8] -> B.ByteString
-buildCommand cmd bs = B.pack $ hdlcFrameCommand $ firmwareCmdVal cmd : bs
+buildCommand cmd bs = B.pack $ firmwareCmdVal cmd : bs
 
 -- | Package a request as a sequence of bytes to be sent to the board
 -- using the Firmata protocol.
