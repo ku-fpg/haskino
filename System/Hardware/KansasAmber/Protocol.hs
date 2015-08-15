@@ -56,8 +56,7 @@ packageCommand c (DelayMillis ms) =
 packageCommand c (DelayMicros ms) = 
     return $ buildCommand BC_CMD_DELAY_MICROS (word32ToBytes ms)
 packageCommand c (ScheduleTask tid tt)    = 
-    return $ buildCommand SCHED_CMD_DELETE_TASK (tid : word32ToBytes tt)
-{-
+    return $ buildCommand SCHED_CMD_SCHED_TASK (tid : word32ToBytes tt)
 packageCommand c (CreateTask tid m)       = do
     td <- packageTaskData c m
     let taskSize = fromIntegral (B.length td)
@@ -69,9 +68,7 @@ packageCommand c (CreateTask tid m)       = do
         addToTask (B.take maxCmdSize tds) 
             `B.append` (genAddToTaskCmds (B.drop maxCmdSize tds))
     genAddToTaskCmds tds = addToTask tds
-    addToTask tds' = (buildCommand SCHED_CMD_ADD_TO_TASK [tid]) 
-                           `B.append` tds'
--}
+    addToTask tds' = buildCommand SCHED_CMD_ADD_TO_TASK ([tid, fromIntegral $ B.length tds'] ++ (B.unpack tds'))
 {- 
 packageCommand c (StepperConfig dev TwoWire d sr p1 p2 _ _) = do
     ipin1 <-  getInternalPin c p1 
@@ -190,7 +187,7 @@ unpackageResponse (cmdWord:args)
 --      (PULSE, xs) | length xs == 10          -> let [p, a, b, c, d] = fromArduinoBytes xs in PulseResponse (InternalPin p) (bytesToWord32 (a, b, c, d))
       (BS_RESP_STRING, rest)          -> StringMessage (getString rest)
       (DIG_RESP_READ_PIN, [b])        -> DigitalReply b
-      (ALG_RESP_READ_PIN, [bl,bh])    -> AnalogReply (bytesToWord16 (bh,bl))
+      (ALG_RESP_READ_PIN, [bl,bh])    -> AnalogReply (bytesToWord16 (bl,bh))
       (I2C_RESP_READ, xs)             -> I2CReply xs
       (SCHED_RESP_QUERY_ALL, ts)      -> QueryAllTasksReply ts
       (SCHED_RESP_QUERY, ts) | length ts == 0 -> 

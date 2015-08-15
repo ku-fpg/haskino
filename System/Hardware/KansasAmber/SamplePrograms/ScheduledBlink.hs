@@ -22,14 +22,14 @@ import System.Hardware.KansasAmber
 myTask :: Pin -> Arduino ()
 myTask led = do
         digitalWrite led True
-        delay 1000
+        delayMillis 1000
         digitalWrite led False
-        delay 1000
+        delayMillis 1000
         return ()
 
 scheduledBlink :: IO ()
-scheduledBlink = withArduino False "/dev/cu.usbmodem1421" $ do
-    let led = digital 13
+scheduledBlink = withArduino True "/dev/cu.usbmodem1421" $ do
+    let led = 13
     setPinMode led OUTPUT
     -- Create the task which blinks with a 2 second period
     createTask 1 (myTask led)
@@ -41,6 +41,8 @@ scheduledBlink = withArduino False "/dev/cu.usbmodem1421" $ do
     task <- queryTask 1
     liftIO $ print task
     -- Wait 10.5 seconds and delete the task
-    delay 10500
+    delayMillis 10500
     deleteTask 1
+    tasks <- queryAllTasks
+    liftIO $ print tasks
 

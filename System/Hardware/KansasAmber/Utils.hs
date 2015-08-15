@@ -53,41 +53,25 @@ showBin n = showIntAtBase 2 (head . show) n ""
 
 -- | Turn a lo/hi encoded Arduino string constant into a Haskell string
 getString :: [Word8] -> String
-getString = map (chr . fromIntegral) . fromArduinoBytes
-
--- | Turn a lo/hi encoded Arduino sequence into a bunch of words, again weird
--- encoding.
-fromArduinoBytes :: [Word8] -> [Word8]
-fromArduinoBytes []         = []
-fromArduinoBytes [x]        = [x]  -- shouldn't really happen
-fromArduinoBytes (l:h:rest) = c : fromArduinoBytes rest
-  where c = h `shiftL` 7 .|. l -- first seven bit comes from l; then extra stuff is in h
-
--- | Turn a lo/hi encoded Arduino pair into a word
-fromArduinoByte :: (Word8, Word8) -> Word8
-fromArduinoByte (l,h) = (fromArduinoBytes [l,h]) !! 0
-
--- | Turn a normal byte into a lo/hi Arduino byte. If you think this encoding
--- is just plain weird, you're not alone. (I suspect it has something to do
--- with error-correcting low-level serial communication of the past.)
-toArduinoBytes :: Word8 -> [Word8]
-toArduinoBytes w = [lo, hi]
-  where lo =  w             .&. 0x7F   -- first seven bits
-        hi = (w `shiftR` 7) .&. 0x7F   -- one extra high-bit
+getString s = map (chr . fromIntegral) s
 
 -- | Convert a word to it's bytes, as would be required by Arduino comms
 word32ToBytes :: Word32 -> [Word8]
-word32ToBytes i = map fromIntegral [(i `shiftR` 24) .&. 0xFF, (i `shiftR` 16) .&. 0xFF, (i `shiftR`  8) .&. 0xFF, i .&. 0xFF]
+word32ToBytes i = map fromIntegral [ i .&. 0xFF, (i `shiftR` 8) .&. 0xFF, 
+                                    (i `shiftR` 16) .&. 0xFF, 
+                                    (i `shiftR`  24) .&. 0xFF]
 
 -- | Inverse conversion for word32ToBytes
 bytesToWord32 :: (Word8, Word8, Word8, Word8) -> Word32
-bytesToWord32 (a, b, c, d) = fromIntegral a `shiftL` 24 .|. fromIntegral b `shiftL` 16 .|. fromIntegral c `shiftL` 8 .|. fromIntegral d
+bytesToWord32 (a, b, c, d) = fromIntegral d `shiftL` 24 .|. 
+                             fromIntegral c `shiftL` 16 .|. 
+                             fromIntegral b `shiftL`  8 .|. 
+                             fromIntegral a
 
 -- | Convert a word to it's bytes, as would be required by Arduino comms
 word16ToBytes :: Word16 -> [Word8]
-word16ToBytes i = map fromIntegral [(i `shiftR`  8) .&. 0xFF, i .&. 0xFF]
+word16ToBytes i = map fromIntegral [ i .&. 0xFF, (i `shiftR`  8) .&. 0xFF ]
 
 -- | Inverse conversion for word32ToBytes
 bytesToWord16 :: (Word8, Word8) -> Word16
-bytesToWord16 (a, b) = fromIntegral a `shiftL` 8 .|. fromIntegral b
-
+bytesToWord16 (a, b) = fromIntegral b .|. fromIntegral a `shiftL` 8 
