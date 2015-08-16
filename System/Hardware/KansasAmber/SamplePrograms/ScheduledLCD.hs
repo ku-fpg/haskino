@@ -13,17 +13,19 @@
 
 module System.Hardware.KansasAmber.SamplePrograms.ScheduledLCD where
 
+import Control.Monad.Trans (liftIO)
+
 import System.Hardware.KansasAmber
 import System.Hardware.KansasAmber.Parts.LCD
 
 hitachi :: LCDController
-hitachi = Hitachi44780 { lcdRS = digital 8
-                     , lcdEN = digital 9
-                     , lcdD4 = digital 4
-                     , lcdD5 = digital 5
-                     , lcdD6 = digital 6
-                     , lcdD7 = digital 7
-                     , lcdBL   = Just (digital 10 )
+hitachi = Hitachi44780 { lcdRS = 8
+                     , lcdEN = 9
+                     , lcdD4 = 4
+                     , lcdD5 = 5
+                     , lcdD6 = 6
+                     , lcdD7 = 7
+                     , lcdBL   = Just 10
                      , lcdRows = 2
                      , lcdCols = 16
                      , dotMode5x10 = False
@@ -35,13 +37,13 @@ myTask :: LCD -> Arduino ()
 myTask lcd = do
     lcdHome lcd
     lcdWrite lcd "Rock   " 
-    delay 1500   
+    delayMillis 1500   
     lcdHome lcd
     lcdWrite lcd "Chalk  " 
-    delay 1500   
+    delayMillis 1500   
     lcdHome lcd
     lcdWrite lcd "Jayhawk" 
-    delay 1500   
+    delayMillis 1500   
 
 scheduledLCD :: IO ()
 scheduledLCD = withArduino True "/dev/cu.usbmodem1421" $ do
@@ -51,3 +53,6 @@ scheduledLCD = withArduino True "/dev/cu.usbmodem1421" $ do
         createTask 1 (myTask lcd)
         -- Schedule the task to start in 5 seconds
         scheduleTask 1 5000
+        -- Query to confirm task creation
+        task <- queryTask 1
+        liftIO $ print task
