@@ -4,6 +4,7 @@
 #include "AmberComm.h"
 #include "AmberCommands.h"
 #include "AmberBoardStatus.h"
+#include "AmberScheduler.h"
 
 /*
  
@@ -32,15 +33,11 @@ void loop()
         handleInput();
         if (!processingMessage()) 
             {
-#if 0
             schedulerRunTasks();
-#endif    
             }
         }
     if (!processingMessage()) 
         {
-#if 0
         schedulerRunTasks();
-#endif
         }
 }

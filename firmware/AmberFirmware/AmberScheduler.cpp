@@ -28,6 +28,7 @@ static TASK *findTask(int id);
 static bool executeTask(TASK *task);
 
 static TASK *firstTask = NULL;
+static TASK *runningTask = NULL;
 
 bool parseSchedulerMessage(int size, byte *msg)
     {
@@ -124,7 +125,7 @@ static bool handleAddToTask(int size, byte *msg)
 
     if ((task = findTask(id)) != NULL)
         {
-        if (size + task->currLen <= task->size)
+        if (addSize + task->currLen <= task->size)
             {
             memcpy(&task->data[task->currLen], data, addSize);
             task->currLen += addSize;
@@ -162,7 +163,7 @@ static bool handleQuery(int size, byte *msg)
         *sizeReply = task->size;
         *lenReply = task->currLen;
         *posReply = task->currPos;
-        *millisReply = task->millis;
+        *millisReply = task->millis - millis();
         sendReply(sizeof(queryReply), SCHED_RESP_QUERY, queryReply);
         }
     else
@@ -210,10 +211,12 @@ void schedulerRunTasks()
             next = current->next;
             if (current->millis > 0 && current->millis < now) 
                 { // ToDo: handle overflow
+                runningTask = current;
                 if (!executeTask(current)) 
                     {
                     deleteTask(current);
                     }
+                runningTask = NULL;
                 }
             current = next;
             }
@@ -223,33 +226,36 @@ void schedulerRunTasks()
 static bool executeTask(TASK *task)
     {
     // Find end of next command
-    byte *msg = &task->data[task->currPos];
-    byte *search = msg;
-    int cmdSize;
-    bool taskRescheduled = false;
+    bool taskRescheduled;
 
-    while (*search != HDLC_FRAME_FLAG && search != task->endData)
+    while (task->currPos < task->currLen)
         {
-        search++;
-        }
+        byte *msg = &task->data[task->currPos];
+        byte cmdSize = msg[0];
+        byte *cmd = &msg[1];
 
-    if ((cmdSize = search - msg - 1) != 0)
-        {
-        taskRescheduled = parseMessage(cmdSize, msg);  
-        } 
+        char buffer[20];
+        taskRescheduled = parseMessage(cmdSize, cmd);  
 
-    task->currPos += cmdSize + 1;
-    if (task->currPos >= task->size)
-        {
+        task->currPos += cmdSize + 1;
         if (taskRescheduled)
             {
-            task->currPos = 0;
+            if (task->currPos >= task->currLen)
+                {
+                task->currPos = 0;
+                }
             return true;
             }
-        else
-            {
-            return false;
-            }
         }
-    return true;
+    return false;
+    }
+
+bool isRunningTask()
+    {
+    return runningTask != NULL;
+    }
+
+void delayRunningTask(unsigned long ms)
+    {
+    runningTask->millis += ms;   
     }

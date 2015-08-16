@@ -11,7 +11,7 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE GADTs      #-}
 
-module System.Hardware.KansasAmber.Protocol(packageCommand, packageProcedure, unpackageResponse, parseQueryResult) where
+module System.Hardware.KansasAmber.Protocol(framePackage, packageCommand, packageProcedure, unpackageResponse, parseQueryResult) where
 
 import Data.Bits            (xor)
 import Data.Word (Word8)
@@ -24,6 +24,14 @@ import System.Hardware.KansasAmber.Utils
 -- | Maximum size of a firmata message
 maxFirmwareSize :: Int
 maxFirmwareSize = 128
+
+framePackage :: B.ByteString -> B.ByteString
+framePackage bs = B.append (B.concatMap escape bs) (B.singleton 0x7E)
+  where
+    escape :: Word8 -> B.ByteString
+    escape c = if c == 0x7E || c == 0x7D
+               then B.pack $ [0x7D, xor c 0x20]
+               else B.singleton c
 
 buildCommand :: FirmwareCmd -> [Word8] -> B.ByteString
 buildCommand cmd bs = B.pack $ firmwareCmdVal cmd : bs
@@ -52,15 +60,15 @@ packageCommand c (ScheduleTask tid tt)    =
 packageCommand c (CreateTask tid m)       = do
     td <- packageTaskData c m
     let taskSize = fromIntegral (B.length td)
-    return $ buildCommand SCHED_CMD_CREATE_TASK (tid : (word16ToBytes taskSize))
-                                    `B.append` (genAddToTaskCmds td)
+    let cmd = buildCommand SCHED_CMD_CREATE_TASK (tid : (word16ToBytes taskSize))                                   
+    return $ (framePackage cmd) `B.append` (genAddToTaskCmds td)
   where
     maxCmdSize = maxFirmwareSize - 3
     genAddToTaskCmds tds | fromIntegral (B.length tds) > maxCmdSize = 
         addToTask (B.take maxCmdSize tds) 
             `B.append` (genAddToTaskCmds (B.drop maxCmdSize tds))
     genAddToTaskCmds tds = addToTask tds
-    addToTask tds' = buildCommand SCHED_CMD_ADD_TO_TASK ([tid, fromIntegral $ B.length tds'] ++ (B.unpack tds'))
+    addToTask tds' = framePackage $ buildCommand SCHED_CMD_ADD_TO_TASK ([tid, fromIntegral $ B.length tds'] ++ (B.unpack tds'))
 {- 
 packageCommand c (StepperConfig dev TwoWire d sr p1 p2 _ _) = do
     ipin1 <-  getInternalPin c p1 
@@ -187,11 +195,12 @@ unpackageResponse (cmdWord:args)
       (SCHED_RESP_QUERY_ALL, ts)      -> QueryAllTasksReply ts
       (SCHED_RESP_QUERY, ts) | length ts == 0 -> 
           QueryTaskReply Nothing
-      -- TBD Fix reply decode
       (SCHED_RESP_QUERY, ts) | length ts >= 9 -> 
-          let tid:tt0:tt1:tt2:tt3:tl0:tl1:tp0:tp1:rest = ts
-          in QueryTaskReply (Just (tid, bytesToWord32 (tt3,tt2,tt1,tt0),  
-                              bytesToWord16 (tl1,tl0), bytesToWord16 (tp1,tp0)))
+          let ts0:ts1:tl0:tl1:tp0:tp1:tt0:tt1:tt2:tt3:rest = ts
+          in QueryTaskReply (Just (bytesToWord16 (ts0,ts1), 
+                                   bytesToWord16 (tl0,tl1),
+                                   bytesToWord16 (tp0,tp1), 
+                                   bytesToWord32 (tt0,tt1,tt2,tt3)))  
       _                               -> Unimplemented (Just (show cmd)) args
   | True
   = Unimplemented Nothing (cmdWord : args)

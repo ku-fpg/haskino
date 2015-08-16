@@ -299,7 +299,7 @@ data Procedure :: * -> * where
      I2CRead :: SlaveAddress -> Maybe SlaveRegister -> Word8 -> Procedure [Word8]
      -- Todo: add one wire queries
      QueryAllTasks :: Procedure [TaskID]
-     QueryTask :: TaskID -> Procedure (Maybe (TaskID, TimeMillis, TaskLength, TaskPos))
+     QueryTask :: TaskID -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
 
 deriving instance Show a => Show (Procedure a)
 
@@ -339,7 +339,7 @@ i2cRead sa sr cnt = Procedure $ I2CRead sa sr cnt
 queryAllTasks :: Arduino [TaskID]
 queryAllTasks = Procedure QueryAllTasks
 
-queryTask :: TaskID -> Arduino (Maybe (TaskID, TimeMillis, TaskLength, TaskPos))
+queryTask :: TaskID -> Arduino (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
 queryTask tid = Procedure $ QueryTask tid
 
 -- | A response, as returned from the Arduino
@@ -353,7 +353,7 @@ data Response = Firmware Word8 Word8                 -- ^ Firmware version (maj/
 --              | PulseResponse  IPin Word32           -- ^ Repsonse to a PulseInCommand
               | I2CReply [Word8]                     -- ^ Response to a I2C Read
               | QueryAllTasksReply [Word8]           -- ^ Response to Query All Tasks
-              | QueryTaskReply (Maybe (TaskID, TimeMillis, TaskLength, TaskPos))
+              | QueryTaskReply (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
               | Unimplemented (Maybe String) [Word8] -- ^ Represents messages currently unsupported
               | EmptyFrame
     deriving Show

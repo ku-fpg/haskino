@@ -3,6 +3,7 @@
 #include "AmberComm.h"
 #include "AmberCommands.h"
 #include "AmberFirmware.h"
+#include "AmberScheduler.h"
 #include "SoftReset.h"
 
 static bool handleSetPinMode(int size, byte *msg);
@@ -40,7 +41,14 @@ static bool handleDelayMillis(int size, byte *msg)
     {
     unsigned long millis;
     memcpy(&millis, &msg[1], 4);
-    delay(millis);
+    if (isRunningTask())
+        {
+        delayRunningTask(millis);
+        }
+    else 
+        {
+        delay(millis);
+        }
     return true;
     }
 

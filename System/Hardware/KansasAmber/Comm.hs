@@ -123,14 +123,6 @@ withArduino verbose fp program = do
   where catchCtrlC UserInterrupt = Just ()
         catchCtrlC _             = Nothing
 
-framePackage :: B.ByteString -> IO B.ByteString
-framePackage bs = return $ B.append (B.concatMap escape bs) (B.singleton 0x7E)
-  where
-    escape :: Word8 -> B.ByteString
-    escape c = if c == 0x7E || c == 0x7D
-               then B.pack $ [0x7D, xor c 0x20]
-               else B.singleton c
-
 send :: ArduinoConnection -> Arduino a -> IO a
 send conn commands =
       send' conn commands B.empty
@@ -148,10 +140,12 @@ send conn commands =
           message c $ "Delaying: " ++ show d
           threadDelay (fromIntegral d)
           send' c (k ()) B.empty
+      sendBind c (Command (CreateTask tid as)) k cmds = do 
+          packCmd <- packageCommand c (CreateTask tid as)
+          send' c (k ()) (B.append cmds packCmd)
       sendBind c (Command cmd) k cmds = do 
           packCmd <- packageCommand c cmd
-          frame <- framePackage packCmd
-          send' c (k ()) (B.append cmds frame)
+          send' c (k ()) (B.append cmds (framePackage packCmd))
       sendBind c (Control ctrl)  k cmds = sendControl c ctrl k cmds
       sendBind c (Local local)   k cmds = sendLocal c local k cmds
       sendBind c (Procedure procedure) k cmds = sendProcedure c procedure k cmds
@@ -175,8 +169,7 @@ send conn commands =
 
       sendProcedure :: ArduinoConnection -> Procedure a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendProcedure c procedure k cmds = do
-          frame <- framePackage $ packageProcedure procedure
-          sendToArduino c (B.append cmds frame)
+          sendToArduino c (B.append cmds (framePackage $ packageProcedure procedure))
           wait c procedure k
         where
           wait :: ArduinoConnection -> Procedure a -> (a -> Arduino b) -> IO b

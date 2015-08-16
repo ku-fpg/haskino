@@ -74,4 +74,4 @@ word16ToBytes i = map fromIntegral [ i .&. 0xFF, (i `shiftR`  8) .&. 0xFF ]
 
 -- | Inverse conversion for word32ToBytes
 bytesToWord16 :: (Word8, Word8) -> Word16
-bytesToWord16 (a, b) = fromIntegral b .|. fromIntegral a `shiftL` 8 
+bytesToWord16 (a, b) = fromIntegral a .|. fromIntegral b `shiftL` 8 
