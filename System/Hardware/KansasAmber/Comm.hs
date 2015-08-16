@@ -85,7 +85,6 @@ openArduino verbose fp = do
           -- Step 1: Send a reset to get things going
           -- send initState systemReset
           -- Step 2: Send query-firmware, and wait until we get a response
-          S.send port (B.pack [0x73,0x10,0x73])
           (v1, v2) <- send initState queryFirmware
           let versionState = initState {firmwareID = "Firmware v" ++ show v1 ++ "." ++ show v2 }
           -- Step 3: Send a capabilities request
