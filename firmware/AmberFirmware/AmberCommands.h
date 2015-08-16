@@ -43,6 +43,8 @@
 #define ALG_CMD_TYPE            0x30
 #define ALG_CMD_READ_PIN        (ALG_CMD_TYPE | 0x0)
 #define ALG_CMD_WRITE_PIN       (ALG_CMD_TYPE | 0x1)
+#define ALG_CMD_TONE_PIN        (ALG_CMD_TYPE | 0x2)
+#define ALG_CMD_NOTONE_PIN      (ALG_CMD_TYPE | 0x3)
 
 // Analog responses
 #define ALG_RESP_READ_PIN       (ALG_CMD_TYPE | 0x8)

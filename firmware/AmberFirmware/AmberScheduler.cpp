@@ -75,7 +75,8 @@ static TASK *findTask(int id)
 static bool handleCreateTask(int size, byte *msg)
     {
     byte id = msg[1];
-    uint16_t taskSize = msg[2] + (msg[3] << 8);
+    unsigned int taskSize;
+    memcpy(&taskSize, &msg[2], 2);
     TASK *newTask;
 
     if ((findTask(id) == NULL) &&
@@ -137,8 +138,8 @@ static bool handleAddToTask(int size, byte *msg)
 static bool handleScheduleTask(int size, byte *msg)
     {
     byte id = msg[1];
-    uint32_t deltaMillis = msg[2] + (msg[3] << 8) + 
-                           (msg[4] << 16) + (msg[5] << 24);
+    unsigned long deltaMillis;
+    memcpy(&deltaMillis, &msg[2], 4);
     TASK *task;
 
     if ((task = findTask(id)) != NULL)
