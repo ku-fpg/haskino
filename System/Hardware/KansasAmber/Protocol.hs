@@ -26,12 +26,13 @@ maxFirmwareSize :: Int
 maxFirmwareSize = 128
 
 framePackage :: B.ByteString -> B.ByteString
-framePackage bs = B.append (B.concatMap escape bs) (B.singleton 0x7E)
+framePackage bs = B.append (B.concatMap escape bs) (B.pack [check bs, 0x7E])
   where
     escape :: Word8 -> B.ByteString
     escape c = if c == 0x7E || c == 0x7D
                then B.pack $ [0x7D, xor c 0x20]
                else B.singleton c
+    check b = B.foldl (+) 0 b
 
 buildCommand :: FirmwareCmd -> [Word8] -> B.ByteString
 buildCommand cmd bs = B.pack $ firmwareCmdVal cmd : bs

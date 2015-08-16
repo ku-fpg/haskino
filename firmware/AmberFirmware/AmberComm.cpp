@@ -62,11 +62,20 @@ static void processChar(byte c)
     {
     if (c == HDLC_FRAME_FLAG) 
         {
-        processingEscapeState = 0;
-        if (messageCount > 0)
+        if (messageCount > 1)
             {
-            parseMessage(messageCount, inputData);
+            byte checksum = 0;
+            byte *msg = inputData;
+            for (int i=0;i<messageCount-1;i++)
+                {
+                checksum += *msg++;
+                }
+            if (checksum == *msg)
+                {
+                parseMessage(messageCount, inputData);
+                }
             }
+        processingEscapeState = 0;
         messageCount = 0;
         } 
     else if (c == HDLC_ESCAPE) 
@@ -93,13 +102,17 @@ void handleInput()
         }  
     }
 
+static byte outgoingChecksum;
+
 void startReplyFrame(byte replyType)
     {
     Serial.write(replyType);
+    outgoingChecksum = replyType;
     }
 
 void endReplyFrame()
     {
+    Serial.write(outgoingChecksum);
     Serial.write(HDLC_FRAME_FLAG);
     }
 
@@ -115,6 +128,7 @@ void sendReplyByte(byte replyByte)
         {
         Serial.write(replyByte);
         }
+    outgoingChecksum += replyByte;
     }
 
 void sendReply(int count, byte replyType, byte *reply)

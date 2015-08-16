@@ -364,6 +364,7 @@ data Response = Firmware Word8 Word8                 -- ^ Firmware version (maj/
               | QueryTaskReply (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
               | Unimplemented (Maybe String) [Word8] -- ^ Represents messages currently unsupported
               | EmptyFrame
+              | InvalidChecksumFrame [Word8]
     deriving Show
 
 -- | Amber Firmware commands, see: http://tbd

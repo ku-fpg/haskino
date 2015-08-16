@@ -217,13 +217,15 @@ setupListener serial dbg chan = do
                                       0x7D -> do e <- getByte
                                                  collectFrame ((xor e 0x20) : sofar)
                                       _    -> collectFrame (b : sofar)
+            checkFrame fs = (last fs) == (foldl (+) 0 $ init fs)
             listener = do
                 frame  <- collectFrame []
                 resp <- case frame of 
                            [] -> return $ EmptyFrame
+                           fs | not (checkFrame fs) -> return $ InvalidChecksumFrame fs
                            fs -> case getFirmwareReply $ head fs of
                                     Left  unknown  -> return $ Unimplemented (Just (show unknown)) []
-                                    Right c        -> return $ unpackageResponse fs
+                                    Right c        -> return $ unpackageResponse $ init fs
                 case resp of
                   EmptyFrame           -> dbg $ "Ignoring empty received frame"
                   Unimplemented{}      -> dbg $ "Ignoring the received response: " ++ show resp
