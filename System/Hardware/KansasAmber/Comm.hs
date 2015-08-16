@@ -227,10 +227,11 @@ setupListener serial dbg chan = do
                                     Left  unknown  -> return $ Unimplemented (Just (show unknown)) []
                                     Right c        -> return $ unpackageResponse $ init fs
                 case resp of
-                  EmptyFrame           -> dbg $ "Ignoring empty received frame"
-                  Unimplemented{}      -> dbg $ "Ignoring the received response: " ++ show resp
-                  StringMessage{}      -> dbg $ "Received " ++ show resp
-                  _                    -> do dbg $ "Received " ++ show resp
-                                             writeChan chan resp
+                  EmptyFrame             -> dbg $ "Ignoring empty received frame"
+                  InvalidChecksumFrame{} -> dbg $ "Ignoring received frame with invalid checksum" ++ show resp
+                  Unimplemented{}        -> dbg $ "Ignoring the received response: " ++ show resp
+                  StringMessage{}        -> dbg $ "Received " ++ show resp
+                  _                      -> do dbg $ "Received " ++ show resp
+                                               writeChan chan resp
         tid <- liftIO $ forkIO $ forever listener
         return tid
