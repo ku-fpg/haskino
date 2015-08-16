@@ -9,7 +9,7 @@
 #define CMD_SUBTYPE_MASK        0x0F
 
 // Board Control commands
-#define BC_CMD_TYPE             0x00
+#define BC_CMD_TYPE             0x10
 #define BC_CMD_SET_PIN_MODE     (BC_CMD_TYPE | 0x0)
 #define BC_CMD_DELAY_MILLIS     (BC_CMD_TYPE | 0x1)
 #define BC_CMD_DELAY_MICROS     (BC_CMD_TYPE | 0x2)
@@ -18,7 +18,7 @@
 // Board Control responses
 
 // Board Status commands
-#define BS_CMD_TYPE             0x10
+#define BS_CMD_TYPE             0x20
 #define BS_CMD_REQUEST_VERSION  (BS_CMD_TYPE | 0x0)
 #define BS_CMD_REQUEST_TYPE     (BS_CMD_TYPE | 0x1)
 #define BS_CMD_REQUEST_MICROS   (BS_CMD_TYPE | 0x2)
@@ -32,7 +32,7 @@
 #define BS_RESP_STRING          (BS_CMD_TYPE | 0xC)
 
 // Digital commands
-#define DIG_CMD_TYPE            0x20
+#define DIG_CMD_TYPE            0x30
 #define DIG_CMD_READ_PIN        (DIG_CMD_TYPE | 0x0)
 #define DIG_CMD_WRITE_PIN       (DIG_CMD_TYPE | 0x1)
 
@@ -40,7 +40,7 @@
 #define DIG_RESP_READ_PIN       (DIG_CMD_TYPE | 0x8)
 
 // Analog commands
-#define ALG_CMD_TYPE            0x30
+#define ALG_CMD_TYPE            0x40
 #define ALG_CMD_READ_PIN        (ALG_CMD_TYPE | 0x0)
 #define ALG_CMD_WRITE_PIN       (ALG_CMD_TYPE | 0x1)
 #define ALG_CMD_TONE_PIN        (ALG_CMD_TYPE | 0x2)
@@ -50,7 +50,7 @@
 #define ALG_RESP_READ_PIN       (ALG_CMD_TYPE | 0x8)
 
 // I2C commands
-#define I2C_CMD_TYPE            0x40
+#define I2C_CMD_TYPE            0x50
 #define I2C_CMD_READ            (I2C_CMD_TYPE | 0x0)
 #define I2C_CMD_READ_REG        (I2C_CMD_TYPE | 0x1)
 #define I2C_CMD_WRITE           (I2C_CMD_TYPE | 0x2)
@@ -59,22 +59,22 @@
 #define I2C_RESP_READ           (I2C_CMD_TYPE | 0x8)
 
 // One Wire commands
-#define ONEW_CMD_TYPE           0x50
+#define ONEW_CMD_TYPE           0x60
 
 // One Wire responses
 
 // Servo commands
-#define SRVO_CMD_TYPE           0x60
+#define SRVO_CMD_TYPE           0x80
 
 // Servo responses
 
 // Stepper commands
-#define STEP_CMD_TYPE           0x80
+#define STEP_CMD_TYPE           0x90
 
 // Stepper responses
 
 // Scheduler commands
-#define SCHED_CMD_TYPE          0x90
+#define SCHED_CMD_TYPE          0xA0
 #define SCHED_CMD_CREATE_TASK   (SCHED_CMD_TYPE | 0x0)
 #define SCHED_CMD_DELETE_TASK   (SCHED_CMD_TYPE | 0x1)
 #define SCHED_CMD_ADD_TO_TASK   (SCHED_CMD_TYPE | 0x2)

@@ -185,6 +185,8 @@ data Command =
      | DigitalWrite Pin Bool                    -- ^ Set the value on a pin digitally
 --     | DigitalWriteE Pin (Expr Bool)              
      | AnalogWrite Pin Word16                   -- ^ Send an analog-write; used for servo control
+     | Tone Pin Word16 (Maybe Word32)           -- ^ Play a tone on a pin
+     | NoTone Pin                               -- ^ Stop playing a tone on a pin
 --     | AnalogWriteE Pin (Expr Word16)
      | I2CWrite SlaveAddress [Word8]
 --     | I2CWriteE SlaveAddress (Expr [Word8])
@@ -222,6 +224,12 @@ digitalWrite p b = Command $ DigitalWrite p b
 
 analogWrite :: Pin -> Word16 -> Arduino ()
 analogWrite p w = Command $ AnalogWrite p w
+
+tone :: Pin -> Word16 -> Maybe Word32 -> Arduino ()
+tone p f d = Command $ Tone p f d
+
+noTone :: Pin -> Arduino ()
+noTone p = Command $ NoTone p
 
 -- analogWriteE :: Pin -> (Expr Word16) -> Arduino ()
 -- analogWriteE p w = Command $ AnalogWriteE p w
@@ -371,6 +379,8 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE
                  | DIG_CMD_WRITE_PIN
                  | ALG_CMD_READ_PIN
                  | ALG_CMD_WRITE_PIN
+                 | ALG_CMD_TONE_PIN
+                 | ALG_CMD_NOTONE_PIN
                  | I2C_CMD_READ
                  | I2C_CMD_READ_REG
                  | I2C_CMD_WRITE
@@ -385,27 +395,29 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE
 
 -- | Compute the numeric value of a command
 firmwareCmdVal :: FirmwareCmd -> Word8
-firmwareCmdVal BC_CMD_SET_PIN_MODE    = 0x00
-firmwareCmdVal BC_CMD_DELAY_MILLIS    = 0x01
-firmwareCmdVal BC_CMD_DELAY_MICROS    = 0x02
-firmwareCmdVal BC_CMD_SYSTEM_RESET    = 0x03
-firmwareCmdVal BS_CMD_REQUEST_VERSION = 0x10
-firmwareCmdVal BS_CMD_REQUEST_TYPE    = 0x11
-firmwareCmdVal BS_CMD_REQUEST_MILLIS  = 0x12
-firmwareCmdVal DIG_CMD_READ_PIN       = 0x20
-firmwareCmdVal DIG_CMD_WRITE_PIN      = 0x21
-firmwareCmdVal ALG_CMD_READ_PIN       = 0x30
-firmwareCmdVal ALG_CMD_WRITE_PIN      = 0x31
-firmwareCmdVal I2C_CMD_READ           = 0x40
-firmwareCmdVal I2C_CMD_READ_REG       = 0x41
-firmwareCmdVal I2C_CMD_WRITE          = 0x42
-firmwareCmdVal SCHED_CMD_CREATE_TASK  = 0x90
-firmwareCmdVal SCHED_CMD_DELETE_TASK  = 0x91
-firmwareCmdVal SCHED_CMD_ADD_TO_TASK  = 0x92
-firmwareCmdVal SCHED_CMD_SCHED_TASK   = 0x93
-firmwareCmdVal SCHED_CMD_QUERY        = 0x94
-firmwareCmdVal SCHED_CMD_QUERY_ALL    = 0x95
-firmwareCmdVal SCHED_CMD_RESET        = 0x96
+firmwareCmdVal BC_CMD_SET_PIN_MODE    = 0x10
+firmwareCmdVal BC_CMD_DELAY_MILLIS    = 0x11
+firmwareCmdVal BC_CMD_DELAY_MICROS    = 0x12
+firmwareCmdVal BC_CMD_SYSTEM_RESET    = 0x13
+firmwareCmdVal BS_CMD_REQUEST_VERSION = 0x20
+firmwareCmdVal BS_CMD_REQUEST_TYPE    = 0x21
+firmwareCmdVal BS_CMD_REQUEST_MILLIS  = 0x22
+firmwareCmdVal DIG_CMD_READ_PIN       = 0x30
+firmwareCmdVal DIG_CMD_WRITE_PIN      = 0x31
+firmwareCmdVal ALG_CMD_READ_PIN       = 0x40
+firmwareCmdVal ALG_CMD_WRITE_PIN      = 0x41
+firmwareCmdVal ALG_CMD_TONE_PIN       = 0x42
+firmwareCmdVal ALG_CMD_NOTONE_PIN     = 0x43
+firmwareCmdVal I2C_CMD_READ           = 0x50
+firmwareCmdVal I2C_CMD_READ_REG       = 0x51
+firmwareCmdVal I2C_CMD_WRITE          = 0x52
+firmwareCmdVal SCHED_CMD_CREATE_TASK  = 0xA0
+firmwareCmdVal SCHED_CMD_DELETE_TASK  = 0xA1
+firmwareCmdVal SCHED_CMD_ADD_TO_TASK  = 0xA2
+firmwareCmdVal SCHED_CMD_SCHED_TASK   = 0xA3
+firmwareCmdVal SCHED_CMD_QUERY        = 0xA4
+firmwareCmdVal SCHED_CMD_QUERY_ALL    = 0xA5
+firmwareCmdVal SCHED_CMD_RESET        = 0xA6
 
 -- | Firmware replies, see: https:tbd
 data FirmwareReply =  BS_RESP_VERSION
@@ -421,16 +433,16 @@ data FirmwareReply =  BS_RESP_VERSION
                 deriving Show
 
 getFirmwareReply :: Word8 -> Either Word8 FirmwareReply
-getFirmwareReply 0x18 = Right BS_RESP_VERSION
-getFirmwareReply 0x19 = Right BS_RESP_TYPE
-getFirmwareReply 0x1A = Right BS_RESP_MICROS
-getFirmwareReply 0x1B = Right BS_RESP_MILLIS
-getFirmwareReply 0x1C = Right BS_RESP_STRING
-getFirmwareReply 0x28 = Right DIG_RESP_READ_PIN
-getFirmwareReply 0x38 = Right ALG_RESP_READ_PIN
-getFirmwareReply 0x48 = Right I2C_RESP_READ
-getFirmwareReply 0x98 = Right SCHED_RESP_QUERY
-getFirmwareReply 0x99 = Right SCHED_RESP_QUERY_ALL
+getFirmwareReply 0x28 = Right BS_RESP_VERSION
+getFirmwareReply 0x29 = Right BS_RESP_TYPE
+getFirmwareReply 0x2A = Right BS_RESP_MICROS
+getFirmwareReply 0x2B = Right BS_RESP_MILLIS
+getFirmwareReply 0x2C = Right BS_RESP_STRING
+getFirmwareReply 0x38 = Right DIG_RESP_READ_PIN
+getFirmwareReply 0x48 = Right ALG_RESP_READ_PIN
+getFirmwareReply 0x58 = Right I2C_RESP_READ
+getFirmwareReply 0xA8 = Right SCHED_RESP_QUERY
+getFirmwareReply 0xA9 = Right SCHED_RESP_QUERY_ALL
 getFirmwareReply n    = Left n
 
 --stepDelayVal :: StepDelay -> Word8

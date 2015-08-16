@@ -47,6 +47,12 @@ packageCommand c (DigitalWrite p b)  = do
     return $ buildCommand DIG_CMD_WRITE_PIN [p, if b then 1 else 0]
 packageCommand c (AnalogWrite p w) = do
     return $ buildCommand ALG_CMD_WRITE_PIN (p : (word16ToBytes w))
+packageCommand c (Tone p f (Just d)) = do
+    return $ buildCommand ALG_CMD_TONE_PIN (p : (word16ToBytes f) ++ (word32ToBytes d))
+packageCommand c (Tone p f Nothing) = do
+    packageCommand c (Tone p f (Just 0))
+packageCommand c (NoTone p) = do
+    return $ buildCommand ALG_CMD_NOTONE_PIN [p]
 packageCommand c (I2CWrite sa w8s) = 
     return $ buildCommand I2C_CMD_WRITE (sa : w8s)
 packageCommand c (DeleteTask tid) = 
