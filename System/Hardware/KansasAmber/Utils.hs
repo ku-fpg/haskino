@@ -56,12 +56,14 @@ getString :: [Word8] -> String
 getString s = map (chr . fromIntegral) s
 
 -- | Convert a word to it's bytes, as would be required by Arduino comms
+-- | Note: Little endian format, which is Arduino native
 word32ToBytes :: Word32 -> [Word8]
 word32ToBytes i = map fromIntegral [ i .&. 0xFF, (i `shiftR` 8) .&. 0xFF, 
                                     (i `shiftR` 16) .&. 0xFF, 
                                     (i `shiftR`  24) .&. 0xFF]
 
 -- | Inverse conversion for word32ToBytes
+-- | Note: Little endian format, which is Arduino native
 bytesToWord32 :: (Word8, Word8, Word8, Word8) -> Word32
 bytesToWord32 (a, b, c, d) = fromIntegral d `shiftL` 24 .|. 
                              fromIntegral c `shiftL` 16 .|. 
@@ -69,9 +71,11 @@ bytesToWord32 (a, b, c, d) = fromIntegral d `shiftL` 24 .|.
                              fromIntegral a
 
 -- | Convert a word to it's bytes, as would be required by Arduino comms
+-- | Note: Little endian format, which is Arduino native
 word16ToBytes :: Word16 -> [Word8]
 word16ToBytes i = map fromIntegral [ i .&. 0xFF, (i `shiftR`  8) .&. 0xFF ]
 
--- | Inverse conversion for word32ToBytes
+-- | Inverse conversion for word16ToBytes
+-- | Note: Little endian format, which is Arduino native
 bytesToWord16 :: (Word8, Word8) -> Word16
 bytesToWord16 (a, b) = fromIntegral a .|. fromIntegral b `shiftL` 8 

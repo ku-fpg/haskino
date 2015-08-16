@@ -103,10 +103,6 @@ data PinMode = INPUT
              | INPUT_PULLUP
         deriving (Eq, Show, Enum)
 
--- | Resolution, as referred to in http://firmata.org/wiki/Protocol#Capability_Query
--- TODO: Not quite sure how this is used, so merely keep it as a Word8 now
-type Resolution = Word8
-
 -- | LCD's connected to the board
 data LCD = LCD {
                  lcdController     :: LCDController -- ^ Actual controller
@@ -165,17 +161,7 @@ type TaskID = Word8
 type TimeMillis = Word32
 type TimeMicros = Word32
 type TaskPos = Word16
-type StepDevice = Word8
-type NumSteps = Word32
-type StepSpeed = Word16
-type StepAccel = Int
-type StepPerRev = Word16
-data StepDelay = OneUs | TwoUs
-      deriving Show
-data StepDir = CW | CCW
-      deriving Show
-data StepType = TwoWire | FourWire | StepDir
-      deriving Show
+-- ToDo: Readd Stepper types
 
 data Command =
        SystemReset                              -- ^ Send system reset
@@ -191,11 +177,6 @@ data Command =
      | I2CWrite SlaveAddress [Word8]
 --     | I2CWriteE SlaveAddress (Expr [Word8])
      | I2CConfig Word16
---     | I2CConfigE (Expr Word16)
---     | ServoConfig Pin MinPulse MaxPulse
-     -- TBD add one wire and encoder procedures
---     | StepperConfig StepDevice StepType StepDelay StepPerRev Pin Pin (Maybe Pin) (Maybe Pin)
---     | StepperStep StepDevice StepDir NumSteps StepSpeed (Maybe StepAccel)
      | CreateTask TaskID (Arduino ())
      | DeleteTask TaskID
      | DelayMillis TimeMillis
@@ -203,6 +184,7 @@ data Command =
 --     | DelayE (Expr TaskTime)
      | ScheduleTask TaskID TimeMillis
      | ScheduleReset
+     -- ToDo: add one wire and encoder procedures, readd stepper and servo
 
 systemReset :: Arduino ()
 systemReset = Command SystemReset
@@ -246,14 +228,7 @@ i2cConfig w = Command $ I2CConfig w
 -- i2cConfigE :: (Expr Word16) -> Arduino ()
 -- i2cConfigE w = Command $ I2CConfigE w
 
--- servoConfig :: Pin -> MinPulse -> MaxPulse -> Arduino ()
--- servoConfig p min max = Command $ ServoConfig p min max
-
--- stepperConfig :: StepDevice -> StepType -> StepDelay -> StepPerRev -> Pin -> Pin -> (Maybe Pin) -> (Maybe Pin) -> Arduino ()
--- stepperConfig dev ty d sr p1 p2 p3 p4 = Command $ StepperConfig dev ty d sr p1 p2 p3 p4
-
--- stepperStep :: StepDevice -> StepDir -> NumSteps -> StepSpeed -> Maybe StepAccel -> Arduino ()
--- stepperStep dev sd ns sp ac = Command $ StepperStep dev sd ns sp ac
+-- ToDo: Readd servo and stepper functions
 
 createTask :: TaskID -> Arduino () -> Arduino ()
 createTask tid ps = Command (CreateTask tid ps)
@@ -303,11 +278,10 @@ data Procedure :: * -> * where
 --     DigitalReadE     :: Pin -> Procedure (Expr Bool)
      AnalogRead     :: Pin -> Procedure Word16          -- ^ Read the analog value on a pin
 --     AnalogReadE      :: Pin -> Procedure (Expr Word16)          
---     Pulse :: Pin -> Bool -> Word32 -> Word32 -> Procedure Word32 -- ^ Request for a pulse reading on a pin, value, duration, timeout
      I2CRead :: SlaveAddress -> Maybe SlaveRegister -> Word8 -> Procedure [Word8]
-     -- Todo: add one wire queries
      QueryAllTasks :: Procedure [TaskID]
      QueryTask :: TaskID -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
+     -- Todo: add one wire queries, readd pulse?
 
 deriving instance Show a => Show (Procedure a)
 
@@ -318,7 +292,6 @@ queryProcessor :: Arduino Processor
 queryProcessor = Procedure QueryProcessor
 
 -- ToDo: Do some sort of analog mapping locally?
-
 
 -- digitalPortRead :: Port -> Arduino Word8
 -- digitalPortRead p = Procedure $ DigitalPortRead p
@@ -338,9 +311,6 @@ analogRead p = Procedure $ AnalogRead p
 -- analogReadE :: Pin -> Arduino (Expr Word16)
 -- analogReadE p = Procedure $ AnalogReadE p
 
--- pulse :: Pin -> Bool -> Word32 -> Word32 -> Arduino Word32
--- pulse p b w1 w2 = Procedure $ Pulse p b w1 w2
-
 i2cRead :: SlaveAddress -> Maybe SlaveRegister -> Word8 -> Arduino [Word8]
 i2cRead sa sr cnt = Procedure $ I2CRead sa sr cnt
 
@@ -358,7 +328,6 @@ data Response = Firmware Word8 Word8                 -- ^ Firmware version (maj/
               | DigitalReply Word8                   -- ^ Status of a pin
               | AnalogReply Word16                   -- ^ Status of an analog pin
               | StringMessage  String                -- ^ String message from Firmata
---              | PulseResponse  IPin Word32           -- ^ Repsonse to a PulseInCommand
               | I2CReply [Word8]                     -- ^ Response to a I2C Read
               | QueryAllTasksReply [Word8]           -- ^ Response to Query All Tasks
               | QueryTaskReply (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))

@@ -76,39 +76,6 @@ packageCommand c (CreateTask tid m)       = do
             `B.append` (genAddToTaskCmds (B.drop maxCmdSize tds))
     genAddToTaskCmds tds = addToTask tds
     addToTask tds' = framePackage $ buildCommand SCHED_CMD_ADD_TO_TASK ([tid, fromIntegral $ B.length tds'] ++ (B.unpack tds'))
-{- 
-packageCommand c (StepperConfig dev TwoWire d sr p1 p2 _ _) = do
-    ipin1 <-  getInternalPin c p1 
-    ipin2 <-  getInternalPin c p2
-    let pn1 = fromIntegral $ pinNo ipin1
-        pn2 = fromIntegral $ pinNo ipin2
-    return $ sysEx STEPPER_DATA ([stepperCmdVal CONFIG_STEPPER,dev,((stepDelayVal d) .|. 0x02)] ++ (word16ToArduinoBytes sr) ++ [pn1,pn2])
-packageCommand c (StepperConfig dev FourWire d sr p1 p2 (Just p3) (Just p4)) = do 
-    ipin1 <-  getInternalPin c p1 
-    ipin2 <-  getInternalPin c p2
-    ipin3 <-  getInternalPin c p3 
-    ipin4 <-  getInternalPin c p4
-    let pn1 = fromIntegral $ pinNo ipin1
-        pn2 = fromIntegral $ pinNo ipin2
-        pn3 = fromIntegral $ pinNo ipin3
-        pn4 = fromIntegral $ pinNo ipin4
-    return $ sysEx STEPPER_DATA ([stepperCmdVal CONFIG_STEPPER,dev,((stepDelayVal d) .|. 0x04)] ++ (word16ToArduinoBytes sr) ++ [pn1,pn2,pn3,pn4])
-packageCommand c (StepperConfig _ FourWire _ _ _ _ _ _) = 
-    runDie c "KansasAmber: FourWire steppers require specification of 4 pins for config"  []
-packageCommand c (StepperConfig dev StepDir d sr dp sp _ _) = do
-    dipin <-  getInternalPin c dp 
-    sipin <-  getInternalPin c sp
-    let pnd = fromIntegral $ pinNo dipin
-        pns = fromIntegral $ pinNo sipin
-    return $ sysEx STEPPER_DATA ([stepperCmdVal CONFIG_STEPPER,dev,((stepDelayVal d) .|. 0x01)] ++ (word16ToArduinoBytes sr) ++ [pnd,pns])
-packageCommand c (StepperStep dev sd ns sp (Just ac)) =
-    return $ sysEx STEPPER_DATA ([stepperCmdVal STEP_STEPPER,dev,(stepDirVal sd)] ++ (word32To3ArduinoBytes ns) ++ (word16ToArduinoBytes sp) ++ (intTo4ArduinoBytes ac))
-packageCommand c (StepperStep dev sd ns sp Nothing) =
-    return $ sysEx STEPPER_DATA ([stepperCmdVal STEP_STEPPER,dev,(stepDirVal sd)] ++ (word32To3ArduinoBytes ns) ++ (word16ToArduinoBytes sp))
-packageCommand c (ServoConfig p min max)  = do
-    ipin <- getInternalPin c p
-    return $ sysEx SERVO_CONFIG ([fromIntegral $ pinNo ipin] ++ (word16ToArduinoBytes min) ++ (word16ToArduinoBytes max))
--}
 
 packageTaskData :: ArduinoConnection -> Arduino a -> IO B.ByteString
 packageTaskData conn commands =
@@ -149,9 +116,6 @@ packageTaskData conn commands =
       packProcedure c (AnalogRead _) k cmds = do 
           cs <- cmds           
           packageTaskData' c (k 0) cs
---      packProcedure c (Pulse _ _ _ _) k cmds = do
---          cs <- cmds 
---          packageTaskData' c (k 0) cs
       packProcedure c QueryAllTasks k cmds = do
           cs <- cmds
           packageTaskData' c (k ([])) cs
@@ -184,7 +148,6 @@ packageProcedure QueryAllTasks       =
     buildCommand SCHED_CMD_QUERY_ALL []
 packageProcedure (QueryTask tid)     = 
     buildCommand SCHED_CMD_QUERY [tid]
--- packageProcedure (Pulse p b dur to)       = sysEx    PULSE                   ([fromIntegral (pinNo p), if b then 1 else 0] ++ concatMap toArduinoBytes (word32ToBytes dur ++ word32ToBytes to))
 
 -- | Unpackage a SysEx response
 unpackageResponse :: [Word8] -> Response
@@ -194,7 +157,6 @@ unpackageResponse (cmdWord:args)
   = case (cmd, args) of
       (BS_RESP_VERSION, [majV, minV]) -> Firmware majV minV
       (BS_RESP_TYPE, [p])             -> ProcessorType p
---      (PULSE, xs) | length xs == 10          -> let [p, a, b, c, d] = fromArduinoBytes xs in PulseResponse (InternalPin p) (bytesToWord32 (a, b, c, d))
       (BS_RESP_STRING, rest)          -> StringMessage (getString rest)
       (DIG_RESP_READ_PIN, [b])        -> DigitalReply b
       (ALG_RESP_READ_PIN, [bl,bh])    -> AnalogReply (bytesToWord16 (bl,bh))
@@ -218,7 +180,6 @@ parseQueryResult QueryFirmware (Firmware wa wb) = Just (wa,wb)
 parseQueryResult QueryProcessor (ProcessorType pt) = Just $ getProcessor pt
 parseQueryResult (DigitalRead p) (DigitalReply d) = Just (if d == 0 then False else True)
 parseQueryResult (AnalogRead p) (AnalogReply a) = Just a
--- parseQueryResult (Pulse p b dur to) (PulseResponse p2 w) = Just w
 parseQueryResult (I2CRead saq srq cnt) (I2CReply ds) = Just ds
 parseQueryResult QueryAllTasks (QueryAllTasksReply ts) = Just ts
 parseQueryResult (QueryTask tid) (QueryTaskReply tr) = Just tr
