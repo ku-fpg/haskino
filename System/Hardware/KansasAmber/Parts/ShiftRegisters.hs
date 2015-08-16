@@ -72,7 +72,6 @@ instance ShiftRegister SR_74HC595 where
            clear sr
            enable sr
            forM_ mbBits (mapM_ (`setPinMode` INPUT))
-           forM_ mbBits (mapM_ (`digitalReport` True))
   disable SR_74HC595{nEnable} = digitalWrite nEnable True
   enable  SR_74HC595{nEnable} = digitalWrite nEnable False
   clear SR_74HC595{nClear}    = do digitalWrite nClear False

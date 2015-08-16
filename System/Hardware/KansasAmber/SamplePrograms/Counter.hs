@@ -34,9 +34,9 @@ counter = do
             setPinMode bUp   INPUT
             setPinMode bDown INPUT
        update conn (0::Int)
- where bUp   = digital 4
-       bDown = digital 2
-       led   = digital 13
+ where bUp   = 4
+       bDown = 2
+       led   = 13
        update c curVal = do
                 print curVal
                 [up, down] <- send c $ do

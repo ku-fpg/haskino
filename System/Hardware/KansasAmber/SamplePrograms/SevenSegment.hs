@@ -28,11 +28,11 @@ import System.Hardware.KansasAmber.Parts.SevenSegmentCodes
 -- In our circuit, we merely use pins 8 thru 12 on the Arduino to control the 'serial', 'enable', 'rClock', 'sClock', and 'nClear'
 -- lines, respectively. Since we do not need to read the output of the shift-register, we leave the 'bits' field unconnected.
 sr :: SR_74HC595
-sr = SR_74HC595 { serial  = digital 8
-                , nEnable = digital 9
-                , rClock  = digital 10
-                , sClock  = digital 11
-                , nClear  = digital 12
+sr = SR_74HC595 { serial  = 8
+                , nEnable = 9
+                , rClock  = 10
+                , sClock  = 11
+                , nClear  = 12
                 , mbBits  = Nothing
                 }
 
