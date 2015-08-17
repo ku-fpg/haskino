@@ -1,9 +1,11 @@
 #ifndef AmberCommandsH
 #define AmberCommandsH
 
-// Note:  None of the CMD_TYPE's should be 0x70, so that there
+// Note:  None of the CMD_TYPE's should be 0x7x, so that there
 // is no possibility of sending an HDLC frame or escape as
-// a command and requiring to send an escape.
+// a command and causing an extra escape to be sent.
+// Also, not using 0x0x as a command type to avoid sending an
+// all zero message.
 
 #define CMD_TYPE_MASK           0xF0
 #define CMD_SUBTYPE_MASK        0x0F

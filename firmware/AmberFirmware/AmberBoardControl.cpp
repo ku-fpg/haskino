@@ -41,6 +41,7 @@ static bool handleDelayMillis(int size, byte *msg)
     {
     unsigned long millis;
     memcpy(&millis, &msg[1], 4);
+
     if (isRunningTask())
         {
         delayRunningTask(millis);
@@ -54,9 +55,9 @@ static bool handleDelayMillis(int size, byte *msg)
 
 static bool handleDelayMicros(int size, byte *msg)
     {
-    unsigned long millis;
-    memcpy(&millis, &msg[1], 4);
-    delay(millis);
+    unsigned int micros;
+    memcpy(&micros, &msg[1], 2);
+    delayMicroseconds(micros);
     return false;
     }
 
