@@ -278,7 +278,7 @@ data Procedure :: * -> * where
 --     DigitalReadE     :: Pin -> Procedure (Expr Bool)
      AnalogRead     :: Pin -> Procedure Word16          -- ^ Read the analog value on a pin
 --     AnalogReadE      :: Pin -> Procedure (Expr Word16)          
-     I2CRead :: SlaveAddress -> Maybe SlaveRegister -> Word8 -> Procedure [Word8]
+     I2CRead :: SlaveAddress -> Word8 -> Procedure [Word8]
      QueryAllTasks :: Procedure [TaskID]
      QueryTask :: TaskID -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
      -- Todo: add one wire queries, readd pulse?
@@ -311,8 +311,8 @@ analogRead p = Procedure $ AnalogRead p
 -- analogReadE :: Pin -> Arduino (Expr Word16)
 -- analogReadE p = Procedure $ AnalogReadE p
 
-i2cRead :: SlaveAddress -> Maybe SlaveRegister -> Word8 -> Arduino [Word8]
-i2cRead sa sr cnt = Procedure $ I2CRead sa sr cnt
+i2cRead :: SlaveAddress -> Word8 -> Arduino [Word8]
+i2cRead sa cnt = Procedure $ I2CRead sa cnt
 
 queryAllTasks :: Arduino [TaskID]
 queryAllTasks = Procedure QueryAllTasks
@@ -352,7 +352,6 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE
                  | ALG_CMD_TONE_PIN
                  | ALG_CMD_NOTONE_PIN
                  | I2C_CMD_READ
-                 | I2C_CMD_READ_REG
                  | I2C_CMD_WRITE
                  | SCHED_CMD_CREATE_TASK
                  | SCHED_CMD_DELETE_TASK
@@ -379,8 +378,7 @@ firmwareCmdVal ALG_CMD_WRITE_PIN      = 0x41
 firmwareCmdVal ALG_CMD_TONE_PIN       = 0x42
 firmwareCmdVal ALG_CMD_NOTONE_PIN     = 0x43
 firmwareCmdVal I2C_CMD_READ           = 0x50
-firmwareCmdVal I2C_CMD_READ_REG       = 0x51
-firmwareCmdVal I2C_CMD_WRITE          = 0x52
+firmwareCmdVal I2C_CMD_WRITE          = 0x51
 firmwareCmdVal SCHED_CMD_CREATE_TASK  = 0xA0
 firmwareCmdVal SCHED_CMD_DELETE_TASK  = 0xA1
 firmwareCmdVal SCHED_CMD_ADD_TO_TASK  = 0xA2

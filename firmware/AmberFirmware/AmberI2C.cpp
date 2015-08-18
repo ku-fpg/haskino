@@ -15,9 +15,6 @@ bool parseI2CMessage(int size, byte *msg)
         case I2C_CMD_READ:
             return handleRead(size, msg);
             break;
-        case I2C_CMD_READ_REG:
-            return handleReadReg(size, msg);
-            break;
         case I2C_CMD_WRITE:
             return handleWrite(size, msg);
             break;
@@ -51,37 +48,22 @@ static bool handleRead(int size, byte *msg)
     return false;
     }
 
-static bool handleReadReg(int size, byte *msg)
-    {
-    byte slaveAddress = msg[1];
-    unsigned int slaveRegister;
-    memcpy(&slaveRegister, &msg[2], 2);
-    byte wordCount = msg[4];
-
-    Wire.beginTransmission(slaveAddress);
-    Wire.write(slaveRegister); // TBD size and byte order
-    Wire.endTransmission();
-    delayMicroseconds(70);
-
-    readFrom(slaveAddress, wordCount);
-    return false;
-    }
-
 static bool handleWrite(int size, byte *msg)
     {
     byte slaveAddress = msg[1];
-    byte wordCount = msg[2];
-    uint16_t *data = (uint16_t *) &msg[3];
+    uint16_t *data = (uint16_t *) &msg[2];
+    byte wordCount = size - 2;
 
-    if (wordCount > (size - 2) / 2)
-        wordCount = (size - 2) / 2;
-
-    Wire.beginTransmission(slaveAddress);
-    for (int i = 0; i < wordCount; i++) 
+    if (wordCount > 0)
         {
-        Wire.write(*data++);
+        Wire.beginTransmission(slaveAddress);
+        for (int i = 0; i < wordCount; i++) 
+            {
+            Wire.write(*data++);
+            }
+        Wire.endTransmission();
+        delayMicroseconds(70);
         }
-    Wire.endTransmission();
-    delayMicroseconds(70);
+
     return false;
     }

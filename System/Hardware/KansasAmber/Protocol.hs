@@ -140,10 +140,8 @@ packageProcedure (DigitalRead p)     =
     buildCommand DIG_CMD_READ_PIN [p]
 packageProcedure (AnalogRead p)      = 
     buildCommand ALG_CMD_READ_PIN [p]
-packageProcedure (I2CRead sa Nothing cnt)    = 
+packageProcedure (I2CRead sa cnt)    = 
     buildCommand I2C_CMD_READ [sa,cnt]
-packageProcedure (I2CRead sa (Just sr) cnt) = 
-    buildCommand I2C_CMD_READ_REG ((sa : (word16ToBytes sr)) ++ [cnt])
 packageProcedure QueryAllTasks       = 
     buildCommand SCHED_CMD_QUERY_ALL []
 packageProcedure (QueryTask tid)     = 
@@ -180,7 +178,7 @@ parseQueryResult QueryFirmware (Firmware wa wb) = Just (wa,wb)
 parseQueryResult QueryProcessor (ProcessorType pt) = Just $ getProcessor pt
 parseQueryResult (DigitalRead p) (DigitalReply d) = Just (if d == 0 then False else True)
 parseQueryResult (AnalogRead p) (AnalogReply a) = Just a
-parseQueryResult (I2CRead saq srq cnt) (I2CReply ds) = Just ds
+parseQueryResult (I2CRead saq cnt) (I2CReply ds) = Just ds
 parseQueryResult QueryAllTasks (QueryAllTasksReply ts) = Just ts
 parseQueryResult (QueryTask tid) (QueryTaskReply tr) = Just tr
 parseQueryResult q r = Nothing

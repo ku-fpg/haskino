@@ -54,8 +54,7 @@
 // I2C commands
 #define I2C_CMD_TYPE            0x50
 #define I2C_CMD_READ            (I2C_CMD_TYPE | 0x0)
-#define I2C_CMD_READ_REG        (I2C_CMD_TYPE | 0x1)
-#define I2C_CMD_WRITE           (I2C_CMD_TYPE | 0x2)
+#define I2C_CMD_WRITE           (I2C_CMD_TYPE | 0x1)
 
 // I2C responses
 #define I2C_RESP_READ           (I2C_CMD_TYPE | 0x8)
