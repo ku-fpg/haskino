@@ -70,6 +70,7 @@ packageCommand c (CreateTask tid m)       = do
     let cmd = buildCommand SCHED_CMD_CREATE_TASK (tid : (word16ToBytes taskSize))                                   
     return $ (framePackage cmd) `B.append` (genAddToTaskCmds td)
   where
+    -- Max command data size is max frame size - 3 (command,checksum,frame flag) 
     maxCmdSize = maxFirmwareSize - 3
     genAddToTaskCmds tds | fromIntegral (B.length tds) > maxCmdSize = 
         addToTask (B.take maxCmdSize tds) 
