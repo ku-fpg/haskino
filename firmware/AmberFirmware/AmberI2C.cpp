@@ -28,6 +28,7 @@ bool parseI2CMessage(int size, byte *msg)
 static bool handleConfig(int size, byte *msg)
     {
     Wire.begin();
+    delay(10);
     return false;
     }
 
@@ -54,18 +55,15 @@ static bool handleRead(int size, byte *msg)
 static bool handleWrite(int size, byte *msg)
     {
     byte slaveAddress = msg[1];
-    byte *data = (byte *) &msg[2];
-    byte byteCount = size - 2;
+    byte *data = &msg[2];
+    byte byteCount = size - 3;
 
     if (byteCount > 0)
         {
         Wire.beginTransmission(slaveAddress);
-        for (int i = 0; i < byteCount; i++) 
-            {
-            Wire.write(*data++);
-            }
+        Wire.write(data, byteCount);
         Wire.endTransmission();
-        delayMicroseconds(70);
+        delayMicroseconds(170);
         }
 
     return false;
