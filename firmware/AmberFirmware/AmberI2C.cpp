@@ -56,7 +56,7 @@ static bool handleWrite(int size, byte *msg)
     {
     byte slaveAddress = msg[1];
     byte *data = &msg[2];
-    byte byteCount = size - 3;
+    byte byteCount = size - 2;
 
     if (byteCount > 0)
         {

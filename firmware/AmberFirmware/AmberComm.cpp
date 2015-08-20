@@ -72,7 +72,7 @@ static void processChar(byte c)
                 }
             if (checksum == *msg)
                 {
-                parseMessage(messageCount, inputData);
+                parseMessage(messageCount-1, inputData);
                 }
             }
         processingEscapeState = 0;
