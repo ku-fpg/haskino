@@ -27,7 +27,7 @@ eepromEnable = i2cConfig
 eepromRead :: SlaveAddress -> Word16 -> Word8 -> Arduino [Word8]
 eepromRead sa addr count = do
         i2cWrite sa [fromIntegral hi, fromIntegral lo]
-        ws <- i2cRead sa Nothing count
+        ws <- i2cRead sa count
         return ws
   where lo =  addr             .&. 0xFF   -- first eight bits
         hi = (addr `shiftR` 8) .&. 0x7F   -- seven extra high-bits
