@@ -63,7 +63,7 @@ static bool handleWrite(int size, byte *msg)
         Wire.beginTransmission(slaveAddress);
         Wire.write(data, byteCount);
         Wire.endTransmission();
-        delayMicroseconds(170);
+        delayMicroseconds(70);
         }
 
     return false;
