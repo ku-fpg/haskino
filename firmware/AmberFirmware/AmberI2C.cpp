@@ -41,6 +41,15 @@ static bool handleRead(int size, byte *msg)
     Wire.requestFrom((int) slaveAddress, (int) byteCount);
     byteAvail = Wire.available();
 
+    if (byteCount < byteAvail) 
+        {
+        sendString("I2C: Too many bytes received");
+        } 
+    else if (byteCount > byteAvail) 
+        {
+        sendString("I2C: Too few bytes received");
+        }
+
     startReplyFrame(I2C_RESP_READ);
 
     for (int i = 0; i < byteAvail; i++) 
