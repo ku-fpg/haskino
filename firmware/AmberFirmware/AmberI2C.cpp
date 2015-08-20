@@ -4,14 +4,17 @@
 #include "AmberCommands.h"
 #include "AmberI2C.h"
 
+static bool handleConfig(int size, byte *msg);
 static bool handleRead(int size, byte *msg);
-static bool handleReadReg(int size, byte *msg);
 static bool handleWrite(int size, byte *msg);
 
 bool parseI2CMessage(int size, byte *msg)
     {
     switch (msg[0] ) 
         {
+        case I2C_CMD_CONFIG:
+            return handleConfig(size, msg);
+            break;
         case I2C_CMD_READ:
             return handleRead(size, msg);
             break;
@@ -39,6 +42,12 @@ static int readFrom(byte address, byte wordCount)
     endReplyFrame();    
     }
 
+static bool handleConfig(int size, byte *msg)
+    {
+    Wire.begin();
+    return false;
+    }
+
 static bool handleRead(int size, byte *msg)
     {
     byte slaveAddress = msg[1];
@@ -51,13 +60,13 @@ static bool handleRead(int size, byte *msg)
 static bool handleWrite(int size, byte *msg)
     {
     byte slaveAddress = msg[1];
-    uint16_t *data = (uint16_t *) &msg[2];
-    byte wordCount = size - 2;
+    byte *data = (byte *) &msg[2];
+    byte byteCount = size - 2;
 
-    if (wordCount > 0)
+    if (byteCount > 0)
         {
         Wire.beginTransmission(slaveAddress);
-        for (int i = 0; i < wordCount; i++) 
+        for (int i = 0; i < byteCount; i++) 
             {
             Wire.write(*data++);
             }

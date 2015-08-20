@@ -56,6 +56,8 @@ packageCommand c (NoTone p) = do
     return $ buildCommand ALG_CMD_NOTONE_PIN [p]
 packageCommand c (I2CWrite sa w8s) = 
     return $ buildCommand I2C_CMD_WRITE (sa : w8s)
+packageCommand c I2CConfig = 
+    return $ buildCommand I2C_CMD_CONFIG []
 packageCommand c (DeleteTask tid) = 
     return $ buildCommand SCHED_CMD_DELETE_TASK [tid]
 packageCommand c (DelayMillis ms) = 

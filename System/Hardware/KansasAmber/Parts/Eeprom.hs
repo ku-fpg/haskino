@@ -22,7 +22,7 @@ import Data.Word     (Word8, Word16)
 import System.Hardware.KansasAmber
 
 eepromEnable :: Arduino ()
-eepromEnable = i2cConfig 0
+eepromEnable = i2cConfig
 
 eepromRead :: SlaveAddress -> Word16 -> Word8 -> Arduino [Word8]
 eepromRead sa addr count = do

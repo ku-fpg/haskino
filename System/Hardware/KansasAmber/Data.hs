@@ -176,7 +176,7 @@ data Command =
 --     | AnalogWriteE Pin (Expr Word16)
      | I2CWrite SlaveAddress [Word8]
 --     | I2CWriteE SlaveAddress (Expr [Word8])
-     | I2CConfig Word16
+     | I2CConfig
      | CreateTask TaskID (Arduino ())
      | DeleteTask TaskID
      | DelayMillis TimeMillis
@@ -222,8 +222,8 @@ i2cWrite sa ws = Command $ I2CWrite sa ws
 -- i2cWriteE :: SlaveAddress -> (Expr [Word8]) -> Arduino ()
 -- i2cWriteE sa ws = Command $ I2CWriteE sa ws
 
-i2cConfig :: Word16 -> Arduino ()
-i2cConfig w = Command $ I2CConfig w
+i2cConfig :: Arduino ()
+i2cConfig = Command $ I2CConfig
 
 -- i2cConfigE :: (Expr Word16) -> Arduino ()
 -- i2cConfigE w = Command $ I2CConfigE w
@@ -351,6 +351,7 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE
                  | ALG_CMD_WRITE_PIN
                  | ALG_CMD_TONE_PIN
                  | ALG_CMD_NOTONE_PIN
+                 | I2C_CMD_CONFIG
                  | I2C_CMD_READ
                  | I2C_CMD_WRITE
                  | SCHED_CMD_CREATE_TASK
@@ -377,8 +378,9 @@ firmwareCmdVal ALG_CMD_READ_PIN       = 0x40
 firmwareCmdVal ALG_CMD_WRITE_PIN      = 0x41
 firmwareCmdVal ALG_CMD_TONE_PIN       = 0x42
 firmwareCmdVal ALG_CMD_NOTONE_PIN     = 0x43
-firmwareCmdVal I2C_CMD_READ           = 0x50
-firmwareCmdVal I2C_CMD_WRITE          = 0x51
+firmwareCmdVal I2C_CMD_CONFIG         = 0x50
+firmwareCmdVal I2C_CMD_READ           = 0x51
+firmwareCmdVal I2C_CMD_WRITE          = 0x52
 firmwareCmdVal SCHED_CMD_CREATE_TASK  = 0xA0
 firmwareCmdVal SCHED_CMD_DELETE_TASK  = 0xA1
 firmwareCmdVal SCHED_CMD_ADD_TO_TASK  = 0xA2

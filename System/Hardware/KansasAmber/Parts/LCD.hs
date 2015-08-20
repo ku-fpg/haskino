@@ -104,7 +104,7 @@ initLCD lcd = do
     debug "Starting the LCD initialization sequence"
     case c of 
         Hitachi44780{} -> initLCDDigital c
-        I2CHitachi44780{} -> i2cConfig 0
+        I2CHitachi44780{} -> i2cConfig
     -- Wait for 50ms, data-sheet says at least 40ms for 2.7V version, so be safe
     delayMillis 50
     sendCmd lcd c LCD_INITIALIZE
