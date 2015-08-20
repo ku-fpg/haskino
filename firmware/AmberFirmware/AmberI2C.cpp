@@ -25,11 +25,19 @@ bool parseI2CMessage(int size, byte *msg)
     return false;
     }
 
-static int readFrom(byte address, byte wordCount)
+static bool handleConfig(int size, byte *msg)
     {
+    Wire.begin();
+    return false;
+    }
+
+static bool handleRead(int size, byte *msg)
+    {
+    byte slaveAddress = msg[1];
+    byte byteCount = msg[2];
     int byteAvail;
 
-    Wire.requestFrom((int) address, (int) wordCount*2);
+    Wire.requestFrom((int) slaveAddress, (int) byteCount);
     byteAvail = Wire.available();
 
     startReplyFrame(I2C_RESP_READ);
@@ -40,20 +48,6 @@ static int readFrom(byte address, byte wordCount)
         }
 
     endReplyFrame();    
-    }
-
-static bool handleConfig(int size, byte *msg)
-    {
-    Wire.begin();
-    return false;
-    }
-
-static bool handleRead(int size, byte *msg)
-    {
-    byte slaveAddress = msg[1];
-    byte wordCount = msg[2];
-
-    readFrom(slaveAddress, wordCount);
     return false;
     }
 
