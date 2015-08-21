@@ -35,3 +35,6 @@
 .cabal-sandbox
 cabal.sandbox.config
 
+# Arduino Makefile
+firmware/Arduino-Makefile-master
+
