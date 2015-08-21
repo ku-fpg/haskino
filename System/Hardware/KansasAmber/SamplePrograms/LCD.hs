@@ -10,7 +10,7 @@
 -- Basic demo of an Hitachi HD44780 LCD
 -------------------------------------------------------------------------------
 
-module System.Hardware.Arduino.SamplePrograms.LCD where
+module System.Hardware.KansasAmber.SamplePrograms.LCD where
 
 import Control.Monad.Trans (liftIO)
 import Data.Char           (isSpace)

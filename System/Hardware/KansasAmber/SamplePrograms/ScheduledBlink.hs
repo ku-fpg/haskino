@@ -10,7 +10,7 @@
 -- blinks the LED on and off without host intervention.
 -------------------------------------------------------------------------------
 
-module ScheduledBlink where
+module System.Hardware.KansasAmber.SamplePrograms.ScheduledBlink where
 
 import Control.Monad (forever)
 import Control.Monad.Trans (liftIO)
