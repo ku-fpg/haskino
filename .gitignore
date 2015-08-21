@@ -36,7 +36,7 @@
 cabal.sandbox.config
 
 # Arduino Makefile
-firmware/Arduino-Makefile-master
+firmware/Arduino-Makefile
 
 # Firmware binaries
 firmware/AmberFirmware/build-*
