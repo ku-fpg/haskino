@@ -32,26 +32,11 @@ import           Data.Word (Word8, Word16, Word32)
 
 import           System.Hardware.Serialport (SerialPort)
 
+import           System.Hardware.KansasAmber.Expr
 import           System.Hardware.KansasAmber.Utils
 
 import Debug.Trace
 -----------------------------------------------------------------------------
-
-type BoolE   = Expr Bool
-type Word8E  = Expr Word8
-type Word16E = Expr Word16
-
-data Expr a where
-  LitBool   :: Bool      -> Expr Bool
-  LitWord8  :: Word8     -> Expr Word8
-  LitWord16 :: Word16    -> Expr Word16
-  LitBoolL  :: [Bool]    -> Expr [Bool]
-  LitWord8L :: [Word8]   -> Expr [Word8]
-  VarBool   :: String    -> Expr String
-  VarWord8  :: String    -> Expr String
-  VarWord16 :: String    -> Expr String
-  Not       :: Expr Bool -> Expr Bool
---  Add       :: 
 
 data Arduino :: * -> * where
     Control        :: Control                         -> Arduino ()
