@@ -15,6 +15,7 @@ module System.Hardware.KansasAmber.Expr where
 
 import       Data.Word (Word8, Word16, Word32)
 import       Data.Boolean as B
+import       Data.Boolean.Numbers as BN
 
 type BoolE   = Expr Bool
 type Word8E  = Expr Word8
@@ -27,9 +28,10 @@ data Expr a where
   Lit8      :: Word8 -> Word8E
   Lit16     :: Word16 -> Word16E
   Lit32     :: Word32 -> Word32E
-  VarBool   :: String -> StringE
-  VarWord8  :: String -> StringE
-  VarWord16 :: String -> StringE
+  VarB      :: String -> StringE
+  Var8      :: String -> StringE
+  Var16     :: String -> StringE
+  Var32     :: String -> StringE
   NotB      :: BoolE -> BoolE
   AndB      :: BoolE -> BoolE -> BoolE
   OrB       :: BoolE -> BoolE -> BoolE
@@ -39,7 +41,7 @@ data Expr a where
   Sub8      :: Word8E -> Word8E -> Word8E
   Mult8     :: Word8E -> Word8E -> Word8E
   Div8      :: Word8E -> Word8E -> Word8E
-  Mod8      :: Word8E -> Word8E -> Word8E
+  Rem8      :: Word8E -> Word8E -> Word8E
   And8      :: Word8E -> Word8E -> Word8E
   Or8       :: Word8E -> Word8E -> Word8E
   Xor8      :: Word8E -> Word8E -> Word8E
@@ -52,7 +54,7 @@ data Expr a where
   Sub16     :: Word16E -> Word16E -> Word16E
   Mult16    :: Word16E -> Word16E -> Word16E
   Div16     :: Word16E -> Word16E -> Word16E
-  Mod16     :: Word16E -> Word16E -> Word16E
+  Rem16     :: Word16E -> Word16E -> Word16E
   And16     :: Word16E -> Word16E -> Word16E
   Or16      :: Word16E -> Word16E -> Word16E
   Xor16     :: Word16E -> Word16E -> Word16E
@@ -65,7 +67,7 @@ data Expr a where
   Sub32     :: Word32E -> Word32E -> Word32E
   Mult32    :: Word32E -> Word32E -> Word32E
   Div32     :: Word32E -> Word32E -> Word32E
-  Mod32     :: Word32E -> Word32E -> Word32E
+  Rem32     :: Word32E -> Word32E -> Word32E
   And32     :: Word32E -> Word32E -> Word32E
   Or32      :: Word32E -> Word32E -> Word32E
   Xor32     :: Word32E -> Word32E -> Word32E
@@ -82,7 +84,7 @@ instance B.Boolean BoolE where
     (&&*) = AndB
     (||*) = OrB
 
-instance  Num Word8E where
+instance Num Word8E where
     (+) x y = Add8 x y
     (-) x y = Sub8 x y
     (*) x y = Mult8 x y
@@ -101,6 +103,18 @@ instance B.OrdB Word8E where
 
 instance B.IfB Word8E where
     ifB = If8
+
+instance BN.NumB Word8E where
+    type IntegerOf Word8E = Word8
+    fromIntegerB x = Lit8 x
+
+instance BN.IntegralB Word8E where
+    div = Div8
+    rem = Rem8
+    quot = Div8
+    mod = Rem8
+    toIntegerB x = case x of
+                      Lit8 n -> n
 
 instance  Num Word16E where
     (+) x y = Add16 x y
@@ -122,6 +136,18 @@ instance B.OrdB Word16E where
 instance B.IfB Word16E where
     ifB = If16
 
+instance BN.NumB Word16E where
+    type IntegerOf Word16E = Word16
+    fromIntegerB x = Lit16 x
+
+instance BN.IntegralB Word16E where
+    div = Div16
+    rem = Rem16
+    quot = Div16
+    mod = Rem16
+    toIntegerB x = case x of
+                      Lit16 n -> n
+
 instance  Num Word32E where
     (+) x y = Add32 x y
     (-) x y = Sub32 x y
@@ -142,6 +168,15 @@ instance B.OrdB Word32E where
 instance B.IfB Word32E where
     ifB = If32
 
+instance BN.NumB Word32E where
+    type IntegerOf Word32E = Word32
+    fromIntegerB x = Lit32 x
 
-
+instance BN.IntegralB Word32E where
+    div = Div32
+    rem = Rem32
+    quot = Div32
+    mod = Rem32
+    toIntegerB x = case x of
+                      Lit32 n -> n
 
