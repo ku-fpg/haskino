@@ -1,7 +1,7 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.KansasAmber.Comm
---                Based on System.Hardware.Arduino.comm
+-- Module      :  System.Hardware.KansasAmber.Utils
+--                Based on System.Hardware.Arduino.Utils
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
 -- License     :  BSD3
