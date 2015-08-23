@@ -78,105 +78,105 @@ data Expr a where
 deriving instance Show a => Show (Expr a)
 
 instance B.Boolean BoolE where
-    true  = LitB True
-    false = LitB False
-    notB  = NotB
-    (&&*) = AndB
-    (||*) = OrB
+  true  = LitB True
+  false = LitB False
+  notB  = NotB
+  (&&*) = AndB
+  (||*) = OrB
 
 instance Num Word8E where
-    (+) x y = Add8 x y
-    (-) x y = Sub8 x y
-    (*) x y = Mult8 x y
-    negate x = Neg8 x
-    abs x  = x
-    signum x = Sign8 x
-    fromInteger x = Lit8 $ fromInteger x
+  (+) x y = Add8 x y
+  (-) x y = Sub8 x y
+  (*) x y = Mult8 x y
+  negate x = Neg8 x
+  abs x  = x
+  signum x = Sign8 x
+  fromInteger x = Lit8 $ fromInteger x
 
 type instance BooleanOf Word8E = BoolE
 
 instance B.EqB Word8E where
-    (==*) = Eq8
+  (==*) = Eq8
 
 instance B.OrdB Word8E where
-    (<*) = Less8
+  (<*) = Less8
 
 instance B.IfB Word8E where
-    ifB = If8
+  ifB = If8
 
 instance BN.NumB Word8E where
-    type IntegerOf Word8E = Word8
-    fromIntegerB x = Lit8 x
+  type IntegerOf Word8E = Word8
+  fromIntegerB x = Lit8 x
 
 instance BN.IntegralB Word8E where
-    div = Div8
-    rem = Rem8
-    quot = Div8
-    mod = Rem8
-    toIntegerB x = case x of
+  div = Div8
+  rem = Rem8
+  quot = Div8
+  mod = Rem8
+  toIntegerB x = case x of
                       Lit8 n -> n
 
 instance  Num Word16E where
-    (+) x y = Add16 x y
-    (-) x y = Sub16 x y
-    (*) x y = Mult16 x y
-    negate x = Neg16 x
-    abs x  = x
-    signum x = Sign16 x
-    fromInteger x = Lit16 $ fromInteger x
+  (+) x y = Add16 x y
+  (-) x y = Sub16 x y
+  (*) x y = Mult16 x y
+  negate x = Neg16 x
+  abs x  = x
+  signum x = Sign16 x
+  fromInteger x = Lit16 $ fromInteger x
 
 type instance BooleanOf Word16E = BoolE
 
 instance B.EqB Word16E where
-    (==*) = Eq16
+  (==*) = Eq16
 
 instance B.OrdB Word16E where
-    (<*) = Less16
+  (<*) = Less16
 
 instance B.IfB Word16E where
-    ifB = If16
+  ifB = If16
 
 instance BN.NumB Word16E where
-    type IntegerOf Word16E = Word16
-    fromIntegerB x = Lit16 x
+  type IntegerOf Word16E = Word16
+  fromIntegerB x = Lit16 x
 
 instance BN.IntegralB Word16E where
-    div = Div16
-    rem = Rem16
-    quot = Div16
-    mod = Rem16
-    toIntegerB x = case x of
-                      Lit16 n -> n
+  div = Div16
+  rem = Rem16
+  quot = Div16
+  mod = Rem16
+  toIntegerB x = case x of
+                    Lit16 n -> n
 
 instance  Num Word32E where
-    (+) x y = Add32 x y
-    (-) x y = Sub32 x y
-    (*) x y = Mult32 x y
-    negate x = Neg32 x
-    abs x  = x
-    signum x = Sign32 x
-    fromInteger x = Lit32 $ fromInteger x
+  (+) x y = Add32 x y
+  (-) x y = Sub32 x y
+  (*) x y = Mult32 x y
+  negate x = Neg32 x
+  abs x  = x
+  signum x = Sign32 x
+  fromInteger x = Lit32 $ fromInteger x
 
 type instance BooleanOf Word32E = BoolE
 
 instance B.EqB Word32E where
-    (==*) = Eq32
+  (==*) = Eq32
 
 instance B.OrdB Word32E where
-    (<*) = Less32
+  (<*) = Less32
 
 instance B.IfB Word32E where
-    ifB = If32
+  ifB = If32
 
 instance BN.NumB Word32E where
-    type IntegerOf Word32E = Word32
-    fromIntegerB x = Lit32 x
+  type IntegerOf Word32E = Word32
+  fromIntegerB x = Lit32 x
 
 instance BN.IntegralB Word32E where
-    div = Div32
-    rem = Rem32
-    quot = Div32
-    mod = Rem32
-    toIntegerB x = case x of
-                      Lit32 n -> n
+  div = Div32
+  rem = Rem32
+  quot = Div32
+  mod = Rem32
+  toIntegerB x = case x of
+                    Lit32 n -> n
 

@@ -30,7 +30,7 @@ module System.Hardware.KansasAmber (
   -- ** Analog IO
   , analogWrite, analogRead
   -- ** I2C
-  , SlaveAddress, SlaveRegister, i2cRead, i2cWrite, i2cConfig
+  , SlaveAddress, i2cRead, i2cWrite, i2cConfig
   -- ** Pulse
   --, pulse
   -- ** Servo

@@ -11,7 +11,7 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE FlexibleInstances, GADTs, KindSignatures, RankNTypes,
              OverloadedStrings, ScopedTypeVariables, StandaloneDeriving,
-             GeneralizedNewtypeDeriving, NamedFieldPuns #-}
+             GeneralizedNewtypeDeriving, NamedFieldPuns, DataKinds #-}
 
 module System.Hardware.KansasAmber.Data where
 
@@ -40,6 +40,7 @@ import Debug.Trace
 
 data Arduino :: * -> * where
     Control        :: Control                         -> Arduino ()
+    Variable       :: Variable a                      -> Arduino ()
     Command        :: Command                         -> Arduino ()
     Local          :: Local a                         -> Arduino a
     Procedure      :: Procedure a                     -> Arduino a
@@ -65,7 +66,8 @@ instance Monoid a => Monoid (Arduino a) where
 instance MonadIO Arduino where
   liftIO m = LiftIO m
 
-type Pin = Word8
+type Pin  = Word8
+type PinE = Word8E
 
 -- | Bailing out: print the given string on stdout and die
 runDie :: ArduinoConnection -> String -> [String] -> IO a
@@ -138,13 +140,16 @@ data ArduinoConnection = ArduinoConnection {
               }
 
 type SlaveAddress = Word8
-type SlaveRegister = Word16
+type SlaveAddressE = Word8E
 type MinPulse = Word16
 type MaxPulse = Word16
 type TaskLength = Word16
 type TaskID = Word8
+type TaskIDE = Word8E
 type TimeMillis = Word32
+type TimeMillisE = Word32E
 type TimeMicros = Word32
+type TimeMicrosE = Word32E
 type TaskPos = Word16
 -- ToDo: Readd Stepper types
 
@@ -154,20 +159,26 @@ data Command =
 --     | DigitalPortWrite Port Word8              -- ^ Set the values on a port digitally
 --     | DigitalPortWriteE Port (Expr Word8)
      | DigitalWrite Pin Bool                    -- ^ Set the value on a pin digitally
---     | DigitalWriteE Pin (Expr Bool)              
+     | DigitalWriteE PinE BoolE              
      | AnalogWrite Pin Word16                   -- ^ Send an analog-write; used for servo control
+     | AnalogWriteE PinE Word16E
      | Tone Pin Word16 (Maybe Word32)           -- ^ Play a tone on a pin
+     | ToneE PinE Word16E (Maybe Word32E)       -- ^ Play a tone on a pin
      | NoTone Pin                               -- ^ Stop playing a tone on a pin
---     | AnalogWriteE Pin (Expr Word16)
+     | NoToneE PinE                             -- ^ Stop playing a tone on a pin
      | I2CWrite SlaveAddress [Word8]
---     | I2CWriteE SlaveAddress (Expr [Word8])
+     | I2CWriteE SlaveAddressE [Word8E]
      | I2CConfig
      | CreateTask TaskID (Arduino ())
+     | CreateTaskE TaskIDE (Arduino ())
      | DeleteTask TaskID
+     | DeleteTaskE TaskIDE
      | DelayMillis TimeMillis
      | DelayMicros TimeMicros
---     | DelayE (Expr TaskTime)
+     | DelayMillisE TimeMillisE
+     | DelayMicrosE TimeMicrosE
      | ScheduleTask TaskID TimeMillis
+     | ScheduleTaskE TaskIDE TimeMillisE
      | ScheduleReset
      -- ToDo: add one wire and encoder procedures, readd stepper and servo
 
@@ -186,61 +197,112 @@ setPinMode p pm = Command $ SetPinMode p pm
 digitalWrite :: Pin -> Bool -> Arduino ()
 digitalWrite p b = Command $ DigitalWrite p b
 
--- digitalWriteE :: Pin -> (Expr Bool) -> Arduino ()
--- digitalWriteE p b = Command $ DigitalWriteE p b
+digitalWriteE :: PinE -> BoolE -> Arduino ()
+digitalWriteE p b = Command $ DigitalWriteE p b
 
 analogWrite :: Pin -> Word16 -> Arduino ()
 analogWrite p w = Command $ AnalogWrite p w
 
+analogWriteE :: PinE -> Word16E -> Arduino ()
+analogWriteE p w = Command $ AnalogWriteE p w
+
 tone :: Pin -> Word16 -> Maybe Word32 -> Arduino ()
 tone p f d = Command $ Tone p f d
+
+toneE :: PinE -> Word16E -> Maybe Word32E -> Arduino ()
+toneE p f d = Command $ ToneE p f d
 
 noTone :: Pin -> Arduino ()
 noTone p = Command $ NoTone p
 
--- analogWriteE :: Pin -> (Expr Word16) -> Arduino ()
--- analogWriteE p w = Command $ AnalogWriteE p w
+noToneE :: PinE -> Arduino ()
+noToneE p = Command $ NoToneE p
 
 i2cWrite :: SlaveAddress -> [Word8] -> Arduino ()
 i2cWrite sa ws = Command $ I2CWrite sa ws
 
--- i2cWriteE :: SlaveAddress -> (Expr [Word8]) -> Arduino ()
--- i2cWriteE sa ws = Command $ I2CWriteE sa ws
+i2cWriteE :: SlaveAddressE -> [Word8E] -> Arduino ()
+i2cWriteE sa ws = Command $ I2CWriteE sa ws
 
 i2cConfig :: Arduino ()
 i2cConfig = Command $ I2CConfig
 
--- i2cConfigE :: (Expr Word16) -> Arduino ()
--- i2cConfigE w = Command $ I2CConfigE w
-
--- ToDo: Readd servo and stepper functions
-
 createTask :: TaskID -> Arduino () -> Arduino ()
 createTask tid ps = Command (CreateTask tid ps)
+
+createTaskE :: TaskIDE -> Arduino () -> Arduino ()
+createTaskE tid ps = Command (CreateTaskE tid ps)
 
 deleteTask :: TaskID -> Arduino ()
 deleteTask tid = Command $ DeleteTask tid
 
+deleteTaskE :: TaskIDE -> Arduino ()
+deleteTaskE tid = Command $ DeleteTaskE tid
+
 delayMillis :: TimeMillis -> Arduino ()
 delayMillis t = Command $ DelayMillis t
+
+delayMillisE :: TimeMillisE -> Arduino ()
+delayMillisE t = Command $ DelayMillisE t
 
 delayMicros :: TimeMicros -> Arduino ()
 delayMicros t = Command $ DelayMicros t
 
--- delayE :: (Expr TaskTime) -> Arduino ()
--- delayE t = Command $ DelayE t
+delayMicrosE :: TimeMicrosE -> Arduino ()
+delayMicrosE t = Command $ DelayMicrosE t
 
 scheduleTask :: TaskID -> TimeMillis -> Arduino ()
 scheduleTask tid tt = Command $ ScheduleTask tid tt
 
+scheduleTaskE :: TaskIDE -> TimeMillisE -> Arduino ()
+scheduleTaskE tid tt = Command $ ScheduleTaskE tid tt
+
 scheduleReset :: Arduino ()
 scheduleReset = Command ScheduleReset
 
+-- ToDo: Readd servo and stepper functions
+
 data Control =
-     Loop (Arduino ())
+      Loop (Arduino ())
+    | While BoolE (Arduino ())
+    | IfThenElse BoolE (Arduino ()) (Arduino ())
 
 loop :: Arduino () -> Arduino ()
 loop ps = Control (Loop ps)
+
+data Variable :: * -> * where
+     AssignProcB      :: StringE -> Arduino BoolE -> Variable ()
+     AssignExprB      :: StringE -> BoolE -> Variable ()
+     AssignProc8      :: StringE -> Arduino Word8E -> Variable ()
+     AssignExpr8      :: StringE -> Word8E -> Variable ()
+     AssignProc16     :: StringE -> Arduino Word16E -> Variable ()
+     AssignExpr16     :: StringE -> Word16E -> Variable ()
+     AssignProc32     :: StringE -> Arduino Word32E -> Variable ()
+     AssignExpr32     :: StringE -> Word32E -> Variable ()
+     NewB             :: String  -> Variable Int
+     New8             :: String  -> Variable Int
+     New16            :: String  -> Variable Int
+     New32            :: String  -> Variable Int
+
+class Assign a where
+    (=*)  :: StringE -> Expr a -> Variable ()
+    (=**) :: StringE -> Arduino (Expr a) -> Variable ()
+
+instance Assign Bool where
+    (=*)  se e  = AssignExprB se e
+    (=**) se pe = AssignProcB se pe
+
+instance Assign Word8 where
+    (=*)  se e  = AssignExpr8 se e
+    (=**) se pe = AssignProc8 se pe
+
+instance Assign Word16 where
+    (=*)  se e  = AssignExpr16 se e
+    (=**) se pe = AssignProc16 se pe
+
+instance Assign Word32 where
+    (=*)  se e  = AssignExpr32 se e
+    (=**) se pe = AssignProc32 se pe
 
 data Local :: * -> * where
      Debug            :: String -> Local ()
@@ -260,10 +322,11 @@ data Procedure :: * -> * where
 --     DigitalPortRead  :: Port -> Procedure Word8          -- ^ Read the values on a port digitally
 --     DigitalPortReadE :: Port -> Procedure (Expr Word8)
      DigitalRead    :: Pin -> Procedure Bool            -- ^ Read the avlue ona pin digitally
---     DigitalReadE     :: Pin -> Procedure (Expr Bool)
+     DigitalReadE   :: PinE -> Procedure BoolE          -- ^ Read the avlue ona pin digitally
      AnalogRead     :: Pin -> Procedure Word16          -- ^ Read the analog value on a pin
---     AnalogReadE      :: Pin -> Procedure (Expr Word16)          
+     AnalogReadE    :: PinE -> Procedure Word16E          
      I2CRead :: SlaveAddress -> Word8 -> Procedure [Word8]
+     I2CReadE :: SlaveAddressE -> Word8E -> Procedure [Word8E]
      QueryAllTasks :: Procedure [TaskID]
      QueryTask :: TaskID -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
      -- Todo: add one wire queries, readd pulse?
@@ -287,17 +350,20 @@ queryProcessor = Procedure QueryProcessor
 digitalRead :: Pin -> Arduino Bool
 digitalRead p = Procedure $ DigitalRead p
 
--- digitalReadE :: Pin -> Arduino (Expr Bool)
--- digitalReadE p = Procedure $ DigitalReadE p
+digitalReadE :: PinE -> Arduino BoolE
+digitalReadE p = Procedure $ DigitalReadE p
 
 analogRead :: Pin -> Arduino Word16
 analogRead p = Procedure $ AnalogRead p
 
--- analogReadE :: Pin -> Arduino (Expr Word16)
--- analogReadE p = Procedure $ AnalogReadE p
+analogReadE :: PinE -> Arduino Word16E
+analogReadE p = Procedure $ AnalogReadE p
 
 i2cRead :: SlaveAddress -> Word8 -> Arduino [Word8]
 i2cRead sa cnt = Procedure $ I2CRead sa cnt
+
+i2cReadE :: SlaveAddressE -> Word8E -> Arduino [Word8E]
+i2cReadE sa cnt = Procedure $ I2CReadE sa cnt
 
 queryAllTasks :: Arduino [TaskID]
 queryAllTasks = Procedure QueryAllTasks
