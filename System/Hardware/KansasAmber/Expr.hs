@@ -45,6 +45,7 @@ data Expr a where
   And8      :: Word8E -> Word8E -> Word8E
   Or8       :: Word8E -> Word8E -> Word8E
   Xor8      :: Word8E -> Word8E -> Word8E
+  -- ToDo: Add shifts
   Eq8       :: Word8E -> Word8E -> BoolE
   Less8     :: Word8E -> Word8E -> BoolE
   If8       :: BoolE -> Word8E -> Word8E -> Word8E

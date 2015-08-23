@@ -47,6 +47,8 @@ packageCommand c (SetPinMode p m) = do
     return $ buildCommand BC_CMD_SET_PIN_MODE [p, fromIntegral $ fromEnum m]
 packageCommand c (DigitalWrite p b)  = do
     return $ buildCommand DIG_CMD_WRITE_PIN [p, if b then 1 else 0]
+--packageCommand c (DigitalWriteE p b)  = do
+--    return $ buildCommand DIG_CMD_WRITE_PIN [p, if b then 1 else 0]
 packageCommand c (AnalogWrite p w) = do
     return $ buildCommand ALG_CMD_WRITE_PIN (p : (word16ToBytes w))
 packageCommand c (Tone p f (Just d)) = do
@@ -151,27 +153,26 @@ packageProcedure QueryAllTasks       =
 packageProcedure (QueryTask tid)     = 
     buildCommand SCHED_CMD_QUERY [tid]
 
-packageSubExpr :: ArduinoConnection -> ExprCmd -> Expr a -> IO B.ByteString
+packageSubExpr :: ArduinoConnection -> ExprCmd -> Expr a -> IO [Word8]
 packageSubExpr c ec e = do
     pe <- packageExpr c e
-    return $ B.cons (exprCmdVal ec) pe
+    return $ (exprCmdVal ec) : pe
 
-packageTwoSubExpr :: ArduinoConnection -> ExprCmd -> Expr a -> Expr b -> IO B.ByteString
+packageTwoSubExpr :: ArduinoConnection -> ExprCmd -> Expr a -> Expr b -> IO [Word8]
 packageTwoSubExpr c ec e1 e2 = do
     pe1 <- packageExpr c e1
     pe2 <- packageExpr c e2
-    return $ B.cons (exprCmdVal ec) (B.append pe1 pe2)
+    return $ (exprCmdVal ec) : (pe1 ++ pe2)
 
-packageThreeSubExpr :: ArduinoConnection -> ExprCmd -> Expr a -> Expr b -> Expr c -> IO B.ByteString
+packageThreeSubExpr :: ArduinoConnection -> ExprCmd -> Expr a -> Expr b -> Expr c -> IO [Word8]
 packageThreeSubExpr c ec e1 e2 e3 = do
     pe1 <- packageExpr c e1
     pe2 <- packageExpr c e2
     pe3 <- packageExpr c e3
-    return $ B.cons (exprCmdVal ec) (B.append pe1 (B.append pe2 pe3))
+    return $ (exprCmdVal ec) : (pe1 ++ pe2 ++ pe3)
 
-packageExpr :: ArduinoConnection -> Expr a -> IO B.ByteString
-packageExpr c (LitB b) = 
-    return $ B.pack [exprCmdVal EXPR_LITB, if b then 1 else 0]
+packageExpr :: ArduinoConnection -> Expr a -> IO [Word8]
+packageExpr c (LitB b) = return $ [exprCmdVal EXPR_LITB, if b then 1 else 0]
 -- packageExpr (VarB s) = BS.pack [EXPR_VARB, ] 
 packageExpr c (NotB e) = packageSubExpr c EXPR_NOTB e 
 packageExpr c (AndB e1 e2) = packageTwoSubExpr c EXPR_ANDB e1 e2 
@@ -182,7 +183,7 @@ packageExpr c (Eq16 e1 e2) = packageTwoSubExpr c EXPR_EQ16 e1 e2
 packageExpr c (Less16 e1 e2) = packageTwoSubExpr c EXPR_LESS16 e1 e2 
 packageExpr c (Eq32 e1 e2) = packageTwoSubExpr c EXPR_EQ32 e1 e2 
 packageExpr c (Less32 e1 e2) = packageTwoSubExpr c EXPR_LESS32 e1 e2 
-packageExpr c (Lit8 w) = return $ B.pack [exprCmdVal EXPR_LIT8, w]
+packageExpr c (Lit8 w) = return $ [exprCmdVal EXPR_LIT8, w]
 -- packageExpr (Var8 s) = BS.pack [EXPR_VAR8, ] 
 packageExpr c (Neg8 e) = packageSubExpr c EXPR_NEG8 e
 packageExpr c (Sign8 e) = packageSubExpr c EXPR_SIGN8 e
@@ -195,8 +196,7 @@ packageExpr c (And8 e1 e2) = packageTwoSubExpr c EXPR_AND8 e1 e2
 packageExpr c (Or8 e1 e2) = packageTwoSubExpr c EXPR_OR8 e1 e2 
 packageExpr c (Xor8 e1 e2) = packageTwoSubExpr c EXPR_XOR8 e1 e2 
 packageExpr c (If8 e1 e2 e3) = packageThreeSubExpr c EXPR_IF8 e1 e2 e3
-packageExpr c (Lit16 w) = 
-    return $ B.pack $ (exprCmdVal EXPR_LIT16) : word16ToBytes w
+packageExpr c (Lit16 w) = return $ (exprCmdVal EXPR_LIT16) : word16ToBytes w
 -- packageExpr (Var16 s) = BS.pack [EXPR_VAR8, ] 
 packageExpr c (Neg16 e) = packageSubExpr c EXPR_NEG16 e
 packageExpr c (Sign16 e) = packageSubExpr c EXPR_SIGN16 e
@@ -209,8 +209,7 @@ packageExpr c (And16 e1 e2) = packageTwoSubExpr c EXPR_AND16 e1 e2
 packageExpr c (Or16 e1 e2) = packageTwoSubExpr c EXPR_OR16 e1 e2 
 packageExpr c (Xor16 e1 e2) = packageTwoSubExpr c EXPR_XOR16 e1 e2 
 packageExpr c (If16 e1 e2 e3) = packageThreeSubExpr c EXPR_IF16 e1 e2 e3
-packageExpr c (Lit32 w) = 
-    return $ B.pack $ (exprCmdVal EXPR_LIT32) : word32ToBytes w
+packageExpr c (Lit32 w) = return $ (exprCmdVal EXPR_LIT32) : word32ToBytes w
 -- packageExpr (Var32 s) = BS.pack [EXPR_VAR8, ] 
 packageExpr c (Neg32 e) = packageSubExpr c EXPR_NEG32 e
 packageExpr c (Sign32 e) = packageSubExpr c EXPR_SIGN32 e
@@ -223,7 +222,8 @@ packageExpr c (And32 e1 e2) = packageTwoSubExpr c EXPR_AND32 e1 e2
 packageExpr c (Or32 e1 e2) = packageTwoSubExpr c EXPR_OR32 e1 e2 
 packageExpr c (Xor32 e1 e2) = packageTwoSubExpr c EXPR_XOR32 e1 e2 
 packageExpr c (If32 e1 e2 e3) = packageThreeSubExpr c EXPR_IF32 e1 e2 e3
-
+  where
+    
 -- | Unpackage a Amber Firmware response
 unpackageResponse :: [Word8] -> Response
 unpackageResponse [] = Unimplemented (Just "<EMPTY-REPLY>") []

@@ -156,7 +156,9 @@ type TaskPos = Word16
 data Command =
        SystemReset                              -- ^ Send system reset
      | SetPinMode Pin PinMode                   -- ^ Set the mode on a pin
---     | DigitalPortWrite Port Word8              -- ^ Set the values on a port digitally
+     | SetPinModeE PinE PinMode                 -- ^ Set the mode on a pin
+--  ToDo: PinMode expression?
+--     | DigitalPortWrite Port Word8            -- ^ Set the values on a port digitally
 --     | DigitalPortWriteE Port (Expr Word8)
      | DigitalWrite Pin Bool                    -- ^ Set the value on a pin digitally
      | DigitalWriteE PinE BoolE              
@@ -187,6 +189,9 @@ systemReset = Command SystemReset
 
 setPinMode :: Pin -> PinMode -> Arduino ()
 setPinMode p pm = Command $ SetPinMode p pm
+
+setPinModeE :: PinE -> PinMode -> Arduino ()
+setPinModeE p pm = Command $ SetPinModeE p pm
 
 -- digitalPortWrite :: Port -> Word8 -> Arduino ()
 -- digitalPortWrite p w = Command $ DigitalPortWrite p w
@@ -328,7 +333,8 @@ data Procedure :: * -> * where
      I2CRead :: SlaveAddress -> Word8 -> Procedure [Word8]
      I2CReadE :: SlaveAddressE -> Word8E -> Procedure [Word8]
      QueryAllTasks :: Procedure [TaskID]
-     QueryTask :: TaskID -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
+     QueryTask  :: TaskID -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
+     QueryTaskE :: TaskIDE -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
      -- Todo: add one wire queries, readd pulse?
 
 deriving instance Show a => Show (Procedure a)
@@ -370,6 +376,9 @@ queryAllTasks = Procedure QueryAllTasks
 
 queryTask :: TaskID -> Arduino (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
 queryTask tid = Procedure $ QueryTask tid
+
+queryTaskE :: TaskIDE -> Arduino (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
+queryTaskE tid = Procedure $ QueryTaskE tid
 
 -- | A response, as returned from the Arduino
 data Response = Firmware Word8 Word8                 -- ^ Firmware version (maj/min and indentifier
