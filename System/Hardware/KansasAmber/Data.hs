@@ -271,13 +271,13 @@ loop :: Arduino () -> Arduino ()
 loop ps = Control (Loop ps)
 
 data Variable :: * -> * where
-     AssignProcB      :: StringE -> Arduino BoolE -> Variable ()
+     AssignProcB      :: StringE -> Arduino Bool -> Variable ()
      AssignExprB      :: StringE -> BoolE -> Variable ()
-     AssignProc8      :: StringE -> Arduino Word8E -> Variable ()
+     AssignProc8      :: StringE -> Arduino Word8 -> Variable ()
      AssignExpr8      :: StringE -> Word8E -> Variable ()
-     AssignProc16     :: StringE -> Arduino Word16E -> Variable ()
+     AssignProc16     :: StringE -> Arduino Word16 -> Variable ()
      AssignExpr16     :: StringE -> Word16E -> Variable ()
-     AssignProc32     :: StringE -> Arduino Word32E -> Variable ()
+     AssignProc32     :: StringE -> Arduino Word32 -> Variable ()
      AssignExpr32     :: StringE -> Word32E -> Variable ()
      NewB             :: String  -> Variable Int
      New8             :: String  -> Variable Int
@@ -286,7 +286,7 @@ data Variable :: * -> * where
 
 class Assign a where
     (=*)  :: StringE -> Expr a -> Variable ()
-    (=**) :: StringE -> Arduino (Expr a) -> Variable ()
+    (=**) :: StringE -> Arduino a -> Variable ()
 
 instance Assign Bool where
     (=*)  se e  = AssignExprB se e
@@ -322,11 +322,11 @@ data Procedure :: * -> * where
 --     DigitalPortRead  :: Port -> Procedure Word8          -- ^ Read the values on a port digitally
 --     DigitalPortReadE :: Port -> Procedure (Expr Word8)
      DigitalRead    :: Pin -> Procedure Bool            -- ^ Read the avlue ona pin digitally
-     DigitalReadE   :: PinE -> Procedure BoolE          -- ^ Read the avlue ona pin digitally
+     DigitalReadE   :: PinE -> Procedure Bool          -- ^ Read the avlue ona pin digitally
      AnalogRead     :: Pin -> Procedure Word16          -- ^ Read the analog value on a pin
-     AnalogReadE    :: PinE -> Procedure Word16E          
+     AnalogReadE    :: PinE -> Procedure Word16          
      I2CRead :: SlaveAddress -> Word8 -> Procedure [Word8]
-     I2CReadE :: SlaveAddressE -> Word8E -> Procedure [Word8E]
+     I2CReadE :: SlaveAddressE -> Word8E -> Procedure [Word8]
      QueryAllTasks :: Procedure [TaskID]
      QueryTask :: TaskID -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
      -- Todo: add one wire queries, readd pulse?
@@ -350,19 +350,19 @@ queryProcessor = Procedure QueryProcessor
 digitalRead :: Pin -> Arduino Bool
 digitalRead p = Procedure $ DigitalRead p
 
-digitalReadE :: PinE -> Arduino BoolE
+digitalReadE :: PinE -> Arduino Bool
 digitalReadE p = Procedure $ DigitalReadE p
 
 analogRead :: Pin -> Arduino Word16
 analogRead p = Procedure $ AnalogRead p
 
-analogReadE :: PinE -> Arduino Word16E
+analogReadE :: PinE -> Arduino Word16
 analogReadE p = Procedure $ AnalogReadE p
 
 i2cRead :: SlaveAddress -> Word8 -> Arduino [Word8]
 i2cRead sa cnt = Procedure $ I2CRead sa cnt
 
-i2cReadE :: SlaveAddressE -> Word8E -> Arduino [Word8E]
+i2cReadE :: SlaveAddressE -> Word8E -> Arduino [Word8]
 i2cReadE sa cnt = Procedure $ I2CReadE sa cnt
 
 queryAllTasks :: Arduino [TaskID]
@@ -387,7 +387,8 @@ data Response = Firmware Word8 Word8                 -- ^ Firmware version (maj/
               | InvalidChecksumFrame [Word8]
     deriving Show
 
--- | Amber Firmware commands, see: http://tbd
+-- | Amber Firmware commands, see: 
+-- | https://github.com/ku-fpg/kansas-amber/wiki/Amber-Firmware-Protocol-Definition
 data FirmwareCmd = BC_CMD_SET_PIN_MODE
                  | BC_CMD_DELAY_MILLIS
                  | BC_CMD_DELAY_MICROS
@@ -440,7 +441,8 @@ firmwareCmdVal SCHED_CMD_QUERY        = 0xA4
 firmwareCmdVal SCHED_CMD_QUERY_ALL    = 0xA5
 firmwareCmdVal SCHED_CMD_RESET        = 0xA6
 
--- | Firmware replies, see: https:tbd
+-- | Firmware replies, see: 
+-- | https://github.com/ku-fpg/kansas-amber/wiki/Amber-Firmware-Protocol-Definition
 data FirmwareReply =  BS_RESP_VERSION
                    |  BS_RESP_TYPE
                    |  BS_RESP_MICROS

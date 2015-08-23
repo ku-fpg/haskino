@@ -180,3 +180,108 @@ instance BN.IntegralB Word32E where
   toIntegerB x = case x of
                     Lit32 n -> n
 
+-- | Amber Firmware expresions, see:tbd 
+data ExprCmd = EXPR_LITB 
+                 | EXPR_LIT8
+                 | EXPR_LIT16
+                 | EXPR_LIT32
+                 | EXPR_VARB
+                 | EXPR_VAR8
+                 | EXPR_VAR16
+                 | EXPR_VAR32
+                 | EXPR_NOTB
+                 | EXPR_ANDB
+                 | EXPR_ORB
+                 | EXPR_NEG8
+                 | EXPR_SIGN8
+                 | EXPR_ADD8
+                 | EXPR_SUB8
+                 | EXPR_MULT8
+                 | EXPR_DIV8
+                 | EXPR_REM8
+                 | EXPR_AND8
+                 | EXPR_OR8
+                 | EXPR_XOR8
+                 | EXPR_EQ8
+                 | EXPR_LESS8
+                 | EXPR_IF8
+                 | EXPR_NEG16
+                 | EXPR_SIGN16
+                 | EXPR_ADD16
+                 | EXPR_SUB16
+                 | EXPR_MULT16
+                 | EXPR_DIV16
+                 | EXPR_REM16
+                 | EXPR_AND16
+                 | EXPR_OR16
+                 | EXPR_XOR16
+                 | EXPR_EQ16
+                 | EXPR_LESS16
+                 | EXPR_IF16
+                 | EXPR_NEG32
+                 | EXPR_SIGN32
+                 | EXPR_ADD32
+                 | EXPR_SUB32
+                 | EXPR_MULT32
+                 | EXPR_DIV32
+                 | EXPR_REM32
+                 | EXPR_AND32
+                 | EXPR_OR32
+                 | EXPR_XOR32
+                 | EXPR_EQ32
+                 | EXPR_LESS32
+                 | EXPR_IF32
+                deriving Show
+
+-- | Compute the numeric value of a command
+exprCmdVal :: ExprCmd -> Word8
+exprCmdVal EXPR_LITB    = 0xC0
+exprCmdVal EXPR_VARB    = 0xC1
+exprCmdVal EXPR_NOTB    = 0xC2
+exprCmdVal EXPR_ANDB    = 0xC3
+exprCmdVal EXPR_ORB     = 0xC4
+exprCmdVal EXPR_EQ8     = 0xC5
+exprCmdVal EXPR_LESS8   = 0xC6
+exprCmdVal EXPR_EQ16    = 0xC7
+exprCmdVal EXPR_LESS16  = 0xC8
+exprCmdVal EXPR_EQ32    = 0xC9
+exprCmdVal EXPR_LESS32  = 0xCA
+exprCmdVal EXPR_LIT8    = 0xD0
+exprCmdVal EXPR_VAR8    = 0xD1
+exprCmdVal EXPR_NEG8    = 0xD2
+exprCmdVal EXPR_SIGN8   = 0xD3
+exprCmdVal EXPR_ADD8    = 0xD4
+exprCmdVal EXPR_SUB8    = 0xD5
+exprCmdVal EXPR_MULT8   = 0xD6
+exprCmdVal EXPR_DIV8    = 0xD7
+exprCmdVal EXPR_REM8    = 0xD8
+exprCmdVal EXPR_AND8    = 0xD9
+exprCmdVal EXPR_OR8     = 0xDA
+exprCmdVal EXPR_XOR8    = 0xDB
+exprCmdVal EXPR_IF8     = 0xDC
+exprCmdVal EXPR_LIT16   = 0xE0
+exprCmdVal EXPR_VAR16   = 0xE1
+exprCmdVal EXPR_NEG16   = 0xE2
+exprCmdVal EXPR_SIGN16  = 0xE3
+exprCmdVal EXPR_ADD16   = 0xE4
+exprCmdVal EXPR_SUB16   = 0xE5
+exprCmdVal EXPR_MULT16  = 0xE6
+exprCmdVal EXPR_DIV16   = 0xE7
+exprCmdVal EXPR_REM16   = 0xE8
+exprCmdVal EXPR_AND16   = 0xE9
+exprCmdVal EXPR_OR16    = 0xEA
+exprCmdVal EXPR_XOR16   = 0xEB
+exprCmdVal EXPR_IF16    = 0xEC
+exprCmdVal EXPR_LIT32   = 0xF0
+exprCmdVal EXPR_VAR32   = 0xF1
+exprCmdVal EXPR_NEG32   = 0xF2
+exprCmdVal EXPR_SIGN32  = 0xF3
+exprCmdVal EXPR_ADD32   = 0xF4
+exprCmdVal EXPR_SUB32   = 0xF5
+exprCmdVal EXPR_MULT32  = 0xF6
+exprCmdVal EXPR_DIV32   = 0xF7
+exprCmdVal EXPR_REM32   = 0xF8
+exprCmdVal EXPR_AND32   = 0xF9
+exprCmdVal EXPR_OR32    = 0xFA
+exprCmdVal EXPR_XOR32   = 0xFB
+exprCmdVal EXPR_IF32    = 0xFC
