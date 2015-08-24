@@ -45,30 +45,64 @@ packageCommand c SystemReset =
     return $ buildCommand BC_CMD_SYSTEM_RESET []
 packageCommand c (SetPinMode p m) = do
     return $ buildCommand BC_CMD_SET_PIN_MODE [p, fromIntegral $ fromEnum m]
+packageCommand c (SetPinModeE p m) = do
+    pe <- packageExpr c p
+    return $ buildCommand BC_CMD_SET_PIN_MODE_E (pe ++ [fromIntegral $ fromEnum m])
 packageCommand c (DigitalWrite p b)  = do
     return $ buildCommand DIG_CMD_WRITE_PIN [p, if b then 1 else 0]
---packageCommand c (DigitalWriteE p b)  = do
---    return $ buildCommand DIG_CMD_WRITE_PIN [p, if b then 1 else 0]
+packageCommand c (DigitalWriteE p b)  = do
+    pe <- packageExpr c p
+    be <- packageExpr c b
+    return $ buildCommand DIG_CMD_WRITE_PIN_E (pe ++ be)
 packageCommand c (AnalogWrite p w) = do
     return $ buildCommand ALG_CMD_WRITE_PIN (p : (word16ToBytes w))
+packageCommand c (AnalogWriteE p w) = do
+    pe <- packageExpr c p
+    we <- packageExpr c w
+    return $ buildCommand ALG_CMD_WRITE_PIN_E (pe ++ we)
 packageCommand c (Tone p f (Just d)) = do
     return $ buildCommand ALG_CMD_TONE_PIN (p : (word16ToBytes f) ++ (word32ToBytes d))
 packageCommand c (Tone p f Nothing) = do
     packageCommand c (Tone p f (Just 0))
+packageCommand c (ToneE p f (Just d)) = do
+    pe <- packageExpr c p
+    fe <- packageExpr c f
+    de <- packageExpr c d
+    return $ buildCommand ALG_CMD_TONE_PIN_E (pe ++ fe ++ de)
+packageCommand c (ToneE p f Nothing) = do
+    packageCommand c (ToneE p f (Just 0))
 packageCommand c (NoTone p) = do
     return $ buildCommand ALG_CMD_NOTONE_PIN [p]
+packageCommand c (NoToneE p) = do
+    pe <- packageExpr c p
+    return $ buildCommand ALG_CMD_NOTONE_PIN_E pe
 packageCommand c (I2CWrite sa w8s) = 
     return $ buildCommand I2C_CMD_WRITE (sa : w8s)
+-- ToDo: packageCommand c (I2CWriteE sa w8s) = 
+--    return $ buildCommand I2C_CMD_WRITE_E (sa : w8s)
 packageCommand c I2CConfig = 
     return $ buildCommand I2C_CMD_CONFIG []
 packageCommand c (DeleteTask tid) = 
     return $ buildCommand SCHED_CMD_DELETE_TASK [tid]
+packageCommand c (DeleteTaskE tid) = do
+    tide <- packageExpr c tid
+    return $ buildCommand SCHED_CMD_DELETE_TASK_E tide
 packageCommand c (DelayMillis ms) = 
     return $ buildCommand BC_CMD_DELAY_MILLIS (word32ToBytes ms)
+packageCommand c (DelayMillisE ms) = do
+    mse <- packageExpr c ms
+    return $ buildCommand BC_CMD_DELAY_MILLIS_E mse
 packageCommand c (DelayMicros ms) = 
     return $ buildCommand BC_CMD_DELAY_MICROS (word32ToBytes ms)
-packageCommand c (ScheduleTask tid tt)    = 
+packageCommand c (DelayMicrosE ms) = do
+    mse <- packageExpr c ms
+    return $ buildCommand BC_CMD_DELAY_MICROS_E mse
+packageCommand c (ScheduleTask tid tt) = 
     return $ buildCommand SCHED_CMD_SCHED_TASK (tid : word32ToBytes tt)
+packageCommand c (ScheduleTaskE tid tt) = do
+    tide <- packageExpr c tid
+    tte <- packageExpr c tt
+    return $ buildCommand SCHED_CMD_SCHED_TASK_E (tide ++ tte)
 packageCommand c (CreateTask tid m)       = do
     td <- packageTaskData c m
     let taskSize = fromIntegral (B.length td)
@@ -223,7 +257,7 @@ packageExpr c (Or32 e1 e2) = packageTwoSubExpr c EXPR_OR32 e1 e2
 packageExpr c (Xor32 e1 e2) = packageTwoSubExpr c EXPR_XOR32 e1 e2 
 packageExpr c (If32 e1 e2 e3) = packageThreeSubExpr c EXPR_IF32 e1 e2 e3
   where
-    
+
 -- | Unpackage a Amber Firmware response
 unpackageResponse :: [Word8] -> Response
 unpackageResponse [] = Unimplemented (Just "<EMPTY-REPLY>") []

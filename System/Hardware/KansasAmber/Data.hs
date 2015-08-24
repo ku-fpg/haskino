@@ -401,6 +401,9 @@ data Response = Firmware Word8 Word8                 -- ^ Firmware version (maj/
 data FirmwareCmd = BC_CMD_SET_PIN_MODE
                  | BC_CMD_DELAY_MILLIS
                  | BC_CMD_DELAY_MICROS
+                 | BC_CMD_SET_PIN_MODE_E
+                 | BC_CMD_DELAY_MILLIS_E
+                 | BC_CMD_DELAY_MICROS_E
                  | BC_CMD_SYSTEM_RESET
                  | BS_CMD_REQUEST_VERSION
                  | BS_CMD_REQUEST_TYPE
@@ -408,13 +411,21 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE
                  | BS_CMD_REQUEST_MILLIS
                  | DIG_CMD_READ_PIN
                  | DIG_CMD_WRITE_PIN
+                 | DIG_CMD_READ_PIN_E
+                 | DIG_CMD_WRITE_PIN_E
                  | ALG_CMD_READ_PIN
                  | ALG_CMD_WRITE_PIN
                  | ALG_CMD_TONE_PIN
                  | ALG_CMD_NOTONE_PIN
+                 | ALG_CMD_READ_PIN_E
+                 | ALG_CMD_WRITE_PIN_E
+                 | ALG_CMD_TONE_PIN_E
+                 | ALG_CMD_NOTONE_PIN_E
                  | I2C_CMD_CONFIG
                  | I2C_CMD_READ
                  | I2C_CMD_WRITE
+                 | I2C_CMD_READ_E
+                 | I2C_CMD_WRITE_E
                  | SCHED_CMD_CREATE_TASK
                  | SCHED_CMD_DELETE_TASK
                  | SCHED_CMD_ADD_TO_TASK
@@ -422,6 +433,9 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE
                  | SCHED_CMD_QUERY
                  | SCHED_CMD_QUERY_ALL
                  | SCHED_CMD_RESET
+                 | SCHED_CMD_DELETE_TASK_E
+                 | SCHED_CMD_SCHED_TASK_E
+                 | SCHED_CMD_QUERY_E
                 deriving Show
 
 -- | Compute the numeric value of a command
@@ -430,15 +444,24 @@ firmwareCmdVal BC_CMD_SET_PIN_MODE    = 0x10
 firmwareCmdVal BC_CMD_DELAY_MILLIS    = 0x11
 firmwareCmdVal BC_CMD_DELAY_MICROS    = 0x12
 firmwareCmdVal BC_CMD_SYSTEM_RESET    = 0x13
+firmwareCmdVal BC_CMD_SET_PIN_MODE_E  = 0x14
+firmwareCmdVal BC_CMD_DELAY_MILLIS_E  = 0x15
+firmwareCmdVal BC_CMD_DELAY_MICROS_E  = 0x16
 firmwareCmdVal BS_CMD_REQUEST_VERSION = 0x20
 firmwareCmdVal BS_CMD_REQUEST_TYPE    = 0x21
 firmwareCmdVal BS_CMD_REQUEST_MILLIS  = 0x22
 firmwareCmdVal DIG_CMD_READ_PIN       = 0x30
 firmwareCmdVal DIG_CMD_WRITE_PIN      = 0x31
+firmwareCmdVal DIG_CMD_READ_PIN_E     = 0x32
+firmwareCmdVal DIG_CMD_WRITE_PIN_E    = 0x33
 firmwareCmdVal ALG_CMD_READ_PIN       = 0x40
 firmwareCmdVal ALG_CMD_WRITE_PIN      = 0x41
 firmwareCmdVal ALG_CMD_TONE_PIN       = 0x42
 firmwareCmdVal ALG_CMD_NOTONE_PIN     = 0x43
+firmwareCmdVal ALG_CMD_READ_PIN_E     = 0x44
+firmwareCmdVal ALG_CMD_WRITE_PIN_E    = 0x45
+firmwareCmdVal ALG_CMD_TONE_PIN_E     = 0x46
+firmwareCmdVal ALG_CMD_NOTONE_PIN_E   = 0x47
 firmwareCmdVal I2C_CMD_CONFIG         = 0x50
 firmwareCmdVal I2C_CMD_READ           = 0x51
 firmwareCmdVal I2C_CMD_WRITE          = 0x52
@@ -449,6 +472,9 @@ firmwareCmdVal SCHED_CMD_SCHED_TASK   = 0xA3
 firmwareCmdVal SCHED_CMD_QUERY        = 0xA4
 firmwareCmdVal SCHED_CMD_QUERY_ALL    = 0xA5
 firmwareCmdVal SCHED_CMD_RESET        = 0xA6
+firmwareCmdVal SCHED_CMD_DELETE_TASK_E = 0xA7
+firmwareCmdVal SCHED_CMD_SCHED_TASK_E  = 0xA8
+firmwareCmdVal SCHED_CMD_QUERY_E       = 0xA9
 
 -- | Firmware replies, see: 
 -- | https://github.com/ku-fpg/kansas-amber/wiki/Amber-Firmware-Protocol-Definition
