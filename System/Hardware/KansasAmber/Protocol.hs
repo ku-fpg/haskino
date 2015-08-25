@@ -16,7 +16,9 @@ module System.Hardware.KansasAmber.Protocol(framePackage, packageCommand, packag
 import Data.Bits            (xor)
 import Data.Word (Word8)
 
+import Control.Concurrent   (modifyMVar_)
 import qualified Data.ByteString as B
+import qualified Data.Map        as M
 
 import System.Hardware.KansasAmber.Data
 import System.Hardware.KansasAmber.Expr
@@ -172,20 +174,17 @@ packageTaskData conn commands =
       lenPackage package = B.cons (fromIntegral $ B.length package) package      
 
 packageProcedure :: Procedure a -> B.ByteString
-packageProcedure QueryFirmware       = 
-    buildCommand BS_CMD_REQUEST_VERSION []
-packageProcedure QueryProcessor      = 
-    buildCommand BS_CMD_REQUEST_TYPE []
-packageProcedure (DigitalRead p)     = 
-    buildCommand DIG_CMD_READ_PIN [p]
-packageProcedure (AnalogRead p)      = 
-    buildCommand ALG_CMD_READ_PIN [p]
-packageProcedure (I2CRead sa cnt)    = 
-    buildCommand I2C_CMD_READ [sa,cnt]
-packageProcedure QueryAllTasks       = 
-    buildCommand SCHED_CMD_QUERY_ALL []
-packageProcedure (QueryTask tid)     = 
-    buildCommand SCHED_CMD_QUERY [tid]
+packageProcedure QueryFirmware       = buildCommand BS_CMD_REQUEST_VERSION []
+packageProcedure QueryProcessor      = buildCommand BS_CMD_REQUEST_TYPE []
+packageProcedure (DigitalRead p)     = buildCommand DIG_CMD_READ_PIN [p]
+packageProcedure (AnalogRead p)      = buildCommand ALG_CMD_READ_PIN [p]
+packageProcedure (I2CRead sa cnt)    = buildCommand I2C_CMD_READ [sa,cnt]
+packageProcedure QueryAllTasks       = buildCommand SCHED_CMD_QUERY_ALL []
+packageProcedure (QueryTask tid)     = buildCommand SCHED_CMD_QUERY [tid]
+packageProcedure (NewB _)            = buildCommand VAR_CMD_NEWB  []
+packageProcedure (New8 _)            = buildCommand VAR_CMD_NEW8  []
+packageProcedure (New16 _)           = buildCommand VAR_CMD_NEW16 []
+packageProcedure (New32 _)           = buildCommand VAR_CMD_NEW32 []
 
 packageSubExpr :: ArduinoConnection -> ExprCmd -> Expr a -> IO [Word8]
 packageSubExpr c ec e = do
@@ -279,17 +278,30 @@ unpackageResponse (cmdWord:args)
                                    bytesToWord16 (tl0,tl1),
                                    bytesToWord16 (tp0,tp1), 
                                    bytesToWord32 (tt0,tt1,tt2,tt3)))  
+      (VAR_RESP_NEWB, [w])            -> NewBReply w
+      (VAR_RESP_NEW8, [w])            -> New8Reply w
+      (VAR_RESP_NEW16, [w])           -> New16Reply w
+      (VAR_RESP_NEW32, [w])           -> New32Reply w
       _                               -> Unimplemented (Just (show cmd)) args
   | True
   = Unimplemented Nothing (cmdWord : args)
 
+updateVariables :: ArduinoConnection -> String -> Word8 -> IO (Maybe (String, Word8))
+updateVariables c s w = do
+    modifyMVar_ (variables c) $ \vs -> return $ M.insert s w vs
+    return $ Just (s, w) 
+
 -- This is how we match responses with queries
-parseQueryResult :: Procedure a -> Response -> Maybe a
-parseQueryResult QueryFirmware (Firmware wa wb) = Just (wa,wb)
-parseQueryResult QueryProcessor (ProcessorType pt) = Just $ getProcessor pt
-parseQueryResult (DigitalRead p) (DigitalReply d) = Just (if d == 0 then False else True)
-parseQueryResult (AnalogRead p) (AnalogReply a) = Just a
-parseQueryResult (I2CRead saq cnt) (I2CReply ds) = Just ds
-parseQueryResult QueryAllTasks (QueryAllTasksReply ts) = Just ts
-parseQueryResult (QueryTask tid) (QueryTaskReply tr) = Just tr
-parseQueryResult q r = Nothing
+parseQueryResult :: ArduinoConnection -> Procedure a -> Response -> IO (Maybe a)
+parseQueryResult c QueryFirmware (Firmware wa wb) = return $ Just (wa,wb)
+parseQueryResult c QueryProcessor (ProcessorType pt) = return $Just $ getProcessor pt
+parseQueryResult c (DigitalRead p) (DigitalReply d) = return $ Just (if d == 0 then False else True)
+parseQueryResult c (AnalogRead p) (AnalogReply a) = return $ Just a
+parseQueryResult c (I2CRead saq cnt) (I2CReply ds) = return $ Just ds
+parseQueryResult c QueryAllTasks (QueryAllTasksReply ts) = return $ Just ts
+parseQueryResult c (QueryTask tid) (QueryTaskReply tr) = return $ Just tr
+parseQueryResult c (NewB s) (NewBReply vn) = updateVariables c s vn
+parseQueryResult c (New8 s) (New8Reply vn) = updateVariables c s vn
+parseQueryResult c (New16 s) (New16Reply vn) = updateVariables c s vn
+parseQueryResult c (New32 s) (New32Reply vn) = updateVariables c s vn
+parseQueryResult c q r = return Nothing

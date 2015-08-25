@@ -19,7 +19,7 @@ import Control.Monad        (when, forever)
 import Control.Concurrent   (Chan, MVar, ThreadId, newChan, newMVar, 
                              newEmptyMVar, putMVar, takeMVar, writeChan, 
                              readChan, forkIO, modifyMVar_, tryTakeMVar, 
-                             killThread, threadDelay)
+                             killThread, threadDelay, withMVar)
 import Control.Exception    (tryJust, AsyncException(UserInterrupt))
 import Control.Monad.State  (liftIO)
 import Data.Bits            (testBit, (.&.), xor)
@@ -34,7 +34,7 @@ import System.Timeout       (timeout)
 import qualified Data.ByteString            as B 
 import Data.ByteString.Base16 (encode)
 import qualified Data.Map                   as M (empty, mapWithKey, insert, 
-                                                  assocs, lookup)
+                                                  assocs, lookup, member)
 import qualified Data.Set                   as S (empty)
 import qualified System.Hardware.Serialport as S (openSerial, closeSerial, 
                                                   defaultSerialSettings, 
@@ -64,6 +64,7 @@ openArduino verbose fp = do
       debugger <- mkDebugPrinter verbose
       debugger $ "Accessing arduino located at: " ++ show fp
       listenerTid <- newEmptyMVar
+      variables <- newEmptyMVar
       portTry <- tryIOError (S.openSerial fp S.defaultSerialSettings{S.commSpeed = S.CS115200})
       case portTry of 
         Left e -> 
@@ -72,6 +73,7 @@ openArduino verbose fp = do
           dc <- newChan
           tid <- setupListener port debugger dc
           liftIO $ putMVar listenerTid tid
+          liftIO $ putMVar variables M.empty
           debugger $ "Started listener thread: " ++ show tid
           let initState = ArduinoConnection {
                              message       = debugger
@@ -81,6 +83,7 @@ openArduino verbose fp = do
                            , processor     = UNKNOWN_PROCESSOR 255
                            , deviceChannel = dc
                            , listenerTid   = listenerTid
+                           , variables     = variables
                         }
           -- Step 1: Send a reset to get things going
           send initState systemReset
@@ -131,12 +134,12 @@ send conn commands =
       sendBind c (Bind m k1)    k2 cmds = sendBind c m (\ r -> Bind (k1 r) k2) cmds
       sendBind c (Command (DelayMillis d)) k cmds = do
           sendToArduino c cmds
-          message c $ "Delaying: " ++ show d
+          message c $ "Delaying Millis: " ++ show d
           threadDelay ((fromIntegral d)*1000)
           send' c (k ()) B.empty
       sendBind c (Command (DelayMicros d)) k cmds = do
           sendToArduino c cmds
-          message c $ "Delaying: " ++ show d
+          message c $ "Delaying Micros: " ++ show d
           threadDelay (fromIntegral d)
           send' c (k ()) B.empty
       sendBind c (Command (CreateTask tid as)) k cmds = do 
@@ -168,6 +171,12 @@ send conn commands =
 
       sendProcedure :: ArduinoConnection -> Procedure a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendProcedure c procedure k cmds = do
+          case procedure of
+              NewB s  -> checkDuplicateVariable c s
+              New8 s  -> checkDuplicateVariable c s
+              New16 s -> checkDuplicateVariable c s
+              New32 s -> checkDuplicateVariable c s
+              _       -> return ()
           sendToArduino c (B.append cmds (framePackage $ packageProcedure procedure))
           wait c procedure k
         where
@@ -179,13 +188,19 @@ send conn commands =
                 Nothing -> runDie c "Response Timeout" 
                                  [ "Make sure your Arduino is running Amber Firmware"]
                 Just r -> do 
-                    let qres = parseQueryResult procedure r
+                    qres <- parseQueryResult c procedure r
                     case qres of
                         -- Ignore responses that do not match expected response
                         -- and wait for the next response.
                         Nothing -> do message c $ "Unmatched response" ++ show r
                                       wait c procedure k
                         Just qr -> send' c (k qr) B.empty
+
+      checkDuplicateVariable :: ArduinoConnection -> String -> IO ()
+      checkDuplicateVariable c s = 
+          withMVar (variables c) $ \vs -> if M.member s vs 
+                                          then error $ "\n*** KansasAmber:ERROR: Duplicate Variable Name " ++ s
+                                          else return ()
 
       send' :: ArduinoConnection -> Arduino a -> B.ByteString -> IO a
       send' c (Bind m k)            cmds = sendBind c m k cmds
