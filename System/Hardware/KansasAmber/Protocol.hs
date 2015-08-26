@@ -107,7 +107,7 @@ packageCommand c (ScheduleTaskE tid tt) = do
     tide <- packageExpr c tid
     tte <- packageExpr c tt
     return $ buildCommand SCHED_CMD_SCHED_TASK_E (tide ++ tte)
-packageCommand c (CreateTask tid m)       = do
+packageCommand c (CreateTask tid m) = do
     td <- packageTaskData c m
     let taskSize = fromIntegral (B.length td)
     let cmd = buildCommand SCHED_CMD_CREATE_TASK (tid : (word16ToBytes taskSize))                                   
@@ -120,7 +120,12 @@ packageCommand c (CreateTask tid m)       = do
             `B.append` (genAddToTaskCmds (B.drop maxCmdSize tds))
     genAddToTaskCmds tds = addToTask tds
     addToTask tds' = framePackage $ buildCommand SCHED_CMD_ADD_TO_TASK ([tid, fromIntegral $ B.length tds'] ++ (B.unpack tds'))
-
+{-
+packageCommand c (AssignExprB v rh) = do
+    ve <- packageExpr c v
+    rhe <- packageExpr c rh
+    return $ buildCommand VAR_CMD_ASGN_EXPRB (ve ++ rhe)
+-}
 packageTaskData :: ArduinoConnection -> Arduino a -> IO B.ByteString
 packageTaskData conn commands =
       packageTaskData' conn commands B.empty
@@ -208,13 +213,18 @@ packageThreeSubExpr c ec e1 e2 e3 = do
     pe3 <- packageExpr c e3
     return $ (exprCmdVal ec) : (pe1 ++ pe2 ++ pe3)
 
-packageExpr :: ArduinoConnection -> Expr a -> IO [Word8]
-packageExpr c (LitB b) = return $ [exprCmdVal EXPR_LITB, if b then 1 else 0]
-packageExpr c (VarB s) = do
+packageVar :: ArduinoConnection -> String -> ExprCmd -> IO [Word8]
+packageVar c s ec = do
     vmap <- readMVar $ variables c
     case M.lookup s vmap of
-        Just vn -> return [exprCmdVal EXPR_VARB, vn] 
-        Nothing -> return []  
+        Just vn -> return [exprCmdVal ec, vn] 
+        Nothing -> runDie c "Unallocated variable" 
+                             [ "Variable name - " ++ s, 
+                             "Make sure Variables are allocated before use"]
+
+packageExpr :: ArduinoConnection -> Expr a -> IO [Word8]
+packageExpr c (LitB b) = return $ [exprCmdVal EXPR_LITB, if b then 1 else 0]
+packageExpr c (VarB s) = packageVar c s EXPR_VARB
 packageExpr c (NotB e) = packageSubExpr c EXPR_NOTB e 
 packageExpr c (AndB e1 e2) = packageTwoSubExpr c EXPR_ANDB e1 e2 
 packageExpr c (OrB e1 e2) = packageTwoSubExpr c EXPR_ORB e1 e2 
@@ -225,11 +235,7 @@ packageExpr c (Less16 e1 e2) = packageTwoSubExpr c EXPR_LESS16 e1 e2
 packageExpr c (Eq32 e1 e2) = packageTwoSubExpr c EXPR_EQ32 e1 e2 
 packageExpr c (Less32 e1 e2) = packageTwoSubExpr c EXPR_LESS32 e1 e2 
 packageExpr c (Lit8 w) = return $ [exprCmdVal EXPR_LIT8, w]
-packageExpr c (Var8 s) = do
-    vmap <- readMVar $ variables c
-    case M.lookup s vmap of
-        Just vn -> return [exprCmdVal EXPR_VAR8, vn] 
-        Nothing -> return []  
+packageExpr c (Var8 s) = packageVar c s EXPR_VAR8
 packageExpr c (Neg8 e) = packageSubExpr c EXPR_NEG8 e
 packageExpr c (Sign8 e) = packageSubExpr c EXPR_SIGN8 e
 packageExpr c (Add8 e1 e2) = packageTwoSubExpr c EXPR_ADD8 e1 e2 
@@ -242,11 +248,7 @@ packageExpr c (Or8 e1 e2) = packageTwoSubExpr c EXPR_OR8 e1 e2
 packageExpr c (Xor8 e1 e2) = packageTwoSubExpr c EXPR_XOR8 e1 e2 
 packageExpr c (If8 e1 e2 e3) = packageThreeSubExpr c EXPR_IF8 e1 e2 e3
 packageExpr c (Lit16 w) = return $ (exprCmdVal EXPR_LIT16) : word16ToBytes w
-packageExpr c (Var16 s) = do
-    vmap <- readMVar $ variables c
-    case M.lookup s vmap of
-        Just vn -> return [exprCmdVal EXPR_VAR16, vn] 
-        Nothing -> return []  
+packageExpr c (Var16 s) = packageVar c s EXPR_VAR16
 packageExpr c (Neg16 e) = packageSubExpr c EXPR_NEG16 e
 packageExpr c (Sign16 e) = packageSubExpr c EXPR_SIGN16 e
 packageExpr c (Add16 e1 e2) = packageTwoSubExpr c EXPR_ADD16 e1 e2 
@@ -259,11 +261,7 @@ packageExpr c (Or16 e1 e2) = packageTwoSubExpr c EXPR_OR16 e1 e2
 packageExpr c (Xor16 e1 e2) = packageTwoSubExpr c EXPR_XOR16 e1 e2 
 packageExpr c (If16 e1 e2 e3) = packageThreeSubExpr c EXPR_IF16 e1 e2 e3
 packageExpr c (Lit32 w) = return $ (exprCmdVal EXPR_LIT32) : word32ToBytes w
-packageExpr c (Var32 s) = do
-    vmap <- readMVar $ variables c
-    case M.lookup s vmap of
-        Just vn -> return [exprCmdVal EXPR_VAR32, vn] 
-        Nothing -> return []  
+packageExpr c (Var32 s) = packageVar c s EXPR_VAR32
 packageExpr c (Neg32 e) = packageSubExpr c EXPR_NEG32 e
 packageExpr c (Sign32 e) = packageSubExpr c EXPR_SIGN32 e
 packageExpr c (Add32 e1 e2) = packageTwoSubExpr c EXPR_ADD32 e1 e2 
