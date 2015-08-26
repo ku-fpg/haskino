@@ -187,7 +187,7 @@ send conn commands =
         message c $ "Waiting for response"
         resp <- liftIO $ timeout 5000000 $ readChan $ deviceChannel c
         case resp of 
-            Nothing -> runDie c "Response Timeout" 
+            Nothing -> runDie c "KansasAmber:ERROR: Response Timeout" 
                              [ "Make sure your Arduino is running Amber Firmware"]
             Just r -> do 
                 qres <- parseQueryResult c procedure r
@@ -201,8 +201,9 @@ send conn commands =
       checkDuplicateVariable :: ArduinoConnection -> String -> IO ()
       checkDuplicateVariable c s = 
           withMVar (variables c) $ \vs -> if M.member s vs 
-                                          then runDie c "Duplicate Variable Name" 
-                                                  [ "Make sure variable names are unique"]
+                                          then runDie c "KansasAmber:ERROR: Duplicate Variable Name" 
+                                                  [ "Variable name - " ++ s, 
+                                                    "Make sure variable names are unique"]
                                           else return ()
 
       send' :: ArduinoConnection -> Arduino a -> B.ByteString -> IO a
