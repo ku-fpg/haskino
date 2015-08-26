@@ -124,12 +124,22 @@ packageCommand c (AssignExprB v rh) = packageAssignExpr c VAR_CMD_ASGN_EXPRB v r
 packageCommand c (AssignExpr8 v rh) = packageAssignExpr c VAR_CMD_ASGN_EXPR8 v rh
 packageCommand c (AssignExpr16 v rh) = packageAssignExpr c VAR_CMD_ASGN_EXPR16 v rh
 packageCommand c (AssignExpr32 v rh) = packageAssignExpr c VAR_CMD_ASGN_EXPR32 v rh
+packageCommand c (AssignProcB v rh) = packageAssignProc c VAR_CMD_ASGN_PROCB v rh
+packageCommand c (AssignProc8 v rh) = packageAssignProc c VAR_CMD_ASGN_PROC8 v rh
+packageCommand c (AssignProc16 v rh) = packageAssignProc c VAR_CMD_ASGN_PROC16 v rh
+packageCommand c (AssignProc32 v rh) = packageAssignProc c VAR_CMD_ASGN_PROC32 v rh
 
 packageAssignExpr :: ArduinoConnection -> FirmwareCmd -> String -> Expr a -> IO B.ByteString
 packageAssignExpr c fc v rh = do
     vn <- lookupVar c v
     rhe <- packageExpr c rh
     return $ buildCommand fc (vn : rhe)
+
+packageAssignProc :: ArduinoConnection -> FirmwareCmd -> String -> Arduino a -> IO B.ByteString
+packageAssignProc c fc v rh = do
+    vn <- lookupVar c v
+    d <- packageTaskData c rh
+    return $ buildCommand fc (vn : (B.unpack d))
 
 packageTaskData :: ArduinoConnection -> Arduino a -> IO B.ByteString
 packageTaskData conn commands =
@@ -218,6 +228,7 @@ packageThreeSubExpr c ec e1 e2 e3 = do
     pe3 <- packageExpr c e3
     return $ (exprCmdVal ec) : (pe1 ++ pe2 ++ pe3)
 
+-- ToDo: Add variable type checking
 lookupVar :: ArduinoConnection -> String -> IO Word8
 lookupVar c s = do
     vmap <- readMVar $ variables c
