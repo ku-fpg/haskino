@@ -24,7 +24,9 @@ blink = withArduino False "/dev/cu.usbmodem1421" $ do
            x <- newVarB "x"
            setPinModeE led1 OUTPUT
            setPinModeE led2 OUTPUT
-           while (LitB True) $ do "x" =** (digitalReadE button)
+           while (LitB True) $ do "x" =** digitalReadE button
+                                  "x" =* x &&* LitB True
                                   digitalWriteE led1 x
                                   digitalWriteE led2 (notB x)
+                                  delayMillis 100 
 

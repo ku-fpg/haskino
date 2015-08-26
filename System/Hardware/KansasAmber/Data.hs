@@ -287,7 +287,7 @@ ifThenElse be tps eps = Command $ IfThenElse be tps eps
 
 -- ToDo: Readd servo and stepper functions
 
-infix 9 =*,=**
+infix 1 =*,=**
 
 class Assign a where
     (=*)  :: String -> Expr a -> Arduino()
