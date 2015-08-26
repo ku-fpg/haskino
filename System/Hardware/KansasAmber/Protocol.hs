@@ -333,16 +333,16 @@ parseQueryResult c (Procedure QueryAllTasks) (QueryAllTasksReply ts) = return $ 
 parseQueryResult c (Procedure (QueryTask tid)) (QueryTaskReply tr) = return $ Just tr
 parseQueryResult c (RemoteBinding (NewVarB s)) (NewReply vn) = do
     updateVariables c s vn
-    return $ Just vn
+    return $ Just $ VarB s
 parseQueryResult c (RemoteBinding (NewVar8 s)) (NewReply vn) = do
     updateVariables c s vn
-    return $ Just vn
+    return $ Just $ Var8 s
 parseQueryResult c (RemoteBinding (NewVar16 s)) (NewReply vn) = do
     updateVariables c s vn
-    return $ Just vn
+    return $ Just $ Var16 s
 parseQueryResult c (RemoteBinding (NewVar32 s)) (NewReply vn) = do
     updateVariables c s vn
-    return $ Just vn
+    return $ Just $ Var32 s
 parseQueryResult c q r = return Nothing
 
 updateVariables :: ArduinoConnection -> String -> Word8 -> IO ()

@@ -387,21 +387,21 @@ queryTaskE :: TaskIDE -> Arduino (Maybe (TaskLength, TaskLength, TaskPos, TimeMi
 queryTaskE tid = Procedure $ QueryTaskE tid
 
 data RemoteBinding :: * -> * where
-     NewVarB       :: String  -> RemoteBinding Word8
-     NewVar8       :: String  -> RemoteBinding Word8
-     NewVar16      :: String  -> RemoteBinding Word8
-     NewVar32      :: String  -> RemoteBinding Word8
+     NewVarB       :: String  -> RemoteBinding BoolE
+     NewVar8       :: String  -> RemoteBinding Word8E
+     NewVar16      :: String  -> RemoteBinding Word16E
+     NewVar32      :: String  -> RemoteBinding Word32E
 
-newVarB :: String -> Arduino Word8
+newVarB :: String -> Arduino BoolE
 newVarB n = RemoteBinding $ NewVarB n
 
-newVar8 :: String -> Arduino Word8
+newVar8 :: String -> Arduino Word8E
 newVar8 n = RemoteBinding $ NewVar8 n
 
-newVar16 :: String -> Arduino Word8
+newVar16 :: String -> Arduino Word16E
 newVar16 n = RemoteBinding $ NewVar16 n
 
-newVar32 :: String -> Arduino Word8
+newVar32 :: String -> Arduino Word32E
 newVar32 n = RemoteBinding $ NewVar32 n
 
 -- | A response, as returned from the Arduino

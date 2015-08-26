@@ -21,10 +21,10 @@ blink = withArduino False "/dev/cu.usbmodem1421" $ do
            let button = Lit8 10
            let led1 = Lit8 10
            let led2 = Lit8 10
-           newVar8 "x"
+           x <- newVarB "x"
            setPinModeE led1 OUTPUT
            setPinModeE led2 OUTPUT
            while (LitB True) $ do "x" =** (digitalReadE button)
-                                  digitalWriteE led1 (VarB "x")
-                                  digitalWriteE led2 (notB VarB "x")
+                                  digitalWriteE led1 x
+                                  digitalWriteE led2 (notB x)
 
