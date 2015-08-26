@@ -45,7 +45,9 @@ data Expr a where
   And8      :: Word8E -> Word8E -> Word8E
   Or8       :: Word8E -> Word8E -> Word8E
   Xor8      :: Word8E -> Word8E -> Word8E
-  -- ToDo: Add shifts
+  Comp8     :: Word8E -> Word8E
+  ShfL8     :: Word8E -> Word8E -> Word8E
+  ShfE8     :: Word8E -> Word8E -> Word8E
   Eq8       :: Word8E -> Word8E -> BoolE
   Less8     :: Word8E -> Word8E -> BoolE
   If8       :: BoolE -> Word8E -> Word8E -> Word8E
@@ -59,6 +61,9 @@ data Expr a where
   And16     :: Word16E -> Word16E -> Word16E
   Or16      :: Word16E -> Word16E -> Word16E
   Xor16     :: Word16E -> Word16E -> Word16E
+  Comp16    :: Word16E -> Word16E
+  ShfL16    :: Word16E -> Word8E -> Word16E
+  ShfR16    :: Word16E -> Word8E -> Word16E
   Eq16      :: Word16E -> Word16E -> BoolE
   Less16    :: Word16E -> Word16E -> BoolE
   If16      :: BoolE -> Word16E -> Word16E -> Word16E
@@ -72,11 +77,16 @@ data Expr a where
   And32     :: Word32E -> Word32E -> Word32E
   Or32      :: Word32E -> Word32E -> Word32E
   Xor32     :: Word32E -> Word32E -> Word32E
+  Comp32    :: Word32E -> Word32E
+  ShfL32    :: Word32E -> Word8E -> Word32E
+  ShfR32    :: Word32E -> Word8E -> Word32E
   Eq32      :: Word32E -> Word32E -> BoolE
   Less32    :: Word32E -> Word32E -> BoolE
   If32      :: BoolE -> Word32E -> Word32E -> Word32E
 
 deriving instance Show a => Show (Expr a)
+
+-- ToDo:  Add BitsB class for and, or, xor, complement and shifts
 
 instance B.Boolean BoolE where
   true  = LitB True
@@ -202,6 +212,9 @@ data ExprCmd = EXPR_LITB
                  | EXPR_REM8
                  | EXPR_AND8
                  | EXPR_OR8
+                 | EXPR_COMP8
+                 | EXPR_SHFL8
+                 | EXPR_SHFR8
                  | EXPR_XOR8
                  | EXPR_EQ8
                  | EXPR_LESS8
@@ -216,6 +229,9 @@ data ExprCmd = EXPR_LITB
                  | EXPR_AND16
                  | EXPR_OR16
                  | EXPR_XOR16
+                 | EXPR_COMP16
+                 | EXPR_SHFL16
+                 | EXPR_SHFR16
                  | EXPR_EQ16
                  | EXPR_LESS16
                  | EXPR_IF16
@@ -229,6 +245,9 @@ data ExprCmd = EXPR_LITB
                  | EXPR_AND32
                  | EXPR_OR32
                  | EXPR_XOR32
+                 | EXPR_COMP32
+                 | EXPR_SHFL32
+                 | EXPR_SHFR32
                  | EXPR_EQ32
                  | EXPR_LESS32
                  | EXPR_IF32
@@ -259,7 +278,10 @@ exprCmdVal EXPR_REM8    = 0xD8
 exprCmdVal EXPR_AND8    = 0xD9
 exprCmdVal EXPR_OR8     = 0xDA
 exprCmdVal EXPR_XOR8    = 0xDB
-exprCmdVal EXPR_IF8     = 0xDC
+exprCmdVal EXPR_COMP8   = 0xDC
+exprCmdVal EXPR_SHFL8   = 0xDD
+exprCmdVal EXPR_SHFR8   = 0xDE
+exprCmdVal EXPR_IF8     = 0xDF
 exprCmdVal EXPR_LIT16   = 0xE0
 exprCmdVal EXPR_VAR16   = 0xE1
 exprCmdVal EXPR_NEG16   = 0xE2
@@ -272,7 +294,10 @@ exprCmdVal EXPR_REM16   = 0xE8
 exprCmdVal EXPR_AND16   = 0xE9
 exprCmdVal EXPR_OR16    = 0xEA
 exprCmdVal EXPR_XOR16   = 0xEB
-exprCmdVal EXPR_IF16    = 0xEC
+exprCmdVal EXPR_COMP16  = 0xEC
+exprCmdVal EXPR_SHFL16  = 0xED
+exprCmdVal EXPR_SHFR16  = 0xEE
+exprCmdVal EXPR_IF16    = 0xEF
 exprCmdVal EXPR_LIT32   = 0xF0
 exprCmdVal EXPR_VAR32   = 0xF1
 exprCmdVal EXPR_NEG32   = 0xF2
@@ -285,4 +310,7 @@ exprCmdVal EXPR_REM32   = 0xF8
 exprCmdVal EXPR_AND32   = 0xF9
 exprCmdVal EXPR_OR32    = 0xFA
 exprCmdVal EXPR_XOR32   = 0xFB
-exprCmdVal EXPR_IF32    = 0xFC
+exprCmdVal EXPR_COMP32  = 0xFC
+exprCmdVal EXPR_SHFL32  = 0xFD
+exprCmdVal EXPR_SHFR32  = 0xFE
+exprCmdVal EXPR_IF32    = 0xFF
