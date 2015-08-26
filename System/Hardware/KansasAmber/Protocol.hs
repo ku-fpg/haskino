@@ -120,12 +120,17 @@ packageCommand c (CreateTask tid m) = do
             `B.append` (genAddToTaskCmds (B.drop maxCmdSize tds))
     genAddToTaskCmds tds = addToTask tds
     addToTask tds' = framePackage $ buildCommand SCHED_CMD_ADD_TO_TASK ([tid, fromIntegral $ B.length tds'] ++ (B.unpack tds'))
-{-
-packageCommand c (AssignExprB v rh) = do
-    ve <- packageExpr c v
+packageCommand c (AssignExprB v rh) = packageAssignExpr c VAR_CMD_ASGN_EXPRB v rh
+packageCommand c (AssignExpr8 v rh) = packageAssignExpr c VAR_CMD_ASGN_EXPR8 v rh
+packageCommand c (AssignExpr16 v rh) = packageAssignExpr c VAR_CMD_ASGN_EXPR16 v rh
+packageCommand c (AssignExpr32 v rh) = packageAssignExpr c VAR_CMD_ASGN_EXPR32 v rh
+
+packageAssignExpr :: ArduinoConnection -> FirmwareCmd -> String -> Expr a -> IO B.ByteString
+packageAssignExpr c fc v rh = do
+    vn <- lookupVar c v
     rhe <- packageExpr c rh
-    return $ buildCommand VAR_CMD_ASGN_EXPRB (ve ++ rhe)
--}
+    return $ buildCommand fc (vn : rhe)
+
 packageTaskData :: ArduinoConnection -> Arduino a -> IO B.ByteString
 packageTaskData conn commands =
       packageTaskData' conn commands B.empty
@@ -213,14 +218,19 @@ packageThreeSubExpr c ec e1 e2 e3 = do
     pe3 <- packageExpr c e3
     return $ (exprCmdVal ec) : (pe1 ++ pe2 ++ pe3)
 
-packageVar :: ArduinoConnection -> String -> ExprCmd -> IO [Word8]
-packageVar c s ec = do
+lookupVar :: ArduinoConnection -> String -> IO Word8
+lookupVar c s = do
     vmap <- readMVar $ variables c
     case M.lookup s vmap of
-        Just vn -> return [exprCmdVal ec, vn] 
+        Just vn -> return vn 
         Nothing -> runDie c "Unallocated variable" 
                              [ "Variable name - " ++ s, 
                              "Make sure Variables are allocated before use"]
+
+packageVar :: ArduinoConnection -> String -> ExprCmd -> IO [Word8]
+packageVar c s ec = do
+    vn <- lookupVar c s
+    return [exprCmdVal ec, vn]
 
 packageExpr :: ArduinoConnection -> Expr a -> IO [Word8]
 packageExpr c (LitB b) = return $ [exprCmdVal EXPR_LITB, if b then 1 else 0]
