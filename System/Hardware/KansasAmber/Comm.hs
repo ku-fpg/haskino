@@ -151,6 +151,7 @@ send conn commands =
       sendBind c (Control ctrl)  k cmds = sendControl c ctrl k cmds
       sendBind c (Local local)   k cmds = sendLocal c local k cmds
       sendBind c (Procedure procedure) k cmds = sendProcedure c procedure k cmds
+      sendBind c (RemoteBinding procedure) k cmds = sendRemoteBinding c procedure k cmds
       sendBind c (LiftIO m) k cmds = do 
           res <- m
           send' c (k res) cmds
@@ -171,30 +172,31 @@ send conn commands =
 
       sendProcedure :: ArduinoConnection -> Procedure a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendProcedure c procedure k cmds = do
-          case procedure of
-              NewB s  -> checkDuplicateVariable c s
-              New8 s  -> checkDuplicateVariable c s
-              New16 s -> checkDuplicateVariable c s
-              New32 s -> checkDuplicateVariable c s
-              _       -> return ()
           sendToArduino c (B.append cmds (framePackage $ packageProcedure procedure))
-          wait c procedure k
-        where
-          wait :: ArduinoConnection -> Procedure a -> (a -> Arduino b) -> IO b
-          wait c procedure k = do
-            message c $ "Waiting for response"
-            resp <- liftIO $ timeout 5000000 $ readChan $ deviceChannel c
-            case resp of 
-                Nothing -> runDie c "Response Timeout" 
-                                 [ "Make sure your Arduino is running Amber Firmware"]
-                Just r -> do 
-                    qres <- parseQueryResult c procedure r
-                    case qres of
-                        -- Ignore responses that do not match expected response
-                        -- and wait for the next response.
-                        Nothing -> do message c $ "Unmatched response" ++ show r
-                                      wait c procedure k
-                        Just qr -> send' c (k qr) B.empty
+          qr <- waitResponse c (Procedure procedure)
+          send' c (k qr) B.empty
+
+      sendRemoteBinding :: ArduinoConnection -> RemoteBinding a -> (a -> Arduino b) -> B.ByteString -> IO b
+      sendRemoteBinding c b k cmds = do
+          sendToArduino c (B.append cmds (framePackage $ packageRemoteBinding b))
+          qr <- waitResponse c (RemoteBinding b)
+          send' c (k qr) B.empty
+
+      waitResponse :: ArduinoConnection -> Arduino a -> IO a
+      waitResponse c procedure = do
+        message c $ "Waiting for response"
+        resp <- liftIO $ timeout 5000000 $ readChan $ deviceChannel c
+        case resp of 
+            Nothing -> runDie c "Response Timeout" 
+                             [ "Make sure your Arduino is running Amber Firmware"]
+            Just r -> do 
+                qres <- parseQueryResult c procedure r
+                case qres of
+                    -- Ignore responses that do not match expected response
+                    -- and wait for the next response.
+                    Nothing -> do message c $ "Unmatched response" ++ show r
+                                  waitResponse c procedure
+                    Just qr -> return qr
 
       checkDuplicateVariable :: ArduinoConnection -> String -> IO ()
       checkDuplicateVariable c s = 

@@ -43,6 +43,7 @@ data Arduino :: * -> * where
     Command        :: Command                         -> Arduino ()
     Local          :: Local a                         -> Arduino a
     Procedure      :: Procedure a                     -> Arduino a
+    RemoteBinding  :: RemoteBinding a                 -> Arduino a
     LiftIO         :: IO a                            -> Arduino a
     Bind           :: Arduino a -> (a -> Arduino b)   -> Arduino b
     Return         :: a                               -> Arduino a
@@ -153,6 +154,7 @@ type TimeMillisE = Word32E
 type TimeMicros = Word32
 type TimeMicrosE = Word32E
 type TaskPos = Word16
+type VarSize = Word8
 -- ToDo: Readd Stepper types
 
 data Command =
@@ -331,10 +333,6 @@ data Procedure :: * -> * where
      QueryAllTasks :: Procedure [TaskID]
      QueryTask  :: TaskID -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
      QueryTaskE :: TaskIDE -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
-     NewB           :: String  -> Procedure (String, Word8)
-     New8           :: String  -> Procedure (String, Word8)
-     New16          :: String  -> Procedure (String, Word8)
-     New32          :: String  -> Procedure (String, Word8)
      -- Todo: add one wire queries, readd pulse?
 
 deriving instance Show a => Show (Procedure a)
@@ -380,6 +378,24 @@ queryTask tid = Procedure $ QueryTask tid
 queryTaskE :: TaskIDE -> Arduino (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
 queryTaskE tid = Procedure $ QueryTaskE tid
 
+data RemoteBinding :: * -> * where
+     NewVarB       :: String  -> RemoteBinding Word8
+     NewVar8       :: String  -> RemoteBinding Word8
+     NewVar16      :: String  -> RemoteBinding Word8
+     NewVar32      :: String  -> RemoteBinding Word8
+
+newVarB :: String -> Arduino Word8
+newVarB n = RemoteBinding $ NewVarB n
+
+newVar8 :: String -> Arduino Word8
+newVar8 n = RemoteBinding $ NewVar8 n
+
+newVar16 :: String -> Arduino Word8
+newVar16 n = RemoteBinding $ NewVar16 n
+
+newVar32 :: String -> Arduino Word8
+newVar32 n = RemoteBinding $ NewVar32 n
+
 -- | A response, as returned from the Arduino
 data Response = Firmware Word8 Word8                 -- ^ Firmware version (maj/min and indentifier
               | ProcessorType Word8                  -- ^ Processor report
@@ -391,10 +407,7 @@ data Response = Firmware Word8 Word8                 -- ^ Firmware version (maj/
               | I2CReply [Word8]                     -- ^ Response to a I2C Read
               | QueryAllTasksReply [Word8]           -- ^ Response to Query All Tasks
               | QueryTaskReply (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
-              | NewBReply Word8
-              | New8Reply Word8
-              | New16Reply Word8
-              | New32Reply Word8
+              | NewReply Word8
               | Unimplemented (Maybe String) [Word8] -- ^ Represents messages currently unsupported
               | EmptyFrame
               | InvalidChecksumFrame [Word8]
@@ -440,10 +453,7 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE
                  | SCHED_CMD_DELETE_TASK_E
                  | SCHED_CMD_SCHED_TASK_E
                  | SCHED_CMD_QUERY_E
-                 | VAR_CMD_NEWB
-                 | VAR_CMD_NEW8
-                 | VAR_CMD_NEW16
-                 | VAR_CMD_NEW32
+                 | VAR_CMD_NEW
                  | VAR_CMD_ASGN_PROCB
                  | VAR_CMD_ASGN_EXPRB
                  | VAR_CMD_ASGN_PROC8
@@ -491,18 +501,15 @@ firmwareCmdVal SCHED_CMD_RESET        = 0xA6
 firmwareCmdVal SCHED_CMD_DELETE_TASK_E = 0xA7
 firmwareCmdVal SCHED_CMD_SCHED_TASK_E  = 0xA8
 firmwareCmdVal SCHED_CMD_QUERY_E       = 0xA9
-firmwareCmdVal VAR_CMD_NEWB           = 0xB0
-firmwareCmdVal VAR_CMD_NEW8           = 0xB1
-firmwareCmdVal VAR_CMD_NEW16          = 0xB2
-firmwareCmdVal VAR_CMD_NEW32          = 0xB3
-firmwareCmdVal VAR_CMD_ASGN_PROCB     = 0xB4
-firmwareCmdVal VAR_CMD_ASGN_EXPRB     = 0xB5
-firmwareCmdVal VAR_CMD_ASGN_PROC8     = 0xB6
-firmwareCmdVal VAR_CMD_ASGN_EXPR8     = 0xB7
-firmwareCmdVal VAR_CMD_ASGN_PROC16    = 0xB8
-firmwareCmdVal VAR_CMD_ASGN_EXPR16    = 0xB9
-firmwareCmdVal VAR_CMD_ASGN_PROC32    = 0xBA
-firmwareCmdVal VAR_CMD_ASGN_EXPR32    = 0xBB
+firmwareCmdVal VAR_CMD_NEW            = 0xB0
+firmwareCmdVal VAR_CMD_ASGN_PROCB     = 0xB1
+firmwareCmdVal VAR_CMD_ASGN_EXPRB     = 0xB2
+firmwareCmdVal VAR_CMD_ASGN_PROC8     = 0xB3
+firmwareCmdVal VAR_CMD_ASGN_EXPR8     = 0xB4
+firmwareCmdVal VAR_CMD_ASGN_PROC16    = 0xB5
+firmwareCmdVal VAR_CMD_ASGN_EXPR16    = 0xB6
+firmwareCmdVal VAR_CMD_ASGN_PROC32    = 0xB7
+firmwareCmdVal VAR_CMD_ASGN_EXPR32    = 0xB8
 
 -- | Firmware replies, see: 
 -- | https://github.com/ku-fpg/kansas-amber/wiki/Amber-Firmware-Protocol-Definition
@@ -516,10 +523,7 @@ data FirmwareReply =  BS_RESP_VERSION
                    |  I2C_RESP_READ
                    |  SCHED_RESP_QUERY
                    |  SCHED_RESP_QUERY_ALL
-                   |  VAR_RESP_NEWB
-                   |  VAR_RESP_NEW8
-                   |  VAR_RESP_NEW16
-                   |  VAR_RESP_NEW32
+                   |  VAR_RESP_NEW
                 deriving Show
 
 getFirmwareReply :: Word8 -> Either Word8 FirmwareReply
@@ -533,10 +537,7 @@ getFirmwareReply 0x48 = Right ALG_RESP_READ_PIN
 getFirmwareReply 0x58 = Right I2C_RESP_READ
 getFirmwareReply 0xA8 = Right SCHED_RESP_QUERY
 getFirmwareReply 0xA9 = Right SCHED_RESP_QUERY_ALL
-getFirmwareReply 0xBC = Right VAR_RESP_NEWB
-getFirmwareReply 0xBD = Right VAR_RESP_NEW8
-getFirmwareReply 0xBE = Right VAR_RESP_NEW16
-getFirmwareReply 0xBF = Right VAR_RESP_NEW32
+getFirmwareReply 0xBC = Right VAR_RESP_NEW
 getFirmwareReply n    = Left n
 
 --stepDelayVal :: StepDelay -> Word8
