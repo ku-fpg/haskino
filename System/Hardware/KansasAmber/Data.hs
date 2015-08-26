@@ -186,14 +186,14 @@ data Command =
      | ScheduleTask TaskID TimeMillis
      | ScheduleTaskE TaskIDE TimeMillisE
      | ScheduleReset
-     | AssignProcB String (Arduino Bool)
-     | AssignExprB String BoolE
-     | AssignProc8 String (Arduino Word8)
-     | AssignExpr8 String Word8E
-     | AssignProc16 String (Arduino Word16)
-     | AssignExpr16 String Word16E
-     | AssignProc32 String (Arduino Word32)
-     | AssignExpr32 String Word32E
+     | AssignProcB BoolE (Arduino Bool)
+     | AssignExprB BoolE BoolE
+     | AssignProc8 Word8E (Arduino Word8)
+     | AssignExpr8 Word8E Word8E
+     | AssignProc16 Word16E (Arduino Word16)
+     | AssignExpr16 Word16E Word16E
+     | AssignProc32 Word32E (Arduino Word32)
+     | AssignExpr32 Word32E Word32E
      | While BoolE (Arduino ())
      | IfThenElse BoolE (Arduino ()) (Arduino ())
      -- ToDo: add one wire and encoder procedures, readd stepper and servo
@@ -290,8 +290,8 @@ ifThenElse be tps eps = Command $ IfThenElse be tps eps
 infix 1 =*,=**
 
 class Assign a where
-    (=*)  :: String -> Expr a -> Arduino()
-    (=**) :: String -> Arduino a -> Arduino() 
+    (=*)  :: Expr a -> Expr a -> Arduino()
+    (=**) :: Expr a -> Arduino a -> Arduino() 
 
 instance Assign Bool where
     (=*)  s e  = Command $ AssignExprB s e

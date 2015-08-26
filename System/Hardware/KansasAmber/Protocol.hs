@@ -130,15 +130,26 @@ packageCommand c (AssignProc16 v rh) = packageAssignProc c VAR_CMD_ASGN_PROC16 v
 packageCommand c (AssignProc32 v rh) = packageAssignProc c VAR_CMD_ASGN_PROC32 v rh
 -- packageCommand c (While e ps) = buildCommand
 
-packageAssignExpr :: ArduinoConnection -> FirmwareCmd -> String -> Expr a -> IO B.ByteString
-packageAssignExpr c fc v rh = do
+packageAssign :: ArduinoConnection -> Expr a -> IO Word8
+packageAssign c lh = do
+    v <- case lh of
+              VarB s -> return s
+              Var8 s -> return s
+              Var16 s -> return s
+              Var32 s -> return s
+              otherwise -> runDie c "" []
     vn <- lookupVar c v
+    return vn
+
+packageAssignExpr :: ArduinoConnection -> FirmwareCmd -> Expr a -> Expr a -> IO B.ByteString
+packageAssignExpr c fc lh rh = do
+    vn <- packageAssign c lh
     rhe <- packageExpr c rh
     return $ buildCommand fc (vn : rhe)
 
-packageAssignProc :: ArduinoConnection -> FirmwareCmd -> String -> Arduino a -> IO B.ByteString
-packageAssignProc c fc v rh = do
-    vn <- lookupVar c v
+packageAssignProc :: ArduinoConnection -> FirmwareCmd -> Expr a -> Arduino a -> IO B.ByteString
+packageAssignProc c fc lh rh = do
+    vn <- packageAssign c lh
     d <- packageTaskData c rh
     return $ buildCommand fc (vn : (B.unpack d))
 
@@ -235,7 +246,7 @@ lookupVar c s = do
     vmap <- readMVar $ variables c
     case M.lookup s vmap of
         Just vn -> return vn 
-        Nothing -> runDie c "Unallocated variable" 
+        Nothing -> runDie c "KansasAmber:ERROR: Unallocated variable" 
                              [ "Variable name - " ++ s, 
                              "Make sure Variables are allocated before use"]
 
