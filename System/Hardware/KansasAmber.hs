@@ -20,15 +20,15 @@ module System.Hardware.KansasAmber (
   , Arduino(..) , Command(..), Procedure(..), Local(..)
   -- * Programming the Arduino
   -- ** Pins
-  , Pin, PinMode(..), setPinMode
+  , Pin, PinMode(..), setPinMode, setPinModeE
   -- ** Gereral utils
   , systemReset, queryFirmware
   -- ** Digital IO
-  , digitalWrite, digitalRead 
+  , digitalWrite, digitalRead, digitalWriteE, digitalReadE  
   -- ** Programming with triggers
   --, waitFor, waitAny, waitAnyHigh, waitAnyLow
   -- ** Analog IO
-  , analogWrite, analogRead
+  , analogWrite, analogRead, analogWriteE, analogReadE
   -- ** I2C
   , SlaveAddress, i2cRead, i2cWrite, i2cConfig
   -- ** Pulse
@@ -42,9 +42,13 @@ module System.Hardware.KansasAmber (
   --, StepDevice, StepType(..), NumSteps, StepSpeed, StepAccel, StepPerRev
   --, StepDelay(..), StepDir(..), stepperConfig, stepperStep
   -- ** Control structures
-  , loop
+  , loop, while, ifThenElse, (=*), (=**)
+  -- ** Variables
+  , newVarB, newVar8, newVar16, newVar32, Expr(..)
  )
  where
 
 import System.Hardware.KansasAmber.Data
 import System.Hardware.KansasAmber.Comm
+import System.Hardware.KansasAmber.Expr
+import Data.Boolean
