@@ -201,7 +201,8 @@ send conn commands =
       checkDuplicateVariable :: ArduinoConnection -> String -> IO ()
       checkDuplicateVariable c s = 
           withMVar (variables c) $ \vs -> if M.member s vs 
-                                          then error $ "\n*** KansasAmber:ERROR: Duplicate Variable Name " ++ s
+                                          then runDie c "Duplicate Variable Name" 
+                                                  [ "Make sure variable names are unique"]
                                           else return ()
 
       send' :: ArduinoConnection -> Arduino a -> B.ByteString -> IO a
