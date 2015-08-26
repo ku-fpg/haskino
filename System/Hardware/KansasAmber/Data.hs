@@ -186,14 +186,14 @@ data Command =
      | ScheduleTask TaskID TimeMillis
      | ScheduleTaskE TaskIDE TimeMillisE
      | ScheduleReset
-     | AssignProcB StringE (Arduino Bool)
-     | AssignExprB StringE BoolE
-     | AssignProc8 StringE (Arduino Word8)
-     | AssignExpr8 StringE Word8E
-     | AssignProc16 StringE (Arduino Word16)
-     | AssignExpr16 StringE Word16E
-     | AssignProc32 StringE (Arduino Word32)
-     | AssignExpr32 StringE Word32E
+     | AssignProcB String (Arduino Bool)
+     | AssignExprB String BoolE
+     | AssignProc8 String (Arduino Word8)
+     | AssignExpr8 String Word8E
+     | AssignProc16 String (Arduino Word16)
+     | AssignExpr16 String Word16E
+     | AssignProc32 String (Arduino Word32)
+     | AssignExpr32 String Word32E
      -- ToDo: add one wire and encoder procedures, readd stepper and servo
 
 systemReset :: Arduino ()
@@ -288,24 +288,24 @@ loop :: Arduino () -> Arduino ()
 loop ps = Control (Loop ps)
 
 class Assign a where
-    (=*)  :: StringE -> Expr a -> Command
-    (=**) :: StringE -> Arduino a -> Command 
+    (=*)  :: String -> Expr a -> Command
+    (=**) :: String -> Arduino a -> Command 
 
 instance Assign Bool where
-    (=*)  se e  = AssignExprB se e
-    (=**) se pe = AssignProcB se pe
+    (=*)  s e  = AssignExprB s e
+    (=**) s pe = AssignProcB s pe
 
 instance Assign Word8 where
-    (=*)  se e  = AssignExpr8 se e
-    (=**) se pe = AssignProc8 se pe
+    (=*)  s e  = AssignExpr8 s e
+    (=**) s pe = AssignProc8 s pe
 
 instance Assign Word16 where
-    (=*)  se e  = AssignExpr16 se e
-    (=**) se pe = AssignProc16 se pe
+    (=*)  s e  = AssignExpr16 s e
+    (=**) s pe = AssignProc16 s pe
 
 instance Assign Word32 where
-    (=*)  se e  = AssignExpr32 se e
-    (=**) se pe = AssignProc32 se pe
+    (=*)  s e  = AssignExpr32 s e
+    (=**) s pe = AssignProc32 s pe
 
 data Local :: * -> * where
      Debug            :: String -> Local ()
