@@ -135,10 +135,10 @@ packageAssignExpr c fc v rh = do
     rhe <- packageExpr c rh
     return $ buildCommand fc (vn : rhe)
 
-packageAssignProc :: ArduinoConnection -> FirmwareCmd -> String -> Arduino a -> IO B.ByteString
+packageAssignProc :: ArduinoConnection -> FirmwareCmd -> String -> Procedure a -> IO B.ByteString
 packageAssignProc c fc v rh = do
     vn <- lookupVar c v
-    d <- packageTaskData c rh
+    d <- packageTaskData c (Procedure rh)
     return $ buildCommand fc (vn : (B.unpack d))
 
 packageTaskData :: ArduinoConnection -> Arduino a -> IO B.ByteString

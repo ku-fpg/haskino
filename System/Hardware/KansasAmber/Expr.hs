@@ -87,6 +87,7 @@ data Expr a where
 deriving instance Show a => Show (Expr a)
 
 -- ToDo:  Add BitsB class for and, or, xor, complement and shifts
+-- ToDo:  Add fromInteger/toInteger properly to do typing on Arduino
 
 instance B.Boolean BoolE where
   true  = LitB True
