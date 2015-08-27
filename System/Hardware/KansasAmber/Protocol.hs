@@ -331,6 +331,8 @@ unpackageResponse (cmdWord:args)
   = case (cmd, args) of
       (BS_RESP_VERSION, [majV, minV]) -> Firmware majV minV
       (BS_RESP_TYPE, [p])             -> ProcessorType p
+      (BS_RESP_MICROS, [m0,m1,m2,m3]) -> MicrosReply (bytesToWord32 (m0,m1,m2,m3))
+      (BS_RESP_MILLIS, [m0,m1,m2,m3]) -> MillisReply (bytesToWord32 (m0,m1,m2,m3))
       (BS_RESP_STRING, rest)          -> StringMessage (getString rest)
       (DIG_RESP_READ_PIN, [b])        -> DigitalReply b
       (ALG_RESP_READ_PIN, [bl,bh])    -> AnalogReply (bytesToWord16 (bl,bh))
