@@ -8,7 +8,7 @@
 
 /*
  
-  https://github.com/kansas-amber/firmware/AmberFirmware.ino
+  https://github.com/haskino/firmware/AmberFirmware.ino
 
   Copyright (C) University of Kansas. All rights reserved.
 

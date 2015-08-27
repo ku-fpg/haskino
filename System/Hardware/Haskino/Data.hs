@@ -430,7 +430,7 @@ data Response = Firmware Word8 Word8                 -- ^ Firmware version (maj/
     deriving Show
 
 -- | Amber Firmware commands, see: 
--- | https://github.com/ku-fpg/kansas-amber/wiki/Amber-Firmware-Protocol-Definition
+-- | https://github.com/ku-fpg/haskino/wiki/Amber-Firmware-Protocol-Definition
 data FirmwareCmd = BC_CMD_SET_PIN_MODE
                  | BC_CMD_DELAY_MILLIS
                  | BC_CMD_DELAY_MICROS
@@ -532,7 +532,7 @@ firmwareCmdVal VAR_CMD_ASGN_PROC32    = 0xB7
 firmwareCmdVal VAR_CMD_ASGN_EXPR32    = 0xB8
 
 -- | Firmware replies, see: 
--- | https://github.com/ku-fpg/kansas-amber/wiki/Amber-Firmware-Protocol-Definition
+-- | https://github.com/ku-fpg/haskino/wiki/Amber-Firmware-Protocol-Definition
 data FirmwareReply =  BS_RESP_VERSION
                    |  BS_RESP_TYPE
                    |  BS_RESP_MICROS
