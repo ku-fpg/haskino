@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "AmberOneWire.h"
+#include "HaskinoOneWire.h"
 
 bool parseOneWireMessage(int size, byte *msg)
     {

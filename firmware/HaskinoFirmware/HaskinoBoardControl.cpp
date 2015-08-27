@@ -1,9 +1,9 @@
 #include <Arduino.h>
-#include "AmberBoardControl.h"
-#include "AmberComm.h"
-#include "AmberCommands.h"
-#include "AmberFirmware.h"
-#include "AmberScheduler.h"
+#include "HaskinoBoardControl.h"
+#include "HaskinoComm.h"
+#include "HaskinoCommands.h"
+#include "HaskinoFirmware.h"
+#include "HaskinoScheduler.h"
 #include "SoftReset.h"
 
 static bool handleSetPinMode(int size, byte *msg);

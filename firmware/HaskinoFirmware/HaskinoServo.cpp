@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "AmberServo.h"
+#include "HaskinoServo.h"
 
 bool parseServoMessage(int size, byte *msg)
     {

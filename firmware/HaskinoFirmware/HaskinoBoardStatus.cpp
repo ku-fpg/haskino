@@ -1,8 +1,8 @@
 #include <Arduino.h>
-#include "AmberBoardStatus.h"
-#include "AmberComm.h"
-#include "AmberCommands.h"
-#include "AmberFirmware.h"
+#include "HaskinoBoardStatus.h"
+#include "HaskinoComm.h"
+#include "HaskinoCommands.h"
+#include "HaskinoFirmware.h"
 
 static bool handleRequestVersion(int size, byte *msg);
 static bool handleRequestType(int size, byte *msg);

@@ -39,5 +39,5 @@ cabal.sandbox.config
 firmware/Arduino-Makefile
 
 # Firmware binaries
-firmware/AmberFirmware/build-*
+firmware/HaskinoFirmware/build-*
 

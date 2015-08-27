@@ -1,7 +1,7 @@
 #include <Arduino.h>
-#include "AmberComm.h"
-#include "AmberCommands.h"
-#include "AmberDigital.h"
+#include "HaskinoComm.h"
+#include "HaskinoCommands.h"
+#include "HaskinoDigital.h"
 
 static bool handleReadPin(int size, byte *msg);
 static bool handleWritePin(int size, byte *msg);

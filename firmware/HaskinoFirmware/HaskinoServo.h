@@ -1,6 +1,6 @@
-#ifndef AmberServoH
-#define AmberServoH
+#ifndef HaskinoServoH
+#define HaskinoServoH
 
 bool parseServoMessage(int size, byte *msg);
 
-#endif /* AmberServoH */
+#endif /* HaskinoServoH */

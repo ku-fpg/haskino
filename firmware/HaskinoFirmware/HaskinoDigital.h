@@ -1,6 +1,6 @@
-#ifndef AmberDigitalH
-#define AmberDigitalH
+#ifndef HaskinoDigitalH
+#define HaskinoDigitalH
 
 bool parseDigitalMessage(int size, byte *msg);
 
-#endif /* AmberDigitalH */
+#endif /* HaskinoDigitalH */

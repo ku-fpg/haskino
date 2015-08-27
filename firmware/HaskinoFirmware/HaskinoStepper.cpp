@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "AmberStepper.h"
+#include "HaskinoStepper.h"
 
 bool parseStepperMessage(int size, byte *msg)
     {

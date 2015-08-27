@@ -1,5 +1,5 @@
-#ifndef AmberBoardStatusH
-#define AmberBoardStatusH
+#ifndef HaskinoBoardStatusH
+#define HaskinoBoardStatusH
 
 #define ATmega8_TYPE        0
 #define ATmega168_TYPE      1
@@ -16,4 +16,4 @@
 bool parseBoardStatusMessage(int size, byte *msg);
 void sendVersionReply();
 
-#endif /* AmberBoardStatusH */
+#endif /* HaskinoBoardStatusH */

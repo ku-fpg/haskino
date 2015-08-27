@@ -1,6 +1,6 @@
-#ifndef AmberOneWireH
-#define AmberOneWireH
+#ifndef HaskinoOneWireH
+#define HaskinoOneWireH
 
 bool parseOneWireMessage(int size, byte *msg);
 
-#endif /* AmberOneWireH */
+#endif /* HaskinoOneWireH */

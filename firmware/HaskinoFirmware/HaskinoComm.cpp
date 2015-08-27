@@ -1,16 +1,16 @@
 #include <Arduino.h>
 #include <HardwareSerial.h>
-#include "AmberAnalog.h"
-#include "AmberBoardControl.h"
-#include "AmberBoardStatus.h"
-#include "AmberCommands.h"
-#include "AmberComm.h"
-#include "AmberDigital.h"
-#include "AmberI2C.h"
-#include "AmberOneWire.h"
-#include "AmberScheduler.h"
-#include "AmberServo.h"
-#include "AmberStepper.h"
+#include "HaskinoAnalog.h"
+#include "HaskinoBoardControl.h"
+#include "HaskinoBoardStatus.h"
+#include "HaskinoCommands.h"
+#include "HaskinoComm.h"
+#include "HaskinoDigital.h"
+#include "HaskinoI2C.h"
+#include "HaskinoOneWire.h"
+#include "HaskinoScheduler.h"
+#include "HaskinoServo.h"
+#include "HaskinoStepper.h"
 
 static int messageCount = 0;
 static int processingEscapeState = 0;

@@ -1,6 +1,6 @@
-#ifndef AmberBoardControlH
-#define AmberBoardControlH
+#ifndef HaskinoBoardControlH
+#define HaskinoBoardControlH
 
 bool parseBoardControlMessage(int size, byte *msg);
 
-#endif /* AmberBoardControlH */
+#endif /* HaskinoBoardControlH */

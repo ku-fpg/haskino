@@ -1,5 +1,5 @@
-#ifndef AmberCommH
-#define AmberCommH
+#ifndef HaskinoCommH
+#define HaskinoCommH
 
 #define MESSAGE_MAX_SIZE 128
 
@@ -16,4 +16,4 @@ void sendReply(int count, byte replyType, byte *reply);
 void sendString(char *string);
 bool parseMessage(int size, byte *msg);
 
-#endif /* AmberCommH */
+#endif /* HaskinoCommH */

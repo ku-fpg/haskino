@@ -1,6 +1,6 @@
-#ifndef AmberStepperH
-#define AmberStepperH
+#ifndef HaskinoStepperH
+#define HaskinoStepperH
 
 bool parseStepperMessage(int size, byte *msg);
 
-#endif /* AmberStepperH */
+#endif /* HaskinoStepperH */

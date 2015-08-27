@@ -1,14 +1,14 @@
 #include <Wire.h>
 
 #include <Arduino.h>
-#include "AmberComm.h"
-#include "AmberCommands.h"
-#include "AmberBoardStatus.h"
-#include "AmberScheduler.h"
+#include "HaskinoComm.h"
+#include "HaskinoCommands.h"
+#include "HaskinoBoardStatus.h"
+#include "HaskinoScheduler.h"
 
 /*
  
-  https://github.com/haskino/firmware/AmberFirmware.ino
+  https://github.com/haskino/firmware/HaskinoFirmware.ino
 
   Copyright (C) University of Kansas. All rights reserved.
 

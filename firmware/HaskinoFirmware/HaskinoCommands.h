@@ -1,5 +1,5 @@
-#ifndef AmberCommandsH
-#define AmberCommandsH
+#ifndef HaskinoCommandsH
+#define HaskinoCommandsH
 
 // Note:  None of the CMD_TYPE's should be 0x7x, so that there
 // is no possibility of sending an HDLC frame or escape as
@@ -89,5 +89,5 @@
 #define SCHED_RESP_QUERY        (SCHED_CMD_TYPE | 0x8)
 #define SCHED_RESP_QUERY_ALL    (SCHED_CMD_TYPE | 0x9)
 
-#endif /* AmberCommandsH */
+#endif /* HaskinoCommandsH */
 

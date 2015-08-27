@@ -1,8 +1,8 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include "AmberComm.h"
-#include "AmberCommands.h"
-#include "AmberI2C.h"
+#include "HaskinoComm.h"
+#include "HaskinoCommands.h"
+#include "HaskinoI2C.h"
 
 static bool handleConfig(int size, byte *msg);
 static bool handleRead(int size, byte *msg);

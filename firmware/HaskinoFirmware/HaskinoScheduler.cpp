@@ -1,7 +1,7 @@
 #include <Arduino.h>
-#include "AmberComm.h"
-#include "AmberCommands.h"
-#include "AmberScheduler.h"
+#include "HaskinoComm.h"
+#include "HaskinoCommands.h"
+#include "HaskinoScheduler.h"
 
 typedef struct task_t 
     {
