@@ -330,6 +330,8 @@ die msg msgs = Local $ Die msg msgs
 data Procedure :: * -> * where
      QueryFirmware  :: Procedure (Word8, Word8        )   -- ^ Query the Firmata version installed
      QueryProcessor :: Procedure Processor                -- ^ Query the type of processor on 
+     Micros         :: Procedure Word32
+     Millis         :: Procedure Word32
 --     DigitalPortRead  :: Port -> Procedure Word8          -- ^ Read the values on a port digitally
 --     DigitalPortReadE :: Port -> Procedure (Expr Word8)
      DigitalRead    :: Pin -> Procedure Bool            -- ^ Read the avlue ona pin digitally
@@ -350,6 +352,12 @@ queryFirmware = Procedure QueryFirmware
 
 queryProcessor :: Arduino Processor
 queryProcessor = Procedure QueryProcessor
+
+micros :: Arduino Word32
+micros = Procedure Micros
+
+millis :: Arduino Word32
+millis = Procedure Millis
 
 -- ToDo: Do some sort of analog mapping locally?
 

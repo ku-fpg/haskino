@@ -224,6 +224,8 @@ packageTaskData conn commands =
 packageProcedure :: Procedure a -> B.ByteString
 packageProcedure QueryFirmware       = buildCommand BS_CMD_REQUEST_VERSION []
 packageProcedure QueryProcessor      = buildCommand BS_CMD_REQUEST_TYPE []
+packageProcedure Micros              = buildCommand BS_CMD_REQUEST_MICROS []
+packageProcedure Millis              = buildCommand BS_CMD_REQUEST_MILLIS []
 packageProcedure (DigitalRead p)     = buildCommand DIG_CMD_READ_PIN [p]
 packageProcedure (AnalogRead p)      = buildCommand ALG_CMD_READ_PIN [p]
 packageProcedure (I2CRead sa cnt)    = buildCommand I2C_CMD_READ [sa,cnt]
@@ -350,7 +352,9 @@ unpackageResponse (cmdWord:args)
 -- This is how we match responses with queries
 parseQueryResult :: ArduinoConnection -> Arduino a -> Response -> IO (Maybe a)
 parseQueryResult c (Procedure QueryFirmware) (Firmware wa wb) = return $ Just (wa,wb)
-parseQueryResult c (Procedure QueryProcessor) (ProcessorType pt) = return $Just $ getProcessor pt
+parseQueryResult c (Procedure QueryProcessor) (ProcessorType pt) = return $ Just $ getProcessor pt
+parseQueryResult c (Procedure Micros) (MicrosReply m) = return $ Just m
+parseQueryResult c (Procedure Millis) (MillisReply m) = return $ Just m
 parseQueryResult c (Procedure (DigitalRead p)) (DigitalReply d) = return $ Just (if d == 0 then False else True)
 parseQueryResult c (Procedure (AnalogRead p)) (AnalogReply a) = return $ Just a
 parseQueryResult c (Procedure (I2CRead saq cnt)) (I2CReply ds) = return $ Just ds
