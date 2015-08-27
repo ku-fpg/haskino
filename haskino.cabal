@@ -1,0 +1,53 @@
+Name:          Haskino
+Version:       0.2
+Category:      Hardware
+Synopsis:      Control your Arduino board from Haskell using Deep Embedding
+Description:   Haskino allows Haskell programs to control Arduino boards
+               (<http://www.arduino.cc>) and peripherals, using the Firmata
+               protocol (<http://firmata.org>).
+               For details, see: <http://kufpg.github.com/Haskino>.
+Copyright:     University of Kansas, 2015
+License:       BSD3
+License-file:  LICENSE
+Stability:     Experimental
+Author:        Mark Grebe
+Homepage:      http://kufpg.github.com/Haskino
+Bug-reports:   http://github.com/kufpg/Haskino/issues
+Maintainer:    Mark Grebe
+Build-Type:    Simple
+Cabal-Version: >= 1.14
+Extra-Source-Files: README.md, LICENSE
+
+source-repository head
+    type:       git
+    location:   git://github.com/kufpg/Haskino.git
+
+Library
+  default-language  : Haskell2010
+  ghc-options       : -Wall
+  Build-depends     : base  >= 4 && < 5
+                    , serialport >= 0.4.5
+                    , bytestring
+                    , mtl
+                    , containers
+                    , time
+                    , base16-bytestring
+  Exposed-modules   : System.Hardware.Haskino
+                    , System.Hardware.Haskino.Parts.Eeprom
+                    , System.Hardware.Haskino.Parts.LCD
+                    , System.Hardware.Haskino.Parts.Piezo
+                    , System.Hardware.Haskino.Parts.SevenSegmentCodes
+                    , System.Hardware.Haskino.Parts.ShiftRegisters
+                    , System.Hardware.Haskino.SamplePrograms.Analog
+                    , System.Hardware.Haskino.SamplePrograms.Blink
+                    , System.Hardware.Haskino.SamplePrograms.Eeprom
+                    , System.Hardware.Haskino.SamplePrograms.JingleBells
+                    , System.Hardware.Haskino.SamplePrograms.Morse
+                    , System.Hardware.Haskino.SamplePrograms.LCD
+                    , System.Hardware.Haskino.SamplePrograms.NumGuess
+                    , System.Hardware.Haskino.SamplePrograms.ScheduledBlink
+                    , System.Hardware.Haskino.SamplePrograms.SevenSegment
+  Other-modules     : System.Hardware.Haskino.Comm
+                    , System.Hardware.Haskino.Data
+                    , System.Hardware.Haskino.Protocol
+                    , System.Hardware.Haskino.Utils
