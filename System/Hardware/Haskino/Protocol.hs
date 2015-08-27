@@ -324,7 +324,7 @@ packageExpr c (Or32 e1 e2) = packageTwoSubExpr c EXPR_OR32 e1 e2
 packageExpr c (Xor32 e1 e2) = packageTwoSubExpr c EXPR_XOR32 e1 e2 
 packageExpr c (If32 e1 e2 e3) = packageThreeSubExpr c EXPR_IF32 e1 e2 e3
 
--- | Unpackage a Amber Firmware response
+-- | Unpackage a Haskino Firmware response
 unpackageResponse :: [Word8] -> Response
 unpackageResponse [] = Unimplemented (Just "<EMPTY-REPLY>") []
 unpackageResponse (cmdWord:args)

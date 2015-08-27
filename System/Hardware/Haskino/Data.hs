@@ -429,7 +429,7 @@ data Response = Firmware Word8 Word8                 -- ^ Firmware version (maj/
               | InvalidChecksumFrame [Word8]
     deriving Show
 
--- | Amber Firmware commands, see: 
+-- | Haskino Firmware commands, see: 
 -- | https://github.com/ku-fpg/haskino/wiki/Amber-Firmware-Protocol-Definition
 data FirmwareCmd = BC_CMD_SET_PIN_MODE
                  | BC_CMD_DELAY_MILLIS

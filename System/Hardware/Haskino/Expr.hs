@@ -192,7 +192,7 @@ instance BN.IntegralB Word32E where
   toIntegerB x = case x of
                     Lit32 n -> n
 
--- | Amber Firmware expresions, see:tbd 
+-- | Haskino Firmware expresions, see:tbd 
 data ExprCmd = EXPR_LITB 
                  | EXPR_LIT8
                  | EXPR_LIT16

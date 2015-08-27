@@ -188,7 +188,7 @@ send conn commands =
         resp <- liftIO $ timeout 5000000 $ readChan $ deviceChannel c
         case resp of 
             Nothing -> runDie c "Haskino:ERROR: Response Timeout" 
-                             [ "Make sure your Arduino is running Amber Firmware"]
+                             [ "Make sure your Arduino is running Haskino Firmware"]
             Just r -> do 
                 qres <- parseQueryResult c procedure r
                 case qres of
