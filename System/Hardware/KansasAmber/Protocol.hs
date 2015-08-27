@@ -128,6 +128,7 @@ packageCommand c (AssignProcB v rh) = packageAssignProc c VAR_CMD_ASGN_PROCB v r
 packageCommand c (AssignProc8 v rh) = packageAssignProc c VAR_CMD_ASGN_PROC8 v rh
 packageCommand c (AssignProc16 v rh) = packageAssignProc c VAR_CMD_ASGN_PROC16 v rh
 packageCommand c (AssignProc32 v rh) = packageAssignProc c VAR_CMD_ASGN_PROC32 v rh
+-- ToDo: Do we need to check maximum frame size on conditionals?
 packageCommand c (While e ps) = do
     pe <- packageExpr c e
     td <- packageTaskData c ps  
@@ -358,10 +359,14 @@ parseQueryResult c (Procedure QueryProcessor) (ProcessorType pt) = return $ Just
 parseQueryResult c (Procedure Micros) (MicrosReply m) = return $ Just m
 parseQueryResult c (Procedure Millis) (MillisReply m) = return $ Just m
 parseQueryResult c (Procedure (DigitalRead p)) (DigitalReply d) = return $ Just (if d == 0 then False else True)
+parseQueryResult c (Procedure (DigitalReadE p)) (DigitalReply d) = return $ Just (if d == 0 then False else True)
 parseQueryResult c (Procedure (AnalogRead p)) (AnalogReply a) = return $ Just a
+parseQueryResult c (Procedure (AnalogReadE p)) (AnalogReply a) = return $ Just a
 parseQueryResult c (Procedure (I2CRead saq cnt)) (I2CReply ds) = return $ Just ds
+parseQueryResult c (Procedure (I2CReadE saq cnt)) (I2CReply ds) = return $ Just ds
 parseQueryResult c (Procedure QueryAllTasks) (QueryAllTasksReply ts) = return $ Just ts
 parseQueryResult c (Procedure (QueryTask tid)) (QueryTaskReply tr) = return $ Just tr
+parseQueryResult c (Procedure (QueryTaskE tid)) (QueryTaskReply tr) = return $ Just tr
 parseQueryResult c (RemoteBinding (NewVarB s)) (NewReply vn) = do
     updateVariables c s vn
     return $ Just $ VarB s
