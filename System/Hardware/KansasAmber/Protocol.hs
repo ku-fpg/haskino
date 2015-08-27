@@ -128,7 +128,16 @@ packageCommand c (AssignProcB v rh) = packageAssignProc c VAR_CMD_ASGN_PROCB v r
 packageCommand c (AssignProc8 v rh) = packageAssignProc c VAR_CMD_ASGN_PROC8 v rh
 packageCommand c (AssignProc16 v rh) = packageAssignProc c VAR_CMD_ASGN_PROC16 v rh
 packageCommand c (AssignProc32 v rh) = packageAssignProc c VAR_CMD_ASGN_PROC32 v rh
--- packageCommand c (While e ps) = buildCommand
+packageCommand c (While e ps) = do
+    pe <- packageExpr c e
+    td <- packageTaskData c ps  
+    return $ buildCommand BC_CMD_WHILE (pe ++ B.unpack td)
+packageCommand c (IfThenElse e ps1 ps2) = do
+    pe <- packageExpr c e
+    td1 <- packageTaskData c ps1  
+    td2 <- packageTaskData c ps2  
+    let thenSize = word16ToBytes $ fromIntegral (B.length td1)
+    return $ buildCommand BC_CMD_IF_THEN_ELSE (thenSize ++ pe ++ B.unpack td1 ++ B.unpack td2)
 
 packageAssign :: ArduinoConnection -> Expr a -> IO Word8
 packageAssign c lh = do
@@ -165,6 +174,9 @@ packageTaskData conn commands =
       packBind c (Command cmd) k cmds = do
           packCmd <- packageCommand c cmd
           cs <- cmds
+          -- Instead of framing each command as is done with sending them
+          -- seperately, here a byte which contains the command length
+          -- is prepended.
           packageTaskData' c (k ()) (B.append cs (lenPackage packCmd))
       packBind c (Local local) k cmds = packLocal c local k cmds
       packBind c (Procedure procedure) k cmds = packProcedure c procedure k cmds
@@ -179,6 +191,8 @@ packageTaskData conn commands =
           cs <- cmds 
           packageTaskData' c (k ()) cs
 
+      -- ToDo:  Add expression procedures, and actually add procedures
+      -- to task stream, since they are now used in the AssignXxx commands
       packProcedure :: ArduinoConnection -> Procedure a -> (a -> Arduino b) -> IO B.ByteString -> IO B.ByteString
       packProcedure c QueryFirmware k cmds = do 
           cs <- cmds           

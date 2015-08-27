@@ -430,6 +430,8 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE
                  | BC_CMD_DELAY_MILLIS_E
                  | BC_CMD_DELAY_MICROS_E
                  | BC_CMD_SYSTEM_RESET
+                 | BC_CMD_WHILE
+                 | BC_CMD_IF_THEN_ELSE
                  | BS_CMD_REQUEST_VERSION
                  | BS_CMD_REQUEST_TYPE
                  | BS_CMD_REQUEST_MICROS
@@ -481,6 +483,8 @@ firmwareCmdVal BC_CMD_SYSTEM_RESET    = 0x13
 firmwareCmdVal BC_CMD_SET_PIN_MODE_E  = 0x14
 firmwareCmdVal BC_CMD_DELAY_MILLIS_E  = 0x15
 firmwareCmdVal BC_CMD_DELAY_MICROS_E  = 0x16
+firmwareCmdVal BC_CMD_WHILE           = 0x17
+firmwareCmdVal BC_CMD_IF_THEN_ELSE    = 0x18
 firmwareCmdVal BS_CMD_REQUEST_VERSION = 0x20
 firmwareCmdVal BS_CMD_REQUEST_TYPE    = 0x21
 firmwareCmdVal BS_CMD_REQUEST_MILLIS  = 0x22
