@@ -32,6 +32,7 @@ Library
                     , containers
                     , time
                     , base16-bytestring
+                    , Boolean
   Exposed-modules   : System.Hardware.Haskino
                     , System.Hardware.Haskino.Parts.Eeprom
                     , System.Hardware.Haskino.Parts.LCD
@@ -49,5 +50,6 @@ Library
                     , System.Hardware.Haskino.SamplePrograms.SevenSegment
   Other-modules     : System.Hardware.Haskino.Comm
                     , System.Hardware.Haskino.Data
+                    , System.Hardware.Haskino.Expr
                     , System.Hardware.Haskino.Protocol
                     , System.Hardware.Haskino.Utils
