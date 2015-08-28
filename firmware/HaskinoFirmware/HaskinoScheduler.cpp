@@ -178,16 +178,26 @@ static bool handleQueryAll(int size, byte *msg, byte *local)
     {
     TASK *task = firstTask;
 
-    startReplyFrame(SCHED_RESP_QUERY_ALL);
-
-    while(task != NULL)
+    if (local)
         {
-        sendReplyByte(task->id);
-        task = task->next;
+        while(task != NULL)
+            {
+            *local = task->id;
+            task = task->next;
+// ToDo Limit task reponse size??
+            }
         }
-    // To Do - handle local
+    else
+        {
+        startReplyFrame(SCHED_RESP_QUERY_ALL);
 
-    endReplyFrame();    
+        while(task != NULL)
+            {
+            sendReplyByte(task->id);
+            task = task->next;
+            }
+        endReplyFrame();    
+        }
     return false;
     }
 

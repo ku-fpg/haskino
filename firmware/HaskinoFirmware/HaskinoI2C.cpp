@@ -50,15 +50,24 @@ static bool handleRead(int size, byte *msg, byte *local)
         sendString("I2C: Too few bytes received");
         }
 
-    // To Do - handle local
-    startReplyFrame(I2C_RESP_READ);
-
-    for (int i = 0; i < byteAvail; i++) 
+    if (local)
         {
-        sendReplyByte(Wire.read());
+        for (int i = 0; i < byteAvail; i++)
+            { 
+            *local++ = Wire.read();
+            }
         }
+    else 
+        {
+        startReplyFrame(I2C_RESP_READ);
 
-    endReplyFrame();    
+        for (int i = 0; i < byteAvail; i++) 
+            {
+            sendReplyByte(Wire.read());
+            }
+
+        endReplyFrame();    
+        }
     return false;
     }
 
