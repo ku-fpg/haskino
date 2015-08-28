@@ -32,6 +32,8 @@ bool evalBoolExpr(byte **ppExpr)
             *ppExpr += 2; // Use Cmd and Ref bytes
             break;
         case EXPR_PROC:
+            // ToDo:  Handle case where monadic structure is more than one
+            //        procedure.
             procLen = pExpr[1];
             parseMessage(procLen, &pExpr[2], (byte *) &val);
             *ppExpr += 2 + procLen; // Use Cmd, ProcLen and Proc bytes */

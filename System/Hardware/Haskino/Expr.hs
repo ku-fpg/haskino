@@ -48,7 +48,7 @@ data Expr a where
   Xor8      :: Word8E -> Word8E -> Word8E
   Comp8     :: Word8E -> Word8E
   ShfL8     :: Word8E -> Word8E -> Word8E
-  ShfE8     :: Word8E -> Word8E -> Word8E
+  ShfR8     :: Word8E -> Word8E -> Word8E
   Eq8       :: Word8E -> Word8E -> BoolE
   Less8     :: Word8E -> Word8E -> BoolE
   If8       :: BoolE -> Word8E -> Word8E -> Word8E
