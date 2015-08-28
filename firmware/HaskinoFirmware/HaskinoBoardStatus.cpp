@@ -4,46 +4,46 @@
 #include "HaskinoCommands.h"
 #include "HaskinoFirmware.h"
 
-static bool handleRequestVersion(int size, byte *msg);
-static bool handleRequestType(int size, byte *msg);
-static bool handleRequestMicros(int size, byte *msg);
-static bool handleRequestMillis(int size, byte *msg);
+static bool handleRequestVersion(int size, byte *msg, byte *local);
+static bool handleRequestType(int size, byte *msg, byte *local);
+static bool handleRequestMicros(int size, byte *msg, byte *local);
+static bool handleRequestMillis(int size, byte *msg, byte *local);
 
-bool parseBoardStatusMessage(int size, byte *msg)
+bool parseBoardStatusMessage(int size, byte *msg, byte *local)
     {
     switch (msg[0] ) 
         {
         case BS_CMD_REQUEST_VERSION:
-            return handleRequestVersion(size, msg);
+            return handleRequestVersion(size, msg, local);
             break;
         case BS_CMD_REQUEST_TYPE:
-            return handleRequestType(size, msg);
+            return handleRequestType(size, msg, local);
             break;
         case BS_CMD_REQUEST_MICROS:
-            return handleRequestMicros(size, msg);
+            return handleRequestMicros(size, msg, local);
             break;
         case BS_CMD_REQUEST_MILLIS:
-            return handleRequestMillis(size, msg);
+            return handleRequestMillis(size, msg, local);
             break;
         }
     return false;
     }
 
-void sendVersionReply()
+void sendVersionReply(byte *local)
     {
     static byte versionReply[2] = {FIRMWARE_MAJOR,
                                    FIRMWARE_MINOR};
         
-    sendReply(sizeof(versionReply), BS_RESP_VERSION, versionReply);
+    sendReply(sizeof(versionReply), BS_RESP_VERSION, versionReply, local);
     }
 
-static bool handleRequestVersion(int size, byte *msg)
+static bool handleRequestVersion(int size, byte *msg, byte *local)
     {
-    sendVersionReply();
+    sendVersionReply(local);
     return false;
     }
 
-static bool handleRequestType(int size, byte *msg)
+static bool handleRequestType(int size, byte *msg, byte *local)
     {
     static byte typeReply[1] = {
 #if defined(__AVR_ATmega8__)
@@ -71,22 +71,22 @@ static bool handleRequestType(int size, byte *msg)
 #else
 #error "Please define a new processor type board"
 #endif
-    sendReply(sizeof(typeReply), BS_RESP_TYPE, typeReply);
+    sendReply(sizeof(typeReply), BS_RESP_TYPE, typeReply, local);
     return false;
     }
 
-static bool handleRequestMicros(int size, byte *msg)
+static bool handleRequestMicros(int size, byte *msg, byte *local)
     {
     uint32_t microReply = micros();
 
-    sendReply(sizeof(uint32_t), BS_RESP_MICROS, (byte *) &microReply);
+    sendReply(sizeof(uint32_t), BS_RESP_MICROS, (byte *) &microReply, local);
     return false;
     }
 
-static bool handleRequestMillis(int size, byte *msg)
+static bool handleRequestMillis(int size, byte *msg, byte *local)
     {
     uint32_t milliReply = millis();
 
-    sendReply(sizeof(uint32_t), BS_RESP_MILLIS, (byte *) &milliReply);
+    sendReply(sizeof(uint32_t), BS_RESP_MILLIS, (byte *) &milliReply, local);
     return false;
     }

@@ -208,35 +208,6 @@ instance BN.IntegralB Word32E where
   toIntegerB x = case x of
                     Lit32 n -> n
 
-{-
-data RemoteRef a where
-    RemoteRefWB  :: Int  -> RemoteRef Bool
-    RemoteRefW8  :: Int  -> RemoteRef Word8
-    RemoteRefW16 :: Int -> RemoteRef Word16
-    RemoteRefW32 :: Int -> RemoteRef Word32
-
-class RemoteReference a where
-    newRemoteRef    :: a -> Arduino (RemoteRef a)
-    readRemoteRef   :: RemoteRef a -> Arduino (Expr a)
-    writeRemoteRef  :: RemoteRef a -> Expr a -> Arduino ()
-    updateRemoteRef :: RemoteRef a -> (Expr a -> Expr a) -> Arduino ()
-
-instance RemoteReference Bool where
-    (=*)  s e  = Command $ AssignExprB s e
-    (=**) s pe = Command $ AssignProcB s pe
-
-instance RemoteReference Word8 where
-    (=*)  s e  = Command $ AssignExpr8 s e
-    (=**) s pe = Command $ AssignProc8 s pe
-
-instance RemoteReference Word16 where
-    (=*)  s e  = Command $ AssignExpr16 s e
-    (=**) s pe = Command $ AssignProc16 s pe
-
-instance RemoteReference Word32 where
-    (=*)  s e  = Command $ AssignExpr32 s e
-    (=**) s pe = Command $ AssignProc32 s pe
--}
 -- | Haskino Firmware expresions, see:tbd 
 data ExprType = EXPR_BOOL
               | EXPR_WORD8

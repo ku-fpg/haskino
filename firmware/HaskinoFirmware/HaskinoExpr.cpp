@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "HaskinoConfig.h"
+#include "HaskinoComm.h"
 #include "HaskinoExpr.h"
 
 static void *haskinoRefs[MAX_REFS];
@@ -10,6 +11,7 @@ bool evalBoolExpr(byte **ppExpr)
     byte exprOp = *pExpr && EXPR_OP_MASK;
     bool val = false;
     int refNum;
+    uint8_t procLen;
     uint8_t e8_1,e8_2;
     uint16_t e16_1,e16_2;
     uint32_t e32_1,e32_2;
@@ -27,9 +29,12 @@ bool evalBoolExpr(byte **ppExpr)
                 bool *ref = (bool *) haskinoRefs[refNum];
                 val = *ref;
                 }
+            *ppExpr += 2; // Use Cmd and Ref bytes
             break;
         case EXPR_PROC:
-            // ToDo:
+            procLen = pExpr[1];
+            parseMessage(procLen, &pExpr[2], (byte *) &val);
+            *ppExpr += 2 + procLen; // Use Cmd, ProcLen and Proc bytes */
             break;
         case EXPR_NOT:
             *ppExpr += 1; // Use command byte
@@ -87,6 +92,7 @@ uint8_t evalWord8Expr(byte **ppExpr)
     byte *pExpr = *ppExpr;
     byte exprOp = *pExpr && EXPR_OP_MASK;
     uint8_t val = 0;
+    uint8_t procLen;
     uint8_t e1,e2;
     int refNum;
 
@@ -105,7 +111,9 @@ uint8_t evalWord8Expr(byte **ppExpr)
                 }
             break;
         case EXPR_PROC:
-            // ToDo:
+            procLen = pExpr[1];
+            parseMessage(procLen, &pExpr[2], &val);
+            *ppExpr += 2 + procLen; // Use Cmd, ProcLen and Proc bytes */
             break;
         case EXPR_NEG:
         case EXPR_SIGN:

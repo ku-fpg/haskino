@@ -20,8 +20,8 @@ static bool handleCreateTask(int size, byte *msg);
 static bool handleDeleteTask(int size, byte *msg);
 static bool handleAddToTask(int size, byte *msg);
 static bool handleScheduleTask(int size, byte *msg);
-static bool handleQuery(int size, byte *msg);
-static bool handleQueryAll(int size, byte *msg);
+static bool handleQuery(int size, byte *msg, byte *local);
+static bool handleQueryAll(int size, byte *msg, byte *local);
 static bool handleReset(int size, byte *msg);
 static void deleteTask(TASK* task);
 static TASK *findTask(int id);
@@ -30,7 +30,7 @@ static bool executeTask(TASK *task);
 static TASK *firstTask = NULL;
 static TASK *runningTask = NULL;
 
-bool parseSchedulerMessage(int size, byte *msg)
+bool parseSchedulerMessage(int size, byte *msg, byte *local)
     {
     switch (msg[0]) 
         {
@@ -47,10 +47,10 @@ bool parseSchedulerMessage(int size, byte *msg)
             return handleScheduleTask(size, msg);
             break;
         case SCHED_CMD_QUERY:
-            return handleQuery(size, msg);
+            return handleQuery(size, msg, local);
             break;
         case SCHED_CMD_QUERY_ALL:
-            return handleQueryAll(size, msg);
+            return handleQueryAll(size, msg, local);
             break;
         case SCHED_CMD_RESET:
             return handleReset(size, msg);
@@ -149,7 +149,7 @@ static bool handleScheduleTask(int size, byte *msg)
     return false;
     }
 
-static bool handleQuery(int size, byte *msg)
+static bool handleQuery(int size, byte *msg, byte *local)
     {
     byte queryReply[10];
     uint16_t *sizeReply = (uint16_t *) queryReply;
@@ -165,16 +165,16 @@ static bool handleQuery(int size, byte *msg)
         *lenReply = task->currLen;
         *posReply = task->currPos;
         *millisReply = task->millis - millis();
-        sendReply(sizeof(queryReply), SCHED_RESP_QUERY, queryReply);
+        sendReply(sizeof(queryReply), SCHED_RESP_QUERY, queryReply, local);
         }
     else
         {
-        sendReply(0, SCHED_RESP_QUERY, queryReply);
+        sendReply(0, SCHED_RESP_QUERY, queryReply, local);
         }
     return false;
     }
 
-static bool handleQueryAll(int size, byte *msg)
+static bool handleQueryAll(int size, byte *msg, byte *local)
     {
     TASK *task = firstTask;
 
@@ -185,6 +185,7 @@ static bool handleQueryAll(int size, byte *msg)
         sendReplyByte(task->id);
         task = task->next;
         }
+    // To Do - handle local
 
     endReplyFrame();    
     return false;
@@ -203,7 +204,7 @@ void schedulerRunTasks()
     {
     if (firstTask) 
         {
-        long now = millis();
+        unsigned long now = millis();
         TASK *current = firstTask;
         TASK *next = NULL;
 
@@ -235,8 +236,7 @@ static bool executeTask(TASK *task)
         byte cmdSize = msg[0];
         byte *cmd = &msg[1];
 
-        char buffer[20];
-        taskRescheduled = parseMessage(cmdSize, cmd);  
+        taskRescheduled = parseMessage(cmdSize, cmd, NULL);  
 
         task->currPos += cmdSize + 1;
         if (taskRescheduled)

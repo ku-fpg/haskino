@@ -11,7 +11,7 @@ static bool handleDelayMillis(int size, byte *msg);
 static bool handleDelayMicros(int size, byte *msg);
 static bool handleSystemReset(int size, byte *msg);
 
-bool parseBoardControlMessage(int size, byte *msg)
+bool parseBoardControlMessage(int size, byte *msg, byte *local)
     {
     switch (msg[0] ) 
         {

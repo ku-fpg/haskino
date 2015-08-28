@@ -5,10 +5,10 @@
 #include "HaskinoI2C.h"
 
 static bool handleConfig(int size, byte *msg);
-static bool handleRead(int size, byte *msg);
+static bool handleRead(int size, byte *msg, byte *local);
 static bool handleWrite(int size, byte *msg);
 
-bool parseI2CMessage(int size, byte *msg)
+bool parseI2CMessage(int size, byte *msg, byte *local)
     {
     switch (msg[0] ) 
         {
@@ -16,7 +16,7 @@ bool parseI2CMessage(int size, byte *msg)
             return handleConfig(size, msg);
             break;
         case I2C_CMD_READ:
-            return handleRead(size, msg);
+            return handleRead(size, msg, local);
             break;
         case I2C_CMD_WRITE:
             return handleWrite(size, msg);
@@ -32,7 +32,7 @@ static bool handleConfig(int size, byte *msg)
     return false;
     }
 
-static bool handleRead(int size, byte *msg)
+static bool handleRead(int size, byte *msg, byte *local)
     {
     byte slaveAddress = msg[1];
     byte byteCount = msg[2];
@@ -50,6 +50,7 @@ static bool handleRead(int size, byte *msg)
         sendString("I2C: Too few bytes received");
         }
 
+    // To Do - handle local
     startReplyFrame(I2C_RESP_READ);
 
     for (int i = 0; i < byteAvail; i++) 

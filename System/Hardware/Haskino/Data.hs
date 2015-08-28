@@ -309,6 +309,37 @@ instance Assign Word32 where
     (=*)  s e  = Command $ AssignExpr32 s e
     (=**) s pe = Command $ AssignProc32 s pe
 
+{-
+data RemoteRef a where
+    RemoteRefB   :: Int -> RemoteRef Bool
+    RemoteRefW8  :: Int -> RemoteRef Word8
+    RemoteRefW16 :: Int -> RemoteRef Word16
+    RemoteRefW32 :: Int -> RemoteRef Word32
+
+class RemoteReference a where
+    newRemoteRef    :: a -> Arduino (RemoteRef a)
+    readRemoteRef   :: RemoteRef a -> Arduino a
+    writeRemoteRef  :: RemoteRef a -> a -> Arduino ()
+    modifyRemoteRef :: RemoteRef a -> (Expr a -> Expr a) -> Arduino ()
+
+instance RemoteReference Bool where
+    (=*)  s e  = Command $ AssignExprB s e
+    (=**) s pe = Command $ AssignProcB s pe
+
+instance RemoteReference Word8 where
+    (=*)  s e  = Command $ AssignExpr8 s e
+    (=**) s pe = Command $ AssignProc8 s pe
+
+instance RemoteReference Word16 where
+    (=*)  s e  = Command $ AssignExpr16 s e
+    (=**) s pe = Command $ AssignProc16 s pe
+
+instance RemoteReference Word32 where
+    (=*)  s e  = Command $ AssignExpr32 s e
+    (=**) s pe = Command $ AssignProc32 s pe
+-}
+
+
 data Control =
       Loop (Arduino ())
 

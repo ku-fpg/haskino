@@ -3,17 +3,17 @@
 #include "HaskinoComm.h"
 #include "HaskinoCommands.h"
 
-static bool handleReadPin(int size, byte *msg);
+static bool handleReadPin(int size, byte *msg, byte *local);
 static bool handleWritePin(int size, byte *msg);
 static bool handleTonePin(int size, byte *msg);
 static bool handleNoTonePin(int size, byte *msg);
 
-bool parseAnalogMessage(int size, byte *msg)
+bool parseAnalogMessage(int size, byte *msg, byte *local)
     {
     switch (msg[0] ) 
         {
         case ALG_CMD_READ_PIN:
-            return handleReadPin(size, msg);
+            return handleReadPin(size, msg, local);
             break;
         case ALG_CMD_WRITE_PIN:
             return handleWritePin(size, msg);
@@ -28,13 +28,14 @@ bool parseAnalogMessage(int size, byte *msg)
     return false;
     }
 
-static bool handleReadPin(int size, byte *msg)
+static bool handleReadPin(int size, byte *msg, byte *local)
     {
     byte pinNo = msg[1];
     uint16_t analogReply;
 
     analogReply = analogRead(pinNo);
-    sendReply(sizeof(analogReply), ALG_RESP_READ_PIN, (byte *) &analogReply);
+    sendReply(sizeof(analogReply), ALG_RESP_READ_PIN, 
+              (byte *) &analogReply, local);
     return false;
     }
 

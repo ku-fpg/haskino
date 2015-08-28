@@ -24,36 +24,36 @@ int processingMessage()
     return (messageCount != 0);
     }
 
-bool parseMessage(int size, byte *msg)
+bool parseMessage(int size, byte *msg, byte *local)
     {
     switch (msg[0] & CMD_TYPE_MASK) 
         {
         case BC_CMD_TYPE:
-            return parseBoardControlMessage(size, msg);
+            return parseBoardControlMessage(size, msg, local);
             break;
         case BS_CMD_TYPE:
-            return parseBoardStatusMessage(size, msg);
+            return parseBoardStatusMessage(size, msg, local);
             break;
         case DIG_CMD_TYPE:
-            return parseDigitalMessage(size, msg);
+            return parseDigitalMessage(size, msg, local);
             break;
         case ALG_CMD_TYPE:
-            return parseAnalogMessage(size, msg);
+            return parseAnalogMessage(size, msg, local);
             break;
         case I2C_CMD_TYPE:
-            return parseI2CMessage(size, msg);
+            return parseI2CMessage(size, msg, local);
             break;
         case ONEW_CMD_TYPE:
-            return parseOneWireMessage(size, msg);
+            return parseOneWireMessage(size, msg, local);
             break;
         case SRVO_CMD_TYPE:
-            return parseServoMessage(size, msg);
+            return parseServoMessage(size, msg, local);
             break;
         case STEP_CMD_TYPE:
-            return parseStepperMessage(size, msg);
+            return parseStepperMessage(size, msg, local);
             break;
         case SCHED_CMD_TYPE:
-            return parseSchedulerMessage(size, msg);
+            return parseSchedulerMessage(size, msg, local);
             break;
         }
         return false;
@@ -73,7 +73,7 @@ static void processChar(byte c)
                 }
             if (checksum == *msg)
                 {
-                parseMessage(messageCount-1, inputData);
+                parseMessage(messageCount-1, inputData, NULL);
                 }
             }
         processingEscapeState = 0;
@@ -132,20 +132,27 @@ void sendReplyByte(byte replyByte)
     outgoingChecksum += replyByte;
     }
 
-void sendReply(int count, byte replyType, byte *reply)
+void sendReply(int count, byte replyType, const byte *reply, byte *local)
     {
-    byte *nextChar = reply;
+    const byte *nextChar = reply;
     int i;
 
-    startReplyFrame(replyType);
-    for (i=0; i < count; i++) 
+    if (local)
         {
-        sendReplyByte(*nextChar++);
+        memcpy(local, reply, count);
         }
-    endReplyFrame();
+    else
+        {
+        startReplyFrame(replyType);
+        for (i=0; i < count; i++) 
+            {
+            sendReplyByte(*nextChar++);
+            }
+        endReplyFrame();
+        }
     }
 
-void sendString(char *reply)
+void sendString(const char *reply)
     {
-    sendReply(strlen(reply), BS_RESP_STRING, (byte *) reply);
+    sendReply(strlen(reply), BS_RESP_STRING, (byte *) reply, NULL);
     }
