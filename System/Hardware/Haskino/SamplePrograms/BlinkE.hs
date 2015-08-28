@@ -15,12 +15,13 @@ import Control.Monad (forever)
 
 import System.Hardware.Haskino
 import Data.Boolean
+import Data.Word
 
 blink :: IO ()
 blink = withArduino False "/dev/cu.usbmodem1421" $ do
-           let button = Lit8 2
-           let led1 = Lit8 10
-           let led2 = Lit8 11
+           let button = lit 2
+           let led1 = lit 10
+           let led2 = lit 11
            x <- newVarB "x"
            setPinModeE button INPUT
            setPinModeE led1 OUTPUT

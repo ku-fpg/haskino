@@ -44,7 +44,7 @@ module System.Hardware.Haskino (
   -- ** Control structures
   , loop, while, ifThenElse, (=*), (=**)
   -- ** Variables
-  , newVarB, newVar8, newVar16, newVar32, Expr(..)
+  , newVarB, newVar8, newVar16, newVar32, Expr(..), lit
  )
  where
 

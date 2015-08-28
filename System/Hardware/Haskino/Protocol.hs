@@ -143,10 +143,10 @@ packageCommand c (IfThenElse e ps1 ps2) = do
 packageAssign :: ArduinoConnection -> Expr a -> IO Word8
 packageAssign c lh = do
     v <- case lh of
-              VarB s -> return s
-              Var8 s -> return s
-              Var16 s -> return s
-              Var32 s -> return s
+              RefB s -> return s
+              Ref8 s -> return s
+              Ref16 s -> return s
+              Ref32 s -> return s
               otherwise -> runDie c "" []
     vn <- lookupVar c v
     return vn
@@ -239,23 +239,23 @@ packageRemoteBinding (NewVar8 _)   = buildCommand VAR_CMD_NEW [1]
 packageRemoteBinding (NewVar16 _)   = buildCommand VAR_CMD_NEW [2]
 packageRemoteBinding (NewVar32 _)   = buildCommand VAR_CMD_NEW [4]
 
-packageSubExpr :: ArduinoConnection -> ExprCmd -> Expr a -> IO [Word8]
+packageSubExpr :: ArduinoConnection -> Word8 -> Expr a -> IO [Word8]
 packageSubExpr c ec e = do
     pe <- packageExpr c e
-    return $ (exprCmdVal ec) : pe
+    return $ ec : pe
 
-packageTwoSubExpr :: ArduinoConnection -> ExprCmd -> Expr a -> Expr b -> IO [Word8]
+packageTwoSubExpr :: ArduinoConnection -> Word8 -> Expr a -> Expr b -> IO [Word8]
 packageTwoSubExpr c ec e1 e2 = do
     pe1 <- packageExpr c e1
     pe2 <- packageExpr c e2
-    return $ (exprCmdVal ec) : (pe1 ++ pe2)
+    return $ ec : (pe1 ++ pe2)
 
-packageThreeSubExpr :: ArduinoConnection -> ExprCmd -> Expr a -> Expr b -> Expr c -> IO [Word8]
+packageThreeSubExpr :: ArduinoConnection -> Word8 -> Expr a -> Expr b -> Expr c -> IO [Word8]
 packageThreeSubExpr c ec e1 e2 e3 = do
     pe1 <- packageExpr c e1
     pe2 <- packageExpr c e2
     pe3 <- packageExpr c e3
-    return $ (exprCmdVal ec) : (pe1 ++ pe2 ++ pe3)
+    return $ ec : (pe1 ++ pe2 ++ pe3)
 
 -- ToDo: Add variable type checking
 lookupVar :: ArduinoConnection -> String -> IO Word8
@@ -267,62 +267,62 @@ lookupVar c s = do
                              [ "Variable name - " ++ s, 
                              "Make sure Variables are allocated before use"]
 
-packageVar :: ArduinoConnection -> String -> ExprCmd -> IO [Word8]
-packageVar c s ec = do
+packageRef :: ArduinoConnection -> String -> Word8 -> IO [Word8]
+packageRef c s ec = do
     vn <- lookupVar c s
-    return [exprCmdVal ec, vn]
+    return [ec, vn]
 
 packageExpr :: ArduinoConnection -> Expr a -> IO [Word8]
-packageExpr c (LitB b) = return $ [exprCmdVal EXPR_LITB, if b then 1 else 0]
-packageExpr c (VarB s) = packageVar c s EXPR_VARB
-packageExpr c (NotB e) = packageSubExpr c EXPR_NOTB e 
-packageExpr c (AndB e1 e2) = packageTwoSubExpr c EXPR_ANDB e1 e2 
-packageExpr c (OrB e1 e2) = packageTwoSubExpr c EXPR_ORB e1 e2 
-packageExpr c (Eq8 e1 e2) = packageTwoSubExpr c EXPR_EQ8 e1 e2 
-packageExpr c (Less8 e1 e2) = packageTwoSubExpr c EXPR_LESS8 e1 e2 
-packageExpr c (Eq16 e1 e2) = packageTwoSubExpr c EXPR_EQ16 e1 e2 
-packageExpr c (Less16 e1 e2) = packageTwoSubExpr c EXPR_LESS16 e1 e2 
-packageExpr c (Eq32 e1 e2) = packageTwoSubExpr c EXPR_EQ32 e1 e2 
-packageExpr c (Less32 e1 e2) = packageTwoSubExpr c EXPR_LESS32 e1 e2 
-packageExpr c (Lit8 w) = return $ [exprCmdVal EXPR_LIT8, w]
-packageExpr c (Var8 s) = packageVar c s EXPR_VAR8
-packageExpr c (Neg8 e) = packageSubExpr c EXPR_NEG8 e
-packageExpr c (Sign8 e) = packageSubExpr c EXPR_SIGN8 e
-packageExpr c (Add8 e1 e2) = packageTwoSubExpr c EXPR_ADD8 e1 e2 
-packageExpr c (Sub8 e1 e2) = packageTwoSubExpr c EXPR_SUB8 e1 e2 
-packageExpr c (Mult8 e1 e2) = packageTwoSubExpr c EXPR_MULT8 e1 e2 
-packageExpr c (Div8 e1 e2) = packageTwoSubExpr c EXPR_DIV8 e1 e2 
-packageExpr c (Rem8 e1 e2) = packageTwoSubExpr c EXPR_REM8 e1 e2 
-packageExpr c (And8 e1 e2) = packageTwoSubExpr c EXPR_AND8 e1 e2 
-packageExpr c (Or8 e1 e2) = packageTwoSubExpr c EXPR_OR8 e1 e2 
-packageExpr c (Xor8 e1 e2) = packageTwoSubExpr c EXPR_XOR8 e1 e2 
-packageExpr c (If8 e1 e2 e3) = packageThreeSubExpr c EXPR_IF8 e1 e2 e3
-packageExpr c (Lit16 w) = return $ (exprCmdVal EXPR_LIT16) : word16ToBytes w
-packageExpr c (Var16 s) = packageVar c s EXPR_VAR16
-packageExpr c (Neg16 e) = packageSubExpr c EXPR_NEG16 e
-packageExpr c (Sign16 e) = packageSubExpr c EXPR_SIGN16 e
-packageExpr c (Add16 e1 e2) = packageTwoSubExpr c EXPR_ADD16 e1 e2 
-packageExpr c (Sub16 e1 e2) = packageTwoSubExpr c EXPR_SUB16 e1 e2 
-packageExpr c (Mult16 e1 e2) = packageTwoSubExpr c EXPR_MULT16 e1 e2 
-packageExpr c (Div16 e1 e2) = packageTwoSubExpr c EXPR_DIV16 e1 e2 
-packageExpr c (Rem16 e1 e2) = packageTwoSubExpr c EXPR_REM16 e1 e2 
-packageExpr c (And16 e1 e2) = packageTwoSubExpr c EXPR_AND16 e1 e2 
-packageExpr c (Or16 e1 e2) = packageTwoSubExpr c EXPR_OR16 e1 e2 
-packageExpr c (Xor16 e1 e2) = packageTwoSubExpr c EXPR_XOR16 e1 e2 
-packageExpr c (If16 e1 e2 e3) = packageThreeSubExpr c EXPR_IF16 e1 e2 e3
-packageExpr c (Lit32 w) = return $ (exprCmdVal EXPR_LIT32) : word32ToBytes w
-packageExpr c (Var32 s) = packageVar c s EXPR_VAR32
-packageExpr c (Neg32 e) = packageSubExpr c EXPR_NEG32 e
-packageExpr c (Sign32 e) = packageSubExpr c EXPR_SIGN32 e
-packageExpr c (Add32 e1 e2) = packageTwoSubExpr c EXPR_ADD32 e1 e2 
-packageExpr c (Sub32 e1 e2) = packageTwoSubExpr c EXPR_SUB32 e1 e2 
-packageExpr c (Mult32 e1 e2) = packageTwoSubExpr c EXPR_MULT32 e1 e2 
-packageExpr c (Div32 e1 e2) = packageTwoSubExpr c EXPR_DIV32 e1 e2 
-packageExpr c (Rem32 e1 e2) = packageTwoSubExpr c EXPR_REM32 e1 e2 
-packageExpr c (And32 e1 e2) = packageTwoSubExpr c EXPR_AND32 e1 e2 
-packageExpr c (Or32 e1 e2) = packageTwoSubExpr c EXPR_OR32 e1 e2 
-packageExpr c (Xor32 e1 e2) = packageTwoSubExpr c EXPR_XOR32 e1 e2 
-packageExpr c (If32 e1 e2 e3) = packageThreeSubExpr c EXPR_IF32 e1 e2 e3
+packageExpr c (LitB b) = return $ [exprCmdVal EXPR_BOOL EXPR_LIT, if b then 1 else 0]
+packageExpr c (RefB s) = packageRef c s (exprCmdVal EXPR_BOOL EXPR_REF)
+packageExpr c (NotB e) = packageSubExpr c (exprCmdVal EXPR_BOOL EXPR_NOT) e 
+packageExpr c (AndB e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_BOOL EXPR_AND) e1 e2 
+packageExpr c (OrB e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_BOOL EXPR_OR) e1 e2 
+packageExpr c (Eq8 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD8 EXPR_EQ) e1 e2 
+packageExpr c (Less8 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD8 EXPR_LESS) e1 e2 
+packageExpr c (Eq16 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD16 EXPR_EQ) e1 e2 
+packageExpr c (Less16 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD16 EXPR_LESS) e1 e2 
+packageExpr c (Eq32 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD32 EXPR_EQ) e1 e2 
+packageExpr c (Less32 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD32 EXPR_LESS) e1 e2 
+packageExpr c (Lit8 w) = return $ [exprCmdVal EXPR_WORD8 EXPR_LIT, w]
+packageExpr c (Ref8 s) = packageRef c s (exprCmdVal EXPR_WORD8 EXPR_REF)
+packageExpr c (Neg8 e) = packageSubExpr c (exprCmdVal EXPR_WORD8 EXPR_NEG) e
+packageExpr c (Sign8 e) = packageSubExpr c (exprCmdVal EXPR_WORD8 EXPR_SIGN) e
+packageExpr c (Add8 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD8 EXPR_ADD) e1 e2 
+packageExpr c (Sub8 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD8 EXPR_SUB) e1 e2 
+packageExpr c (Mult8 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD8 EXPR_MULT) e1 e2 
+packageExpr c (Div8 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD8 EXPR_DIV) e1 e2 
+packageExpr c (Rem8 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD8 EXPR_REM) e1 e2 
+packageExpr c (And8 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD8 EXPR_AND) e1 e2 
+packageExpr c (Or8 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD8 EXPR_OR) e1 e2 
+packageExpr c (Xor8 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD8 EXPR_XOR) e1 e2 
+packageExpr c (If8 e1 e2 e3) = packageThreeSubExpr c (exprCmdVal EXPR_WORD8 EXPR_IF) e1 e2 e3
+packageExpr c (Lit16 w) = return $ (exprCmdVal EXPR_WORD16 EXPR_LIT) : word16ToBytes w
+packageExpr c (Ref16 s) = packageRef c s (exprCmdVal EXPR_WORD16 EXPR_REF)
+packageExpr c (Neg16 e) = packageSubExpr c (exprCmdVal EXPR_WORD16 EXPR_NEG) e
+packageExpr c (Sign16 e) = packageSubExpr c (exprCmdVal EXPR_WORD16 EXPR_SIGN) e
+packageExpr c (Add16 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD16 EXPR_ADD) e1 e2 
+packageExpr c (Sub16 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD16 EXPR_SUB) e1 e2 
+packageExpr c (Mult16 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD16 EXPR_MULT) e1 e2 
+packageExpr c (Div16 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD16 EXPR_DIV) e1 e2 
+packageExpr c (Rem16 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD16 EXPR_REM) e1 e2 
+packageExpr c (And16 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD16 EXPR_AND) e1 e2 
+packageExpr c (Or16 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD16 EXPR_OR) e1 e2 
+packageExpr c (Xor16 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD16 EXPR_XOR) e1 e2 
+packageExpr c (If16 e1 e2 e3) = packageThreeSubExpr c (exprCmdVal EXPR_WORD16 EXPR_IF) e1 e2 e3
+packageExpr c (Lit32 w) = return $ (exprCmdVal EXPR_WORD32 EXPR_LIT) : word32ToBytes w
+packageExpr c (Ref32 s) = packageRef c s (exprCmdVal EXPR_WORD32 EXPR_REF)
+packageExpr c (Neg32 e) = packageSubExpr c (exprCmdVal EXPR_WORD32 EXPR_NEG) e
+packageExpr c (Sign32 e) = packageSubExpr c (exprCmdVal EXPR_WORD32 EXPR_SIGN) e
+packageExpr c (Add32 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD32 EXPR_ADD) e1 e2 
+packageExpr c (Sub32 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD32 EXPR_SUB) e1 e2 
+packageExpr c (Mult32 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD32 EXPR_MULT) e1 e2 
+packageExpr c (Div32 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD32 EXPR_DIV) e1 e2 
+packageExpr c (Rem32 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD32 EXPR_REM) e1 e2 
+packageExpr c (And32 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD32 EXPR_AND) e1 e2 
+packageExpr c (Or32 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD32 EXPR_OR) e1 e2 
+packageExpr c (Xor32 e1 e2) = packageTwoSubExpr c (exprCmdVal EXPR_WORD32 EXPR_XOR) e1 e2 
+packageExpr c (If32 e1 e2 e3) = packageThreeSubExpr c (exprCmdVal EXPR_WORD32 EXPR_IF) e1 e2 e3
 
 -- | Unpackage a Haskino Firmware response
 unpackageResponse :: [Word8] -> Response
@@ -369,16 +369,16 @@ parseQueryResult c (Procedure (QueryTask tid)) (QueryTaskReply tr) = return $ Ju
 parseQueryResult c (Procedure (QueryTaskE tid)) (QueryTaskReply tr) = return $ Just tr
 parseQueryResult c (RemoteBinding (NewVarB s)) (NewReply vn) = do
     updateVariables c s vn
-    return $ Just $ VarB s
+    return $ Just $ RefB s
 parseQueryResult c (RemoteBinding (NewVar8 s)) (NewReply vn) = do
     updateVariables c s vn
-    return $ Just $ Var8 s
+    return $ Just $ Ref8 s
 parseQueryResult c (RemoteBinding (NewVar16 s)) (NewReply vn) = do
     updateVariables c s vn
-    return $ Just $ Var16 s
+    return $ Just $ Ref16 s
 parseQueryResult c (RemoteBinding (NewVar32 s)) (NewReply vn) = do
     updateVariables c s vn
-    return $ Just $ Var32 s
+    return $ Just $ Ref32 s
 parseQueryResult c q r = return Nothing
 
 updateVariables :: ArduinoConnection -> String -> Word8 -> IO ()
