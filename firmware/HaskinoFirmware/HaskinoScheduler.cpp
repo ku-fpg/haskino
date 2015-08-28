@@ -16,13 +16,13 @@ typedef struct task_t
     byte           data[];
     } TASK;
 
-static bool handleCreateTask(int size, byte *msg);
-static bool handleDeleteTask(int size, byte *msg);
-static bool handleAddToTask(int size, byte *msg);
-static bool handleScheduleTask(int size, byte *msg);
-static bool handleQuery(int size, byte *msg, byte *local);
-static bool handleQueryAll(int size, byte *msg, byte *local);
-static bool handleReset(int size, byte *msg);
+static bool handleCreateTask(int size, const byte *msg);
+static bool handleDeleteTask(int size, const byte *msg);
+static bool handleAddToTask(int size, const byte *msg);
+static bool handleScheduleTask(int size, const byte *msg);
+static bool handleQuery(int size, const byte *msg, byte *local);
+static bool handleQueryAll(int size, const byte *msg, byte *local);
+static bool handleReset(int size, const byte *msg);
 static void deleteTask(TASK* task);
 static TASK *findTask(int id);
 static bool executeTask(TASK *task);
@@ -30,7 +30,7 @@ static bool executeTask(TASK *task);
 static TASK *firstTask = NULL;
 static TASK *runningTask = NULL;
 
-bool parseSchedulerMessage(int size, byte *msg, byte *local)
+bool parseSchedulerMessage(int size, const byte *msg, byte *local)
     {
     switch (msg[0]) 
         {
@@ -72,7 +72,7 @@ static TASK *findTask(int id)
     return NULL;
     }
 
-static bool handleCreateTask(int size, byte *msg)
+static bool handleCreateTask(int size, const byte *msg)
     {
     byte id = msg[1];
     unsigned int taskSize;
@@ -105,7 +105,7 @@ static void deleteTask(TASK* task)
     free(task);
     }
 
-static bool handleDeleteTask(int size, byte *msg)
+static bool handleDeleteTask(int size, const byte *msg)
     {
     byte id = msg[1];
     TASK *task;
@@ -117,11 +117,11 @@ static bool handleDeleteTask(int size, byte *msg)
     return false;
     }
 
-static bool handleAddToTask(int size, byte *msg)
+static bool handleAddToTask(int size, const byte *msg)
     {
     byte id = msg[1];
     byte addSize = msg[2];
-    byte *data = &msg[3];
+    const byte *data = &msg[3];
     TASK *task;
 
     if ((task = findTask(id)) != NULL)
@@ -135,7 +135,7 @@ static bool handleAddToTask(int size, byte *msg)
     return false;
     }
 
-static bool handleScheduleTask(int size, byte *msg)
+static bool handleScheduleTask(int size, const byte *msg)
     {
     byte id = msg[1];
     unsigned long deltaMillis;
@@ -149,7 +149,7 @@ static bool handleScheduleTask(int size, byte *msg)
     return false;
     }
 
-static bool handleQuery(int size, byte *msg, byte *local)
+static bool handleQuery(int size, const byte *msg, byte *local)
     {
     byte queryReply[10];
     uint16_t *sizeReply = (uint16_t *) queryReply;
@@ -174,7 +174,7 @@ static bool handleQuery(int size, byte *msg, byte *local)
     return false;
     }
 
-static bool handleQueryAll(int size, byte *msg, byte *local)
+static bool handleQueryAll(int size, const byte *msg, byte *local)
     {
     TASK *task = firstTask;
 
@@ -201,7 +201,7 @@ static bool handleQueryAll(int size, byte *msg, byte *local)
     return false;
     }
 
-static bool handleReset(int size, byte *msg)
+static bool handleReset(int size, const byte *msg)
     {
     while(firstTask != NULL)
         {

@@ -24,7 +24,7 @@ int processingMessage()
     return (messageCount != 0);
     }
 
-bool parseMessage(int size, byte *msg, byte *local)
+bool parseMessage(int size, const byte *msg, byte *local)
     {
     switch (msg[0] & CMD_TYPE_MASK) 
         {

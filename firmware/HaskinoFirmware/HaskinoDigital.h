@@ -1,6 +1,6 @@
 #ifndef HaskinoDigitalH
 #define HaskinoDigitalH
 
-bool parseDigitalMessage(int size, byte *msg, byte *local);
+bool parseDigitalMessage(int size, const byte *msg, byte *local);
 
 #endif /* HaskinoDigitalH */

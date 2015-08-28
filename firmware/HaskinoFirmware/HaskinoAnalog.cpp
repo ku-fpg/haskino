@@ -3,12 +3,12 @@
 #include "HaskinoComm.h"
 #include "HaskinoCommands.h"
 
-static bool handleReadPin(int size, byte *msg, byte *local);
-static bool handleWritePin(int size, byte *msg);
-static bool handleTonePin(int size, byte *msg);
-static bool handleNoTonePin(int size, byte *msg);
+static bool handleReadPin(int size, const byte *msg, byte *local);
+static bool handleWritePin(int size, const byte *msg);
+static bool handleTonePin(int size, const byte *msg);
+static bool handleNoTonePin(int size, const byte *msg);
 
-bool parseAnalogMessage(int size, byte *msg, byte *local)
+bool parseAnalogMessage(int size, const byte *msg, byte *local)
     {
     switch (msg[0] ) 
         {
@@ -28,7 +28,7 @@ bool parseAnalogMessage(int size, byte *msg, byte *local)
     return false;
     }
 
-static bool handleReadPin(int size, byte *msg, byte *local)
+static bool handleReadPin(int size, const byte *msg, byte *local)
     {
     byte pinNo = msg[1];
     uint16_t analogReply;
@@ -39,7 +39,7 @@ static bool handleReadPin(int size, byte *msg, byte *local)
     return false;
     }
 
-static bool handleWritePin(int size, byte *msg)
+static bool handleWritePin(int size, const byte *msg)
     {
     byte pinNo = msg[1];
     byte value = msg[2];
@@ -48,7 +48,7 @@ static bool handleWritePin(int size, byte *msg)
     return false;
     }
 
-static bool handleTonePin(int size, byte *msg)
+static bool handleTonePin(int size, const byte *msg)
     {
     byte pinNo = msg[1];
     unsigned int freq;
@@ -67,7 +67,7 @@ static bool handleTonePin(int size, byte *msg)
     return false;
     }
 
-static bool handleNoTonePin(int size, byte *msg)
+static bool handleNoTonePin(int size, const byte *msg)
     {
     byte pinNo = msg[1];
 

@@ -13,7 +13,7 @@
 #define SAM3X8E_TYPE        9
 #define X86_TYPE            10
 
-bool parseBoardStatusMessage(int size, byte *msg, byte *local);
+bool parseBoardStatusMessage(int size, const byte *msg, byte *local);
 void sendVersionReply(byte *local);
 
 #endif /* HaskinoBoardStatusH */

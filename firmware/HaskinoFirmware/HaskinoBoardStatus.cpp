@@ -4,12 +4,12 @@
 #include "HaskinoCommands.h"
 #include "HaskinoFirmware.h"
 
-static bool handleRequestVersion(int size, byte *msg, byte *local);
-static bool handleRequestType(int size, byte *msg, byte *local);
-static bool handleRequestMicros(int size, byte *msg, byte *local);
-static bool handleRequestMillis(int size, byte *msg, byte *local);
+static bool handleRequestVersion(int size, const byte *msg, byte *local);
+static bool handleRequestType(int size, const byte *msg, byte *local);
+static bool handleRequestMicros(int size, const byte *msg, byte *local);
+static bool handleRequestMillis(int size, const byte *msg, byte *local);
 
-bool parseBoardStatusMessage(int size, byte *msg, byte *local)
+bool parseBoardStatusMessage(int size, const byte *msg, byte *local)
     {
     switch (msg[0] ) 
         {
@@ -37,13 +37,13 @@ void sendVersionReply(byte *local)
     sendReply(sizeof(versionReply), BS_RESP_VERSION, versionReply, local);
     }
 
-static bool handleRequestVersion(int size, byte *msg, byte *local)
+static bool handleRequestVersion(int size, const byte *msg, byte *local)
     {
     sendVersionReply(local);
     return false;
     }
 
-static bool handleRequestType(int size, byte *msg, byte *local)
+static bool handleRequestType(int size, const byte *msg, byte *local)
     {
     static byte typeReply[1] = {
 #if defined(__AVR_ATmega8__)
@@ -75,7 +75,7 @@ static bool handleRequestType(int size, byte *msg, byte *local)
     return false;
     }
 
-static bool handleRequestMicros(int size, byte *msg, byte *local)
+static bool handleRequestMicros(int size, const byte *msg, byte *local)
     {
     uint32_t microReply = micros();
 
@@ -83,7 +83,7 @@ static bool handleRequestMicros(int size, byte *msg, byte *local)
     return false;
     }
 
-static bool handleRequestMillis(int size, byte *msg, byte *local)
+static bool handleRequestMillis(int size, const byte *msg, byte *local)
     {
     uint32_t milliReply = millis();
 

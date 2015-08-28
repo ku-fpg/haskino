@@ -3,10 +3,10 @@
 #include "HaskinoCommands.h"
 #include "HaskinoDigital.h"
 
-static bool handleReadPin(int size, byte *msg, byte *local);
-static bool handleWritePin(int size, byte *msg);
+static bool handleReadPin(int size, const byte *msg, byte *local);
+static bool handleWritePin(int size, const byte *msg);
 
-bool parseDigitalMessage(int size, byte *msg, byte *local)
+bool parseDigitalMessage(int size, const byte *msg, byte *local)
     {
     switch (msg[0]) 
         {
@@ -20,7 +20,7 @@ bool parseDigitalMessage(int size, byte *msg, byte *local)
     return false;
     }
 
-static bool handleReadPin(int size, byte *msg, byte *local)
+static bool handleReadPin(int size, const byte *msg, byte *local)
     {
     byte pinNo = msg[1];
     byte digitalReply = digitalRead(pinNo);
@@ -29,7 +29,7 @@ static bool handleReadPin(int size, byte *msg, byte *local)
     return false;
     }
 
-static bool handleWritePin(int size, byte *msg)
+static bool handleWritePin(int size, const byte *msg)
     {
     byte pinNo = msg[1];
     byte value = msg[2];

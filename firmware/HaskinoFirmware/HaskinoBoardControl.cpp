@@ -6,12 +6,12 @@
 #include "HaskinoScheduler.h"
 #include "SoftReset.h"
 
-static bool handleSetPinMode(int size, byte *msg);
-static bool handleDelayMillis(int size, byte *msg);
-static bool handleDelayMicros(int size, byte *msg);
-static bool handleSystemReset(int size, byte *msg);
+static bool handleSetPinMode(int size, const byte *msg);
+static bool handleDelayMillis(int size, const byte *msg);
+static bool handleDelayMicros(int size, const byte *msg);
+static bool handleSystemReset(int size, const byte *msg);
 
-bool parseBoardControlMessage(int size, byte *msg, byte *local)
+bool parseBoardControlMessage(int size, const byte *msg, byte *local)
     {
     switch (msg[0] ) 
         {
@@ -31,13 +31,13 @@ bool parseBoardControlMessage(int size, byte *msg, byte *local)
     return false;
     }
 
-static bool handleSetPinMode(int size, byte *msg)
+static bool handleSetPinMode(int size, const byte *msg)
     {
     pinMode(msg[1], msg[2]);
     return false;
     }
 
-static bool handleDelayMillis(int size, byte *msg)
+static bool handleDelayMillis(int size, const byte *msg)
     {
     unsigned long millis;
     memcpy(&millis, &msg[1], 4);
@@ -53,7 +53,7 @@ static bool handleDelayMillis(int size, byte *msg)
     return true;
     }
 
-static bool handleDelayMicros(int size, byte *msg)
+static bool handleDelayMicros(int size, const byte *msg)
     {
     unsigned int micros;
     memcpy(&micros, &msg[1], 2);
@@ -61,7 +61,7 @@ static bool handleDelayMicros(int size, byte *msg)
     return false;
     }
 
-static bool handleSystemReset(int size, byte *msg)
+static bool handleSystemReset(int size, const byte *msg)
     {
     soft_restart();
     return false;

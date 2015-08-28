@@ -4,11 +4,11 @@
 #include "HaskinoCommands.h"
 #include "HaskinoI2C.h"
 
-static bool handleConfig(int size, byte *msg);
-static bool handleRead(int size, byte *msg, byte *local);
-static bool handleWrite(int size, byte *msg);
+static bool handleConfig(int size, const byte *msg);
+static bool handleRead(int size, const byte *msg, byte *local);
+static bool handleWrite(int size, const byte *msg);
 
-bool parseI2CMessage(int size, byte *msg, byte *local)
+bool parseI2CMessage(int size, const byte *msg, byte *local)
     {
     switch (msg[0] ) 
         {
@@ -25,14 +25,14 @@ bool parseI2CMessage(int size, byte *msg, byte *local)
     return false;
     }
 
-static bool handleConfig(int size, byte *msg)
+static bool handleConfig(int size, const byte *msg)
     {
     Wire.begin();
     delay(10);
     return false;
     }
 
-static bool handleRead(int size, byte *msg, byte *local)
+static bool handleRead(int size, const byte *msg, byte *local)
     {
     byte slaveAddress = msg[1];
     byte byteCount = msg[2];
@@ -71,10 +71,10 @@ static bool handleRead(int size, byte *msg, byte *local)
     return false;
     }
 
-static bool handleWrite(int size, byte *msg)
+static bool handleWrite(int size, const byte *msg)
     {
     byte slaveAddress = msg[1];
-    byte *data = &msg[2];
+    const byte *data = &msg[2];
     byte byteCount = size - 2;
 
     if (byteCount > 0)

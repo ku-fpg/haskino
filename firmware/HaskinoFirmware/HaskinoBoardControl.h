@@ -1,6 +1,6 @@
 #ifndef HaskinoBoardControlH
 #define HaskinoBoardControlH
 
-bool parseBoardControlMessage(int size, byte *msg, byte *local);
+bool parseBoardControlMessage(int size, const byte *msg, byte *local);
 
 #endif /* HaskinoBoardControlH */
