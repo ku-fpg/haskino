@@ -1,8 +1,6 @@
 #ifndef HaskinoCommH
 #define HaskinoCommH
 
-#define MESSAGE_MAX_SIZE 128
-
 #define HDLC_FRAME_FLAG  0x7E
 #define HDLC_ESCAPE      0x7D
 #define HDLC_MASK        0x20

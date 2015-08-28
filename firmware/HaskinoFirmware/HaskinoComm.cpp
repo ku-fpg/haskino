@@ -5,6 +5,7 @@
 #include "HaskinoBoardStatus.h"
 #include "HaskinoCommands.h"
 #include "HaskinoComm.h"
+#include "HaskinoConfig.h"
 #include "HaskinoDigital.h"
 #include "HaskinoI2C.h"
 #include "HaskinoOneWire.h"
