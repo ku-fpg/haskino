@@ -18,6 +18,14 @@ import       Data.Word (Word8, Word16, Word32)
 import       Data.Boolean as B
 import       Data.Boolean.Numbers as BN
 
+data RemoteRef a where
+    RemoteRefB   :: Int -> RemoteRef Bool
+    RemoteRefW8  :: Int -> RemoteRef Word8
+    RemoteRefW16 :: Int -> RemoteRef Word16
+    RemoteRefW32 :: Int -> RemoteRef Word32
+
+deriving instance Show a => Show (RemoteRef a)
+
 type BoolE   = Expr Bool
 type Word8E  = Expr Word8
 type Word16E = Expr Word16
@@ -29,10 +37,10 @@ data Expr a where
   Lit8      :: Word8 -> Word8E
   Lit16     :: Word16 -> Word16E
   Lit32     :: Word32 -> Word32E
-  RefB      :: Int -> BoolE
-  Ref8      :: Int -> Word8E
-  Ref16     :: Int -> Word16E
-  Ref32     :: Int -> Word32E
+  RefB      :: RemoteRef Bool -> BoolE
+  Ref8      :: RemoteRef Word8 -> Word8E
+  Ref16     :: RemoteRef Word16 -> Word16E
+  Ref32     :: RemoteRef Word32 -> Word32E
   NotB      :: BoolE -> BoolE
   AndB      :: BoolE -> BoolE -> BoolE
   OrB       :: BoolE -> BoolE -> BoolE
@@ -101,6 +109,21 @@ instance LiteralB Word32 where
 
 instance LiteralB Bool where
     lit = LitB
+
+class ReferenceB a where
+    ref  :: RemoteRef a -> Expr a
+
+instance ReferenceB Word8 where
+    ref = Ref8
+
+instance ReferenceB Word16 where
+    ref = Ref16
+
+instance ReferenceB Word32 where
+    ref = Ref32
+
+instance ReferenceB Bool where
+    ref = RefB
 
 -- ToDo:  Add BitsB class for and, or, xor, complement and shifts
 -- ToDo:  Add fromInteger/toInteger properly to do typing on Arduino

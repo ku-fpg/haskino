@@ -186,14 +186,14 @@ data Command =
      | ScheduleTask TaskID TimeMillis
      | ScheduleTaskE TaskIDE TimeMillisE
      | ScheduleReset
-     | WriteRemoteRefB (RemoteRef BoolE) BoolE
-     | WriteRemoteRef8 (RemoteRef Word8E) Word8E
-     | WriteRemoteRef16 (RemoteRef Word16E) Word16E
-     | WriteRemoteRef32 (RemoteRef Word32E) Word32E
-     | ModifyRemoteRefB (RemoteRef BoolE) (BoolE -> BoolE)
-     | ModifyRemoteRef8 (RemoteRef Word8E) (Word8E -> Word8E)
-     | ModifyRemoteRef16 (RemoteRef Word16E) (Word16E -> Word16E)
-     | ModifyRemoteRef32 (RemoteRef Word32E) (Word32E -> Word32E)
+     | WriteRemoteRefB (RemoteRef Bool) BoolE
+     | WriteRemoteRef8 (RemoteRef Word8) Word8E
+     | WriteRemoteRef16 (RemoteRef Word16) Word16E
+     | WriteRemoteRef32 (RemoteRef Word32) Word32E
+     | ModifyRemoteRefB (RemoteRef Bool) (BoolE -> BoolE)
+     | ModifyRemoteRef8 (RemoteRef Word8) (Word8E -> Word8E)
+     | ModifyRemoteRef16 (RemoteRef Word16) (Word16E -> Word16E)
+     | ModifyRemoteRef32 (RemoteRef Word32) (Word32E -> Word32E)
      | While BoolE (Arduino ())
      | IfThenElse BoolE (Arduino ()) (Arduino ())
      -- ToDo: add one wire and encoder procedures, readd stepper and servo
@@ -285,63 +285,57 @@ while be ps = Command $ While be ps
 ifThenElse :: BoolE -> Arduino () -> Arduino() -> Arduino()
 ifThenElse be tps eps = Command $ IfThenElse be tps eps
 
-writeRemoteRefB :: RemoteRef BoolE -> BoolE -> Arduino ()
+writeRemoteRefB :: RemoteRef Bool -> BoolE -> Arduino ()
 writeRemoteRefB r e = Command $ WriteRemoteRefB r e
 
-writeRemoteRef8 :: RemoteRef Word8E -> Word8E -> Arduino ()
+writeRemoteRef8 :: RemoteRef Word8 -> Word8E -> Arduino ()
 writeRemoteRef8 r e = Command $ WriteRemoteRef8 r e
 
-writeRemoteRef16 :: RemoteRef Word16E -> Word16E -> Arduino ()
+writeRemoteRef16 :: RemoteRef Word16 -> Word16E -> Arduino ()
 writeRemoteRef16 r e = Command $ WriteRemoteRef16 r e
 
-writeRemoteRef32 :: RemoteRef Word32E -> Word32E -> Arduino ()
+writeRemoteRef32 :: RemoteRef Word32 -> Word32E -> Arduino ()
 writeRemoteRef32 r e = Command $ WriteRemoteRef32 r e
 
-modifyRemoteRefB :: RemoteRef BoolE -> (BoolE -> BoolE) -> Arduino ()
+modifyRemoteRefB :: RemoteRef Bool -> (BoolE -> BoolE) -> Arduino ()
 modifyRemoteRefB r f = Command $ ModifyRemoteRefB r f
 
-modifyRemoteRef8 :: RemoteRef Word8E -> (Word8E -> Word8E) -> Arduino ()
+modifyRemoteRef8 :: RemoteRef Word8 -> (Word8E -> Word8E) -> Arduino ()
 modifyRemoteRef8 r f = Command $ ModifyRemoteRef8 r f
 
-modifyRemoteRef16 :: RemoteRef Word16E -> (Word16E -> Word16E) -> Arduino ()
+modifyRemoteRef16 :: RemoteRef Word16 -> (Word16E -> Word16E) -> Arduino ()
 modifyRemoteRef16 r f = Command $ ModifyRemoteRef16 r f
 
-modifyRemoteRef32 :: RemoteRef Word32E -> (Word32E -> Word32E) -> Arduino ()
+modifyRemoteRef32 :: RemoteRef Word32 -> (Word32E -> Word32E) -> Arduino ()
 modifyRemoteRef32 r f = Command $ ModifyRemoteRef32 r f
 
 -- ToDo: Readd servo and stepper functions
 
-data RemoteRef a where
-    RemoteRefB   :: BoolE -> RemoteRef BoolE
-    RemoteRefW8  :: Word8E -> RemoteRef Word8E
-    RemoteRefW16 :: Word16E -> RemoteRef Word16E
-    RemoteRefW32 :: Word32E -> RemoteRef Word32E
-
 class RemoteReference a where
-    newRemoteRef    :: a -> Arduino (RemoteRef a)
-    readRemoteRef   :: RemoteRef a -> Arduino a
-    writeRemoteRef  :: RemoteRef a -> a -> Arduino ()
-    modifyRemoteRef :: RemoteRef a -> (a -> a) -> Arduino ()
+    newRemoteRef    :: Expr a -> Arduino (RemoteRef a)
+    readRemoteRef   :: RemoteRef a -> Arduino (Expr a)
+    writeRemoteRef  :: RemoteRef a -> Expr a -> Arduino ()
+    modifyRemoteRef :: RemoteRef a -> (Expr a -> Expr a) -> Arduino ()
 
-instance RemoteReference BoolE where
+instance RemoteReference Bool where
     newRemoteRef = newRemoteRefB
     readRemoteRef = readRemoteRefB
     writeRemoteRef = writeRemoteRefB
     modifyRemoteRef = modifyRemoteRefB
 
-instance RemoteReference Word8E where
+instance RemoteReference Word8 where
     newRemoteRef = newRemoteRef8
     readRemoteRef = readRemoteRef8
     writeRemoteRef = writeRemoteRef8
     modifyRemoteRef = modifyRemoteRef8
 
-instance RemoteReference Word16E where
+instance RemoteReference Word16 where
     newRemoteRef = newRemoteRef16
     readRemoteRef = readRemoteRef16
     writeRemoteRef = writeRemoteRef16
     modifyRemoteRef = modifyRemoteRef16
 
-instance RemoteReference Word32E where
+instance RemoteReference Word32 where
     newRemoteRef = newRemoteRef32
     readRemoteRef = readRemoteRef32
     writeRemoteRef = writeRemoteRef32
@@ -382,10 +376,10 @@ data Procedure :: * -> * where
      QueryTask  :: TaskID -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
      QueryTaskE :: TaskIDE -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
      -- Todo: add one wire queries, readd pulse?
-     ReadRemoteRefB  :: RemoteRef BoolE   -> Procedure BoolE
-     ReadRemoteRef8  :: RemoteRef Word8E  -> Procedure Word8E
-     ReadRemoteRef16 :: RemoteRef Word16E -> Procedure Word16E
-     ReadRemoteRef32 :: RemoteRef Word32E -> Procedure Word32E
+     ReadRemoteRefB  :: RemoteRef Bool   -> Procedure BoolE
+     ReadRemoteRef8  :: RemoteRef Word8  -> Procedure Word8E
+     ReadRemoteRef16 :: RemoteRef Word16 -> Procedure Word16E
+     ReadRemoteRef32 :: RemoteRef Word32 -> Procedure Word32E
 
 queryFirmware :: Arduino (Word8, Word8)
 queryFirmware = Procedure QueryFirmware
@@ -434,34 +428,34 @@ queryTask tid = Procedure $ QueryTask tid
 queryTaskE :: TaskIDE -> Arduino (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
 queryTaskE tid = Procedure $ QueryTaskE tid
 
-readRemoteRefB :: RemoteRef BoolE -> Arduino BoolE
+readRemoteRefB :: RemoteRef Bool -> Arduino BoolE
 readRemoteRefB n = Procedure $ ReadRemoteRefB n
 
-readRemoteRef8 :: RemoteRef Word8E -> Arduino Word8E
+readRemoteRef8 :: RemoteRef Word8 -> Arduino Word8E
 readRemoteRef8 n = Procedure $ ReadRemoteRef8 n
 
-readRemoteRef16 :: RemoteRef Word16E -> Arduino Word16E
+readRemoteRef16 :: RemoteRef Word16 -> Arduino Word16E
 readRemoteRef16 n = Procedure $ ReadRemoteRef16 n
 
-readRemoteRef32 :: RemoteRef Word32E -> Arduino Word32E
+readRemoteRef32 :: RemoteRef Word32 -> Arduino Word32E
 readRemoteRef32 n = Procedure $ ReadRemoteRef32 n
 
 data RemoteBinding :: * -> * where
-     NewRemoteRefB    :: BoolE   -> RemoteBinding (RemoteRef BoolE)
-     NewRemoteRef8    :: Word8E  -> RemoteBinding (RemoteRef Word8E)
-     NewRemoteRef16   :: Word16E -> RemoteBinding (RemoteRef Word16E)
-     NewRemoteRef32   :: Word32E -> RemoteBinding (RemoteRef Word32E)
+     NewRemoteRefB    :: BoolE   -> RemoteBinding (RemoteRef Bool)
+     NewRemoteRef8    :: Word8E  -> RemoteBinding (RemoteRef Word8)
+     NewRemoteRef16   :: Word16E -> RemoteBinding (RemoteRef Word16)
+     NewRemoteRef32   :: Word32E -> RemoteBinding (RemoteRef Word32)
 
-newRemoteRefB :: BoolE -> Arduino (RemoteRef BoolE)
+newRemoteRefB :: BoolE -> Arduino (RemoteRef Bool)
 newRemoteRefB n = RemoteBinding $ NewRemoteRefB n
 
-newRemoteRef8 :: Word8E -> Arduino (RemoteRef Word8E)
+newRemoteRef8 :: Word8E -> Arduino (RemoteRef Word8)
 newRemoteRef8 n = RemoteBinding $ NewRemoteRef8 n
 
-newRemoteRef16 :: Word16E -> Arduino (RemoteRef Word16E)
+newRemoteRef16 :: Word16E -> Arduino (RemoteRef Word16)
 newRemoteRef16 n = RemoteBinding $ NewRemoteRef16 n
 
-newRemoteRef32 :: Word32E -> Arduino (RemoteRef Word32E)
+newRemoteRef32 :: Word32E -> Arduino (RemoteRef Word32)
 newRemoteRef32 n = RemoteBinding $ NewRemoteRef32 n
 
 -- | A response, as returned from the Arduino
