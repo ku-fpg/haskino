@@ -42,9 +42,9 @@ module System.Hardware.Haskino (
   --, StepDevice, StepType(..), NumSteps, StepSpeed, StepAccel, StepPerRev
   --, StepDelay(..), StepDir(..), stepperConfig, stepperStep
   -- ** Control structures
-  , loop, while, ifThenElse, (=*), (=**)
+  , loop, while, ifThenElse
   -- ** Variables
-  , newVarB, newVar8, newVar16, newVar32, Expr(..), lit
+  , Expr(..), lit, newRemoteRef, readRemoteRef, writeRemoteRef, modifyRemoteRef
  )
  where
 

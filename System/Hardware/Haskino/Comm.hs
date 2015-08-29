@@ -142,12 +142,10 @@ send conn commands =
           message c $ "Delaying Micros: " ++ show d
           threadDelay (fromIntegral d)
           send' c (k ()) B.empty
-      sendBind c (Command (CreateTask tid as)) k cmds = do 
-          packCmd <- packageCommand c (CreateTask tid as)
-          send' c (k ()) (B.append cmds packCmd)
-      sendBind c (Command cmd) k cmds = do 
-          packCmd <- packageCommand c cmd
-          send' c (k ()) (B.append cmds (framePackage packCmd))
+      sendBind c (Command (CreateTask tid as)) k cmds = 
+          send' c (k ()) (B.append cmds (packageCommand (CreateTask tid as)))
+      sendBind c (Command cmd) k cmds =
+          send' c (k ()) (B.append cmds (framePackage (packageCommand cmd)))
       sendBind c (Control ctrl)  k cmds = sendControl c ctrl k cmds
       sendBind c (Local local)   k cmds = sendLocal c local k cmds
       sendBind c (Procedure procedure) k cmds = sendProcedure c procedure k cmds
@@ -190,8 +188,7 @@ send conn commands =
             Nothing -> runDie c "Haskino:ERROR: Response Timeout" 
                              [ "Make sure your Arduino is running Haskino Firmware"]
             Just r -> do 
-                qres <- parseQueryResult c procedure r
-                case qres of
+                case parseQueryResult procedure r of
                     -- Ignore responses that do not match expected response
                     -- and wait for the next response.
                     Nothing -> do message c $ "Unmatched response" ++ show r

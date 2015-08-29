@@ -22,11 +22,11 @@ blink = withArduino False "/dev/cu.usbmodem1421" $ do
            let button = lit 2
            let led1 = lit 10
            let led2 = lit 11
-           x <- newVarB "x"
+           x <- newRemoteRef false
            setPinModeE button INPUT
            setPinModeE led1 OUTPUT
            setPinModeE led2 OUTPUT
-           while (LitB True) $ do x =** digitalReadE button
-                                  digitalWriteE led1 x
-                                  digitalWriteE led2 (notB x)
-                                  delayMillis 100 
+           while (lit True) $ do writeRemoteRef x false -- (Proc digitalReadE button)
+                                 digitalWriteE led1 x
+                                 digitalWriteE led2 (notB x)
+                                 delayMillis 100 

@@ -29,10 +29,10 @@ data Expr a where
   Lit8      :: Word8 -> Word8E
   Lit16     :: Word16 -> Word16E
   Lit32     :: Word32 -> Word32E
-  RefB      :: String -> BoolE
-  Ref8      :: String -> Word8E
-  Ref16     :: String -> Word16E
-  Ref32     :: String -> Word32E
+  RefB      :: Int -> BoolE
+  Ref8      :: Int -> Word8E
+  Ref16     :: Int -> Word16E
+  Ref32     :: Int -> Word32E
   NotB      :: BoolE -> BoolE
   AndB      :: BoolE -> BoolE -> BoolE
   OrB       :: BoolE -> BoolE -> BoolE

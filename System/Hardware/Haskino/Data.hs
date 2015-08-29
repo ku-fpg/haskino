@@ -186,14 +186,14 @@ data Command =
      | ScheduleTask TaskID TimeMillis
      | ScheduleTaskE TaskIDE TimeMillisE
      | ScheduleReset
-     | AssignProcB BoolE (Arduino Bool)
-     | AssignExprB BoolE BoolE
-     | AssignProc8 Word8E (Arduino Word8)
-     | AssignExpr8 Word8E Word8E
-     | AssignProc16 Word16E (Arduino Word16)
-     | AssignExpr16 Word16E Word16E
-     | AssignProc32 Word32E (Arduino Word32)
-     | AssignExpr32 Word32E Word32E
+     | WriteRemoteRefB (RemoteRef BoolE) BoolE
+     | WriteRemoteRef8 (RemoteRef Word8E) Word8E
+     | WriteRemoteRef16 (RemoteRef Word16E) Word16E
+     | WriteRemoteRef32 (RemoteRef Word32E) Word32E
+     | ModifyRemoteRefB (RemoteRef BoolE) (BoolE -> BoolE)
+     | ModifyRemoteRef8 (RemoteRef Word8E) (Word8E -> Word8E)
+     | ModifyRemoteRef16 (RemoteRef Word16E) (Word16E -> Word16E)
+     | ModifyRemoteRef32 (RemoteRef Word32E) (Word32E -> Word32E)
      | While BoolE (Arduino ())
      | IfThenElse BoolE (Arduino ()) (Arduino ())
      -- ToDo: add one wire and encoder procedures, readd stepper and servo
@@ -285,60 +285,67 @@ while be ps = Command $ While be ps
 ifThenElse :: BoolE -> Arduino () -> Arduino() -> Arduino()
 ifThenElse be tps eps = Command $ IfThenElse be tps eps
 
+writeRemoteRefB :: RemoteRef BoolE -> BoolE -> Arduino ()
+writeRemoteRefB r e = Command $ WriteRemoteRefB r e
+
+writeRemoteRef8 :: RemoteRef Word8E -> Word8E -> Arduino ()
+writeRemoteRef8 r e = Command $ WriteRemoteRef8 r e
+
+writeRemoteRef16 :: RemoteRef Word16E -> Word16E -> Arduino ()
+writeRemoteRef16 r e = Command $ WriteRemoteRef16 r e
+
+writeRemoteRef32 :: RemoteRef Word32E -> Word32E -> Arduino ()
+writeRemoteRef32 r e = Command $ WriteRemoteRef32 r e
+
+modifyRemoteRefB :: RemoteRef BoolE -> (BoolE -> BoolE) -> Arduino ()
+modifyRemoteRefB r f = Command $ ModifyRemoteRefB r f
+
+modifyRemoteRef8 :: RemoteRef Word8E -> (Word8E -> Word8E) -> Arduino ()
+modifyRemoteRef8 r f = Command $ ModifyRemoteRef8 r f
+
+modifyRemoteRef16 :: RemoteRef Word16E -> (Word16E -> Word16E) -> Arduino ()
+modifyRemoteRef16 r f = Command $ ModifyRemoteRef16 r f
+
+modifyRemoteRef32 :: RemoteRef Word32E -> (Word32E -> Word32E) -> Arduino ()
+modifyRemoteRef32 r f = Command $ ModifyRemoteRef32 r f
+
 -- ToDo: Readd servo and stepper functions
 
-infix 1 =*,=**
-
-class Assign a where
-    (=*)  :: Expr a -> Expr a -> Arduino()
-    (=**) :: Expr a -> Arduino a -> Arduino() 
-
-instance Assign Bool where
-    (=*)  s e  = Command $ AssignExprB s e
-    (=**) s pe = Command $ AssignProcB s pe
-
-instance Assign Word8 where
-    (=*)  s e  = Command $ AssignExpr8 s e
-    (=**) s pe = Command $ AssignProc8 s pe
-
-instance Assign Word16 where
-    (=*)  s e  = Command $ AssignExpr16 s e
-    (=**) s pe = Command $ AssignProc16 s pe
-
-instance Assign Word32 where
-    (=*)  s e  = Command $ AssignExpr32 s e
-    (=**) s pe = Command $ AssignProc32 s pe
-
-{-
 data RemoteRef a where
-    RemoteRefB   :: Int -> RemoteRef Bool
-    RemoteRefW8  :: Int -> RemoteRef Word8
-    RemoteRefW16 :: Int -> RemoteRef Word16
-    RemoteRefW32 :: Int -> RemoteRef Word32
+    RemoteRefB   :: BoolE -> RemoteRef BoolE
+    RemoteRefW8  :: Word8E -> RemoteRef Word8E
+    RemoteRefW16 :: Word16E -> RemoteRef Word16E
+    RemoteRefW32 :: Word32E -> RemoteRef Word32E
 
 class RemoteReference a where
     newRemoteRef    :: a -> Arduino (RemoteRef a)
     readRemoteRef   :: RemoteRef a -> Arduino a
     writeRemoteRef  :: RemoteRef a -> a -> Arduino ()
-    modifyRemoteRef :: RemoteRef a -> (Expr a -> Expr a) -> Arduino ()
+    modifyRemoteRef :: RemoteRef a -> (a -> a) -> Arduino ()
 
-instance RemoteReference Bool where
-    (=*)  s e  = Command $ AssignExprB s e
-    (=**) s pe = Command $ AssignProcB s pe
+instance RemoteReference BoolE where
+    newRemoteRef = newRemoteRefB
+    readRemoteRef = readRemoteRefB
+    writeRemoteRef = writeRemoteRefB
+    modifyRemoteRef = modifyRemoteRefB
 
-instance RemoteReference Word8 where
-    (=*)  s e  = Command $ AssignExpr8 s e
-    (=**) s pe = Command $ AssignProc8 s pe
+instance RemoteReference Word8E where
+    newRemoteRef = newRemoteRef8
+    readRemoteRef = readRemoteRef8
+    writeRemoteRef = writeRemoteRef8
+    modifyRemoteRef = modifyRemoteRef8
 
-instance RemoteReference Word16 where
-    (=*)  s e  = Command $ AssignExpr16 s e
-    (=**) s pe = Command $ AssignProc16 s pe
+instance RemoteReference Word16E where
+    newRemoteRef = newRemoteRef16
+    readRemoteRef = readRemoteRef16
+    writeRemoteRef = writeRemoteRef16
+    modifyRemoteRef = modifyRemoteRef16
 
-instance RemoteReference Word32 where
-    (=*)  s e  = Command $ AssignExpr32 s e
-    (=**) s pe = Command $ AssignProc32 s pe
--}
-
+instance RemoteReference Word32E where
+    newRemoteRef = newRemoteRef32
+    readRemoteRef = readRemoteRef32
+    writeRemoteRef = writeRemoteRef32
+    modifyRemoteRef = modifyRemoteRef32
 
 data Control =
       Loop (Arduino ())
@@ -375,8 +382,10 @@ data Procedure :: * -> * where
      QueryTask  :: TaskID -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
      QueryTaskE :: TaskIDE -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
      -- Todo: add one wire queries, readd pulse?
-
-deriving instance Show a => Show (Procedure a)
+     ReadRemoteRefB  :: RemoteRef BoolE   -> Procedure BoolE
+     ReadRemoteRef8  :: RemoteRef Word8E  -> Procedure Word8E
+     ReadRemoteRef16 :: RemoteRef Word16E -> Procedure Word16E
+     ReadRemoteRef32 :: RemoteRef Word32E -> Procedure Word32E
 
 queryFirmware :: Arduino (Word8, Word8)
 queryFirmware = Procedure QueryFirmware
@@ -425,23 +434,35 @@ queryTask tid = Procedure $ QueryTask tid
 queryTaskE :: TaskIDE -> Arduino (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
 queryTaskE tid = Procedure $ QueryTaskE tid
 
+readRemoteRefB :: RemoteRef BoolE -> Arduino BoolE
+readRemoteRefB n = Procedure $ ReadRemoteRefB n
+
+readRemoteRef8 :: RemoteRef Word8E -> Arduino Word8E
+readRemoteRef8 n = Procedure $ ReadRemoteRef8 n
+
+readRemoteRef16 :: RemoteRef Word16E -> Arduino Word16E
+readRemoteRef16 n = Procedure $ ReadRemoteRef16 n
+
+readRemoteRef32 :: RemoteRef Word32E -> Arduino Word32E
+readRemoteRef32 n = Procedure $ ReadRemoteRef32 n
+
 data RemoteBinding :: * -> * where
-     NewVarB       :: String  -> RemoteBinding BoolE
-     NewVar8       :: String  -> RemoteBinding Word8E
-     NewVar16      :: String  -> RemoteBinding Word16E
-     NewVar32      :: String  -> RemoteBinding Word32E
+     NewRemoteRefB    :: BoolE   -> RemoteBinding (RemoteRef BoolE)
+     NewRemoteRef8    :: Word8E  -> RemoteBinding (RemoteRef Word8E)
+     NewRemoteRef16   :: Word16E -> RemoteBinding (RemoteRef Word16E)
+     NewRemoteRef32   :: Word32E -> RemoteBinding (RemoteRef Word32E)
 
-newVarB :: String -> Arduino BoolE
-newVarB n = RemoteBinding $ NewVarB n
+newRemoteRefB :: BoolE -> Arduino (RemoteRef BoolE)
+newRemoteRefB n = RemoteBinding $ NewRemoteRefB n
 
-newVar8 :: String -> Arduino Word8E
-newVar8 n = RemoteBinding $ NewVar8 n
+newRemoteRef8 :: Word8E -> Arduino (RemoteRef Word8E)
+newRemoteRef8 n = RemoteBinding $ NewRemoteRef8 n
 
-newVar16 :: String -> Arduino Word16E
-newVar16 n = RemoteBinding $ NewVar16 n
+newRemoteRef16 :: Word16E -> Arduino (RemoteRef Word16E)
+newRemoteRef16 n = RemoteBinding $ NewRemoteRef16 n
 
-newVar32 :: String -> Arduino Word32E
-newVar32 n = RemoteBinding $ NewVar32 n
+newRemoteRef32 :: Word32E -> Arduino (RemoteRef Word32E)
+newRemoteRef32 n = RemoteBinding $ NewRemoteRef32 n
 
 -- | A response, as returned from the Arduino
 data Response = Firmware Word8 Word8                 -- ^ Firmware version (maj/min and indentifier
@@ -503,14 +524,22 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE
                  | SCHED_CMD_SCHED_TASK_E
                  | SCHED_CMD_QUERY_E
                  | VAR_CMD_NEW
-                 | VAR_CMD_ASGN_PROCB
-                 | VAR_CMD_ASGN_EXPRB
-                 | VAR_CMD_ASGN_PROC8
-                 | VAR_CMD_ASGN_EXPR8
-                 | VAR_CMD_ASGN_PROC16
-                 | VAR_CMD_ASGN_EXPR16
-                 | VAR_CMD_ASGN_PROC32
-                 | VAR_CMD_ASGN_EXPR32
+                 | VAR_CMD_NEW_REFB
+                 | VAR_CMD_NEW_REF8
+                 | VAR_CMD_NEW_REF16
+                 | VAR_CMD_NEW_REF32
+                 | VAR_CMD_READ_REFB
+                 | VAR_CMD_READ_REF8
+                 | VAR_CMD_READ_REF16
+                 | VAR_CMD_READ_REF32
+                 | VAR_CMD_WRITE_REFB
+                 | VAR_CMD_WRITE_REF8
+                 | VAR_CMD_WRITE_REF16
+                 | VAR_CMD_WRITE_REF32
+                 | VAR_CMD_MOD_REFB
+                 | VAR_CMD_MOD_REF8
+                 | VAR_CMD_MOD_REF16
+                 | VAR_CMD_MOD_REF32
                 deriving Show
 
 -- | Compute the numeric value of a command
@@ -552,15 +581,22 @@ firmwareCmdVal SCHED_CMD_RESET        = 0xA6
 firmwareCmdVal SCHED_CMD_DELETE_TASK_E = 0xA7
 firmwareCmdVal SCHED_CMD_SCHED_TASK_E  = 0xA8
 firmwareCmdVal SCHED_CMD_QUERY_E       = 0xA9
-firmwareCmdVal VAR_CMD_NEW            = 0xB0
-firmwareCmdVal VAR_CMD_ASGN_PROCB     = 0xB1
-firmwareCmdVal VAR_CMD_ASGN_EXPRB     = 0xB2
-firmwareCmdVal VAR_CMD_ASGN_PROC8     = 0xB3
-firmwareCmdVal VAR_CMD_ASGN_EXPR8     = 0xB4
-firmwareCmdVal VAR_CMD_ASGN_PROC16    = 0xB5
-firmwareCmdVal VAR_CMD_ASGN_EXPR16    = 0xB6
-firmwareCmdVal VAR_CMD_ASGN_PROC32    = 0xB7
-firmwareCmdVal VAR_CMD_ASGN_EXPR32    = 0xB8
+firmwareCmdVal VAR_CMD_NEW_REFB       = 0xB0
+firmwareCmdVal VAR_CMD_NEW_REF8       = 0xB1
+firmwareCmdVal VAR_CMD_NEW_REF16      = 0xB2
+firmwareCmdVal VAR_CMD_NEW_REF32      = 0xB3
+firmwareCmdVal VAR_CMD_READ_REFB      = 0xB4
+firmwareCmdVal VAR_CMD_READ_REF8      = 0xB5
+firmwareCmdVal VAR_CMD_READ_REF16     = 0xB6
+firmwareCmdVal VAR_CMD_READ_REF32     = 0xB7
+firmwareCmdVal VAR_CMD_WRITE_REFB     = 0xB8
+firmwareCmdVal VAR_CMD_WRITE_REF8     = 0xB9
+firmwareCmdVal VAR_CMD_WRITE_REF16    = 0xBA
+firmwareCmdVal VAR_CMD_WRITE_REF32    = 0xBB
+firmwareCmdVal VAR_CMD_MOD_REFB       = 0xBC
+firmwareCmdVal VAR_CMD_MOD_REF8       = 0xBD
+firmwareCmdVal VAR_CMD_MOD_REF16      = 0xBE
+firmwareCmdVal VAR_CMD_MOD_REF32      = 0xBF
 
 -- | Firmware replies, see: 
 -- | https://github.com/ku-fpg/haskino/wiki/Haskino-Firmware-Protocol-Definition
