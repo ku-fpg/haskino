@@ -196,16 +196,24 @@ packageProcedure QueryProcessor      = buildCommand BS_CMD_REQUEST_TYPE []
 packageProcedure Micros              = buildCommand BS_CMD_REQUEST_MICROS []
 packageProcedure Millis              = buildCommand BS_CMD_REQUEST_MILLIS []
 packageProcedure (DigitalRead p)     = buildCommand DIG_CMD_READ_PIN [p]
+packageProcedure (DigitalReadE pe)   = buildCommand DIG_CMD_READ_PIN (packageExpr pe)
 packageProcedure (AnalogRead p)      = buildCommand ALG_CMD_READ_PIN [p]
+packageProcedure (AnalogReadE pe)    = buildCommand ALG_CMD_READ_PIN (packageExpr pe)
 packageProcedure (I2CRead sa cnt)    = buildCommand I2C_CMD_READ [sa,cnt]
+packageProcedure (I2CReadE sae cnte) = buildCommand I2C_CMD_READ ((packageExpr sae) ++ (packageExpr cnte))
 packageProcedure QueryAllTasks       = buildCommand SCHED_CMD_QUERY_ALL []
 packageProcedure (QueryTask tid)     = buildCommand SCHED_CMD_QUERY [tid]
+packageProcedure (QueryTaskE tide)   = buildCommand SCHED_CMD_QUERY (packageExpr tide)
+packageProcedure (ReadRemoteRefB (RemoteRefB r))  = buildCommand REF_CMD_READ_B [fromIntegral r]
+packageProcedure (ReadRemoteRef8 (RemoteRefW8 r))  = buildCommand REF_CMD_READ_8 [fromIntegral r]
+packageProcedure (ReadRemoteRef16 (RemoteRefW16 r)) = buildCommand REF_CMD_READ_16 [fromIntegral r]
+packageProcedure (ReadRemoteRef32 (RemoteRefW32 r)) = buildCommand REF_CMD_READ_32 [fromIntegral r]
 
 packageRemoteBinding :: RemoteBinding a -> B.ByteString
-packageRemoteBinding (NewRemoteRefB e)   = buildCommand VAR_CMD_NEW (1 : (packageExpr e))
-packageRemoteBinding (NewRemoteRef8 e)   = buildCommand VAR_CMD_NEW (1 : (packageExpr e))
-packageRemoteBinding (NewRemoteRef16 e)  = buildCommand VAR_CMD_NEW (2 : (packageExpr e))
-packageRemoteBinding (NewRemoteRef32 e)  = buildCommand VAR_CMD_NEW (4 : (packageExpr e))
+packageRemoteBinding (NewRemoteRefB e)   = buildCommand REF_CMD_NEW_B (packageExpr e)
+packageRemoteBinding (NewRemoteRef8 e)   = buildCommand REF_CMD_NEW_8 (packageExpr e)
+packageRemoteBinding (NewRemoteRef16 e)  = buildCommand REF_CMD_NEW_16 (packageExpr e)
+packageRemoteBinding (NewRemoteRef32 e)  = buildCommand REF_CMD_NEW_32 (packageExpr e)
 
 packageSubExpr :: Word8 -> Expr a -> [Word8]
 packageSubExpr ec e = ec : packageExpr e

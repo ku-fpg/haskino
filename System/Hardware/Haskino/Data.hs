@@ -517,23 +517,22 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE
                  | SCHED_CMD_DELETE_TASK_E
                  | SCHED_CMD_SCHED_TASK_E
                  | SCHED_CMD_QUERY_E
-                 | VAR_CMD_NEW
-                 | VAR_CMD_NEW_REFB
-                 | VAR_CMD_NEW_REF8
-                 | VAR_CMD_NEW_REF16
-                 | VAR_CMD_NEW_REF32
-                 | VAR_CMD_READ_REFB
-                 | VAR_CMD_READ_REF8
-                 | VAR_CMD_READ_REF16
-                 | VAR_CMD_READ_REF32
-                 | VAR_CMD_WRITE_REFB
-                 | VAR_CMD_WRITE_REF8
-                 | VAR_CMD_WRITE_REF16
-                 | VAR_CMD_WRITE_REF32
-                 | VAR_CMD_MOD_REFB
-                 | VAR_CMD_MOD_REF8
-                 | VAR_CMD_MOD_REF16
-                 | VAR_CMD_MOD_REF32
+                 | REF_CMD_NEW_B
+                 | REF_CMD_NEW_8
+                 | REF_CMD_NEW_16
+                 | REF_CMD_NEW_32
+                 | REF_CMD_READ_B
+                 | REF_CMD_READ_8
+                 | REF_CMD_READ_16
+                 | REF_CMD_READ_32
+                 | REF_CMD_WRITE_B
+                 | REF_CMD_WRITE_8
+                 | REF_CMD_WRITE_16
+                 | REF_CMD_WRITE_32
+                 | REF_CMD_MOD_B
+                 | REF_CMD_MOD_8
+                 | REF_CMD_MOD_16
+                 | REF_CMD_MOD_32
                 deriving Show
 
 -- | Compute the numeric value of a command
@@ -575,22 +574,22 @@ firmwareCmdVal SCHED_CMD_RESET        = 0xA6
 firmwareCmdVal SCHED_CMD_DELETE_TASK_E = 0xA7
 firmwareCmdVal SCHED_CMD_SCHED_TASK_E  = 0xA8
 firmwareCmdVal SCHED_CMD_QUERY_E       = 0xA9
-firmwareCmdVal VAR_CMD_NEW_REFB       = 0xB0
-firmwareCmdVal VAR_CMD_NEW_REF8       = 0xB1
-firmwareCmdVal VAR_CMD_NEW_REF16      = 0xB2
-firmwareCmdVal VAR_CMD_NEW_REF32      = 0xB3
-firmwareCmdVal VAR_CMD_READ_REFB      = 0xB4
-firmwareCmdVal VAR_CMD_READ_REF8      = 0xB5
-firmwareCmdVal VAR_CMD_READ_REF16     = 0xB6
-firmwareCmdVal VAR_CMD_READ_REF32     = 0xB7
-firmwareCmdVal VAR_CMD_WRITE_REFB     = 0xB8
-firmwareCmdVal VAR_CMD_WRITE_REF8     = 0xB9
-firmwareCmdVal VAR_CMD_WRITE_REF16    = 0xBA
-firmwareCmdVal VAR_CMD_WRITE_REF32    = 0xBB
-firmwareCmdVal VAR_CMD_MOD_REFB       = 0xBC
-firmwareCmdVal VAR_CMD_MOD_REF8       = 0xBD
-firmwareCmdVal VAR_CMD_MOD_REF16      = 0xBE
-firmwareCmdVal VAR_CMD_MOD_REF32      = 0xBF
+firmwareCmdVal REF_CMD_NEW_B          = 0xB0
+firmwareCmdVal REF_CMD_NEW_8          = 0xB1
+firmwareCmdVal REF_CMD_NEW_16         = 0xB2
+firmwareCmdVal REF_CMD_NEW_32         = 0xB3
+firmwareCmdVal REF_CMD_READ_B         = 0xB4
+firmwareCmdVal REF_CMD_READ_8         = 0xB5
+firmwareCmdVal REF_CMD_READ_16        = 0xB6
+firmwareCmdVal REF_CMD_READ_32        = 0xB7
+firmwareCmdVal REF_CMD_WRITE_B        = 0xB8
+firmwareCmdVal REF_CMD_WRITE_8        = 0xB9
+firmwareCmdVal REF_CMD_WRITE_16       = 0xBA
+firmwareCmdVal REF_CMD_WRITE_32       = 0xBB
+firmwareCmdVal REF_CMD_MOD_B          = 0xBC
+firmwareCmdVal REF_CMD_MOD_8          = 0xBD
+firmwareCmdVal REF_CMD_MOD_16         = 0xBE
+firmwareCmdVal REF_CMD_MOD_32         = 0xBF
 
 -- | Firmware replies, see: 
 -- | https://github.com/ku-fpg/haskino/wiki/Haskino-Firmware-Protocol-Definition
