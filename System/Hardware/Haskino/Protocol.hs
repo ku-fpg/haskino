@@ -23,7 +23,6 @@ import qualified Data.ByteString as B
 import qualified Data.Map        as M
 
 import System.Hardware.Haskino.Data
-import System.Hardware.Haskino.Expr
 import System.Hardware.Haskino.Utils
 
 -- | Maximum size of a Haskino Firmware message

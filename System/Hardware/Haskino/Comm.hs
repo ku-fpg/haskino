@@ -42,7 +42,6 @@ import qualified System.Hardware.Serialport as S (openSerial, closeSerial,
                                                   recv, send)
 
 import System.Hardware.Haskino.Data
-import System.Hardware.Haskino.Expr
 import System.Hardware.Haskino.Utils
 import System.Hardware.Haskino.Protocol
 
