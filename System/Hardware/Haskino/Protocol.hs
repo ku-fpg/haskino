@@ -106,15 +106,8 @@ packageCommand (CreateTask tid m) =
     genAddToTaskCmds tds = addToTask tds
     addToTask tds' = framePackage $ buildCommand SCHED_CMD_ADD_TO_TASK ([tid, fromIntegral $ B.length tds'] ++ (B.unpack tds'))
 {-
+ToDo: package WriteRemoteRef and ModifyRemoteRef
 packageCommand (WriteRemoteRefB e) = 
-packageCommand (AssignExprB v rh) = packageAssignExpr VAR_CMD_ASGN_EXPRB v rh
-packageCommand (AssignExpr8 v rh) = packageAssignExpr VAR_CMD_ASGN_EXPR8 v rh
-packageCommand (AssignExpr16 v rh) = packageAssignExpr VAR_CMD_ASGN_EXPR16 v rh
-packageCommand (AssignExpr32 v rh) = packageAssignExpr VAR_CMD_ASGN_EXPR32 v rh
-packageCommand (AssignProcB v rh) = packageAssignProc VAR_CMD_ASGN_PROCB v rh
-packageCommand (AssignProc8 v rh) = packageAssignProc VAR_CMD_ASGN_PROC8 v rh
-packageCommand (AssignProc16 v rh) = packageAssignProc VAR_CMD_ASGN_PROC16 v rh
-packageCommand (AssignProc32 v rh) = packageAssignProc VAR_CMD_ASGN_PROC32 v rh
 -}
 -- ToDo: Do we need to check maximum frame size on conditionals?
 packageCommand (While e ps) =
@@ -127,30 +120,6 @@ packageCommand (IfThenElse e ps1 ps2) =
     td2 = packageTaskData ps2  
     thenSize = word16ToBytes $ fromIntegral (B.length td1)
 
-{-
-packageAssign :: ArduinoConnection -> Expr a -> IO Word8
-packageAssign lh = do
-    v <- case lh of
-              RefB s -> return s
-              Ref8 s -> return s
-              Ref16 s -> return s
-              Ref32 s -> return s
-              otherwise -> runDie "" []
-    vn <- lookupVar v
-    return vn
-
-packageAssignExpr :: ArduinoConnection -> FirmwareCmd -> Expr a -> Expr a -> IO B.ByteString
-packageAssignExpr fc lh rh = do
-    vn <- packageAssign lh
-    rhe <- packageExpr rh
-    return $ buildCommand fc (vn : rhe)
-
-packageAssignProc :: ArduinoConnection -> FirmwareCmd -> Expr a -> Arduino a -> IO B.ByteString
-packageAssignProc fc lh rh = do
-    vn <- packageAssign lh
-    d <- packageTaskData rh
-    return $ buildCommand fc (vn : (B.unpack d))
--}
 packageTaskData :: Arduino a -> B.ByteString
 packageTaskData commands =
       packageTaskData' commands B.empty
