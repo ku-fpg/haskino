@@ -175,7 +175,7 @@ packageTaskData commands =
       -- ToDo:  Add expression procedures, and actually add procedures
       -- to task stream, since they are now used in the AssignXxx commands
       packProcedure :: Procedure a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
-      packProcedure QueryFirmware k cmds = packageTaskData' (k (0,0)) cmds
+      packProcedure QueryFirmware k cmds = packageTaskData' (k 0) cmds
       packProcedure QueryProcessor k cmds = packageTaskData' (k ATMEGA8) cmds
       packProcedure (DigitalRead _) k cmds = packageTaskData' (k False) cmds
       packProcedure (AnalogRead _) k cmds = packageTaskData' (k 0) cmds
@@ -294,7 +294,7 @@ unpackageResponse [] = Unimplemented (Just "<EMPTY-REPLY>") []
 unpackageResponse (cmdWord:args)
   | Right cmd <- getFirmwareReply cmdWord
   = case (cmd, args) of
-      (BS_RESP_VERSION, [majV, minV]) -> Firmware majV minV
+      (BS_RESP_VERSION, [majV, minV]) -> Firmware (bytesToWord16 (majV,minV))
       (BS_RESP_TYPE, [p])             -> ProcessorType p
       (BS_RESP_MICROS, [m0,m1,m2,m3]) -> MicrosReply (bytesToWord32 (m0,m1,m2,m3))
       (BS_RESP_MILLIS, [m0,m1,m2,m3]) -> MillisReply (bytesToWord32 (m0,m1,m2,m3))
@@ -318,7 +318,7 @@ unpackageResponse (cmdWord:args)
 
 -- This is how we match responses with queries
 parseQueryResult :: Arduino a -> Response -> Maybe a
-parseQueryResult (Procedure QueryFirmware) (Firmware wa wb) = Just (wa,wb)
+parseQueryResult (Procedure QueryFirmware) (Firmware v) = Just v
 parseQueryResult (Procedure QueryProcessor) (ProcessorType pt) = Just $ getProcessor pt
 parseQueryResult (Procedure Micros) (MicrosReply m) = Just m
 parseQueryResult (Procedure Millis) (MillisReply m) = Just m

@@ -22,7 +22,7 @@ import Control.Concurrent   (Chan, MVar, ThreadId, newChan, newMVar,
                              killThread, threadDelay, withMVar)
 import Control.Exception    (tryJust, AsyncException(UserInterrupt))
 import Control.Monad.State  (liftIO)
-import Data.Bits            (testBit, (.&.), xor)
+import Data.Bits            (testBit, (.&.), xor, shiftR)
 import Data.List            (intercalate)
 import Data.Maybe           (listToMaybe)
 import Data.Word            (Word8)
@@ -86,8 +86,10 @@ openArduino verbose fp = do
           -- Step 1: Send a reset to get things going
           send initState systemReset
           -- Step 2: Send query-firmware, and wait until we get a response
-          (v1, v2) <- send initState queryFirmware
-          let versionState = initState {firmwareID = "Firmware v" ++ show v1 ++ "." ++ show v2 }
+          ver <- send initState queryFirmware
+          let maj = ver `shiftR` 8
+              min = ver .&. 0xFF
+              versionState = initState {firmwareID = "Firmware v" ++ show maj ++ "." ++ show min }
           -- Step 3: Send a capabilities request
           p <- send versionState queryProcessor
           -- Update the connection state with the processor

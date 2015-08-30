@@ -359,10 +359,12 @@ die :: String -> [String] -> Arduino ()
 die msg msgs = Local $ Die msg msgs
 
 data Procedure :: * -> * where
-     QueryFirmware  :: Procedure (Word8, Word8        )   -- ^ Query the Firmware version installed
+     QueryFirmware  :: Procedure Word16                   -- ^ Query the Firmware version installed
      QueryProcessor :: Procedure Processor                -- ^ Query the type of processor on 
      Micros         :: Procedure Word32
+     MicrosE        :: Procedure Word32E
      Millis         :: Procedure Word32
+     MillisE        :: Procedure Word32E
 --     DigitalPortRead  :: Port -> Procedure Word8          -- ^ Read the values on a port digitally
 --     DigitalPortReadE :: Port -> Procedure (Expr Word8)
      DigitalRead    :: Pin -> Procedure Bool            -- ^ Read the avlue ona pin digitally
@@ -380,7 +382,7 @@ data Procedure :: * -> * where
      ReadRemoteRef16 :: RemoteRef Word16 -> Procedure Word16E
      ReadRemoteRef32 :: RemoteRef Word32 -> Procedure Word32E
 
-queryFirmware :: Arduino (Word8, Word8)
+queryFirmware :: Arduino Word16
 queryFirmware = Procedure QueryFirmware
 
 queryProcessor :: Arduino Processor
@@ -458,7 +460,7 @@ newRemoteRef32 :: Word32E -> Arduino (RemoteRef Word32)
 newRemoteRef32 n = RemoteBinding $ NewRemoteRef32 n
 
 -- | A response, as returned from the Arduino
-data Response = Firmware Word8 Word8                 -- ^ Firmware version (maj/min and indentifier
+data Response = Firmware Word16                      -- ^ Firmware version (maj/min)
               | ProcessorType Word8                  -- ^ Processor report
               | MicrosReply Word32                   -- ^ Elapsed Microseconds
               | MillisReply Word32                   -- ^ Elapsed Milliseconds
