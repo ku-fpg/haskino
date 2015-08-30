@@ -7,7 +7,7 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Internal representation of the firmata protocol.
+-- Internal representation of the Haskino Fimrware protocol.
 -------------------------------------------------------------------------------
 {-# LANGUAGE GADTs      #-}
 
@@ -26,7 +26,7 @@ import System.Hardware.Haskino.Data
 import System.Hardware.Haskino.Expr
 import System.Hardware.Haskino.Utils
 
--- | Maximum size of a firmata message
+-- | Maximum size of a Haskino Firmware message
 maxFirmwareSize :: Int
 maxFirmwareSize = 128
 
@@ -43,7 +43,7 @@ buildCommand :: FirmwareCmd -> [Word8] -> B.ByteString
 buildCommand cmd bs = B.pack $ firmwareCmdVal cmd : bs
 
 -- | Package a request as a sequence of bytes to be sent to the board
--- using the Firmata protocol.
+-- using the Haskino Firmware protocol.
 packageCommand :: Command -> B.ByteString
 packageCommand SystemReset = buildCommand BC_CMD_SYSTEM_RESET []
 packageCommand (SetPinMode p m) = 
@@ -229,7 +229,7 @@ packageRef n ec = [ec, fromIntegral n]
 
 packageExpr :: Expr a -> [Word8]
 packageExpr (LitB b) = [exprCmdVal EXPR_BOOL EXPR_LIT, if b then 1 else 0]
-packageExpr (RefB (RemoteRefB n)) = packageRef n (exprCmdVal EXPR_BOOL EXPR_REF)
+packageExpr (RefB n) = packageRef n (exprCmdVal EXPR_BOOL EXPR_REF)
 packageExpr (NotB e) = packageSubExpr (exprCmdVal EXPR_BOOL EXPR_NOT) e 
 packageExpr (AndB e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_BOOL EXPR_AND) e1 e2 
 packageExpr (OrB e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_BOOL EXPR_OR) e1 e2 
@@ -240,7 +240,7 @@ packageExpr (Less16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_LESS
 packageExpr (Eq32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_EQ) e1 e2 
 packageExpr (Less32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_LESS) e1 e2 
 packageExpr (Lit8 w) = [exprCmdVal EXPR_WORD8 EXPR_LIT, w]
-packageExpr (Ref8 (RemoteRefW8 n)) = packageRef n (exprCmdVal EXPR_BOOL EXPR_REF)
+packageExpr (Ref8 n) = packageRef n (exprCmdVal EXPR_BOOL EXPR_REF)
 packageExpr (Neg8 e) = packageSubExpr (exprCmdVal EXPR_WORD8 EXPR_NEG) e
 packageExpr (Sign8 e) = packageSubExpr (exprCmdVal EXPR_WORD8 EXPR_SIGN) e
 packageExpr (Add8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_ADD) e1 e2 
@@ -256,7 +256,7 @@ packageExpr (ShfL8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_SHFL) 
 packageExpr (ShfR8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_SHFR) e1 e2 
 packageExpr (If8 e1 e2 e3) = packageThreeSubExpr (exprCmdVal EXPR_WORD8 EXPR_IF) e1 e2 e3
 packageExpr (Lit16 w) = (exprCmdVal EXPR_WORD16 EXPR_LIT) : word16ToBytes w
-packageExpr (Ref16 (RemoteRefW16 n)) = packageRef n (exprCmdVal EXPR_BOOL EXPR_REF)
+packageExpr (Ref16 n) = packageRef n (exprCmdVal EXPR_BOOL EXPR_REF)
 packageExpr (Neg16 e) = packageSubExpr (exprCmdVal EXPR_WORD16 EXPR_NEG) e
 packageExpr (Sign16 e) = packageSubExpr (exprCmdVal EXPR_WORD16 EXPR_SIGN) e
 packageExpr (Add16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_ADD) e1 e2 
@@ -272,7 +272,7 @@ packageExpr (ShfL16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_SHFL
 packageExpr (ShfR16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_SHFR) e1 e2 
 packageExpr (If16 e1 e2 e3) = packageThreeSubExpr (exprCmdVal EXPR_WORD16 EXPR_IF) e1 e2 e3
 packageExpr (Lit32 w) = (exprCmdVal EXPR_WORD32 EXPR_LIT) : word32ToBytes w
-packageExpr (Ref32 (RemoteRefW32 n)) = packageRef n (exprCmdVal EXPR_BOOL EXPR_REF)
+packageExpr (Ref32 n) = packageRef n (exprCmdVal EXPR_BOOL EXPR_REF)
 packageExpr (Neg32 e) = packageSubExpr (exprCmdVal EXPR_WORD32 EXPR_NEG) e
 packageExpr (Sign32 e) = packageSubExpr (exprCmdVal EXPR_WORD32 EXPR_SIGN) e
 packageExpr (Add32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_ADD) e1 e2 

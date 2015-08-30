@@ -8,8 +8,7 @@
 -- Stability   :  experimental
 --
 -- Haskino allows Haskell programs to control Arduino boards 
--- (<http://www.arduino.cc>)
--- and peripherals, using the Firmata protocol (<http://firmata.org>).
+-- (<http://www.arduino.cc>) and peripherals
 --
 -- For details, see: <http://kufpg.github.com/Haskino>.
 -------------------------------------------------------------------------------
@@ -44,7 +43,7 @@ module System.Hardware.Haskino (
   -- ** Control structures
   , loop, while, ifThenElse
   -- ** Expressions
-  , Expr(..), lit, ref, newRemoteRef, readRemoteRef, writeRemoteRef, modifyRemoteRef
+  , Expr(..), lit, newRemoteRef, readRemoteRef, writeRemoteRef, modifyRemoteRef
  )
  where
 

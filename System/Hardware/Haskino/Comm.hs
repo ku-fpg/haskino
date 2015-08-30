@@ -42,6 +42,7 @@ import qualified System.Hardware.Serialport as S (openSerial, closeSerial,
                                                   recv, send)
 
 import System.Hardware.Haskino.Data
+import System.Hardware.Haskino.Expr
 import System.Hardware.Haskino.Utils
 import System.Hardware.Haskino.Protocol
 
@@ -170,9 +171,15 @@ send conn commands =
 
       sendProcedure :: ArduinoConnection -> Procedure a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendProcedure c procedure k cmds = do
-          sendToArduino c (B.append cmds (framePackage $ packageProcedure procedure))
-          qr <- waitResponse c (Procedure procedure)
-          send' c (k qr) B.empty
+          case procedure of
+              ReadRemoteRefB (RemoteRefB i) -> send' c (k (RefB i)) cmds
+              ReadRemoteRef8 (RemoteRefW8 i) -> send' c (k (Ref8 i)) cmds
+              ReadRemoteRef16 (RemoteRefW16 i) -> send' c (k (Ref16 i)) cmds
+              ReadRemoteRef32 (RemoteRefW32 i) -> send' c (k (Ref32 i)) cmds
+              _ -> do 
+                  sendToArduino c (B.append cmds (framePackage $ packageProcedure procedure))
+                  qr <- waitResponse c (Procedure procedure)
+                  send' c (k qr) B.empty
 
       sendRemoteBinding :: ArduinoConnection -> RemoteBinding a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendRemoteBinding c b k cmds = do

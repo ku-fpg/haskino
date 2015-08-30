@@ -24,6 +24,13 @@ data RemoteRef a where
     RemoteRefW16 :: Int -> RemoteRef Word16
     RemoteRefW32 :: Int -> RemoteRef Word32
 
+remoteRefToExpr :: RemoteRef a -> Expr a
+remoteRefToExpr r = case r of
+                         RemoteRefB i -> RefB i
+                         RemoteRefW8 i -> Ref8 i
+                         RemoteRefW16 i -> Ref16 i
+                         RemoteRefW32 i -> Ref32 i
+
 deriving instance Show a => Show (RemoteRef a)
 
 type BoolE   = Expr Bool
@@ -37,10 +44,10 @@ data Expr a where
   Lit8      :: Word8 -> Word8E
   Lit16     :: Word16 -> Word16E
   Lit32     :: Word32 -> Word32E
-  RefB      :: RemoteRef Bool -> BoolE
-  Ref8      :: RemoteRef Word8 -> Word8E
-  Ref16     :: RemoteRef Word16 -> Word16E
-  Ref32     :: RemoteRef Word32 -> Word32E
+  RefB      :: Int -> BoolE
+  Ref8      :: Int -> Word8E
+  Ref16     :: Int -> Word16E
+  Ref32     :: Int -> Word32E
   NotB      :: BoolE -> BoolE
   AndB      :: BoolE -> BoolE -> BoolE
   OrB       :: BoolE -> BoolE -> BoolE
@@ -109,21 +116,6 @@ instance LiteralB Word32 where
 
 instance LiteralB Bool where
     lit = LitB
-
-class ReferenceB a where
-    ref  :: RemoteRef a -> Expr a
-
-instance ReferenceB Word8 where
-    ref = Ref8
-
-instance ReferenceB Word16 where
-    ref = Ref16
-
-instance ReferenceB Word32 where
-    ref = Ref32
-
-instance ReferenceB Bool where
-    ref = RefB
 
 -- ToDo:  Add BitsB class for and, or, xor, complement and shifts
 -- ToDo:  Add fromInteger/toInteger properly to do typing on Arduino

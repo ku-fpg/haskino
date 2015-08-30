@@ -360,7 +360,7 @@ die :: String -> [String] -> Arduino ()
 die msg msgs = Local $ Die msg msgs
 
 data Procedure :: * -> * where
-     QueryFirmware  :: Procedure (Word8, Word8        )   -- ^ Query the Firmata version installed
+     QueryFirmware  :: Procedure (Word8, Word8        )   -- ^ Query the Firmware version installed
      QueryProcessor :: Procedure Processor                -- ^ Query the type of processor on 
      Micros         :: Procedure Word32
      Millis         :: Procedure Word32
@@ -465,7 +465,7 @@ data Response = Firmware Word8 Word8                 -- ^ Firmware version (maj/
               | MillisReply Word32                   -- ^ Elapsed Milliseconds
               | DigitalReply Word8                   -- ^ Status of a pin
               | AnalogReply Word16                   -- ^ Status of an analog pin
-              | StringMessage  String                -- ^ String message from Firmata
+              | StringMessage  String                -- ^ String message from Firmware
               | I2CReply [Word8]                     -- ^ Response to a I2C Read
               | QueryAllTasksReply [Word8]           -- ^ Response to Query All Tasks
               | QueryTaskReply (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
