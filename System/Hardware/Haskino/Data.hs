@@ -137,7 +137,6 @@ data ArduinoConnection = ArduinoConnection {
               , deviceChannel :: Chan Response                        -- ^ Incoming messages from the board
               , processor     :: Processor                            -- ^ Type of processor on board
               , listenerTid   :: MVar ThreadId                        -- ^ ThreadId of the listener
-              , variables     :: MVar VarMap
               }
 
 type VarMap = M.Map String Word8

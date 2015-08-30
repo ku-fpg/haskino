@@ -65,7 +65,6 @@ openArduino verbose fp = do
       debugger <- mkDebugPrinter verbose
       debugger $ "Accessing arduino located at: " ++ show fp
       listenerTid <- newEmptyMVar
-      variables <- newEmptyMVar
       portTry <- tryIOError (S.openSerial fp S.defaultSerialSettings{S.commSpeed = S.CS115200})
       case portTry of 
         Left e -> 
@@ -74,7 +73,6 @@ openArduino verbose fp = do
           dc <- newChan
           tid <- setupListener port debugger dc
           liftIO $ putMVar listenerTid tid
-          liftIO $ putMVar variables M.empty
           debugger $ "Started listener thread: " ++ show tid
           let initState = ArduinoConnection {
                              message       = debugger
@@ -84,7 +82,6 @@ openArduino verbose fp = do
                            , processor     = UNKNOWN_PROCESSOR 255
                            , deviceChannel = dc
                            , listenerTid   = listenerTid
-                           , variables     = variables
                         }
           -- Step 1: Send a reset to get things going
           send initState systemReset
@@ -201,14 +198,6 @@ send conn commands =
                     Nothing -> do message c $ "Unmatched response" ++ show r
                                   waitResponse c procedure
                     Just qr -> return qr
-
-      checkDuplicateVariable :: ArduinoConnection -> String -> IO ()
-      checkDuplicateVariable c s = 
-          withMVar (variables c) $ \vs -> if M.member s vs 
-                                          then runDie c "Haskino:ERROR: Duplicate Variable Name" 
-                                                  [ "Variable name - " ++ s, 
-                                                    "Make sure variable names are unique"]
-                                          else return ()
 
       send' :: ArduinoConnection -> Arduino a -> B.ByteString -> IO a
       send' c (Bind m k)            cmds = sendBind c m k cmds
