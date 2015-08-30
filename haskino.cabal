@@ -49,5 +49,6 @@ Library
                     , System.Hardware.Haskino.SamplePrograms.SevenSegment
   Other-modules     : System.Hardware.Haskino.Comm
                     , System.Hardware.Haskino.Data
+                    , System.Hardware.Haskino.Expr
                     , System.Hardware.Haskino.Protocol
                     , System.Hardware.Haskino.Utils

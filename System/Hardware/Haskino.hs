@@ -49,4 +49,5 @@ module System.Hardware.Haskino (
 
 import System.Hardware.Haskino.Data
 import System.Hardware.Haskino.Comm
+import System.Hardware.Haskino.Expr
 import Data.Boolean
