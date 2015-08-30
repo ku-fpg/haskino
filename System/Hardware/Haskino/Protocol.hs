@@ -146,8 +146,11 @@ packageTaskData commands =
       packProcedure :: Procedure a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
       packProcedure QueryFirmware k cmds = packageTaskData' (k 0) cmds
       packProcedure QueryProcessor k cmds = packageTaskData' (k ATMEGA8) cmds
+      packProcedure Micros k cmds = packageTaskData' (k 0) cmds
+      packProcedure Millis k cmds = packageTaskData' (k 0) cmds
       packProcedure (DigitalRead _) k cmds = packageTaskData' (k False) cmds
       packProcedure (AnalogRead _) k cmds = packageTaskData' (k 0) cmds
+      packProcedure (I2CRead _ _) k cmds = packageTaskData' (k []) cmds
       packProcedure QueryAllTasks k cmds = packageTaskData' (k ([])) cmds
       packProcedure (QueryTask _) k cmds = packageTaskData' (k Nothing) cmds
 
@@ -161,7 +164,7 @@ packageTaskData commands =
 
 packageProcedure :: Procedure a -> B.ByteString
 packageProcedure QueryFirmware       = buildCommand BS_CMD_REQUEST_VERSION []
-packageProcedure QueryFirmware       = buildCommand BS_CMD_REQUEST_VERSION_E []
+packageProcedure QueryFirmwareE      = buildCommand BS_CMD_REQUEST_VERSION_E []
 packageProcedure QueryProcessor      = buildCommand BS_CMD_REQUEST_TYPE []
 packageProcedure Micros              = buildCommand BS_CMD_REQUEST_MICROS []
 packageProcedure MicrosE             = buildCommand BS_CMD_REQUEST_MICROS_E[]
