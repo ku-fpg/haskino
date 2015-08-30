@@ -161,18 +161,21 @@ packageTaskData commands =
 
 packageProcedure :: Procedure a -> B.ByteString
 packageProcedure QueryFirmware       = buildCommand BS_CMD_REQUEST_VERSION []
+packageProcedure QueryFirmware       = buildCommand BS_CMD_REQUEST_VERSION_E []
 packageProcedure QueryProcessor      = buildCommand BS_CMD_REQUEST_TYPE []
 packageProcedure Micros              = buildCommand BS_CMD_REQUEST_MICROS []
+packageProcedure MicrosE             = buildCommand BS_CMD_REQUEST_MICROS_E[]
 packageProcedure Millis              = buildCommand BS_CMD_REQUEST_MILLIS []
+packageProcedure MillisE             = buildCommand BS_CMD_REQUEST_MILLIS_E []
 packageProcedure (DigitalRead p)     = buildCommand DIG_CMD_READ_PIN [p]
-packageProcedure (DigitalReadE pe)   = buildCommand DIG_CMD_READ_PIN (packageExpr pe)
+packageProcedure (DigitalReadE pe)   = buildCommand DIG_CMD_READ_PIN_E (packageExpr pe)
 packageProcedure (AnalogRead p)      = buildCommand ALG_CMD_READ_PIN [p]
-packageProcedure (AnalogReadE pe)    = buildCommand ALG_CMD_READ_PIN (packageExpr pe)
+packageProcedure (AnalogReadE pe)    = buildCommand ALG_CMD_READ_PIN_E (packageExpr pe)
 packageProcedure (I2CRead sa cnt)    = buildCommand I2C_CMD_READ [sa,cnt]
-packageProcedure (I2CReadE sae cnte) = buildCommand I2C_CMD_READ ((packageExpr sae) ++ (packageExpr cnte))
+packageProcedure (I2CReadE sae cnte) = buildCommand I2C_CMD_READ_E ((packageExpr sae) ++ (packageExpr cnte))
 packageProcedure QueryAllTasks       = buildCommand SCHED_CMD_QUERY_ALL []
 packageProcedure (QueryTask tid)     = buildCommand SCHED_CMD_QUERY [tid]
-packageProcedure (QueryTaskE tide)   = buildCommand SCHED_CMD_QUERY (packageExpr tide)
+packageProcedure (QueryTaskE tide)   = buildCommand SCHED_CMD_QUERY_E (packageExpr tide)
 packageProcedure (ReadRemoteRefB (RemoteRefB r))  = buildCommand REF_CMD_READ_B [fromIntegral r]
 packageProcedure (ReadRemoteRef8 (RemoteRefW8 r))  = buildCommand REF_CMD_READ_8 [fromIntegral r]
 packageProcedure (ReadRemoteRef16 (RemoteRefW16 r)) = buildCommand REF_CMD_READ_16 [fromIntegral r]
@@ -280,7 +283,7 @@ unpackageResponse (cmdWord:args)
                                    bytesToWord16 (tl0,tl1),
                                    bytesToWord16 (tp0,tp1), 
                                    bytesToWord32 (tt0,tt1,tt2,tt3)))  
-      (VAR_RESP_NEW , [w])            -> NewReply w
+      (REF_RESP_NEW , [w])            -> NewReply w
       _                               -> Unimplemented (Just (show cmd)) args
   | True
   = Unimplemented Nothing (cmdWord : args)
