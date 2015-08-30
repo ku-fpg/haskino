@@ -360,6 +360,7 @@ die msg msgs = Local $ Die msg msgs
 
 data Procedure :: * -> * where
      QueryFirmware  :: Procedure Word16                   -- ^ Query the Firmware version installed
+     QueryFirmwareE :: Procedure Word16E                  -- ^ Query the Firmware version installed
      QueryProcessor :: Procedure Processor                -- ^ Query the type of processor on 
      Micros         :: Procedure Word32
      MicrosE        :: Procedure Word32E
@@ -368,9 +369,9 @@ data Procedure :: * -> * where
 --     DigitalPortRead  :: Port -> Procedure Word8          -- ^ Read the values on a port digitally
 --     DigitalPortReadE :: Port -> Procedure (Expr Word8)
      DigitalRead    :: Pin -> Procedure Bool            -- ^ Read the avlue ona pin digitally
-     DigitalReadE   :: PinE -> Procedure Bool          -- ^ Read the avlue ona pin digitally
+     DigitalReadE   :: PinE -> Procedure BoolE         -- ^ Read the avlue ona pin digitally
      AnalogRead     :: Pin -> Procedure Word16          -- ^ Read the analog value on a pin
-     AnalogReadE    :: PinE -> Procedure Word16          
+     AnalogReadE    :: PinE -> Procedure Word16E          
      I2CRead :: SlaveAddress -> Word8 -> Procedure [Word8]
      I2CReadE :: SlaveAddressE -> Word8E -> Procedure [Word8]
      QueryAllTasks :: Procedure [TaskID]
@@ -385,14 +386,23 @@ data Procedure :: * -> * where
 queryFirmware :: Arduino Word16
 queryFirmware = Procedure QueryFirmware
 
+queryFirmwareE :: Arduino Word16E
+queryFirmwareE = Procedure QueryFirmwareE
+
 queryProcessor :: Arduino Processor
 queryProcessor = Procedure QueryProcessor
 
 micros :: Arduino Word32
 micros = Procedure Micros
 
+microsE :: Arduino Word32E
+microsE = Procedure MicrosE
+
 millis :: Arduino Word32
 millis = Procedure Millis
+
+millisE :: Arduino Word32E
+millisE = Procedure MillisE
 
 -- ToDo: Do some sort of analog mapping locally?
 
@@ -405,13 +415,13 @@ millis = Procedure Millis
 digitalRead :: Pin -> Arduino Bool
 digitalRead p = Procedure $ DigitalRead p
 
-digitalReadE :: PinE -> Arduino Bool
+digitalReadE :: PinE -> Arduino BoolE
 digitalReadE p = Procedure $ DigitalReadE p
 
 analogRead :: Pin -> Arduino Word16
 analogRead p = Procedure $ AnalogRead p
 
-analogReadE :: PinE -> Arduino Word16
+analogReadE :: PinE -> Arduino Word16E
 analogReadE p = Procedure $ AnalogReadE p
 
 i2cRead :: SlaveAddress -> Word8 -> Arduino [Word8]

@@ -317,15 +317,19 @@ unpackageResponse (cmdWord:args)
   = Unimplemented Nothing (cmdWord : args)
 
 -- This is how we match responses with queries
+-- ToDo: Fix I2CReadE and query task expr versions.
 parseQueryResult :: Arduino a -> Response -> Maybe a
 parseQueryResult (Procedure QueryFirmware) (Firmware v) = Just v
+parseQueryResult (Procedure QueryFirmwareE) (Firmware v) = Just (lit v)
 parseQueryResult (Procedure QueryProcessor) (ProcessorType pt) = Just $ getProcessor pt
 parseQueryResult (Procedure Micros) (MicrosReply m) = Just m
+parseQueryResult (Procedure MicrosE) (MicrosReply m) = Just (lit m)
 parseQueryResult (Procedure Millis) (MillisReply m) = Just m
+parseQueryResult (Procedure MillisE) (MillisReply m) = Just (lit m)
 parseQueryResult (Procedure (DigitalRead p)) (DigitalReply d) = Just (if d == 0 then False else True)
-parseQueryResult (Procedure (DigitalReadE p)) (DigitalReply d) = Just (if d == 0 then False else True)
+parseQueryResult (Procedure (DigitalReadE p)) (DigitalReply d) = Just (if d == 0 then lit False else lit True)
 parseQueryResult (Procedure (AnalogRead p)) (AnalogReply a) = Just a
-parseQueryResult (Procedure (AnalogReadE p)) (AnalogReply a) = Just a
+parseQueryResult (Procedure (AnalogReadE p)) (AnalogReply a) = Just (lit a)
 parseQueryResult (Procedure (I2CRead saq cnt)) (I2CReply ds) = Just ds
 parseQueryResult (Procedure (I2CReadE saq cnt)) (I2CReply ds) = Just ds
 parseQueryResult (Procedure QueryAllTasks) (QueryAllTasksReply ts) = Just ts
