@@ -189,6 +189,10 @@ data Command =
      | WriteRemoteRef8 (RemoteRef Word8) Word8E
      | WriteRemoteRef16 (RemoteRef Word16) Word16E
      | WriteRemoteRef32 (RemoteRef Word32) Word32E
+     | WriteEffectRemoteRefB (RemoteRef Bool) (Arduino BoolE)
+     | WriteEffectRemoteRef8 (RemoteRef Word8) (Arduino Word8E)
+     | WriteEffectRemoteRef16 (RemoteRef Word16) (Arduino Word16E)
+     | WriteEffectRemoteRef32 (RemoteRef Word32) (Arduino Word32E)
      | ModifyRemoteRefB (RemoteRef Bool) (BoolE -> BoolE)
      | ModifyRemoteRef8 (RemoteRef Word8) (Word8E -> Word8E)
      | ModifyRemoteRef16 (RemoteRef Word16) (Word16E -> Word16E)
@@ -296,6 +300,18 @@ writeRemoteRef16 r e = Command $ WriteRemoteRef16 r e
 writeRemoteRef32 :: RemoteRef Word32 -> Word32E -> Arduino ()
 writeRemoteRef32 r e = Command $ WriteRemoteRef32 r e
 
+writeEffectRemoteRefB :: RemoteRef Bool -> Arduino BoolE -> Arduino ()
+writeEffectRemoteRefB r a = Command $ WriteEffectRemoteRefB r a
+
+writeEffectRemoteRef8 :: RemoteRef Word8 -> Arduino Word8E -> Arduino ()
+writeEffectRemoteRef8 r a = Command $ WriteEffectRemoteRef8 r a
+
+writeEffectRemoteRef16 :: RemoteRef Word16 -> Arduino Word16E -> Arduino ()
+writeEffectRemoteRef16 r a = Command $ WriteEffectRemoteRef16 r a
+
+writeEffectRemoteRef32 :: RemoteRef Word32 -> Arduino Word32E -> Arduino ()
+writeEffectRemoteRef32 r a = Command $ WriteEffectRemoteRef32 r a
+
 modifyRemoteRefB :: RemoteRef Bool -> (BoolE -> BoolE) -> Arduino ()
 modifyRemoteRefB r f = Command $ ModifyRemoteRefB r f
 
@@ -311,33 +327,38 @@ modifyRemoteRef32 r f = Command $ ModifyRemoteRef32 r f
 -- ToDo: Readd servo and stepper functions
 
 class RemoteReference a where
-    newRemoteRef    :: Expr a -> Arduino (RemoteRef a)
-    readRemoteRef   :: RemoteRef a -> Arduino (Expr a)
-    writeRemoteRef  :: RemoteRef a -> Expr a -> Arduino ()
-    modifyRemoteRef :: RemoteRef a -> (Expr a -> Expr a) -> Arduino ()
+    newRemoteRef          :: Expr a -> Arduino (RemoteRef a)
+    readRemoteRef         :: RemoteRef a -> Arduino (Expr a)
+    writeRemoteRef        :: RemoteRef a -> Expr a -> Arduino ()
+    writeEffectRemoteRef  :: RemoteRef a -> Arduino (Expr a) -> Arduino ()
+    modifyRemoteRef       :: RemoteRef a -> (Expr a -> Expr a) -> Arduino ()
 
 instance RemoteReference Bool where
     newRemoteRef = newRemoteRefB
     readRemoteRef = readRemoteRefB
     writeRemoteRef = writeRemoteRefB
+    writeEffectRemoteRef = writeEffectRemoteRefB
     modifyRemoteRef = modifyRemoteRefB
 
 instance RemoteReference Word8 where
     newRemoteRef = newRemoteRef8
     readRemoteRef = readRemoteRef8
     writeRemoteRef = writeRemoteRef8
+    writeEffectRemoteRef = writeEffectRemoteRef8
     modifyRemoteRef = modifyRemoteRef8
 
 instance RemoteReference Word16 where
     newRemoteRef = newRemoteRef16
     readRemoteRef = readRemoteRef16
     writeRemoteRef = writeRemoteRef16
+    writeEffectRemoteRef = writeEffectRemoteRef16
     modifyRemoteRef = modifyRemoteRef16
 
 instance RemoteReference Word32 where
     newRemoteRef = newRemoteRef32
     readRemoteRef = readRemoteRef32
     writeRemoteRef = writeRemoteRef32
+    writeEffectRemoteRef = writeEffectRemoteRef32
     modifyRemoteRef = modifyRemoteRef32
 
 data Control =
