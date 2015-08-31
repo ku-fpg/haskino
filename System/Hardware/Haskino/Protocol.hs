@@ -95,7 +95,7 @@ packageCommand (ScheduleTaskE tid tt) =
 packageCommand (CreateTask tid m) =
     (framePackage cmd) `B.append` (genAddToTaskCmds td)
   where
-    td = packageTaskData m
+    td = packageCodeBlock m
     taskSize = fromIntegral (B.length td)
     cmd = buildCommand SCHED_CMD_CREATE_TASK (tid : (word16ToBytes taskSize))                                   
     -- Max command data size is max frame size - 3 (command,checksum,frame flag) 
@@ -111,53 +111,55 @@ packageCommand (WriteRemoteRefB e) =
 -}
 -- ToDo: Do we need to check maximum frame size on conditionals?
 packageCommand (While e ps) =
-    buildCommand BC_CMD_WHILE ((packageExpr e) ++ (B.unpack $ packageTaskData ps))
+    buildCommand BC_CMD_WHILE ((packageExpr e) ++ (B.unpack $ packageCodeBlock ps))
 packageCommand (IfThenElse e ps1 ps2) =
     buildCommand BC_CMD_IF_THEN_ELSE (thenSize ++ pe ++ (B.unpack td1) ++ (B.unpack td2))
   where
     pe = packageExpr e
-    td1 = packageTaskData ps1  
-    td2 = packageTaskData ps2  
+    td1 = packageCodeBlock ps1  
+    td2 = packageCodeBlock ps2  
     thenSize = word16ToBytes $ fromIntegral (B.length td1)
 
-packageTaskData :: Arduino a -> B.ByteString
-packageTaskData commands =
-      packageTaskData' commands B.empty
+-- ToDo:  Create local remote refs by passing ID offsets through pack calls
+-- and incrementing them whan packing newRemoteRef calls.
+packageCodeBlock :: Arduino a -> B.ByteString
+packageCodeBlock commands =
+      packageCodeBlock' commands B.empty
   where
       packBind :: Arduino a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
-      packBind (Return a) k cmds = packageTaskData' (k a) cmds
+      packBind (Return a) k cmds = packageCodeBlock' (k a) cmds
       packBind (Bind m k1) k2 cmds = packBind m (\ r -> Bind (k1 r) k2) cmds
       packBind (Command cmd) k cmds =
           -- Instead of framing each command as is done with sending them
           -- seperately, here a byte which contains the command length
           -- is prepended.
-          packageTaskData' (k ()) (B.append cmds (lenPackage (packageCommand cmd)))
+          packageCodeBlock' (k ()) (B.append cmds (lenPackage (packageCommand cmd)))
       packBind (Local local) k cmds = packLocal local k cmds
       packBind (Procedure procedure) k cmds = packProcedure procedure k cmds
 
       -- For sending as part of a Scheduler task, locals make no sense.  
       -- Instead of signalling an error, at this point they are just ignored.
       packLocal :: Local a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
-      packLocal (Debug _) k cmds = packageTaskData' (k ()) cmds
-      packLocal (Die _ _) k cmds = packageTaskData' (k ()) cmds
+      packLocal (Debug _) k cmds = packageCodeBlock' (k ()) cmds
+      packLocal (Die _ _) k cmds = packageCodeBlock' (k ()) cmds
 
       -- ToDo:  Add expression procedures, and actually add procedures
       -- to task stream, since they are now used in the AssignXxx commands
       packProcedure :: Procedure a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
-      packProcedure QueryFirmware k cmds = packageTaskData' (k 0) cmds
-      packProcedure QueryProcessor k cmds = packageTaskData' (k ATMEGA8) cmds
-      packProcedure Micros k cmds = packageTaskData' (k 0) cmds
-      packProcedure Millis k cmds = packageTaskData' (k 0) cmds
-      packProcedure (DigitalRead _) k cmds = packageTaskData' (k False) cmds
-      packProcedure (AnalogRead _) k cmds = packageTaskData' (k 0) cmds
-      packProcedure (I2CRead _ _) k cmds = packageTaskData' (k []) cmds
-      packProcedure QueryAllTasks k cmds = packageTaskData' (k ([])) cmds
-      packProcedure (QueryTask _) k cmds = packageTaskData' (k Nothing) cmds
+      packProcedure QueryFirmware k cmds = packageCodeBlock' (k 0) cmds
+      packProcedure QueryProcessor k cmds = packageCodeBlock' (k ATMEGA8) cmds
+      packProcedure Micros k cmds = packageCodeBlock' (k 0) cmds
+      packProcedure Millis k cmds = packageCodeBlock' (k 0) cmds
+      packProcedure (DigitalRead _) k cmds = packageCodeBlock' (k False) cmds
+      packProcedure (AnalogRead _) k cmds = packageCodeBlock' (k 0) cmds
+      packProcedure (I2CRead _ _) k cmds = packageCodeBlock' (k []) cmds
+      packProcedure QueryAllTasks k cmds = packageCodeBlock' (k ([])) cmds
+      packProcedure (QueryTask _) k cmds = packageCodeBlock' (k Nothing) cmds
 
-      packageTaskData' :: Arduino a -> B.ByteString -> B.ByteString
-      packageTaskData' (Bind m k) cmds = packBind m k cmds
-      packageTaskData' (Return a) cmds = cmds
-      packageTaskData' cmd        cmds = packBind cmd Return cmds
+      packageCodeBlock' :: Arduino a -> B.ByteString -> B.ByteString
+      packageCodeBlock' (Bind m k) cmds = packBind m k cmds
+      packageCodeBlock' (Return a) cmds = cmds
+      packageCodeBlock' cmd        cmds = packBind cmd Return cmds
 
       lenPackage :: B.ByteString -> B.ByteString
       lenPackage package = B.cons (fromIntegral $ B.length package) package      
