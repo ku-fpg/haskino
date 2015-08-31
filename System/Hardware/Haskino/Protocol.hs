@@ -110,15 +110,19 @@ ToDo: package WriteRemoteRef and ModifyRemoteRef
 packageCommand (WriteRemoteRefB e) = 
 -}
 -- ToDo: Do we need to check maximum frame size on conditionals?
-packageCommand (While e ps) =
-    buildCommand BC_CMD_WHILE ((packageExpr e) ++ (B.unpack $ packageCodeBlock ps))
-packageCommand (IfThenElse e ps1 ps2) =
-    buildCommand BC_CMD_IF_THEN_ELSE (thenSize ++ pe ++ (B.unpack td1) ++ (B.unpack td2))
+packageCommand (While e cb) =
+    buildCommand BC_CMD_WHILE ((packageExpr e) ++ whileSize ++ (B.unpack pc))
+  where
+    pc = packageCodeBlock cb
+    whileSize = word16ToBytes $ fromIntegral (B.length pc)    
+packageCommand (IfThenElse e cb1 cb2) =
+    buildCommand BC_CMD_IF_THEN_ELSE (thenSize ++ elseSize ++ pe ++ (B.unpack pc1) ++ (B.unpack pc2))
   where
     pe = packageExpr e
-    td1 = packageCodeBlock ps1  
-    td2 = packageCodeBlock ps2  
-    thenSize = word16ToBytes $ fromIntegral (B.length td1)
+    pc1 = packageCodeBlock cb1  
+    pc2 = packageCodeBlock cb2  
+    thenSize = word16ToBytes $ fromIntegral (B.length pc1)
+    elseSize = word16ToBytes $ fromIntegral (B.length pc2)
 
 -- ToDo:  Create local remote refs by passing ID offsets through pack calls
 -- and incrementing them whan packing newRemoteRef calls.
@@ -198,8 +202,13 @@ packageSubExpr ec e = ec : packageExpr e
 packageTwoSubExpr :: Word8 -> Expr a -> Expr b -> [Word8]
 packageTwoSubExpr ec e1 e2 = ec : (packageExpr e1) ++ (packageExpr e2)
 
-packageThreeSubExpr :: Word8 -> Expr a -> Expr b -> Expr c -> [Word8]
-packageThreeSubExpr ec e1 e2 e3 = ec : (packageExpr e1) ++ (packageExpr e2) ++ (packageExpr e3)
+packageIfBSubExpr :: Word8 -> Expr a -> Expr b -> Expr b -> [Word8]
+packageIfBSubExpr ec e1 e2 e3 = ec : thenSize ++ pcond ++ pthen ++ pelse
+  where
+    pcond = packageExpr e1
+    pthen = packageExpr e2
+    pelse = packageExpr e3
+    thenSize = word16ToBytes $ fromIntegral $ length pthen
 
 packageRef :: Int -> Word8 -> [Word8]
 packageRef n ec = [ec, fromIntegral n]
@@ -231,7 +240,7 @@ packageExpr (Xor8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_XOR) e1
 packageExpr (Comp8 e) = packageSubExpr (exprCmdVal EXPR_WORD8 EXPR_COMP) e 
 packageExpr (ShfL8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_SHFL) e1 e2 
 packageExpr (ShfR8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_SHFR) e1 e2 
-packageExpr (If8 e1 e2 e3) = packageThreeSubExpr (exprCmdVal EXPR_WORD8 EXPR_IF) e1 e2 e3
+packageExpr (If8 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_WORD8 EXPR_IF) e1 e2 e3
 packageExpr (Lit16 w) = (exprCmdVal EXPR_WORD16 EXPR_LIT) : word16ToBytes w
 packageExpr (Ref16 n) = packageRef n (exprCmdVal EXPR_BOOL EXPR_REF)
 packageExpr (Neg16 e) = packageSubExpr (exprCmdVal EXPR_WORD16 EXPR_NEG) e
@@ -247,7 +256,7 @@ packageExpr (Xor16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_XOR) 
 packageExpr (Comp16 e) = packageSubExpr (exprCmdVal EXPR_WORD16 EXPR_COMP) e 
 packageExpr (ShfL16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_SHFL) e1 e2 
 packageExpr (ShfR16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_SHFR) e1 e2 
-packageExpr (If16 e1 e2 e3) = packageThreeSubExpr (exprCmdVal EXPR_WORD16 EXPR_IF) e1 e2 e3
+packageExpr (If16 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_WORD16 EXPR_IF) e1 e2 e3
 packageExpr (Lit32 w) = (exprCmdVal EXPR_WORD32 EXPR_LIT) : word32ToBytes w
 packageExpr (Ref32 n) = packageRef n (exprCmdVal EXPR_BOOL EXPR_REF)
 packageExpr (Neg32 e) = packageSubExpr (exprCmdVal EXPR_WORD32 EXPR_NEG) e
@@ -263,7 +272,7 @@ packageExpr (Xor32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_XOR) 
 packageExpr (Comp32 e) = packageSubExpr (exprCmdVal EXPR_WORD32 EXPR_COMP) e
 packageExpr (ShfL32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_SHFL) e1 e2 
 packageExpr (ShfR32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_SHFR) e1 e2 
-packageExpr (If32 e1 e2 e3) = packageThreeSubExpr (exprCmdVal EXPR_WORD32 EXPR_IF) e1 e2 e3
+packageExpr (If32 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_WORD32 EXPR_IF) e1 e2 e3
 
 -- | Unpackage a Haskino Firmware response
 unpackageResponse :: [Word8] -> Response

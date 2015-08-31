@@ -406,6 +406,8 @@ data Procedure :: * -> * where
      ReadRemoteRef16 :: RemoteRef Word16 -> Procedure Word16E
      ReadRemoteRef32 :: RemoteRef Word32 -> Procedure Word32E
 
+deriving instance Show a => Show (Procedure a)
+
 queryFirmware :: Arduino Word16
 queryFirmware = Procedure QueryFirmware
 
