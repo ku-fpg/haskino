@@ -105,9 +105,32 @@ packageCommand (CreateTask tid m) =
             `B.append` (genAddToTaskCmds (B.drop maxCmdSize tds))
     genAddToTaskCmds tds = addToTask tds
     addToTask tds' = framePackage $ buildCommand SCHED_CMD_ADD_TO_TASK ([tid, fromIntegral $ B.length tds'] ++ (B.unpack tds'))
+packageCommand (WriteRemoteRefB (RemoteRefB i) e) =
+    buildCommand REF_CMD_WRITE_B ((fromIntegral i) : packageExpr e)
+packageCommand (WriteRemoteRef8 (RemoteRefW8 i) e) =
+    buildCommand REF_CMD_WRITE_8 ((fromIntegral i) : packageExpr e)
+packageCommand (WriteRemoteRef16 (RemoteRefW16 i) e) =
+    buildCommand REF_CMD_WRITE_16 ((fromIntegral i) : packageExpr e)
+packageCommand (WriteRemoteRef32 (RemoteRefW32 i) e) =
+    buildCommand REF_CMD_WRITE_32 ((fromIntegral i) : packageExpr e)
+packageCommand (WriteEffectRemoteRefB (RemoteRefB i) cb) =
+    buildCommand REF_CMD_WRITE_EFFECT_B ((fromIntegral i) : B.unpack (packageCodeBlock cb))
+packageCommand (WriteEffectRemoteRef8 (RemoteRefW8 i) cb) =
+    buildCommand REF_CMD_WRITE_EFFECT_8 ((fromIntegral i) : B.unpack (packageCodeBlock cb))
+packageCommand (WriteEffectRemoteRef16 (RemoteRefW16 i) cb) =
+    buildCommand REF_CMD_WRITE_EFFECT_16 ((fromIntegral i) : B.unpack (packageCodeBlock cb))
+packageCommand (WriteEffectRemoteRef32 (RemoteRefW32 i) cb) =
+    buildCommand REF_CMD_WRITE_EFFECT_32 ((fromIntegral i) : B.unpack (packageCodeBlock cb))
+packageCommand (ModifyRemoteRefB (RemoteRefB i) f) =
+    buildCommand REF_CMD_MOD_B ((fromIntegral i) : packageExpr (f (RefB i)))
+packageCommand (ModifyRemoteRef8 (RemoteRefW8 i) f) =
+    buildCommand REF_CMD_MOD_8 ((fromIntegral i) : packageExpr (f (Ref8 i)))
+packageCommand (ModifyRemoteRef16 (RemoteRefW16 i) f) =
+    buildCommand REF_CMD_MOD_16 ((fromIntegral i) : packageExpr (f (Ref16 i)))
+packageCommand (ModifyRemoteRef32 (RemoteRefW32 i) f) =
+    buildCommand REF_CMD_MOD_32 ((fromIntegral i) : packageExpr (f (Ref32 i)))
 {-
-ToDo: package WriteRemoteRef and ModifyRemoteRef
-packageCommand (WriteRemoteRefB e) = 
+ToDo: Make general methods for the directly above
 -}
 -- ToDo: Do we need to check maximum frame size on conditionals?
 packageCommand (While e cb) =
@@ -124,8 +147,8 @@ packageCommand (IfThenElse e cb1 cb2) =
     thenSize = word16ToBytes $ fromIntegral (B.length pc1)
     elseSize = word16ToBytes $ fromIntegral (B.length pc2)
 
--- ToDo:  Create local remote refs by passing ID offsets through pack calls
--- and incrementing them whan packing newRemoteRef calls.
+-- ToDo:  Create locally scoped remote refs by passing ID offsets 
+-- through pack calls and incrementing them whan packing newRemoteRef calls.
 packageCodeBlock :: Arduino a -> B.ByteString
 packageCodeBlock commands =
       packageCodeBlock' commands B.empty

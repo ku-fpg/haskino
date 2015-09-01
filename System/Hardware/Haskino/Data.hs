@@ -570,6 +570,10 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE
                  | REF_CMD_WRITE_8
                  | REF_CMD_WRITE_16
                  | REF_CMD_WRITE_32
+                 | REF_CMD_WRITE_EFFECT_B
+                 | REF_CMD_WRITE_EFFECT_8
+                 | REF_CMD_WRITE_EFFECT_16
+                 | REF_CMD_WRITE_EFFECT_32
                  | REF_CMD_MOD_B
                  | REF_CMD_MOD_8
                  | REF_CMD_MOD_16
@@ -635,10 +639,14 @@ firmwareCmdVal REF_CMD_WRITE_B          = 0xB8
 firmwareCmdVal REF_CMD_WRITE_8          = 0xB9
 firmwareCmdVal REF_CMD_WRITE_16         = 0xBA
 firmwareCmdVal REF_CMD_WRITE_32         = 0xBB
-firmwareCmdVal REF_CMD_MOD_B            = 0xBC
-firmwareCmdVal REF_CMD_MOD_8            = 0xBD
-firmwareCmdVal REF_CMD_MOD_16           = 0xBE
-firmwareCmdVal REF_CMD_MOD_32           = 0xBF
+firmwareCmdVal REF_CMD_WRITE_EFFECT_B   = 0xBC
+firmwareCmdVal REF_CMD_WRITE_EFFECT_8   = 0xBD
+firmwareCmdVal REF_CMD_WRITE_EFFECT_16  = 0xBE
+firmwareCmdVal REF_CMD_WRITE_EFFECT_32  = 0xBF
+firmwareCmdVal REF_CMD_MOD_B            = 0xC0
+firmwareCmdVal REF_CMD_MOD_8            = 0xC1
+firmwareCmdVal REF_CMD_MOD_16           = 0xC2
+firmwareCmdVal REF_CMD_MOD_32           = 0xC3
 
 -- | Firmware replies, see: 
 -- | https://github.com/ku-fpg/haskino/wiki/Haskino-Firmware-Protocol-Definition
