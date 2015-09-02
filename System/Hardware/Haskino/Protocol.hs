@@ -191,12 +191,12 @@ packageCodeBlock commands =
 
 packageProcedure :: Procedure a -> B.ByteString
 packageProcedure QueryFirmware       = buildCommand BS_CMD_REQUEST_VERSION []
-packageProcedure QueryFirmwareE      = buildCommand BS_CMD_REQUEST_VERSION_E []
+packageProcedure QueryFirmwareE      = buildCommand BS_CMD_REQUEST_VERSION []
 packageProcedure QueryProcessor      = buildCommand BS_CMD_REQUEST_TYPE []
 packageProcedure Micros              = buildCommand BS_CMD_REQUEST_MICROS []
-packageProcedure MicrosE             = buildCommand BS_CMD_REQUEST_MICROS_E[]
+packageProcedure MicrosE             = buildCommand BS_CMD_REQUEST_MICROS[]
 packageProcedure Millis              = buildCommand BS_CMD_REQUEST_MILLIS []
-packageProcedure MillisE             = buildCommand BS_CMD_REQUEST_MILLIS_E []
+packageProcedure MillisE             = buildCommand BS_CMD_REQUEST_MILLIS []
 packageProcedure (DigitalRead p)     = buildCommand DIG_CMD_READ_PIN [p]
 packageProcedure (DigitalReadE pe)   = buildCommand DIG_CMD_READ_PIN_E (packageExpr pe)
 packageProcedure (AnalogRead p)      = buildCommand ALG_CMD_READ_PIN [p]

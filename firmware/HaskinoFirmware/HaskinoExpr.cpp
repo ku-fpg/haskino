@@ -31,13 +31,6 @@ bool evalBoolExpr(byte **ppExpr)
                 }
             *ppExpr += 2; // Use Cmd and Ref bytes
             break;
-        case EXPR_PROC:
-            // ToDo:  Handle case where monadic structure is more than one
-            //        procedure.
-            procLen = pExpr[1];
-            parseMessage(procLen, &pExpr[2], (byte *) &val);
-            *ppExpr += 2 + procLen; // Use Cmd, ProcLen and Proc bytes */
-            break;
         case EXPR_NOT:
             *ppExpr += 1; // Use command byte
             val = !evalBoolExpr(ppExpr);
@@ -111,11 +104,6 @@ uint8_t evalWord8Expr(byte **ppExpr)
                 uint8_t *ref = (uint8_t *) haskinoRefs[refNum];
                 val = *ref;
                 }
-            break;
-        case EXPR_PROC:
-            procLen = pExpr[1];
-            parseMessage(procLen, &pExpr[2], &val);
-            *ppExpr += 2 + procLen; // Use Cmd, ProcLen and Proc bytes */
             break;
         case EXPR_NEG:
         case EXPR_SIGN:

@@ -231,7 +231,6 @@ data ExprType = EXPR_BOOL
 
 data ExprOp = EXPR_LIT
             | EXPR_REF
-            | EXPR_PROC
             | EXPR_NOT
             | EXPR_AND
             | EXPR_OR
@@ -260,24 +259,23 @@ exprTypeVal EXPR_WORD32 = 0x04
 exprOpVal :: ExprOp -> Word8
 exprOpVal EXPR_LIT  = 0x00
 exprOpVal EXPR_REF  = 0x01
-exprOpVal EXPR_PROC = 0x02
-exprOpVal EXPR_NOT  = 0x03
-exprOpVal EXPR_AND  = 0x04
-exprOpVal EXPR_OR   = 0x05
-exprOpVal EXPR_XOR  = 0x06
-exprOpVal EXPR_NEG  = 0x07
-exprOpVal EXPR_SIGN = 0x08
-exprOpVal EXPR_ADD  = 0x09
-exprOpVal EXPR_SUB  = 0x0A
-exprOpVal EXPR_MULT = 0x0B
-exprOpVal EXPR_DIV  = 0x0C
-exprOpVal EXPR_REM  = 0x0D
-exprOpVal EXPR_COMP = 0x0E
-exprOpVal EXPR_SHFL = 0x0F
-exprOpVal EXPR_SHFR = 0x10
-exprOpVal EXPR_EQ   = 0x11
-exprOpVal EXPR_LESS = 0x12
-exprOpVal EXPR_IF   = 0x13
+exprOpVal EXPR_NOT  = 0x02
+exprOpVal EXPR_AND  = 0x03
+exprOpVal EXPR_OR   = 0x04
+exprOpVal EXPR_XOR  = 0x05
+exprOpVal EXPR_NEG  = 0x06
+exprOpVal EXPR_SIGN = 0x07
+exprOpVal EXPR_ADD  = 0x08
+exprOpVal EXPR_SUB  = 0x09
+exprOpVal EXPR_MULT = 0x0A
+exprOpVal EXPR_DIV  = 0x0B
+exprOpVal EXPR_REM  = 0x0C
+exprOpVal EXPR_COMP = 0x0D
+exprOpVal EXPR_SHFL = 0x0E
+exprOpVal EXPR_SHFR = 0x0F
+exprOpVal EXPR_EQ   = 0x10
+exprOpVal EXPR_LESS = 0x11
+exprOpVal EXPR_IF   = 0x12
 
 exprCmdVal :: ExprType -> ExprOp -> Word8
 exprCmdVal t o = exprTypeVal t `shiftL` 5 .|. exprOpVal o
