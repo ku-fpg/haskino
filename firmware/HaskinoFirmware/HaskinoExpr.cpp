@@ -11,7 +11,6 @@ bool evalBoolExpr(byte **ppExpr)
     byte exprOp = *pExpr && EXPR_OP_MASK;
     bool val = false;
     int refNum;
-    uint8_t procLen;
     uint8_t e8_1,e8_2;
     uint16_t e16_1,e16_2;
     uint32_t e32_1,e32_2;
@@ -87,7 +86,6 @@ uint8_t evalWord8Expr(byte **ppExpr)
     byte *pExpr = *ppExpr;
     byte exprOp = *pExpr && EXPR_OP_MASK;
     uint8_t val = 0;
-    uint8_t procLen;
     uint8_t e1,e2;
     int refNum;
 
@@ -129,6 +127,180 @@ uint8_t evalWord8Expr(byte **ppExpr)
         case EXPR_SHFR:
             e1 = evalWord8Expr(ppExpr);
             e2 = evalWord8Expr(ppExpr);
+            switch(exprOp)
+                {
+                case EXPR_AND:
+                    val = e1 & e2;
+                    break;
+                case EXPR_OR:
+                    val = e1 | e2;
+                    break;
+                case EXPR_XOR:
+                    val = e1 ^ e2;
+                    break;
+                case EXPR_ADD:
+                    val = e1 + e2;
+                    break;
+                case EXPR_SUB:
+                    val = e1 - e2;
+                    break;
+                case EXPR_MULT:
+                    val = e1 * e2;
+                    break;
+                case EXPR_DIV:
+                    val = e1 / e2;
+                    break;
+                case EXPR_REM:
+                    val = e1 % e2;
+                    break;
+                case EXPR_SHFL:
+                    val = e1 << e2;
+                    break;
+                case EXPR_SHFR:
+                    val = e1 >> e2;
+                    break;
+                }
+            break;
+        case EXPR_IF:
+            // ToDo:
+            break;
+        }
+        return val;
+    }
+
+uint16_t evalWord16Expr(byte **ppExpr) 
+    {
+    byte *pExpr = *ppExpr;
+    byte exprOp = *pExpr && EXPR_OP_MASK;
+    uint16_t val = 0;
+    uint16_t e1,e2;
+    int refNum;
+
+    switch (exprOp)
+        {
+        case EXPR_LIT:
+            val = pExpr[1];
+            *ppExpr += 2; // Use Cmd and Value bytes
+            break;
+        case EXPR_REF:
+            refNum = pExpr[1];
+            if (refNum < MAX_REFS)
+                {
+                uint16_t *ref = (uint16_t *) haskinoRefs[refNum];
+                val = *ref;
+                }
+            break;
+        case EXPR_NEG:
+        case EXPR_SIGN:
+        case EXPR_COMP:
+            *ppExpr += 1; // Use command byte
+            e1 = evalBoolExpr(ppExpr);
+            if (exprOp == EXPR_NEG)
+                val = -e1;
+            else if (exprOp == EXPR_SIGN)
+                val = e1 == 0 ? 0 : 1;
+            else
+                val = ~e1;
+            break;
+        case EXPR_AND:
+        case EXPR_OR:
+        case EXPR_XOR:
+        case EXPR_ADD:
+        case EXPR_SUB:
+        case EXPR_MULT:
+        case EXPR_DIV:
+        case EXPR_REM:
+        case EXPR_SHFL:
+        case EXPR_SHFR:
+            e1 = evalWord16Expr(ppExpr);
+            e2 = evalWord16Expr(ppExpr);
+            switch(exprOp)
+                {
+                case EXPR_AND:
+                    val = e1 & e2;
+                    break;
+                case EXPR_OR:
+                    val = e1 | e2;
+                    break;
+                case EXPR_XOR:
+                    val = e1 ^ e2;
+                    break;
+                case EXPR_ADD:
+                    val = e1 + e2;
+                    break;
+                case EXPR_SUB:
+                    val = e1 - e2;
+                    break;
+                case EXPR_MULT:
+                    val = e1 * e2;
+                    break;
+                case EXPR_DIV:
+                    val = e1 / e2;
+                    break;
+                case EXPR_REM:
+                    val = e1 % e2;
+                    break;
+                case EXPR_SHFL:
+                    val = e1 << e2;
+                    break;
+                case EXPR_SHFR:
+                    val = e1 >> e2;
+                    break;
+                }
+            break;
+        case EXPR_IF:
+            // ToDo:
+            break;
+        }
+        return val;
+    }
+
+uint32_t evalWord32Expr(byte **ppExpr) 
+    {
+    byte *pExpr = *ppExpr;
+    byte exprOp = *pExpr && EXPR_OP_MASK;
+    uint32_t val = 0;
+    uint32_t e1,e2;
+    int refNum;
+
+    switch (exprOp)
+        {
+        case EXPR_LIT:
+            val = pExpr[1];
+            *ppExpr += 2; // Use Cmd and Value bytes
+            break;
+        case EXPR_REF:
+            refNum = pExpr[1];
+            if (refNum < MAX_REFS)
+                {
+                uint32_t *ref = (uint32_t *) haskinoRefs[refNum];
+                val = *ref;
+                }
+            break;
+        case EXPR_NEG:
+        case EXPR_SIGN:
+        case EXPR_COMP:
+            *ppExpr += 1; // Use command byte
+            e1 = evalBoolExpr(ppExpr);
+            if (exprOp == EXPR_NEG)
+                val = -e1;
+            else if (exprOp == EXPR_SIGN)
+                val = e1 == 0 ? 0 : 1;
+            else
+                val = ~e1;
+            break;
+        case EXPR_AND:
+        case EXPR_OR:
+        case EXPR_XOR:
+        case EXPR_ADD:
+        case EXPR_SUB:
+        case EXPR_MULT:
+        case EXPR_DIV:
+        case EXPR_REM:
+        case EXPR_SHFL:
+        case EXPR_SHFR:
+            e1 = evalWord32Expr(ppExpr);
+            e2 = evalWord32Expr(ppExpr);
             switch(exprOp)
                 {
                 case EXPR_AND:
