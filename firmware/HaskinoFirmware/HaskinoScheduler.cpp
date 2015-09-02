@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "HaskinoComm.h"
 #include "HaskinoCommands.h"
+#include "HaskinoExpr.h"
 #include "HaskinoScheduler.h"
 
 typedef struct task_t 
@@ -22,10 +23,14 @@ static bool handleAddToTask(int size, const byte *msg);
 static bool handleScheduleTask(int size, const byte *msg);
 static bool handleQuery(int size, const byte *msg, byte *local);
 static bool handleQueryAll(int size, const byte *msg, byte *local);
+static bool handleDeleteTaskE(int size, const byte *msg);
+static bool handleScheduleTaskE(int size, const byte *msg);
+static bool handleQueryE(int size, const byte *msg, byte *local);
 static bool handleReset(int size, const byte *msg);
 static void deleteTask(TASK* task);
 static TASK *findTask(int id);
 static bool executeTask(TASK *task);
+static bool deleteById(byte id);
 
 static TASK *firstTask = NULL;
 static TASK *runningTask = NULL;
@@ -51,6 +56,15 @@ bool parseSchedulerMessage(int size, const byte *msg, byte *local)
             break;
         case SCHED_CMD_QUERY_ALL:
             return handleQueryAll(size, msg, local);
+            break;
+        case SCHED_CMD_DELETE_TASK_E:
+            return handleDeleteTaskE(size, msg);
+            break;
+        case SCHED_CMD_SCHED_TASK_E:
+            return handleScheduleTaskE(size, msg);
+            break;
+        case SCHED_CMD_QUERY_E:
+            return handleQueryE(size, msg, local);
             break;
         case SCHED_CMD_RESET:
             return handleReset(size, msg);
@@ -105,9 +119,8 @@ static void deleteTask(TASK* task)
     free(task);
     }
 
-static bool handleDeleteTask(int size, const byte *msg)
+static bool deleteById(byte id)
     {
-    byte id = msg[1];
     TASK *task;
 
     if ((task = findTask(id)) != NULL)
@@ -115,6 +128,19 @@ static bool handleDeleteTask(int size, const byte *msg)
         deleteTask(task);
         }
     return false;
+    }
+
+static bool handleDeleteTask(int size, const byte *msg)
+    {
+    byte id = msg[1];
+    return deleteById(id);
+    }
+
+static bool handleDeleteTaskE(int size, const byte *msg)
+    {
+    byte *expr = (byte *) &msg[1];
+    byte id = evalWord8Expr(&expr);
+    return deleteById(id);
     }
 
 static bool handleAddToTask(int size, const byte *msg)
@@ -135,11 +161,8 @@ static bool handleAddToTask(int size, const byte *msg)
     return false;
     }
 
-static bool handleScheduleTask(int size, const byte *msg)
+static bool scheduleById(byte id, unsigned long deltaMillis)
     {
-    byte id = msg[1];
-    unsigned long deltaMillis;
-    memcpy(&deltaMillis, &msg[2], 4);
     TASK *task;
 
     if ((task = findTask(id)) != NULL)
@@ -149,14 +172,29 @@ static bool handleScheduleTask(int size, const byte *msg)
     return false;
     }
 
-static bool handleQuery(int size, const byte *msg, byte *local)
+static bool handleScheduleTask(int size, const byte *msg)
+    {
+    byte id = msg[1];
+    unsigned long deltaMillis;
+    memcpy(&deltaMillis, &msg[2], 4);
+    return scheduleById(id, deltaMillis);
+    }
+
+static bool handleScheduleTaskE(int size, const byte *msg)
+    {
+    byte *expr = (byte *) &msg[1];
+    byte id = evalWord8Expr(&expr);
+    unsigned long deltaMillis = evalWord32Expr(&expr);
+    return scheduleById(id, deltaMillis);
+    }
+
+static bool queryById(byte id, byte *local)
     {
     byte queryReply[10];
     uint16_t *sizeReply = (uint16_t *) queryReply;
     uint16_t *lenReply = (uint16_t *) &queryReply[2];
     uint16_t *posReply = (uint16_t *) &queryReply[4];
     uint32_t *millisReply = (uint32_t *) &queryReply[6];
-    byte id = msg[1];
     TASK *task;
 
     if ((task = findTask(id)) != NULL)
@@ -172,6 +210,19 @@ static bool handleQuery(int size, const byte *msg, byte *local)
         sendReply(0, SCHED_RESP_QUERY, queryReply, local);
         }
     return false;
+    }
+
+static bool handleQuery(int size, const byte *msg, byte *local)
+    {
+    byte id = msg[1];
+    return queryById(id, local);
+    }
+
+static bool handleQueryE(int size, const byte *msg, byte *local)
+    {
+    byte *expr = (byte *) &msg[1];
+    byte id = evalWord8Expr(&expr);
+    return queryById(id, local);
     }
 
 static bool handleQueryAll(int size, const byte *msg, byte *local)
