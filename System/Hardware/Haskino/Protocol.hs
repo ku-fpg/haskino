@@ -134,18 +134,16 @@ ToDo: Make general methods for the directly above
 -}
 -- ToDo: Do we need to check maximum frame size on conditionals?
 packageCommand (While e cb) =
-    buildCommand BC_CMD_WHILE ((packageExpr e) ++ whileSize ++ (B.unpack pc))
+    buildCommand BC_CMD_WHILE ((packageExpr e) ++ (B.unpack pc))
   where
     pc = packageCodeBlock cb
-    whileSize = word16ToBytes $ fromIntegral (B.length pc)    
 packageCommand (IfThenElse e cb1 cb2) =
-    buildCommand BC_CMD_IF_THEN_ELSE (thenSize ++ elseSize ++ pe ++ (B.unpack pc1) ++ (B.unpack pc2))
+    buildCommand BC_CMD_IF_THEN_ELSE (thenSize ++ pe ++ (B.unpack pc1) ++ (B.unpack pc2))
   where
     pe = packageExpr e
     pc1 = packageCodeBlock cb1  
     pc2 = packageCodeBlock cb2  
     thenSize = word16ToBytes $ fromIntegral (B.length pc1)
-    elseSize = word16ToBytes $ fromIntegral (B.length pc2)
 
 -- ToDo:  Create locally scoped remote refs by passing ID offsets 
 -- through pack calls and incrementing them whan packing newRemoteRef calls.
