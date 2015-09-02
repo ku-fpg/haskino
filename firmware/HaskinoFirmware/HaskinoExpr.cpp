@@ -14,6 +14,7 @@ bool evalBoolExpr(byte **ppExpr)
     uint8_t e8_1,e8_2;
     uint16_t e16_1,e16_2;
     uint32_t e32_1,e32_2;
+    byte exprType;
 
     switch (exprOp)
         {
@@ -47,7 +48,7 @@ bool evalBoolExpr(byte **ppExpr)
             break;
         case EXPR_EQ:
         case EXPR_LESS:
-            byte exprType = *pExpr >> EXPR_TYPE_SHFT;
+            exprType = *pExpr >> EXPR_TYPE_SHFT;
             *ppExpr += 1; // Use command byte
             switch (exprType)
                 {
@@ -75,8 +76,12 @@ bool evalBoolExpr(byte **ppExpr)
                     else 
                         val = (e32_1 < e32_2); 
                     break;
+                default:
+                    sendString("Unknown ExType");
                 }
             break;
+        default:
+            sendString("Unknown ExOp");
         }
         return val;
     }
@@ -93,7 +98,7 @@ uint8_t evalWord8Expr(byte **ppExpr)
         {
         case EXPR_LIT:
             val = pExpr[1];
-            *ppExpr += 2; // Use Cmd and Value bytes
+            *ppExpr += 1 + sizeof(uint8_t); // Use Cmd and Value bytes
             break;
         case EXPR_REF:
             refNum = pExpr[1];
@@ -164,6 +169,8 @@ uint8_t evalWord8Expr(byte **ppExpr)
         case EXPR_IF:
             // ToDo:
             break;
+        default:
+            sendString("Unknown ExOp");
         }
         return val;
     }
@@ -179,8 +186,8 @@ uint16_t evalWord16Expr(byte **ppExpr)
     switch (exprOp)
         {
         case EXPR_LIT:
-            val = pExpr[1];
-            *ppExpr += 2; // Use Cmd and Value bytes
+            memcpy((byte *) val, &pExpr[1], sizeof(uint16_t));
+            *ppExpr += 1 + sizeof(uint16_t); // Use Cmd and Value bytes
             break;
         case EXPR_REF:
             refNum = pExpr[1];
@@ -251,6 +258,8 @@ uint16_t evalWord16Expr(byte **ppExpr)
         case EXPR_IF:
             // ToDo:
             break;
+        default:
+            sendString("Unknown ExOp");
         }
         return val;
     }
@@ -266,8 +275,8 @@ uint32_t evalWord32Expr(byte **ppExpr)
     switch (exprOp)
         {
         case EXPR_LIT:
-            val = pExpr[1];
-            *ppExpr += 2; // Use Cmd and Value bytes
+            memcpy((byte *) val, &pExpr[1], sizeof(uint32_t));
+            *ppExpr += 1 + sizeof(uint32_t); // Use Cmd and Value bytes
             break;
         case EXPR_REF:
             refNum = pExpr[1];
@@ -338,6 +347,8 @@ uint32_t evalWord32Expr(byte **ppExpr)
         case EXPR_IF:
             // ToDo:
             break;
+        default:
+            sendString("Unknown ExOp");
         }
         return val;
     }
