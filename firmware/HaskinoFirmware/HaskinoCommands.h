@@ -16,6 +16,11 @@
 #define BC_CMD_DELAY_MILLIS     (BC_CMD_TYPE | 0x1)
 #define BC_CMD_DELAY_MICROS     (BC_CMD_TYPE | 0x2)
 #define BC_CMD_SYSTEM_RESET     (BC_CMD_TYPE | 0x3)
+#define BC_CMD_SET_PIN_MODE_E   (BC_CMD_TYPE | 0x4)
+#define BC_CMD_DELAY_MILLIS_E   (BC_CMD_TYPE | 0x5)
+#define BC_CMD_DELAY_MICROS_E   (BC_CMD_TYPE | 0x6)
+#define BC_CMD_WHILE            (BC_CMD_TYPE | 0x7)
+#define BC_CMD_IF_THEN_ELSE     (BC_CMD_TYPE | 0x8)
 
 // Board Control responses
 
@@ -37,6 +42,8 @@
 #define DIG_CMD_TYPE            0x30
 #define DIG_CMD_READ_PIN        (DIG_CMD_TYPE | 0x0)
 #define DIG_CMD_WRITE_PIN       (DIG_CMD_TYPE | 0x1)
+#define DIG_CMD_READ_PIN_E      (DIG_CMD_TYPE | 0x0)
+#define DIG_CMD_WRITE_PIN_E     (DIG_CMD_TYPE | 0x1)
 
 // Digital responses
 #define DIG_RESP_READ_PIN       (DIG_CMD_TYPE | 0x8)
@@ -47,6 +54,10 @@
 #define ALG_CMD_WRITE_PIN       (ALG_CMD_TYPE | 0x1)
 #define ALG_CMD_TONE_PIN        (ALG_CMD_TYPE | 0x2)
 #define ALG_CMD_NOTONE_PIN      (ALG_CMD_TYPE | 0x3)
+#define ALG_CMD_READ_PIN_E      (ALG_CMD_TYPE | 0x4)
+#define ALG_CMD_WRITE_PIN_E     (ALG_CMD_TYPE | 0x5)
+#define ALG_CMD_TONE_PIN_E      (ALG_CMD_TYPE | 0x6)
+#define ALG_CMD_NOTONE_PIN_E    (ALG_CMD_TYPE | 0x7)
 
 // Analog responses
 #define ALG_RESP_READ_PIN       (ALG_CMD_TYPE | 0x8)
@@ -56,6 +67,8 @@
 #define I2C_CMD_CONFIG          (I2C_CMD_TYPE | 0x0)
 #define I2C_CMD_READ            (I2C_CMD_TYPE | 0x1)
 #define I2C_CMD_WRITE           (I2C_CMD_TYPE | 0x2)
+#define I2C_CMD_READ_E          (I2C_CMD_TYPE | 0x3)
+#define I2C_CMD_WRITE_E         (I2C_CMD_TYPE | 0x4)
 
 // I2C responses
 #define I2C_RESP_READ           (I2C_CMD_TYPE | 0x8)
@@ -84,10 +97,38 @@
 #define SCHED_CMD_QUERY         (SCHED_CMD_TYPE | 0x4)
 #define SCHED_CMD_QUERY_ALL     (SCHED_CMD_TYPE | 0x5)
 #define SCHED_CMD_RESET         (SCHED_CMD_TYPE | 0x6)
+#define SCHED_CMD_DELETE_TASK_E (SCHED_CMD_TYPE | 0x7)
+#define SCHED_CMD_SCHED_TASK_E  (SCHED_CMD_TYPE | 0x8)
+#define SCHED_CMD_QUERY_E       (SCHED_CMD_TYPE | 0x9)
 
 // Scheduler responses
-#define SCHED_RESP_QUERY        (SCHED_CMD_TYPE | 0x8)
-#define SCHED_RESP_QUERY_ALL    (SCHED_CMD_TYPE | 0x9)
+#define SCHED_RESP_QUERY        (SCHED_CMD_TYPE | 0xA)
+#define SCHED_RESP_QUERY_ALL    (SCHED_CMD_TYPE | 0xB)
+
+// Reference commands
+#define REF1_CMD_TYPE           0xB0
+#define REF_CMD_NEW_B           (REF1_CMD_TYPE | 0x0)
+#define REF_CMD_NEW_8           (REF1_CMD_TYPE | 0x1)
+#define REF_CMD_NEW_16          (REF1_CMD_TYPE | 0x2)
+#define REF_CMD_NEW_32          (REF1_CMD_TYPE | 0x3)
+#define REF_CMD_READ_B          (REF1_CMD_TYPE | 0x4)
+#define REF_CMD_READ_8          (REF1_CMD_TYPE | 0x5)
+#define REF_CMD_READ_16         (REF1_CMD_TYPE | 0x6)
+#define REF_CMD_READ_32         (REF1_CMD_TYPE | 0x7)
+#define REF_CMD_WRITE_B         (REF1_CMD_TYPE | 0x8)
+#define REF_CMD_WRITE_8         (REF1_CMD_TYPE | 0x9)
+#define REF_CMD_WRITE_16        (REF1_CMD_TYPE | 0xA)
+#define REF_CMD_WRITE_32        (REF1_CMD_TYPE | 0xB)
+#define REF_CMD_WRITE_EFFECT_B  (REF1_CMD_TYPE | 0xC)
+#define REF_CMD_WRITE_EFFECT_8  (REF1_CMD_TYPE | 0xD)
+#define REF_CMD_WRITE_EFFECT_16 (REF1_CMD_TYPE | 0xE)
+#define REF_CMD_WRITE_EFFECT_32 (REF1_CMD_TYPE | 0xF)
+
+#define REF2_CMD_TYPE           0xC0
+#define REF_CMD_MOD_B           (REF2_CMD_TYPE | 0x0)
+#define REF_CMD_MOD_8           (REF2_CMD_TYPE | 0x1)
+#define REF_CMD_MOD_16          (REF2_CMD_TYPE | 0x2)
+#define REF_CMD_MOD_32          (REF2_CMD_TYPE | 0x3)
 
 #endif /* HaskinoCommandsH */
 

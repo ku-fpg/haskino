@@ -526,10 +526,6 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE
                  | BS_CMD_REQUEST_TYPE
                  | BS_CMD_REQUEST_MICROS
                  | BS_CMD_REQUEST_MILLIS
-                 | BS_CMD_REQUEST_VERSION_E
-                 | BS_CMD_REQUEST_TYPE_E
-                 | BS_CMD_REQUEST_MICROS_E
-                 | BS_CMD_REQUEST_MILLIS_E
                  | DIG_CMD_READ_PIN
                  | DIG_CMD_WRITE_PIN
                  | DIG_CMD_READ_PIN_E
@@ -557,7 +553,6 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE
                  | SCHED_CMD_DELETE_TASK_E
                  | SCHED_CMD_SCHED_TASK_E
                  | SCHED_CMD_QUERY_E
-                 | SCHED_CMD_QUERY_ALL_E
                  | REF_CMD_NEW_B
                  | REF_CMD_NEW_8
                  | REF_CMD_NEW_16
@@ -595,10 +590,6 @@ firmwareCmdVal BS_CMD_REQUEST_VERSION   = 0x20
 firmwareCmdVal BS_CMD_REQUEST_TYPE      = 0x21
 firmwareCmdVal BS_CMD_REQUEST_MILLIS    = 0x22
 firmwareCmdVal BS_CMD_REQUEST_MICROS    = 0x23
-firmwareCmdVal BS_CMD_REQUEST_VERSION_E = 0x24
-firmwareCmdVal BS_CMD_REQUEST_TYPE_E    = 0x25
-firmwareCmdVal BS_CMD_REQUEST_MILLIS_E  = 0x26
-firmwareCmdVal BS_CMD_REQUEST_MICROS_E  = 0x27
 firmwareCmdVal DIG_CMD_READ_PIN         = 0x30
 firmwareCmdVal DIG_CMD_WRITE_PIN        = 0x31
 firmwareCmdVal DIG_CMD_READ_PIN_E       = 0x32
@@ -626,7 +617,6 @@ firmwareCmdVal SCHED_CMD_RESET          = 0xA6
 firmwareCmdVal SCHED_CMD_DELETE_TASK_E  = 0xA7
 firmwareCmdVal SCHED_CMD_SCHED_TASK_E   = 0xA8
 firmwareCmdVal SCHED_CMD_QUERY_E        = 0xA9
-firmwareCmdVal SCHED_CMD_QUERY_ALL_E    = 0xAA
 firmwareCmdVal REF_CMD_NEW_B            = 0xB0
 firmwareCmdVal REF_CMD_NEW_8            = 0xB1
 firmwareCmdVal REF_CMD_NEW_16           = 0xB2
