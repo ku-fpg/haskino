@@ -42,8 +42,8 @@
 #define DIG_CMD_TYPE            0x30
 #define DIG_CMD_READ_PIN        (DIG_CMD_TYPE | 0x0)
 #define DIG_CMD_WRITE_PIN       (DIG_CMD_TYPE | 0x1)
-#define DIG_CMD_READ_PIN_E      (DIG_CMD_TYPE | 0x0)
-#define DIG_CMD_WRITE_PIN_E     (DIG_CMD_TYPE | 0x1)
+#define DIG_CMD_READ_PIN_E      (DIG_CMD_TYPE | 0x2)
+#define DIG_CMD_WRITE_PIN_E     (DIG_CMD_TYPE | 0x3)
 
 // Digital responses
 #define DIG_RESP_READ_PIN       (DIG_CMD_TYPE | 0x8)
