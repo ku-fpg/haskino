@@ -107,28 +107,15 @@
 
 // Reference commands
 #define REF1_CMD_TYPE           0xB0
-#define REF_CMD_NEW_B           (REF1_CMD_TYPE | 0x0)
-#define REF_CMD_NEW_8           (REF1_CMD_TYPE | 0x1)
-#define REF_CMD_NEW_16          (REF1_CMD_TYPE | 0x2)
-#define REF_CMD_NEW_32          (REF1_CMD_TYPE | 0x3)
-#define REF_CMD_READ_B          (REF1_CMD_TYPE | 0x4)
-#define REF_CMD_READ_8          (REF1_CMD_TYPE | 0x5)
-#define REF_CMD_READ_16         (REF1_CMD_TYPE | 0x6)
-#define REF_CMD_READ_32         (REF1_CMD_TYPE | 0x7)
-#define REF_CMD_WRITE_B         (REF1_CMD_TYPE | 0x8)
-#define REF_CMD_WRITE_8         (REF1_CMD_TYPE | 0x9)
-#define REF_CMD_WRITE_16        (REF1_CMD_TYPE | 0xA)
-#define REF_CMD_WRITE_32        (REF1_CMD_TYPE | 0xB)
-#define REF_CMD_WRITE_EFFECT_B  (REF1_CMD_TYPE | 0xC)
-#define REF_CMD_WRITE_EFFECT_8  (REF1_CMD_TYPE | 0xD)
-#define REF_CMD_WRITE_EFFECT_16 (REF1_CMD_TYPE | 0xE)
-#define REF_CMD_WRITE_EFFECT_32 (REF1_CMD_TYPE | 0xF)
-
 #define REF2_CMD_TYPE           0xC0
-#define REF_CMD_MOD_B           (REF2_CMD_TYPE | 0x0)
-#define REF_CMD_MOD_8           (REF2_CMD_TYPE | 0x1)
-#define REF_CMD_MOD_16          (REF2_CMD_TYPE | 0x2)
-#define REF_CMD_MOD_32          (REF2_CMD_TYPE | 0x3)
+#define REF_CMD_SUBCMD_SHIFT    2
+#define REF_CMD_TYPE_MASK       0x03
+
+#define REF_CMD_NEW             0x0
+#define REF_CMD_READ            0x1
+#define REF_CMD_WRITE           0x2
+#define REF_CMD_WRITE_EFFECT    0x3
+#define REF_CMD_MOD             0x4
 
 #endif /* HaskinoCommandsH */
 

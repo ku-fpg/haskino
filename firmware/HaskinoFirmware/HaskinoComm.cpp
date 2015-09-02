@@ -9,6 +9,7 @@
 #include "HaskinoDigital.h"
 #include "HaskinoI2C.h"
 #include "HaskinoOneWire.h"
+#include "HaskinoRefs.h"
 #include "HaskinoScheduler.h"
 #include "HaskinoServo.h"
 #include "HaskinoStepper.h"
@@ -54,6 +55,10 @@ bool parseMessage(int size, const byte *msg, byte *local)
             break;
         case SCHED_CMD_TYPE:
             return parseSchedulerMessage(size, msg, local);
+            break;
+        case REF1_CMD_TYPE:
+        case REF2_CMD_TYPE:
+            return parseRefMessage(size, msg, local);
             break;
         }
         return false;
