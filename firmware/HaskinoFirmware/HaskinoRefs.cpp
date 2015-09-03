@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "HaskinoCodeBlock.h"
 #include "HaskinoComm.h"
 #include "HaskinoCommands.h"
 #include "HaskinoConfig.h"
@@ -195,30 +196,33 @@ static bool handleWriteRef(int type, int size, const byte *msg)
 static bool handleWriteEffectRef(int type, int size, const byte *msg)
     {
     byte refIndex = msg[2];
-    byte *expr = (byte *) &msg[3];
+    byte *codeBlock = (byte *) &msg[3];
+    int blockSize = size - 3;
     bool bVal;
     uint8_t w8Val;
     uint16_t w16Val;
     uint32_t w32Val;
+    uint32_t val;
 
     // ToDo:  Check for param errors
+    runCodeBlock(blockSize, codeBlock,(byte *) &val);
 
     switch (type)
         {
         case EXPR_BOOL:
-            bVal = evalBoolExpr(&expr);
+            memcpy((byte *) &bVal, (const byte *) &val, sizeof(bVal));
             *((bool *) haskinoRefs[refIndex].ref) = bVal;
             break;
         case EXPR_WORD8:
-            w8Val = evalWord8Expr(&expr);
+            memcpy((byte *) &w8Val, (const byte *) &val, sizeof(w8Val));
             *((uint8_t *) haskinoRefs[refIndex].ref) = w8Val;
             break;
         case EXPR_WORD16:
-            w16Val = evalWord16Expr(&expr);
+            memcpy((byte *) &w16Val, (const byte *) &val, sizeof(w16Val));
             *((uint16_t *) haskinoRefs[refIndex].ref) = w16Val;
             break;
         case EXPR_WORD32:
-            w32Val = evalWord32Expr(&expr);
+            memcpy((byte *) &w32Val, (const byte *) &val, sizeof(w32Val));
             *((uint32_t *) haskinoRefs[refIndex].ref) = w32Val;
             break;
         }
