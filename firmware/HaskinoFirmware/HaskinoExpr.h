@@ -1,7 +1,7 @@
 #ifndef HaskinoExprH
 #define HaskinoExprH
 
-#define EXPR_TYPE_MASK 0x0E
+#define EXPR_TYPE_MASK 0xE0
 #define EXPR_TYPE_SHFT 5
 #define EXPR_BOOL   0x01
 #define EXPR_WORD8  0x02

@@ -100,6 +100,7 @@ uint8_t evalWord8Expr(byte **ppExpr)
         case EXPR_REF:
             refNum = pExpr[1];
             val = readRefWord8(refNum);
+            *ppExpr += 2; // Use Cmd and Ref bytes
             break;
         case EXPR_NEG:
         case EXPR_SIGN:
@@ -201,6 +202,7 @@ uint16_t evalWord16Expr(byte **ppExpr)
         case EXPR_REF:
             refNum = pExpr[1];
             val = readRefWord16(refNum);
+            *ppExpr += 2; // Use Cmd and Ref bytes
             break;
         case EXPR_NEG:
         case EXPR_SIGN:
@@ -302,6 +304,7 @@ uint32_t evalWord32Expr(byte **ppExpr)
         case EXPR_REF:
             refNum = pExpr[1];
             val = readRefWord32(refNum);
+            *ppExpr += 2; // Use Cmd and Ref bytes
             break;
         case EXPR_NEG:
         case EXPR_SIGN:
