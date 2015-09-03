@@ -59,11 +59,8 @@ static bool handleSetPinMode(int size, const byte *msg)
     return false;
     }
 
-static bool handleDelayMillis(int size, const byte *msg)
+static void millisDelay(unsigned long millis)
     {
-    unsigned long millis;
-    memcpy(&millis, &msg[1], 4);
-
     if (isRunningTask())
         {
         delayRunningTask(millis);
@@ -72,6 +69,14 @@ static bool handleDelayMillis(int size, const byte *msg)
         {
         delay(millis);
         }
+    }
+
+static bool handleDelayMillis(int size, const byte *msg)
+    {
+    unsigned long millis;
+    memcpy(&millis, &msg[1], 4);
+
+    millisDelay(millis);
     return true;
     }
 
@@ -96,14 +101,7 @@ static bool handleDelayMillisE(int size, const byte *msg)
     byte *expr = (byte *) &msg[1];
     uint32_t millis = evalWord32Expr(&expr);
 
-    if (isRunningTask())
-        {
-        delayRunningTask(millis);
-        }
-    else 
-        {
-        delay(millis);
-        }
+    millisDelay(millis);
     return true;
     }
 
@@ -141,6 +139,23 @@ static bool handleWhile(int size, const byte *msg)
 
 static bool handleIfThenElse(int size, const byte *msg)
     {
+    uint16_t thenSize, elseSize;
+    memcpy(&thenSize, &msg[1], sizeof(thenSize));
+    byte *expr = (byte *) &msg[3];
+    bool condition = evalBoolExpr(&expr);
+    byte *codeBlock = expr;
+
+    if (condition)
+        {
+        runCodeBlock(thenSize, codeBlock, NULL);
+        }
+    else
+        {
+        elseSize = size - (thenSize + (codeBlock - msg));
+        codeBlock += thenSize;
+        runCodeBlock(elseSize, codeBlock, NULL);
+        }
+
     return false;
     }
 
