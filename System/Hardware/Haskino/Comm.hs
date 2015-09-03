@@ -193,6 +193,9 @@ send conn commands =
         case resp of 
             Nothing -> runDie c "Haskino:ERROR: Response Timeout" 
                              [ "Make sure your Arduino is running Haskino Firmware"]
+            Just FailedNewRef -> runDie c "Haskino:ERROR: Failed to Allocate Reference" 
+                                  [ "Make sure MAX_REFS is set high enough in Firmware",
+                                    "and that Arudino has sufficient RAM"]
             Just r -> do 
                 case parseQueryResult procedure r of
                     -- Ignore responses that do not match expected response

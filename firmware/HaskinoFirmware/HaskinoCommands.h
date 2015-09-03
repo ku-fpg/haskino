@@ -106,16 +106,16 @@
 #define SCHED_RESP_QUERY_ALL    (SCHED_CMD_TYPE | 0xB)
 
 // Reference commands
-#define REF1_CMD_TYPE           0xB0
-#define REF2_CMD_TYPE           0xC0
-#define REF_CMD_SUBCMD_SHIFT    2
-#define REF_CMD_TYPE_MASK       0x03
+#define REF_CMD_TYPE            0xB0
 
-#define REF_CMD_NEW             0x0
-#define REF_CMD_READ            0x1
-#define REF_CMD_WRITE           0x2
-#define REF_CMD_WRITE_EFFECT    0x3
-#define REF_CMD_MOD             0x4
+#define REF_CMD_NEW             (REF_CMD_TYPE | 0x0)
+#define REF_CMD_READ            (REF_CMD_TYPE | 0x1)
+#define REF_CMD_WRITE           (REF_CMD_TYPE | 0x2)
+#define REF_CMD_WRITE_EFFECT    (REF_CMD_TYPE | 0x3)
+
+// Reference  response
+#define REF_RESP_NEW            (REF_CMD_TYPE | 0x8)
+#define REF_RESP_READ           (REF_CMD_TYPE | 0x9)
 
 #endif /* HaskinoCommandsH */
 

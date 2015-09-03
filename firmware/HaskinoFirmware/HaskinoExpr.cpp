@@ -2,8 +2,7 @@
 #include "HaskinoConfig.h"
 #include "HaskinoComm.h"
 #include "HaskinoExpr.h"
-
-static void *haskinoRefs[MAX_REFS];
+#include "HaskinoRefs.h"
 
 bool evalBoolExpr(byte **ppExpr) 
     {
@@ -24,11 +23,7 @@ bool evalBoolExpr(byte **ppExpr)
             break;
         case EXPR_REF:
             refNum = pExpr[1];
-            if (refNum < MAX_REFS)
-                {
-                bool *ref = (bool *) haskinoRefs[refNum];
-                val = *ref;
-                }
+            val = readRefBool(refNum);
             *ppExpr += 2; // Use Cmd and Ref bytes
             break;
         case EXPR_NOT:
@@ -102,11 +97,7 @@ uint8_t evalWord8Expr(byte **ppExpr)
             break;
         case EXPR_REF:
             refNum = pExpr[1];
-            if (refNum < MAX_REFS)
-                {
-                uint8_t *ref = (uint8_t *) haskinoRefs[refNum];
-                val = *ref;
-                }
+            val = readRefWord8(refNum);
             break;
         case EXPR_NEG:
         case EXPR_SIGN:
@@ -191,11 +182,7 @@ uint16_t evalWord16Expr(byte **ppExpr)
             break;
         case EXPR_REF:
             refNum = pExpr[1];
-            if (refNum < MAX_REFS)
-                {
-                uint16_t *ref = (uint16_t *) haskinoRefs[refNum];
-                val = *ref;
-                }
+            val = readRefWord16(refNum);
             break;
         case EXPR_NEG:
         case EXPR_SIGN:
@@ -280,11 +267,7 @@ uint32_t evalWord32Expr(byte **ppExpr)
             break;
         case EXPR_REF:
             refNum = pExpr[1];
-            if (refNum < MAX_REFS)
-                {
-                uint32_t *ref = (uint32_t *) haskinoRefs[refNum];
-                val = *ref;
-                }
+            val = readRefWord32(refNum);
             break;
         case EXPR_NEG:
         case EXPR_SIGN:

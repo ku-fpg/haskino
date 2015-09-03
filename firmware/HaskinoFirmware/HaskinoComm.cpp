@@ -56,8 +56,7 @@ bool parseMessage(int size, const byte *msg, byte *local)
         case SCHED_CMD_TYPE:
             return parseSchedulerMessage(size, msg, local);
             break;
-        case REF1_CMD_TYPE:
-        case REF2_CMD_TYPE:
+        case REF_CMD_TYPE:
             return parseRefMessage(size, msg, local);
             break;
         }

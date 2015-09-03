@@ -506,6 +506,7 @@ data Response = Firmware Word16                      -- ^ Firmware version (maj/
               | QueryAllTasksReply [Word8]           -- ^ Response to Query All Tasks
               | QueryTaskReply (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
               | NewReply Word8
+              | FailedNewRef
               | Unimplemented (Maybe String) [Word8] -- ^ Represents messages currently unsupported
               | EmptyFrame
               | InvalidChecksumFrame [Word8]
@@ -553,26 +554,10 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE
                  | SCHED_CMD_DELETE_TASK_E
                  | SCHED_CMD_SCHED_TASK_E
                  | SCHED_CMD_QUERY_E
-                 | REF_CMD_NEW_B
-                 | REF_CMD_NEW_8
-                 | REF_CMD_NEW_16
-                 | REF_CMD_NEW_32
-                 | REF_CMD_READ_B
-                 | REF_CMD_READ_8
-                 | REF_CMD_READ_16
-                 | REF_CMD_READ_32
-                 | REF_CMD_WRITE_B
-                 | REF_CMD_WRITE_8
-                 | REF_CMD_WRITE_16
-                 | REF_CMD_WRITE_32
-                 | REF_CMD_WRITE_EFFECT_B
-                 | REF_CMD_WRITE_EFFECT_8
-                 | REF_CMD_WRITE_EFFECT_16
-                 | REF_CMD_WRITE_EFFECT_32
-                 | REF_CMD_MOD_B
-                 | REF_CMD_MOD_8
-                 | REF_CMD_MOD_16
-                 | REF_CMD_MOD_32
+                 | REF_CMD_NEW
+                 | REF_CMD_READ
+                 | REF_CMD_WRITE
+                 | REF_CMD_WRITE_EFFECT
                 deriving Show
 
 -- | Compute the numeric value of a command
@@ -617,26 +602,23 @@ firmwareCmdVal SCHED_CMD_RESET          = 0xA6
 firmwareCmdVal SCHED_CMD_DELETE_TASK_E  = 0xA7
 firmwareCmdVal SCHED_CMD_SCHED_TASK_E   = 0xA8
 firmwareCmdVal SCHED_CMD_QUERY_E        = 0xA9
-firmwareCmdVal REF_CMD_NEW_B            = 0xB0
-firmwareCmdVal REF_CMD_NEW_8            = 0xB1
-firmwareCmdVal REF_CMD_NEW_16           = 0xB2
-firmwareCmdVal REF_CMD_NEW_32           = 0xB3
-firmwareCmdVal REF_CMD_READ_B           = 0xB4
-firmwareCmdVal REF_CMD_READ_8           = 0xB5
-firmwareCmdVal REF_CMD_READ_16          = 0xB6
-firmwareCmdVal REF_CMD_READ_32          = 0xB7
-firmwareCmdVal REF_CMD_WRITE_B          = 0xB8
-firmwareCmdVal REF_CMD_WRITE_8          = 0xB9
-firmwareCmdVal REF_CMD_WRITE_16         = 0xBA
-firmwareCmdVal REF_CMD_WRITE_32         = 0xBB
-firmwareCmdVal REF_CMD_WRITE_EFFECT_B   = 0xBC
-firmwareCmdVal REF_CMD_WRITE_EFFECT_8   = 0xBD
-firmwareCmdVal REF_CMD_WRITE_EFFECT_16  = 0xBE
-firmwareCmdVal REF_CMD_WRITE_EFFECT_32  = 0xBF
-firmwareCmdVal REF_CMD_MOD_B            = 0xC0
-firmwareCmdVal REF_CMD_MOD_8            = 0xC1
-firmwareCmdVal REF_CMD_MOD_16           = 0xC2
-firmwareCmdVal REF_CMD_MOD_32           = 0xC3
+firmwareCmdVal REF_CMD_NEW              = 0xB0
+firmwareCmdVal REF_CMD_READ             = 0xB1
+firmwareCmdVal REF_CMD_WRITE            = 0xB2
+firmwareCmdVal REF_CMD_WRITE_EFFECT     = 0xB3
+
+data RefType = REF_BOOL
+             | REF_WORD8
+             | REF_WORD16
+             | REF_WORD32
+            deriving Show
+
+-- | Compute the numeric value of a reference type
+refTypeCmdVal :: RefType -> Word8
+refTypeCmdVal REF_BOOL                  = 0x00
+refTypeCmdVal REF_WORD8                 = 0x01
+refTypeCmdVal REF_WORD16                = 0x02
+refTypeCmdVal REF_WORD32                = 0x03
 
 -- | Firmware replies, see: 
 -- | https://github.com/ku-fpg/haskino/wiki/Haskino-Firmware-Protocol-Definition

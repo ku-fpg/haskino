@@ -106,29 +106,29 @@ packageCommand (CreateTask tid m) =
     genAddToTaskCmds tds = addToTask tds
     addToTask tds' = framePackage $ buildCommand SCHED_CMD_ADD_TO_TASK ([tid, fromIntegral $ B.length tds'] ++ (B.unpack tds'))
 packageCommand (WriteRemoteRefB (RemoteRefB i) e) =
-    buildCommand REF_CMD_WRITE_B ((fromIntegral i) : packageExpr e)
+    buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_BOOL, fromIntegral i] ++ packageExpr e)
 packageCommand (WriteRemoteRef8 (RemoteRefW8 i) e) =
-    buildCommand REF_CMD_WRITE_8 ((fromIntegral i) : packageExpr e)
+    buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD8, fromIntegral i] ++ packageExpr e)
 packageCommand (WriteRemoteRef16 (RemoteRefW16 i) e) =
-    buildCommand REF_CMD_WRITE_16 ((fromIntegral i) : packageExpr e)
+    buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD16, fromIntegral i] ++ packageExpr e)
 packageCommand (WriteRemoteRef32 (RemoteRefW32 i) e) =
-    buildCommand REF_CMD_WRITE_32 ((fromIntegral i) : packageExpr e)
+    buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD32, fromIntegral i] ++ packageExpr e)
 packageCommand (WriteEffectRemoteRefB (RemoteRefB i) cb) =
-    buildCommand REF_CMD_WRITE_EFFECT_B ((fromIntegral i) : B.unpack (packageCodeBlock cb))
+    buildCommand REF_CMD_WRITE_EFFECT ([refTypeCmdVal REF_BOOL, fromIntegral i] ++ B.unpack (packageCodeBlock cb))
 packageCommand (WriteEffectRemoteRef8 (RemoteRefW8 i) cb) =
-    buildCommand REF_CMD_WRITE_EFFECT_8 ((fromIntegral i) : B.unpack (packageCodeBlock cb))
+    buildCommand REF_CMD_WRITE_EFFECT ([refTypeCmdVal REF_WORD8, fromIntegral i] ++ B.unpack (packageCodeBlock cb))
 packageCommand (WriteEffectRemoteRef16 (RemoteRefW16 i) cb) =
-    buildCommand REF_CMD_WRITE_EFFECT_16 ((fromIntegral i) : B.unpack (packageCodeBlock cb))
+    buildCommand REF_CMD_WRITE_EFFECT ([refTypeCmdVal REF_WORD16, fromIntegral i] ++ B.unpack (packageCodeBlock cb))
 packageCommand (WriteEffectRemoteRef32 (RemoteRefW32 i) cb) =
-    buildCommand REF_CMD_WRITE_EFFECT_32 ((fromIntegral i) : B.unpack (packageCodeBlock cb))
+    buildCommand REF_CMD_WRITE_EFFECT ([refTypeCmdVal REF_WORD32, fromIntegral i] ++ B.unpack (packageCodeBlock cb))
 packageCommand (ModifyRemoteRefB (RemoteRefB i) f) =
-    buildCommand REF_CMD_MOD_B ((fromIntegral i) : packageExpr (f (RefB i)))
+    buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_BOOL, fromIntegral i] ++ packageExpr (f (RefB i)))
 packageCommand (ModifyRemoteRef8 (RemoteRefW8 i) f) =
-    buildCommand REF_CMD_MOD_8 ((fromIntegral i) : packageExpr (f (Ref8 i)))
+    buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD8, fromIntegral i] ++ packageExpr (f (Ref8 i)))
 packageCommand (ModifyRemoteRef16 (RemoteRefW16 i) f) =
-    buildCommand REF_CMD_MOD_16 ((fromIntegral i) : packageExpr (f (Ref16 i)))
+    buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD16, fromIntegral i] ++ packageExpr (f (Ref16 i)))
 packageCommand (ModifyRemoteRef32 (RemoteRefW32 i) f) =
-    buildCommand REF_CMD_MOD_32 ((fromIntegral i) : packageExpr (f (Ref32 i)))
+    buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD32, fromIntegral i] ++ packageExpr (f (Ref32 i)))
 {-
 ToDo: Make general methods for the directly above
 -}
@@ -206,16 +206,12 @@ packageProcedure (I2CReadE sae cnte) = buildCommand I2C_CMD_READ_E ((packageExpr
 packageProcedure QueryAllTasks       = buildCommand SCHED_CMD_QUERY_ALL []
 packageProcedure (QueryTask tid)     = buildCommand SCHED_CMD_QUERY [tid]
 packageProcedure (QueryTaskE tide)   = buildCommand SCHED_CMD_QUERY_E (packageExpr tide)
-packageProcedure (ReadRemoteRefB (RemoteRefB r))  = buildCommand REF_CMD_READ_B [fromIntegral r]
-packageProcedure (ReadRemoteRef8 (RemoteRefW8 r))  = buildCommand REF_CMD_READ_8 [fromIntegral r]
-packageProcedure (ReadRemoteRef16 (RemoteRefW16 r)) = buildCommand REF_CMD_READ_16 [fromIntegral r]
-packageProcedure (ReadRemoteRef32 (RemoteRefW32 r)) = buildCommand REF_CMD_READ_32 [fromIntegral r]
 
 packageRemoteBinding :: RemoteBinding a -> B.ByteString
-packageRemoteBinding (NewRemoteRefB e)   = buildCommand REF_CMD_NEW_B (packageExpr e)
-packageRemoteBinding (NewRemoteRef8 e)   = buildCommand REF_CMD_NEW_8 (packageExpr e)
-packageRemoteBinding (NewRemoteRef16 e)  = buildCommand REF_CMD_NEW_16 (packageExpr e)
-packageRemoteBinding (NewRemoteRef32 e)  = buildCommand REF_CMD_NEW_32 (packageExpr e)
+packageRemoteBinding (NewRemoteRefB e)   = buildCommand REF_CMD_NEW ((refTypeCmdVal REF_BOOL) : (packageExpr e))
+packageRemoteBinding (NewRemoteRef8 e)   = buildCommand REF_CMD_NEW ((refTypeCmdVal REF_WORD8) : (packageExpr e))
+packageRemoteBinding (NewRemoteRef16 e)  = buildCommand REF_CMD_NEW ((refTypeCmdVal REF_WORD16) : (packageExpr e))
+packageRemoteBinding (NewRemoteRef32 e)  = buildCommand REF_CMD_NEW ((refTypeCmdVal REF_WORD32) : (packageExpr e))
 
 packageSubExpr :: Word8 -> Expr a -> [Word8]
 packageSubExpr ec e = ec : packageExpr e
@@ -319,6 +315,7 @@ unpackageResponse (cmdWord:args)
                                    bytesToWord16 (tp0,tp1), 
                                    bytesToWord32 (tt0,tt1,tt2,tt3)))  
       (REF_RESP_NEW , [w])            -> NewReply w
+      (REF_RESP_NEW , [])             -> FailedNewRef
       _                               -> Unimplemented (Just (show cmd)) args
   | True
   = Unimplemented Nothing (cmdWord : args)
