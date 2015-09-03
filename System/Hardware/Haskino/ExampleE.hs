@@ -1,15 +1,15 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.Blink
+-- Module      :  System.Hardware.Haskino.SamplePrograms.ExampleE
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- The /hello world/ of the arduino world, blinking the led.
+-- Based on our initial simple example
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.BlinkE where
+module System.Hardware.Haskino.SamplePrograms.ExampleE where
 
 import Control.Monad (forever)
 
@@ -17,8 +17,8 @@ import System.Hardware.Haskino
 import Data.Boolean
 import Data.Word
 
-blink :: IO ()
-blink = withArduino False "/dev/cu.usbmodem1421" $ do
+example :: IO ()
+example = withArduino False "/dev/cu.usbmodem1421" $ do
            let button = lit 2
            let led1 = lit 10
            let led2 = lit 11

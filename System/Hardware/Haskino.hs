@@ -37,6 +37,7 @@ module System.Hardware.Haskino (
   -- ** Scheduler
   , TaskLength, TaskID, TimeMillis, TimeMicros, TaskPos, queryAllTasks, queryTask
   , createTask, deleteTask, delayMillis, delayMicros, scheduleTask, scheduleReset
+  , queryTaskE, deleteTaskE, delayMillisE, delayMicrosE, scheduleTaskE
   -- ** Stepper
   --, StepDevice, StepType(..), NumSteps, StepSpeed, StepAccel, StepPerRev
   --, StepDelay(..), StepDir(..), stepperConfig, stepperStep

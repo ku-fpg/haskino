@@ -142,6 +142,16 @@ send conn commands =
           message c $ "Delaying Micros: " ++ show d
           threadDelay (fromIntegral d)
           send' c (k ()) B.empty
+      sendBind c (Command (DelayMillisE (Lit32 d))) k cmds = do
+          sendToArduino c cmds
+          message c $ "Delaying Millis: " ++ show d
+          threadDelay ((fromIntegral d)*1000)
+          send' c (k ()) B.empty
+      sendBind c (Command (DelayMicrosE (Lit32 d))) k cmds = do
+          sendToArduino c cmds
+          message c $ "Delaying Micros: " ++ show d
+          threadDelay (fromIntegral d)
+          send' c (k ()) B.empty
       sendBind c (Command (CreateTask tid as)) k cmds = 
           send' c (k ()) (B.append cmds (packageCommand (CreateTask tid as)))
       sendBind c (Command cmd) k cmds =
