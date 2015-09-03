@@ -91,21 +91,16 @@ uint8_t evalWord8Expr(byte **ppExpr)
     uint16_t thenSize, elseSize;
     int refNum;
 
-    char buffer[80];
-    sprintf(buffer, "type %x op %x", *pExpr >> 5, exprOp);
-    sendString(buffer);
     switch (exprOp)
         {
         case EXPR_LIT:
             val = pExpr[1];
             *ppExpr += 1 + sizeof(uint8_t); // Use Cmd and Value bytes
-            sendString("Here 1");
             break;
         case EXPR_REF:
             refNum = pExpr[1];
             val = readRefWord8(refNum);
-            sendString("Here 2");
-            *ppExpr += 2; // Use Cmd and Ref bytes
+             *ppExpr += 2; // Use Cmd and Ref bytes
             break;
         case EXPR_NEG:
         case EXPR_SIGN:
