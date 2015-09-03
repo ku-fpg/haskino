@@ -397,7 +397,7 @@ data Procedure :: * -> * where
      I2CRead :: SlaveAddress -> Word8 -> Procedure [Word8]
      I2CReadE :: SlaveAddressE -> Word8E -> Procedure [Word8]
      QueryAllTasks :: Procedure [TaskID]
--- ToDo: E version of QueryProcessor, handle Expr [Word8]
+-- ToDo: E version of QueryAllTasks, handle Expr [Word8]
      QueryTask  :: TaskID -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
      QueryTaskE :: TaskIDE -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
      -- Todo: add one wire queries, readd pulse?
