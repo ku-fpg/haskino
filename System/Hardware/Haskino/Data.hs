@@ -644,8 +644,8 @@ getFirmwareReply 0x2C = Right BS_RESP_STRING
 getFirmwareReply 0x38 = Right DIG_RESP_READ_PIN
 getFirmwareReply 0x48 = Right ALG_RESP_READ_PIN
 getFirmwareReply 0x58 = Right I2C_RESP_READ
-getFirmwareReply 0xAB = Right SCHED_RESP_QUERY
-getFirmwareReply 0xAC = Right SCHED_RESP_QUERY_ALL
+getFirmwareReply 0xAA = Right SCHED_RESP_QUERY
+getFirmwareReply 0xAB = Right SCHED_RESP_QUERY_ALL
 getFirmwareReply 0xC0 = Right REF_RESP_NEW
 getFirmwareReply n    = Left n
 
