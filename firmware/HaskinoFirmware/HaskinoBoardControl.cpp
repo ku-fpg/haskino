@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "HaskinoBoardControl.h"
+#include "HaskinoCodeBlock.h"
 #include "HaskinoComm.h"
 #include "HaskinoCommands.h"
 #include "HaskinoExpr.h"
@@ -14,6 +15,8 @@ static bool handleSystemReset(int size, const byte *msg);
 static bool handleSetPinModeE(int size, const byte *msg);
 static bool handleDelayMillisE(int size, const byte *msg);
 static bool handleDelayMicrosE(int size, const byte *msg);
+static bool handleWhile(int size, const byte *msg);
+static bool handleIfThenElse(int size, const byte *msg);
 
 bool parseBoardControlMessage(int size, const byte *msg, byte *local)
     {
@@ -39,6 +42,12 @@ bool parseBoardControlMessage(int size, const byte *msg, byte *local)
             break;
         case BC_CMD_DELAY_MICROS_E:
             return handleDelayMicrosE(size, msg);
+            break;
+        case BC_CMD_WHILE:
+            return handleWhile(size, msg);
+            break;
+        case BC_CMD_IF_THEN_ELSE:
+            return handleIfThenElse(size, msg);
             break;
         }
     return false;
@@ -111,3 +120,27 @@ static bool handleSystemReset(int size, const byte *msg)
     soft_restart();
     return false;
     }
+
+static bool handleWhile(int size, const byte *msg)
+    {
+    byte *expr = (byte *) &msg[1];
+    bool condition = evalBoolExpr(&expr);
+    byte *codeBlock = expr;
+    int whileSize = size - (expr - msg);
+
+    while (condition)
+        {
+        runCodeBlock(whileSize, codeBlock, NULL);
+
+        expr = (byte *) &msg[1];
+        condition = evalBoolExpr(&expr);
+        }
+
+    return false;
+    }
+
+static bool handleIfThenElse(int size, const byte *msg)
+    {
+    return false;
+    }
+
