@@ -220,12 +220,13 @@ packageTwoSubExpr :: Word8 -> Expr a -> Expr b -> [Word8]
 packageTwoSubExpr ec e1 e2 = ec : (packageExpr e1) ++ (packageExpr e2)
 
 packageIfBSubExpr :: Word8 -> Expr a -> Expr b -> Expr b -> [Word8]
-packageIfBSubExpr ec e1 e2 e3 = ec : thenSize ++ pcond ++ pthen ++ pelse
+packageIfBSubExpr ec e1 e2 e3 = ec : thenSize ++ elseSize ++ pcond ++ pthen ++ pelse
   where
     pcond = packageExpr e1
     pthen = packageExpr e2
     pelse = packageExpr e3
     thenSize = word16ToBytes $ fromIntegral $ length pthen
+    elseSize = word16ToBytes $ fromIntegral $ length pelse
 
 packageRef :: Int -> Word8 -> [Word8]
 packageRef n ec = [ec, fromIntegral n]

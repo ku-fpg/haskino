@@ -152,8 +152,7 @@ static bool handleIfThenElse(int size, const byte *msg)
     else
         {
         elseSize = size - (thenSize + (codeBlock - msg));
-        codeBlock += thenSize;
-        runCodeBlock(elseSize, codeBlock, NULL);
+        runCodeBlock(elseSize, codeBlock + thenSize, NULL);
         }
 
     return false;
