@@ -129,7 +129,7 @@ static bool handleNewRef(int type, int size, const byte *msg, byte *local)
 // ToDo:  Is this needed?  Probably not, perhaps a debug mechanism.
 static bool handleReadRef(int type, int size, const byte *msg, byte *local)
     {
-    byte refIndex = msg[1];
+    byte refIndex = msg[2];
     bool bVal;
     uint8_t w8Val;
     uint16_t w16Val;
@@ -161,8 +161,8 @@ static bool handleReadRef(int type, int size, const byte *msg, byte *local)
 
 static bool handleWriteRef(int type, int size, const byte *msg)
     {
-    byte refIndex = msg[1];
-    byte *expr = (byte *) &msg[2];
+    byte refIndex = msg[2];
+    byte *expr = (byte *) &msg[3];
     bool bVal;
     uint8_t w8Val;
     uint16_t w16Val;
@@ -194,8 +194,8 @@ static bool handleWriteRef(int type, int size, const byte *msg)
 
 static bool handleWriteEffectRef(int type, int size, const byte *msg)
     {
-    byte refIndex = msg[1];
-    byte *expr = (byte *) &msg[2];
+    byte refIndex = msg[2];
+    byte *expr = (byte *) &msg[3];
     bool bVal;
     uint8_t w8Val;
     uint16_t w16Val;
