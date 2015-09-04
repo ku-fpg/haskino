@@ -31,8 +31,8 @@ bool parseBoardStatusMessage(int size, const byte *msg, byte *local)
 
 void sendVersionReply(byte *local)
     {
-    static byte versionReply[2] = {FIRMWARE_MAJOR,
-                                   FIRMWARE_MINOR};
+    static byte versionReply[2] = {FIRMWARE_MINOR,
+                                   FIRMWARE_MAJOR};
         
     sendReply(sizeof(versionReply), BS_RESP_VERSION, versionReply, local);
     }

@@ -89,11 +89,15 @@ openArduino verbose fp = do
           ver <- send initState queryFirmware
           let maj = ver `shiftR` 8
               min = ver .&. 0xFF
-              versionState = initState {firmwareID = "Firmware v" ++ show maj ++ "." ++ show min }
-          -- Step 3: Send a capabilities request
+              id = "Firmware v" ++ show maj ++ "." ++ show min
+              versionState = initState {firmwareID = id}
+          putStrLn id
+          -- Step 3: Send a processor type request
           p <- send versionState queryProcessor
           -- Update the connection state with the processor
           let openState = versionState {processor = p}
+              proc = "Processor: " ++ show p
+          putStrLn proc
           return openState
   where
       bailOut tid m ms = do cleanUpArduino tid
