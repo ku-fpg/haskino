@@ -646,7 +646,7 @@ getFirmwareReply 0x48 = Right ALG_RESP_READ_PIN
 getFirmwareReply 0x58 = Right I2C_RESP_READ
 getFirmwareReply 0xAA = Right SCHED_RESP_QUERY
 getFirmwareReply 0xAB = Right SCHED_RESP_QUERY_ALL
-getFirmwareReply 0xC0 = Right REF_RESP_NEW
+getFirmwareReply 0xB8 = Right REF_RESP_NEW
 getFirmwareReply n    = Left n
 
 --stepDelayVal :: StepDelay -> Word8
