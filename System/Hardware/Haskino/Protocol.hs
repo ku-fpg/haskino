@@ -172,14 +172,25 @@ packageCodeBlock commands =
       -- to task stream, since they are now used in the AssignXxx commands
       packProcedure :: Procedure a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
       packProcedure QueryFirmware k cmds = packageCodeBlock' (k 0) cmds
+      packProcedure QueryFirmwareE k cmds = packageCodeBlock' (k (lit 0)) cmds
       packProcedure QueryProcessor k cmds = packageCodeBlock' (k ATMEGA8) cmds
       packProcedure Micros k cmds = packageCodeBlock' (k 0) cmds
+      packProcedure MicrosE k cmds = packageCodeBlock' (k (lit 0)) cmds
       packProcedure Millis k cmds = packageCodeBlock' (k 0) cmds
+      packProcedure MillisE k cmds = packageCodeBlock' (k (lit 0)) cmds
       packProcedure (DigitalRead _) k cmds = packageCodeBlock' (k False) cmds
+      packProcedure (DigitalReadE _) k cmds = packageCodeBlock' (k (lit False)) cmds
       packProcedure (AnalogRead _) k cmds = packageCodeBlock' (k 0) cmds
+      packProcedure (AnalogReadE _) k cmds = packageCodeBlock' (k (lit 0)) cmds
       packProcedure (I2CRead _ _) k cmds = packageCodeBlock' (k []) cmds
+      packProcedure (I2CReadE _ _) k cmds = packageCodeBlock' (k []) cmds
       packProcedure QueryAllTasks k cmds = packageCodeBlock' (k ([])) cmds
       packProcedure (QueryTask _) k cmds = packageCodeBlock' (k Nothing) cmds
+      packProcedure (QueryTaskE _) k cmds = packageCodeBlock' (k Nothing) cmds
+      packProcedure (ReadRemoteRefB (RemoteRefB i)) k cmds = packageCodeBlock' (k (RefB i)) cmds
+      packProcedure (ReadRemoteRef8 (RemoteRefW8 i)) k cmds = packageCodeBlock' (k (Ref8 i)) cmds
+      packProcedure (ReadRemoteRef16 (RemoteRefW16 i)) k cmds = packageCodeBlock' (k (Ref16 i)) cmds
+      packProcedure (ReadRemoteRef32 (RemoteRefW32 i)) k cmds = packageCodeBlock' (k (Ref32 i)) cmds
 
       packageCodeBlock' :: Arduino a -> B.ByteString -> B.ByteString
       packageCodeBlock' (Bind m k) cmds = packBind m k cmds
