@@ -92,7 +92,7 @@ static bool handleSetPinModeE(int size, const byte *msg)
     {
     byte *expr = (byte *) &msg[1];
     byte pinNo = evalWord8Expr(&expr);
-    pinMode(pinNo, msg[2]);
+    pinMode(pinNo, *expr);
     return false;
     }
 

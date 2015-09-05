@@ -16,7 +16,7 @@ import Data.Boolean
 import Data.Word
 
 blinkRefE :: IO ()
-blinkRefE = withArduino True "/dev/cu.usbmodem1421" $ do
+blinkRefE = withArduino False "/dev/cu.usbmodem1421" $ do
            let led = lit 13
            let delay = lit 1000
            setPinModeE led OUTPUT
@@ -28,3 +28,4 @@ blinkRefE = withArduino True "/dev/cu.usbmodem1421" $ do
                      onOff <- readRemoteRef r 
                      digitalWriteE led onOff
                      delayMillisE delay
+                     modifyRemoteRef r (\x -> notB x)

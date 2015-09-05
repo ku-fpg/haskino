@@ -7,7 +7,7 @@
 bool evalBoolExpr(byte **ppExpr) 
     {
     byte *pExpr = *ppExpr;
-    byte exprOp = *pExpr && EXPR_OP_MASK;
+    byte exprOp = *pExpr & EXPR_OP_MASK;
     bool val = false;
     int refNum;
     uint8_t e8_1,e8_2;
@@ -186,7 +186,7 @@ uint8_t evalWord8Expr(byte **ppExpr)
 uint16_t evalWord16Expr(byte **ppExpr) 
     {
     byte *pExpr = *ppExpr;
-    byte exprOp = *pExpr && EXPR_OP_MASK;
+    byte exprOp = *pExpr & EXPR_OP_MASK;
     uint16_t val = 0;
     uint16_t e1,e2;
     bool conditional;
@@ -288,7 +288,7 @@ uint16_t evalWord16Expr(byte **ppExpr)
 uint32_t evalWord32Expr(byte **ppExpr) 
     {
     byte *pExpr = *ppExpr;
-    byte exprOp = *pExpr && EXPR_OP_MASK;
+    byte exprOp = *pExpr & EXPR_OP_MASK;
     uint32_t val = 0;
     uint32_t e1,e2;
     bool conditional;

@@ -61,7 +61,7 @@ static bool handleWritePinE(int size, const byte *msg)
     {
     byte *expr = (byte *) &msg[1];
     byte pinNo = evalWord8Expr(&expr);
-    byte value = evalWord8Expr(&expr);
+    byte value = evalBoolExpr(&expr);
 
     digitalWrite(pinNo, value);
     return false;

@@ -106,13 +106,13 @@ static bool handleNewRef(int type, int size, const byte *msg, byte *local)
     {
     int count = 1;
     int spaceNeeded = typeToSize(type) * count;
+    byte *expr = (byte *) &msg[2];
     void *memory;
     byte refIndex;
 
     if ((nextFreeRefIndex >= MAX_REFS) ||
         ((memory = malloc(spaceNeeded)) == NULL))
         {
-        // ToDo:  Verify sending empty message can indicate error
         sendReply(0, REF_RESP_NEW, NULL, local);
         }
     else
@@ -121,6 +121,21 @@ static bool handleNewRef(int type, int size, const byte *msg, byte *local)
         haskinoRefs[nextFreeRefIndex].type = type;
         haskinoRefs[nextFreeRefIndex].len = count;
         refIndex = nextFreeRefIndex;
+        switch (type)
+            {
+            case EXPR_BOOL:
+                *((bool *) memory) = evalBoolExpr(&expr);
+                break;
+            case EXPR_WORD8:
+                *((uint8_t *) memory) = evalWord8Expr(&expr);
+                break;
+            case EXPR_WORD16:
+                *((uint16_t *) memory) = evalWord16Expr(&expr);
+                break;
+            case EXPR_WORD32:
+                *((uint32_t *) memory) = evalWord32Expr(&expr);
+                break;
+            }
         sendReply(sizeof(byte), REF_RESP_NEW, (byte *) &refIndex, local);
         nextFreeRefIndex++;
         }
