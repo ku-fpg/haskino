@@ -11,8 +11,6 @@
 
 module System.Hardware.Haskino.SamplePrograms.BlinkE where
 
-import Control.Monad (forever)
-
 import System.Hardware.Haskino
 import Data.Boolean
 import Data.Word
@@ -22,7 +20,7 @@ blinkE = withArduino True "/dev/cu.usbmodem1421" $ do
            let led = lit 13
            let delay = lit 1000
            setPinModeE led OUTPUT
-           loop $ do digitalWriteE led (lit True)
-                     delayMillisE delay
-                     digitalWriteE led (lit False)
-                     delayMillisE delay
+           while (lit True) $ do digitalWriteE led (lit True)
+                                 delayMillisE delay
+                                 digitalWriteE led (lit False)
+                                 delayMillisE delay
