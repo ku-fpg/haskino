@@ -44,7 +44,7 @@ module System.Hardware.Haskino (
   -- ** Control structures
   , loop, while, ifThenElse
   -- ** Expressions
-  , Expr(..), lit, newRemoteRef, readRemoteRef, writeRemoteRef
+  , Expr(..), RemoteRef, lit, newRemoteRef, readRemoteRef, writeRemoteRef
   , writeEffectRemoteRef, modifyRemoteRef
  )
  where
