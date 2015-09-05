@@ -17,6 +17,7 @@ import       Data.Bits ((.|.), shiftL)
 import       Data.Word (Word8, Word16, Word32)
 import       Data.Boolean as B
 import       Data.Boolean.Numbers as BN
+-- import       Data.Boolean.Bits as BB
 
 data RemoteRef a where
     RemoteRefB   :: Int -> RemoteRef Bool
