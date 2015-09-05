@@ -129,9 +129,6 @@ packageCommand (ModifyRemoteRef16 (RemoteRefW16 i) f) =
     buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD16, fromIntegral i] ++ packageExpr (f (Ref16 i)))
 packageCommand (ModifyRemoteRef32 (RemoteRefW32 i) f) =
     buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD32, fromIntegral i] ++ packageExpr (f (Ref32 i)))
-{-
-ToDo: Make general methods for the directly above
--}
 -- ToDo: Do we need to check maximum frame size on conditionals?
 packageCommand (While e cb) =
     buildCommand BC_CMD_WHILE ((packageExpr e) ++ (B.unpack pc))
@@ -168,8 +165,6 @@ packageCodeBlock commands =
       packLocal (Debug _) k cmds = packageCodeBlock' (k ()) cmds
       packLocal (Die _ _) k cmds = packageCodeBlock' (k ()) cmds
 
-      -- ToDo:  Add expression procedures, and actually add procedures
-      -- to task stream, since they are now used in the AssignXxx commands
       packProcedure :: Procedure a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
       packProcedure QueryFirmware k cmds = packageCodeBlock' (k 0) cmds
       packProcedure QueryFirmwareE k cmds = packageCodeBlock' (k (lit 0)) cmds
