@@ -28,7 +28,7 @@ import System.Hardware.Haskino.Utils
 
 -- | Maximum size of a Haskino Firmware message
 maxFirmwareSize :: Int
-maxFirmwareSize = 128
+maxFirmwareSize = 256
 
 framePackage :: B.ByteString -> B.ByteString
 framePackage bs = B.append (B.concatMap escape bs) (B.pack [check bs, 0x7E])
