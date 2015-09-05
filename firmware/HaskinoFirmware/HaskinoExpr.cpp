@@ -72,11 +72,11 @@ bool evalBoolExpr(byte **ppExpr)
                         val = (e32_1 < e32_2); 
                     break;
                 default:
-                    sendString("Unknown ExType");
+                    sendStringf("Unknown ExType");
                 }
             break;
         default:
-            sendString("Unknown ExOp");
+            sendStringf("Unknown ExOp");
         }
         return val;
     }
@@ -178,7 +178,7 @@ uint8_t evalWord8Expr(byte **ppExpr)
                 }
             break;
         default:
-            sendString("Unknown ExOp");
+            sendStringf("Unknown ExOp");
         }
         return val;
     }
@@ -280,7 +280,7 @@ uint16_t evalWord16Expr(byte **ppExpr)
                 }
             break;
         default:
-            sendString("Unknown ExOp");
+            sendStringf("Unknown ExOp");
         }
         return val;
     }
@@ -382,7 +382,7 @@ uint32_t evalWord32Expr(byte **ppExpr)
                 }
             break;
         default:
-            sendString("Unknown ExOp");
+            sendStringf("Unknown ExOp");
         }
         return val;
     }

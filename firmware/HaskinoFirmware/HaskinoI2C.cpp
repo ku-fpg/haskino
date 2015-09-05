@@ -43,11 +43,11 @@ static bool handleRead(int size, const byte *msg, byte *local)
 
     if (byteCount < byteAvail) 
         {
-        sendString("I2C: Too many bytes received");
+        sendStringf("I2C: Too many bytes received");
         } 
     else if (byteCount > byteAvail) 
         {
-        sendString("I2C: Too few bytes received");
+        sendStringf("I2C: Too few bytes received");
         }
 
     if (local)

@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <Arduino.h>
 #include <HardwareSerial.h>
 #include "HaskinoAnalog.h"
@@ -156,7 +157,13 @@ void sendReply(int count, byte replyType, const byte *reply, byte *local)
         }
     }
 
-void sendString(const char *reply)
+void sendStringf(const char *fmt, ...)
     {
-    sendReply(strlen(reply), BS_RESP_STRING, (byte *) reply, NULL);
-    }
+    char buffer[128];    
+    va_list argp = NULL;
+
+    va_start(argp, fmt);
+    vsprintf(buffer, fmt, argp);
+    va_end(argp);
+    sendReply(strlen(buffer), BS_RESP_STRING, (const byte *) buffer, NULL);
+}
