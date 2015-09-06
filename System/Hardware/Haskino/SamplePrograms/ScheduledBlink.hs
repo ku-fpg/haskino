@@ -12,7 +12,7 @@
 
 module System.Hardware.Haskino.SamplePrograms.ScheduledBlink where
 
-import Control.Monad (forever)
+import Control.Concurrent   (threadDelay)
 import Control.Monad.Trans (liftIO)
 
 import System.Hardware.Haskino
@@ -41,7 +41,10 @@ scheduledBlink = withArduino True "/dev/cu.usbmodem1421" $ do
     task <- queryTask 1
     liftIO $ print task
     -- Wait 10.5 seconds and delete the task
-    delayMillis 10500
+    -- Note, delayMillis cannot be used here, as it would prevent scheduled
+    -- task from running on target.
+    liftIO $ print "Delaying 10500 milliseconds"
+    liftIO $ threadDelay (10500 * 1000)
     deleteTask 1
     tasks <- queryAllTasks
     liftIO $ print tasks

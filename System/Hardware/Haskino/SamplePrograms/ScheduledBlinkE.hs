@@ -52,6 +52,8 @@ scheduledBlinkE = withArduino True "/dev/cu.usbmodem1421" $ do
     task <- queryTaskE tid
     liftIO $ print task
     -- Wait 10.5 seconds and delete the task
+    -- Note, delayMillis cannot be used here, as it would prevent scheduled
+    -- task from running on target.
     liftIO $ print "Delaying 10500 milliseconds"
     liftIO $ threadDelay (progDelay * 1000)
     deleteTaskE tid
