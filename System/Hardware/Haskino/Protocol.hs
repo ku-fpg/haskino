@@ -9,7 +9,7 @@
 --
 -- Internal representation of the Haskino Fimrware protocol.
 -------------------------------------------------------------------------------
-{-# LANGUAGE GADTs, TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
 
 module System.Hardware.Haskino.Protocol(framePackage, packageCommand, 
                                             packageProcedure, packageRemoteBinding,
@@ -133,42 +133,6 @@ packageCommand (IfThenElse e cb1 cb2) =
     pc1 = packageCodeBlock cb1  
     pc2 = packageCodeBlock cb2  
     thenSize = word16ToBytes $ fromIntegral (B.length pc1)
-
-class PackEmpty a where
-    pempty :: a
-
-instance PackEmpty Bool where
-    pempty = False
-
-instance PackEmpty () where
-    pempty = ()
-
-instance PackEmpty [a] where
-    pempty = []
-
-instance PackEmpty (Maybe a) where
-    pempty = Nothing
-
-instance PackEmpty Word8 where
-    pempty = 0
-
-instance PackEmpty Word8E where
-    pempty = lit 0
-
-instance PackEmpty Word16 where
-    pempty = 0
-
-instance PackEmpty Word16E where
-    pempty = lit 0
-
-instance PackEmpty Word32 where
-    pempty = 0
-
-instance PackEmpty Word32E where
-    pempty = lit 0
-
-instance PackEmpty Processor where
-    pempty = ATMEGA8
 
 -- ToDo:  Create locally scoped remote refs by passing ID offsets 
 -- through pack calls and incrementing them whan packing newRemoteRef calls.
