@@ -1,9 +1,12 @@
 #include <Arduino.h>
 #include "HaskinoComm.h"
 
+static bool codeBlock = false;
+
 void runCodeBlock(int blockSize, const byte * block, byte *local)
     {
     int currPos = 0;
+    codeBlock = true;
 
     while (currPos < blockSize)
         {
@@ -15,5 +18,11 @@ void runCodeBlock(int blockSize, const byte * block, byte *local)
 
         currPos += cmdSize + 1;
         }
+    codeBlock = false;
+    }
+
+bool isCodeBlock()
+    {
+    return codeBlock;
     }
 

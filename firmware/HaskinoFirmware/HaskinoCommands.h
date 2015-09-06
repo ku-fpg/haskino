@@ -23,6 +23,7 @@
 #define BC_CMD_IF_THEN_ELSE     (BC_CMD_TYPE | 0x8)
 
 // Board Control responses
+#define BC_RESP_DELAY           (BC_CMD_TYPE | 0x9)
 
 // Board Status commands
 #define BS_CMD_TYPE             0x20

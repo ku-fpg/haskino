@@ -68,6 +68,10 @@ static void millisDelay(unsigned long millis)
     else 
         {
         delay(millis);
+        if (!isCodeBlock())
+            {
+            sendReply(0, BC_RESP_DELAY, NULL, NULL);
+            }
         }
     }
 
@@ -85,6 +89,10 @@ static bool handleDelayMicros(int size, const byte *msg)
     unsigned int micros;
     memcpy(&micros, &msg[1], 2);
     delayMicroseconds(micros);
+    if (!isRunningTask() && !isCodeBlock())
+        {
+        sendReply(0, BC_RESP_DELAY, NULL, NULL);
+        }
     return false;
     }
 

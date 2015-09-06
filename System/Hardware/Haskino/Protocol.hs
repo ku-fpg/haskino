@@ -9,14 +9,14 @@
 --
 -- Internal representation of the Haskino Fimrware protocol.
 -------------------------------------------------------------------------------
-{-# LANGUAGE GADTs      #-}
+{-# LANGUAGE GADTs, TypeSynonymInstances, FlexibleInstances #-}
 
 module System.Hardware.Haskino.Protocol(framePackage, packageCommand, 
                                             packageProcedure, packageRemoteBinding,
                                             unpackageResponse, parseQueryResult) where
 
 import Data.Bits            (xor)
-import Data.Word (Word8)
+import Data.Word (Word8, Word16, Word32)
 
 import Control.Concurrent   (modifyMVar_, readMVar)
 import qualified Data.ByteString as B
@@ -80,14 +80,6 @@ packageCommand (DeleteTask tid) =
     buildCommand SCHED_CMD_DELETE_TASK [tid]
 packageCommand (DeleteTaskE tid) =
     buildCommand SCHED_CMD_DELETE_TASK_E (packageExpr tid)
-packageCommand (DelayMillis ms) = 
-    buildCommand BC_CMD_DELAY_MILLIS (word32ToBytes ms)
-packageCommand (DelayMillisE ms) =
-    buildCommand BC_CMD_DELAY_MILLIS_E (packageExpr ms)
-packageCommand (DelayMicros ms) = 
-    buildCommand BC_CMD_DELAY_MICROS (word32ToBytes ms)
-packageCommand (DelayMicrosE ms) =
-    buildCommand BC_CMD_DELAY_MICROS_E (packageExpr ms)
 packageCommand (ScheduleTask tid tt) = 
     buildCommand SCHED_CMD_SCHED_TASK (tid : word32ToBytes tt)
 packageCommand (ScheduleTaskE tid tt) =
@@ -142,6 +134,42 @@ packageCommand (IfThenElse e cb1 cb2) =
     pc2 = packageCodeBlock cb2  
     thenSize = word16ToBytes $ fromIntegral (B.length pc1)
 
+class PackEmpty a where
+    pempty :: a
+
+instance PackEmpty Bool where
+    pempty = False
+
+instance PackEmpty () where
+    pempty = ()
+
+instance PackEmpty [a] where
+    pempty = []
+
+instance PackEmpty (Maybe a) where
+    pempty = Nothing
+
+instance PackEmpty Word8 where
+    pempty = 0
+
+instance PackEmpty Word8E where
+    pempty = lit 0
+
+instance PackEmpty Word16 where
+    pempty = 0
+
+instance PackEmpty Word16E where
+    pempty = lit 0
+
+instance PackEmpty Word32 where
+    pempty = 0
+
+instance PackEmpty Word32E where
+    pempty = lit 0
+
+instance PackEmpty Processor where
+    pempty = ATMEGA8
+
 -- ToDo:  Create locally scoped remote refs by passing ID offsets 
 -- through pack calls and incrementing them whan packing newRemoteRef calls.
 packageCodeBlock :: Arduino a -> B.ByteString
@@ -166,22 +194,26 @@ packageCodeBlock commands =
       packLocal (Die _ _) k cmds = packageCodeBlock' (k ()) cmds
 
       packProcedure :: Procedure a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
-      packProcedure QueryFirmware k cmds = packageCodeBlock' (k 0) cmds
-      packProcedure QueryFirmwareE k cmds = packageCodeBlock' (k (lit 0)) cmds
-      packProcedure QueryProcessor k cmds = packageCodeBlock' (k ATMEGA8) cmds
-      packProcedure Micros k cmds = packageCodeBlock' (k 0) cmds
-      packProcedure MicrosE k cmds = packageCodeBlock' (k (lit 0)) cmds
-      packProcedure Millis k cmds = packageCodeBlock' (k 0) cmds
-      packProcedure MillisE k cmds = packageCodeBlock' (k (lit 0)) cmds
-      packProcedure (DigitalRead _) k cmds = packageCodeBlock' (k False) cmds
-      packProcedure (DigitalReadE _) k cmds = packageCodeBlock' (k (lit False)) cmds
-      packProcedure (AnalogRead _) k cmds = packageCodeBlock' (k 0) cmds
-      packProcedure (AnalogReadE _) k cmds = packageCodeBlock' (k (lit 0)) cmds
-      packProcedure (I2CRead _ _) k cmds = packageCodeBlock' (k []) cmds
-      packProcedure (I2CReadE _ _) k cmds = packageCodeBlock' (k []) cmds
-      packProcedure QueryAllTasks k cmds = packageCodeBlock' (k ([])) cmds
-      packProcedure (QueryTask _) k cmds = packageCodeBlock' (k Nothing) cmds
-      packProcedure (QueryTaskE _) k cmds = packageCodeBlock' (k Nothing) cmds
+      packProcedure QueryFirmware k cmds = packageCodeBlock' (k 0) (B.append cmds (lenPackage (packageProcedure QueryFirmware)))
+      packProcedure QueryFirmwareE k cmds = packageCodeBlock' (k (lit 0)) (B.append cmds (lenPackage (packageProcedure QueryFirmwareE)))
+      packProcedure QueryProcessor k cmds = packageCodeBlock' (k ATMEGA8) (B.append cmds (lenPackage (packageProcedure QueryProcessor)))
+      packProcedure Micros k cmds = packageCodeBlock' (k 0) (B.append cmds (lenPackage (packageProcedure Micros)))
+      packProcedure MicrosE k cmds = packageCodeBlock' (k (lit 0)) (B.append cmds (lenPackage (packageProcedure MicrosE)))
+      packProcedure Millis k cmds = packageCodeBlock' (k 0) (B.append cmds (lenPackage (packageProcedure Millis)))
+      packProcedure MillisE k cmds = packageCodeBlock' (k (lit 0)) (B.append cmds (lenPackage (packageProcedure MillisE)))
+      packProcedure (DelayMillis ms) k cmds = packageCodeBlock' (k ()) (B.append cmds (lenPackage (packageProcedure (DelayMillis ms))))
+      packProcedure (DelayMillisE ms) k cmds = packageCodeBlock' (k ()) (B.append cmds (lenPackage (packageProcedure (DelayMillisE ms))))
+      packProcedure (DelayMicros ms) k cmds = packageCodeBlock' (k ()) (B.append cmds (lenPackage (packageProcedure (DelayMicros ms))))
+      packProcedure (DelayMicrosE ms) k cmds = packageCodeBlock' (k ()) (B.append cmds (lenPackage (packageProcedure (DelayMicrosE ms))))
+      packProcedure (DigitalRead p) k cmds = packageCodeBlock' (k False) (B.append cmds (lenPackage (packageProcedure (DigitalRead p))))
+      packProcedure (DigitalReadE p) k cmds = packageCodeBlock' (k (lit False)) (B.append cmds (lenPackage (packageProcedure (DigitalReadE p))))
+      packProcedure (AnalogRead p) k cmds = packageCodeBlock' (k 0) (B.append cmds (lenPackage (packageProcedure (AnalogRead p))))
+      packProcedure (AnalogReadE p) k cmds = packageCodeBlock' (k (lit 0)) (B.append cmds (lenPackage (packageProcedure (AnalogReadE p))))
+      packProcedure (I2CRead p n) k cmds = packageCodeBlock' (k []) (B.append cmds (lenPackage (packageProcedure (I2CRead p n))))
+      packProcedure (I2CReadE p n) k cmds = packageCodeBlock' (k []) (B.append cmds (lenPackage (packageProcedure (I2CReadE p n))))
+      packProcedure QueryAllTasks k cmds = packageCodeBlock' (k ([])) (B.append cmds (lenPackage (packageProcedure QueryAllTasks)))
+      packProcedure (QueryTask t) k cmds = packageCodeBlock' (k Nothing) (B.append cmds (lenPackage (packageProcedure (QueryTask t))))
+      packProcedure (QueryTaskE t) k cmds = packageCodeBlock' (k Nothing) (B.append cmds (lenPackage (packageProcedure (QueryTaskE t))))
       packProcedure (ReadRemoteRefB (RemoteRefB i)) k cmds = packageCodeBlock' (k (RefB i)) cmds
       packProcedure (ReadRemoteRef8 (RemoteRefW8 i)) k cmds = packageCodeBlock' (k (Ref8 i)) cmds
       packProcedure (ReadRemoteRef16 (RemoteRefW16 i)) k cmds = packageCodeBlock' (k (Ref16 i)) cmds
@@ -212,6 +244,10 @@ packageProcedure (I2CReadE sae cnte) = buildCommand I2C_CMD_READ_E ((packageExpr
 packageProcedure QueryAllTasks       = buildCommand SCHED_CMD_QUERY_ALL []
 packageProcedure (QueryTask tid)     = buildCommand SCHED_CMD_QUERY [tid]
 packageProcedure (QueryTaskE tide)   = buildCommand SCHED_CMD_QUERY_E (packageExpr tide)
+packageProcedure (DelayMillis ms)    = buildCommand BC_CMD_DELAY_MILLIS (word32ToBytes ms)
+packageProcedure (DelayMillisE ms)   = buildCommand BC_CMD_DELAY_MILLIS_E (packageExpr ms)
+packageProcedure (DelayMicros ms)    = buildCommand BC_CMD_DELAY_MICROS (word32ToBytes ms)
+packageProcedure (DelayMicrosE ms)   = buildCommand BC_CMD_DELAY_MICROS_E (packageExpr ms)
 
 packageRemoteBinding :: RemoteBinding a -> B.ByteString
 packageRemoteBinding (NewRemoteRefB e)   = buildCommand REF_CMD_NEW ((refTypeCmdVal REF_BOOL) : (packageExpr e))
@@ -304,6 +340,7 @@ unpackageResponse [] = Unimplemented (Just "<EMPTY-REPLY>") []
 unpackageResponse (cmdWord:args)
   | Right cmd <- getFirmwareReply cmdWord
   = case (cmd, args) of
+      (BC_RESP_DELAY, [])             -> DelayResp
       (BS_RESP_VERSION, [majV, minV]) -> Firmware (bytesToWord16 (majV,minV))
       (BS_RESP_TYPE, [p])             -> ProcessorType p
       (BS_RESP_MICROS, [m0,m1,m2,m3]) -> MicrosReply (bytesToWord32 (m0,m1,m2,m3))
@@ -337,6 +374,10 @@ parseQueryResult (Procedure Micros) (MicrosReply m) = Just m
 parseQueryResult (Procedure MicrosE) (MicrosReply m) = Just (lit m)
 parseQueryResult (Procedure Millis) (MillisReply m) = Just m
 parseQueryResult (Procedure MillisE) (MillisReply m) = Just (lit m)
+parseQueryResult (Procedure (DelayMicros m)) DelayResp = Just ()
+parseQueryResult (Procedure (DelayMicrosE m)) DelayResp = Just ()
+parseQueryResult (Procedure (DelayMillis m)) DelayResp = Just ()
+parseQueryResult (Procedure (DelayMillisE m)) DelayResp = Just ()
 parseQueryResult (Procedure (DigitalRead p)) (DigitalReply d) = Just (if d == 0 then False else True)
 parseQueryResult (Procedure (DigitalReadE p)) (DigitalReply d) = Just (if d == 0 then lit False else lit True)
 parseQueryResult (Procedure (AnalogRead p)) (AnalogReply a) = Just a

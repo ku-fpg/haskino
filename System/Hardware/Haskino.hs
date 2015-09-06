@@ -34,10 +34,12 @@ module System.Hardware.Haskino (
   --, pulse
   -- ** Servo
   --, MinPulse, MaxPulse, servoConfig
+  -- ** TRime 
+  , millis, micros, millisE, microsE, delayMillis, delayMicros,delayMillisE, delayMicrosE
   -- ** Scheduler
   , TaskLength, TaskID, TimeMillis, TimeMicros, TaskPos, queryAllTasks, queryTask
-  , createTask, deleteTask, delayMillis, delayMicros, scheduleTask, scheduleReset
-  , queryTaskE, deleteTaskE, delayMillisE, delayMicrosE, scheduleTaskE
+  , createTask, deleteTask, scheduleTask, scheduleReset, queryTaskE, deleteTaskE
+  , scheduleTaskE
   -- ** Stepper
   --, StepDevice, StepType(..), NumSteps, StepSpeed, StepAccel, StepPerRev
   --, StepDelay(..), StepDir(..), stepperConfig, stepperStep

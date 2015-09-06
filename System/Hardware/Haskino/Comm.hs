@@ -136,26 +136,6 @@ send conn commands =
       sendBind :: ArduinoConnection -> Arduino a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendBind c (Return a)      k cmds = send' c (k a) cmds
       sendBind c (Bind m k1)    k2 cmds = sendBind c m (\ r -> Bind (k1 r) k2) cmds
-      sendBind c (Command (DelayMillis d)) k cmds = do
-          sendToArduino c cmds
-          message c $ "Delaying Millis: " ++ show d
-          threadDelay ((fromIntegral d)*1000)
-          send' c (k ()) B.empty
-      sendBind c (Command (DelayMicros d)) k cmds = do
-          sendToArduino c cmds
-          message c $ "Delaying Micros: " ++ show d
-          threadDelay (fromIntegral d)
-          send' c (k ()) B.empty
-      sendBind c (Command (DelayMillisE (Lit32 d))) k cmds = do
-          sendToArduino c cmds
-          message c $ "Delaying Millis: " ++ show d
-          threadDelay ((fromIntegral d)*1000)
-          send' c (k ()) B.empty
-      sendBind c (Command (DelayMicrosE (Lit32 d))) k cmds = do
-          sendToArduino c cmds
-          message c $ "Delaying Micros: " ++ show d
-          threadDelay (fromIntegral d)
-          send' c (k ()) B.empty
       sendBind c (Command (CreateTask tid as)) k cmds = 
           send' c (k ()) (B.append cmds (packageCommand (CreateTask tid as)))
       sendBind c (Command cmd) k cmds =

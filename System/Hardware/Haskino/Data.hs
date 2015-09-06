@@ -178,10 +178,6 @@ data Command =
      | CreateTaskE TaskIDE (Arduino ())
      | DeleteTask TaskID
      | DeleteTaskE TaskIDE
-     | DelayMillis TimeMillis
-     | DelayMicros TimeMicros
-     | DelayMillisE TimeMillisE
-     | DelayMicrosE TimeMicrosE
      | ScheduleTask TaskID TimeMillis
      | ScheduleTaskE TaskIDE TimeMillisE
      | ScheduleReset
@@ -260,18 +256,6 @@ deleteTask tid = Command $ DeleteTask tid
 
 deleteTaskE :: TaskIDE -> Arduino ()
 deleteTaskE tid = Command $ DeleteTaskE tid
-
-delayMillis :: TimeMillis -> Arduino ()
-delayMillis t = Command $ DelayMillis t
-
-delayMillisE :: TimeMillisE -> Arduino ()
-delayMillisE t = Command $ DelayMillisE t
-
-delayMicros :: TimeMicros -> Arduino ()
-delayMicros t = Command $ DelayMicros t
-
-delayMicrosE :: TimeMicrosE -> Arduino ()
-delayMicrosE t = Command $ DelayMicrosE t
 
 scheduleTask :: TaskID -> TimeMillis -> Arduino ()
 scheduleTask tid tt = Command $ ScheduleTask tid tt
@@ -388,6 +372,10 @@ data Procedure :: * -> * where
      MicrosE        :: Procedure Word32E
      Millis         :: Procedure Word32
      MillisE        :: Procedure Word32E
+     DelayMillis    :: TimeMillis -> Procedure ()
+     DelayMicros    :: TimeMicros -> Procedure ()
+     DelayMillisE   :: TimeMillisE -> Procedure ()
+     DelayMicrosE   :: TimeMicrosE -> Procedure ()
 --     DigitalPortRead  :: Port -> Procedure Word8          -- ^ Read the values on a port digitally
 --     DigitalPortReadE :: Port -> Procedure (Expr Word8)
      DigitalRead    :: Pin -> Procedure Bool            -- ^ Read the avlue ona pin digitally
@@ -428,6 +416,18 @@ millis = Procedure Millis
 
 millisE :: Arduino Word32E
 millisE = Procedure MillisE
+
+delayMillis :: TimeMillis -> Arduino ()
+delayMillis t = Procedure $ DelayMillis t
+
+delayMillisE :: TimeMillisE -> Arduino ()
+delayMillisE t = Procedure $ DelayMillisE t
+
+delayMicros :: TimeMicros -> Arduino ()
+delayMicros t = Procedure $ DelayMicros t
+
+delayMicrosE :: TimeMicrosE -> Arduino ()
+delayMicrosE t = Procedure $ DelayMicrosE t
 
 -- ToDo: Do some sort of analog mapping locally?
 
@@ -495,7 +495,8 @@ newRemoteRef32 :: Word32E -> Arduino (RemoteRef Word32)
 newRemoteRef32 n = RemoteBinding $ NewRemoteRef32 n
 
 -- | A response, as returned from the Arduino
-data Response = Firmware Word16                      -- ^ Firmware version (maj/min)
+data Response = DelayResp
+              | Firmware Word16                      -- ^ Firmware version (maj/min)
               | ProcessorType Word8                  -- ^ Processor report
               | MicrosReply Word32                   -- ^ Elapsed Microseconds
               | MillisReply Word32                   -- ^ Elapsed Milliseconds
@@ -626,7 +627,8 @@ refTypeCmdVal REF_WORD32                = 0x04
 
 -- | Firmware replies, see: 
 -- | https://github.com/ku-fpg/haskino/wiki/Haskino-Firmware-Protocol-Definition
-data FirmwareReply =  BS_RESP_VERSION
+data FirmwareReply =  BC_RESP_DELAY
+                   |  BS_RESP_VERSION
                    |  BS_RESP_TYPE
                    |  BS_RESP_MICROS
                    |  BS_RESP_MILLIS
@@ -640,6 +642,7 @@ data FirmwareReply =  BS_RESP_VERSION
                 deriving Show
 
 getFirmwareReply :: Word8 -> Either Word8 FirmwareReply
+getFirmwareReply 0x19 = Right BC_RESP_DELAY
 getFirmwareReply 0x28 = Right BS_RESP_VERSION
 getFirmwareReply 0x29 = Right BS_RESP_TYPE
 getFirmwareReply 0x2A = Right BS_RESP_MICROS

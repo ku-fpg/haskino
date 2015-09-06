@@ -12,7 +12,7 @@
 
 module System.Hardware.Haskino.SamplePrograms.ScheduledBlinkE where
 
-import Control.Monad (forever)
+import Control.Concurrent   (threadDelay)
 import Control.Monad.Trans (liftIO)
 import Data.Boolean.Numbers
 import Data.Word
@@ -25,8 +25,8 @@ blinkDelay = lit 1000
 startDelay :: Expr Word32
 startDelay = blinkDelay * lit 5
 
-progDelay :: Expr Word32
-progDelay = lit 10500 
+progDelay :: Int
+progDelay = 10500 
 
 -- Task which will execute on Arduino, blink on a second, off a second and
 -- repeat
@@ -52,7 +52,8 @@ scheduledBlinkE = withArduino True "/dev/cu.usbmodem1421" $ do
     task <- queryTaskE tid
     liftIO $ print task
     -- Wait 10.5 seconds and delete the task
-    delayMillisE progDelay
+    liftIO $ print "Delaying 10500 milliseconds"
+    liftIO $ threadDelay (progDelay * 1000)
     deleteTaskE tid
     tasks <- queryAllTasks
     liftIO $ print tasks
