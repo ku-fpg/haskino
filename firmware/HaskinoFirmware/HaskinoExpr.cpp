@@ -124,6 +124,7 @@ uint8_t evalWord8Expr(byte **ppExpr)
         case EXPR_REM:
         case EXPR_SHFL:
         case EXPR_SHFR:
+            *ppExpr += 1; // Use command byte
             e1 = evalWord8Expr(ppExpr);
             e2 = evalWord8Expr(ppExpr);
             switch(exprOp)
@@ -225,6 +226,7 @@ uint16_t evalWord16Expr(byte **ppExpr)
         case EXPR_REM:
         case EXPR_SHFL:
         case EXPR_SHFR:
+            *ppExpr += 1; // Use command byte
             e1 = evalWord16Expr(ppExpr);
             e2 = evalWord16Expr(ppExpr);
             switch(exprOp)
@@ -326,6 +328,7 @@ uint32_t evalWord32Expr(byte **ppExpr)
         case EXPR_REM:
         case EXPR_SHFL:
         case EXPR_SHFR:
+            *ppExpr += 1; // Use command byte
             e1 = evalWord32Expr(ppExpr);
             e2 = evalWord32Expr(ppExpr);
             switch(exprOp)
