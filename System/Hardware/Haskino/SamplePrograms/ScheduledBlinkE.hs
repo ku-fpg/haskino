@@ -25,10 +25,8 @@ blinkDelay = lit 1000
 startDelay :: Expr Word32
 startDelay = blinkDelay * lit 5
 
--- ToDo: Fix div
 progDelay :: Expr Word32
-progDelay = 10500 -- (blinkDelay * lit 10) + (lit 500)
--- progDelay = (blinkDelay * lit 21) `div` (lit 2)
+progDelay = lit 10500 
 
 -- Task which will execute on Arduino, blink on a second, off a second and
 -- repeat
