@@ -60,13 +60,13 @@ bool parseSchedulerMessage(int size, const byte *msg, byte *local)
             return handleQueryAll(size, msg, local);
             break;
         case SCHED_CMD_CREATE_TASK_E:
-            return handleCreateTask(size, msg);
+            return handleCreateTaskE(size, msg);
             break;
         case SCHED_CMD_DELETE_TASK_E:
             return handleDeleteTaskE(size, msg);
             break;
         case SCHED_CMD_ADD_TO_TASK_E:
-            return handleAddToTask(size, msg);
+            return handleAddToTaskE(size, msg);
             break;
         case SCHED_CMD_SCHED_TASK_E:
             return handleScheduleTaskE(size, msg);
@@ -194,7 +194,7 @@ static bool handleAddToTaskE(int size, const byte *msg)
     {
     byte *expr = (byte *) &msg[1];
     byte id = evalWord8Expr(&expr);
-    unsigned int addSize = evalWord8Expr(&expr);
+    byte addSize = evalWord8Expr(&expr);
     const byte *data = &msg[3];
 
     return addToTaskById(id, addSize, data);

@@ -138,6 +138,8 @@ send conn commands =
       sendBind c (Bind m k1)    k2 cmds = sendBind c m (\ r -> Bind (k1 r) k2) cmds
       sendBind c (Command (CreateTask tid as)) k cmds = 
           send' c (k ()) (B.append cmds (packageCommand (CreateTask tid as)))
+      sendBind c (Command (CreateTaskE tid as)) k cmds = 
+          send' c (k ()) (B.append cmds (packageCommand (CreateTaskE tid as)))
       sendBind c (Command cmd) k cmds =
           send' c (k ()) (B.append cmds (framePackage (packageCommand cmd)))
       sendBind c (Control ctrl)  k cmds = sendControl c ctrl k cmds

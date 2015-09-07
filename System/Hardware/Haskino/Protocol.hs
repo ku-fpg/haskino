@@ -103,16 +103,16 @@ packageCommand (CreateTaskE tid m) =
   where
     td = packageCodeBlock m
     taskSize = fromIntegral (B.length td)
-    cmd = buildCommand SCHED_CMD_CREATE_TASK ((packageExpr tid) ++ (word16ToBytes taskSize))                                   
+    cmd = buildCommand SCHED_CMD_CREATE_TASK_E ((packageExpr tid) ++ (packageExpr (Lit16 taskSize)))                                   
     -- Max command data size is max frame size - 3 (command,checksum,frame flag) 
     maxCmdSize = maxFirmwareSize - 3
     genAddToTaskCmds tds | fromIntegral (B.length tds) > maxCmdSize = 
         addToTask (B.take maxCmdSize tds) 
             `B.append` (genAddToTaskCmds (B.drop maxCmdSize tds))
     genAddToTaskCmds tds = addToTask tds
-    addToTask tds' = framePackage $ buildCommand SCHED_CMD_ADD_TO_TASK ((packageExpr tid) ++ 
-                                                                        (packageExpr (Lit8 (fromIntegral (B.length tds')))) ++ 
-                                                                        (B.unpack tds'))
+    addToTask tds' = framePackage $ buildCommand SCHED_CMD_ADD_TO_TASK_E ((packageExpr tid) ++ 
+                                                                          (packageExpr (Lit8 (fromIntegral (B.length tds')))) ++ 
+                                                                          (B.unpack tds'))
 packageCommand (WriteRemoteRefB (RemoteRefB i) e) =
     buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_BOOL, fromIntegral i] ++ packageExpr e)
 packageCommand (WriteRemoteRef8 (RemoteRefW8 i) e) =
