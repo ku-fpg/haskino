@@ -6,7 +6,9 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- The /hello world/ of the arduino world, blinking the led.
+-- The /hello world/ of the arduino world, blinking the led.  This version is
+-- written using remote references (along with expressions), introduced in
+-- version 0.3 of Haskino.
 -------------------------------------------------------------------------------
 
 module System.Hardware.Haskino.SamplePrograms.BlinkRefE where

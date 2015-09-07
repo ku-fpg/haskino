@@ -1,12 +1,14 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.Blink
+-- Module      :  System.Hardware.Haskino.SamplePrograms.BlinkE
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- The /hello world/ of the arduino world, blinking the led.
+-- The /hello world/ of the arduino world, blinking the led.  This version is
+-- written with the expression based version of the commands and procedures
+-- introduced in version 0.3 of Haskino
 -------------------------------------------------------------------------------
 
 module System.Hardware.Haskino.SamplePrograms.BlinkE where

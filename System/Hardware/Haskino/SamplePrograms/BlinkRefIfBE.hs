@@ -1,12 +1,14 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.BlinkRefE
+-- Module      :  System.Hardware.Haskino.SamplePrograms.BlinkRefIfBE
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- The /hello world/ of the arduino world, blinking the led.
+-- The /hello world/ of the arduino world, blinking the led.  This version
+-- was written with remote references and demonstrates the IfB expression
+-- introduced in version 0.3 of Haskino.
 -------------------------------------------------------------------------------
 
 module System.Hardware.Haskino.SamplePrograms.BlinkRefIfBE where

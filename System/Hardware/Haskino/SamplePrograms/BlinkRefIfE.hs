@@ -1,12 +1,15 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.BlinkRefE
+-- Module      :  System.Hardware.Haskino.SamplePrograms.BlinkRefIfE
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- The /hello world/ of the arduino world, blinking the led.
+-- The /hello world/ of the arduino world, blinking the led. This version is
+-- written using remote references, and demonstrating If Then Else blocks in
+-- the remote monad.  (These features were introduced in version 0.3 of 
+-- Haskino)
 -------------------------------------------------------------------------------
 
 module System.Hardware.Haskino.SamplePrograms.BlinkRefIfE where
