@@ -244,5 +244,6 @@ setupListener serial dbg chan = do
                   StringMessage{}        -> dbg $ "Received " ++ show resp
                   _                      -> do dbg $ "Received " ++ show resp
                                                writeChan chan resp
+        S.recv serial maxFirmwareSize -- Clear serial port of any unneeded characters
         tid <- liftIO $ forkIO $ forever listener
         return tid

@@ -13,7 +13,8 @@
 
 module System.Hardware.Haskino.Protocol(framePackage, packageCommand, 
                                             packageProcedure, packageRemoteBinding,
-                                            unpackageResponse, parseQueryResult) where
+                                            unpackageResponse, parseQueryResult,
+                                            maxFirmwareSize) where
 
 import Data.Bits            (xor)
 import Data.Word (Word8, Word16, Word32)
