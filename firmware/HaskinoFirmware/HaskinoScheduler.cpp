@@ -195,7 +195,7 @@ static bool handleAddToTaskE(int size, const byte *msg)
     byte *expr = (byte *) &msg[1];
     byte id = evalWord8Expr(&expr);
     byte addSize = evalWord8Expr(&expr);
-    const byte *data = &msg[3];
+    const byte *data = expr;
 
     return addToTaskById(id, addSize, data);
     }

@@ -42,8 +42,7 @@ scheduledBlinkE = withArduino True "/dev/cu.usbmodem1421" $ do
     let tid = lit 1
     setPinModeE led OUTPUT
     -- Create the task which blinks with a 2 second period
-    -- ToDo: Fix E version of createTask
-    createTask 1 (myTask led)
+    createTaskE tid (myTask led)
     -- Schedule the task to start in 5 seconds
     scheduleTaskE tid startDelay
     tasks <- queryAllTasks
