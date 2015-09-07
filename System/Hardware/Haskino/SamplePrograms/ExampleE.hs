@@ -20,8 +20,8 @@ import Data.Word
 example :: IO ()
 example = withArduino False "/dev/cu.usbmodem1421" $ do
            let button = lit 2
-           let led1 = lit 10
-           let led2 = lit 11
+           let led1 = lit 6
+           let led2 = lit 7
            x <- newRemoteRef false
            setPinModeE button INPUT
            setPinModeE led1 OUTPUT
