@@ -28,6 +28,10 @@
 #define EXPR_EQ   0x10
 #define EXPR_LESS 0x11
 #define EXPR_IF   0x12
+#define EXPR_BIT  0x13
+#define EXPR_SETB 0x14
+#define EXPR_CLRB 0x15
+#define EXPR_TSTB 0x16
 
 bool evalBoolExpr(byte **ppExpr); 
 uint8_t evalWord8Expr(byte **ppExpr); 

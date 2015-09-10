@@ -13,11 +13,11 @@
 
 module System.Hardware.Haskino.Expr where
 
-import       Data.Bits ((.|.), shiftL)
+import       Data.Bits as DB
 import       Data.Word (Word8, Word16, Word32)
 import       Data.Boolean as B
 import       Data.Boolean.Numbers as BN
--- import       Data.Boolean.Bits as BB
+import       Data.Boolean.Bits as BB
 
 data RemoteRef a where
     RemoteRefB   :: Int -> RemoteRef Bool
@@ -67,7 +67,10 @@ data Expr a where
   ShfR8     :: Word8E -> Word8E -> Word8E
   Eq8       :: Word8E -> Word8E -> BoolE
   Less8     :: Word8E -> Word8E -> BoolE
-  If8       :: BoolE -> Word8E -> Word8E -> Word8E
+  If8       :: BoolE  -> Word8E -> Word8E -> Word8E
+  Bit8      :: Word8E -> Word8E
+  SetB8     :: Word8E -> Word8E -> Word8E
+  ClrB8     :: Word8E -> Word8E -> Word8E
   Neg16     :: Word16E -> Word16E
   Sign16    :: Word16E -> Word16E
   Add16     :: Word16E -> Word16E -> Word16E
@@ -83,7 +86,10 @@ data Expr a where
   ShfR16    :: Word16E -> Word8E -> Word16E
   Eq16      :: Word16E -> Word16E -> BoolE
   Less16    :: Word16E -> Word16E -> BoolE
-  If16      :: BoolE -> Word16E -> Word16E -> Word16E
+  If16      :: BoolE   -> Word16E -> Word16E -> Word16E
+  Bit16     :: Word8E  -> Word16E
+  SetB16    :: Word16E -> Word8E -> Word16E
+  ClrB16    :: Word16E -> Word8E -> Word16E
   Neg32     :: Word32E -> Word32E
   Sign32    :: Word32E -> Word32E
   Add32     :: Word32E -> Word32E -> Word32E
@@ -99,7 +105,10 @@ data Expr a where
   ShfR32    :: Word32E -> Word8E -> Word32E
   Eq32      :: Word32E -> Word32E -> BoolE
   Less32    :: Word32E -> Word32E -> BoolE
-  If32      :: BoolE -> Word32E -> Word32E -> Word32E
+  If32      :: BoolE   -> Word32E -> Word32E -> Word32E
+  Bit32     :: Word8E  -> Word32E
+  SetB32    :: Word32E -> Word8E -> Word32E
+  ClrB32    :: Word32E -> Word8E -> Word32E
 
 deriving instance Show a => Show (Expr a)
 
@@ -160,6 +169,21 @@ instance BN.IntegralB Word8E where
   toIntegerB x = case x of
                       Lit8 n -> n
 
+instance BB.BitsB Word8E where
+  type IntOf Word8E = Word8E
+  (.&.) = And8
+  (.|.) = Or8
+  xor = Xor8
+  complement = Comp8
+  shiftL = ShfL8
+  shiftR = ShfR8
+  isSigned = (\_ -> lit False)
+  bitSize = (\_ -> lit 8)
+  bit = Bit8
+  setBit = SetB8
+  clearBit = ClrB8
+--  testBit = (\x i -> x .&. bit i ==* bit i)
+
 instance  Num Word16E where
   (+) x y = Add16 x y
   (-) x y = Sub16 x y
@@ -191,6 +215,21 @@ instance BN.IntegralB Word16E where
   mod = Rem16
   toIntegerB x = case x of
                     Lit16 n -> n
+
+instance BB.BitsB Word16E where
+  type IntOf Word16E = Word8E
+  (.&.) = And16
+  (.|.) = Or16
+  xor = Xor16
+  complement = Comp16
+  shiftL = ShfL16
+  shiftR = ShfR16
+  isSigned = (\_ -> lit False)
+  bitSize = (\_ -> lit 16)
+  bit = Bit16
+  setBit = SetB16
+  clearBit = ClrB16
+--  testBit = (\x i -> x .&. bit i ==* bit i)
 
 instance  Num Word32E where
   (+) x y = Add32 x y
@@ -224,6 +263,21 @@ instance BN.IntegralB Word32E where
   toIntegerB x = case x of
                     Lit32 n -> n
 
+instance BB.BitsB Word32E where
+  type IntOf Word32E = Word8E
+  (.&.) = And32
+  (.|.) = Or32
+  xor = Xor32
+  complement = Comp32
+  shiftL = ShfL32
+  shiftR = ShfR32
+  isSigned = (\_ -> lit False)
+  bitSize = (\_ -> lit 32)
+  bit = Bit32
+  setBit = SetB32
+  clearBit = ClrB32
+--  testBit = (\x i -> x .&. bit i ==* bit i)
+
 -- | Haskino Firmware expresions, see:tbd 
 data ExprType = EXPR_BOOL
               | EXPR_WORD8
@@ -249,6 +303,9 @@ data ExprOp = EXPR_LIT
             | EXPR_EQ
             | EXPR_LESS
             | EXPR_IF
+            | EXPR_BIT
+            | EXPR_SETB
+            | EXPR_CLRB
 
 -- | Compute the numeric value of a command
 exprTypeVal :: ExprType -> Word8
@@ -277,6 +334,9 @@ exprOpVal EXPR_SHFR = 0x0F
 exprOpVal EXPR_EQ   = 0x10
 exprOpVal EXPR_LESS = 0x11
 exprOpVal EXPR_IF   = 0x12
+exprOpVal EXPR_BIT  = 0x13
+exprOpVal EXPR_SETB = 0x14
+exprOpVal EXPR_CLRB = 0x15
 
 exprCmdVal :: ExprType -> ExprOp -> Word8
-exprCmdVal t o = exprTypeVal t `shiftL` 5 .|. exprOpVal o
+exprCmdVal t o = exprTypeVal t `DB.shiftL` 5 DB..|. exprOpVal o
