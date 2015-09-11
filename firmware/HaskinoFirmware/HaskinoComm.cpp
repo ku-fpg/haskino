@@ -8,6 +8,7 @@
 #include "HaskinoComm.h"
 #include "HaskinoConfig.h"
 #include "HaskinoDigital.h"
+#include "HaskinoExprCmds.h"
 #include "HaskinoI2C.h"
 #include "HaskinoOneWire.h"
 #include "HaskinoRefs.h"
@@ -59,6 +60,9 @@ bool parseMessage(int size, const byte *msg, byte *local)
             break;
         case REF_CMD_TYPE:
             return parseRefMessage(size, msg, local);
+            break;
+        case EXP_CMD_TYPE:
+            return parseExprMessage(size, msg, local);
             break;
         }
         return false;

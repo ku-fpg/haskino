@@ -228,6 +228,10 @@ packageProcedure (DelayMillis ms)    = buildCommand BC_CMD_DELAY_MILLIS (word32T
 packageProcedure (DelayMillisE ms)   = buildCommand BC_CMD_DELAY_MILLIS_E (packageExpr ms)
 packageProcedure (DelayMicros ms)    = buildCommand BC_CMD_DELAY_MICROS (word32ToBytes ms)
 packageProcedure (DelayMicrosE ms)   = buildCommand BC_CMD_DELAY_MICROS_E (packageExpr ms)
+packageProcedure (EvalB e)           = buildCommand EXP_CMD_EVAL ((refTypeCmdVal REF_BOOL) : (packageExpr e))
+packageProcedure (Eval8 e)           = buildCommand EXP_CMD_EVAL ((refTypeCmdVal REF_WORD8) : (packageExpr e))
+packageProcedure (Eval16 e)          = buildCommand EXP_CMD_EVAL ((refTypeCmdVal REF_WORD16) : (packageExpr e))
+packageProcedure (Eval32 e)          = buildCommand EXP_CMD_EVAL ((refTypeCmdVal REF_WORD32) : (packageExpr e))
 
 packageRemoteBinding :: RemoteBinding a -> B.ByteString
 packageRemoteBinding (NewRemoteRefB e)   = buildCommand REF_CMD_NEW ((refTypeCmdVal REF_BOOL) : (packageExpr e))
@@ -349,6 +353,14 @@ unpackageResponse (cmdWord:args)
                                    bytesToWord32 (tt0,tt1,tt2,tt3)))  
       (REF_RESP_NEW , [w])            -> NewReply w
       (REF_RESP_NEW , [])             -> FailedNewRef
+      (EXP_RESP_EVAL, t : [b1, b2]) | t == refTypeCmdVal REF_BOOL 
+                                      -> EvalBReply (if bytesToWord16 (b1, b2) == 0 then False else True)
+      (EXP_RESP_EVAL, t : [b]) | t == refTypeCmdVal REF_WORD8 
+                                      -> Eval8Reply b
+      (EXP_RESP_EVAL, t : [b1,b2]) | t == refTypeCmdVal REF_WORD16 
+                                      -> Eval16Reply (bytesToWord16 (b1, b2))
+      (EXP_RESP_EVAL, t : [b1,b2,b3,b4]) | t == refTypeCmdVal REF_WORD32 
+                                      -> Eval32Reply (bytesToWord32 (b1, b2, b3, b4))
       _                               -> Unimplemented (Just (show cmd)) args
   | True
   = Unimplemented Nothing (cmdWord : args)
@@ -380,4 +392,8 @@ parseQueryResult (RemoteBinding (NewRemoteRefB _)) (NewReply r) = Just $ RemoteR
 parseQueryResult (RemoteBinding (NewRemoteRef8 _)) (NewReply r) = Just $ RemoteRefW8 $ fromIntegral r
 parseQueryResult (RemoteBinding (NewRemoteRef16 _)) (NewReply r) = Just $ RemoteRefW16 $ fromIntegral r
 parseQueryResult (RemoteBinding (NewRemoteRef32 _)) (NewReply r) = Just $ RemoteRefW32 $ fromIntegral r
+parseQueryResult (Procedure (EvalB _)) (EvalBReply r) = Just $ r
+parseQueryResult (Procedure (Eval8 _)) (Eval8Reply r) = Just $ r
+parseQueryResult (Procedure (Eval16 _)) (Eval16Reply r) = Just $ r
+parseQueryResult (Procedure (Eval32 _)) (Eval32Reply r) = Just $ r
 parseQueryResult q r = Nothing

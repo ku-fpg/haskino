@@ -120,5 +120,13 @@
 #define REF_RESP_NEW            (REF_CMD_TYPE | 0x8)
 #define REF_RESP_READ           (REF_CMD_TYPE | 0x9)
 
+// Expression Eval commands
+#define EXP_CMD_TYPE            0xC0
+
+#define EXP_CMD_EVAL            (EXP_CMD_TYPE | 0x0)
+
+// Reference  response
+#define EXP_RESP_EVAL           (EXP_CMD_TYPE | 0x8)
+
 #endif /* HaskinoCommandsH */
 

@@ -393,6 +393,12 @@ data Procedure :: * -> * where
      ReadRemoteRef8  :: RemoteRef Word8  -> Procedure Word8E
      ReadRemoteRef16 :: RemoteRef Word16 -> Procedure Word16E
      ReadRemoteRef32 :: RemoteRef Word32 -> Procedure Word32E
+     -- The following are for supporting testing of the Haskino Firmware's
+     -- interpreter.
+     EvalB           :: BoolE  -> Procedure Bool
+     Eval8           :: Word8E -> Procedure Word8
+     Eval16          :: Word16E -> Procedure Word16
+     Eval32          :: Word32E -> Procedure Word32
 
 deriving instance Show a => Show (Procedure a)
 
@@ -476,6 +482,18 @@ readRemoteRef16 n = Procedure $ ReadRemoteRef16 n
 readRemoteRef32 :: RemoteRef Word32 -> Arduino Word32E
 readRemoteRef32 n = Procedure $ ReadRemoteRef32 n
 
+evalB :: BoolE -> Arduino Bool
+evalB e = Procedure $ EvalB e
+
+eval8 :: Word8E -> Arduino Word8
+eval8 e = Procedure $ Eval8 e
+
+eval16 :: Word16E -> Arduino Word16
+eval16 e = Procedure $ Eval16 e
+
+eval32 :: Word32E -> Arduino Word32
+eval32 e = Procedure $ Eval32 e
+
 data RemoteBinding :: * -> * where
      NewRemoteRefB    :: BoolE   -> RemoteBinding (RemoteRef Bool)
      NewRemoteRef8    :: Word8E  -> RemoteBinding (RemoteRef Word8)
@@ -508,6 +526,10 @@ data Response = DelayResp
               | QueryTaskReply (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
               | NewReply Word8
               | FailedNewRef
+              | EvalBReply Bool
+              | Eval8Reply Word8
+              | Eval16Reply Word16
+              | Eval32Reply Word32
               | Unimplemented (Maybe String) [Word8] -- ^ Represents messages currently unsupported
               | EmptyFrame
               | InvalidChecksumFrame [Word8]
@@ -561,6 +583,7 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE
                  | REF_CMD_READ
                  | REF_CMD_WRITE
                  | REF_CMD_WRITE_EFFECT
+                 | EXP_CMD_EVAL
                 deriving Show
 
 -- | Compute the numeric value of a command
@@ -611,6 +634,7 @@ firmwareCmdVal REF_CMD_NEW              = 0xB0
 firmwareCmdVal REF_CMD_READ             = 0xB1
 firmwareCmdVal REF_CMD_WRITE            = 0xB2
 firmwareCmdVal REF_CMD_WRITE_EFFECT     = 0xB3
+firmwareCmdVal EXP_CMD_EVAL             = 0xC0
 
 data RefType = REF_BOOL
              | REF_WORD8
@@ -639,6 +663,7 @@ data FirmwareReply =  BC_RESP_DELAY
                    |  SCHED_RESP_QUERY
                    |  SCHED_RESP_QUERY_ALL
                    |  REF_RESP_NEW
+                   |  EXP_RESP_EVAL
                 deriving Show
 
 getFirmwareReply :: Word8 -> Either Word8 FirmwareReply
@@ -654,6 +679,7 @@ getFirmwareReply 0x58 = Right I2C_RESP_READ
 getFirmwareReply 0xAC = Right SCHED_RESP_QUERY
 getFirmwareReply 0xAD = Right SCHED_RESP_QUERY_ALL
 getFirmwareReply 0xB8 = Right REF_RESP_NEW
+getFirmwareReply 0xC8 = Right EXP_RESP_EVAL
 getFirmwareReply n    = Left n
 
 --stepDelayVal :: StepDelay -> Word8
