@@ -20,7 +20,7 @@ exampleE = withArduino False "/dev/cu.usbmodem1421" $ do
            let button = lit 2
            let led1 = lit 6
            let led2 = lit 7
-           x <- newRemoteRef false
+           x <- newRemoteRef (lit False)
            setPinModeE button INPUT
            setPinModeE led1 OUTPUT
            setPinModeE led2 OUTPUT
