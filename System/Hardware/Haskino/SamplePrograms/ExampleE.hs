@@ -24,7 +24,8 @@ buttonE = withArduino False "/dev/cu.usbmodem1421" $ do
            setPinModeE button INPUT
            setPinModeE led1 OUTPUT
            setPinModeE led2 OUTPUT
-           while (lit True) $ do writeEffectRemoteRef x (digitalReadE button)
+           while (lit True) $ do writeEffectRemoteRef (writeRemoteRef x) (digitalReadE button)
+                                 --writeEffectRemoteRef x (digitalReadE button)
                                  ex <- readRemoteRef x
                                  digitalWriteE led1 ex
                                  digitalWriteE led2 (notB ex)
