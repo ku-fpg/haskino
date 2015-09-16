@@ -284,20 +284,20 @@ writeRemoteRef16 r e = Command $ WriteRemoteRef16 r e
 writeRemoteRef32 :: RemoteRef Word32 -> Word32E -> Arduino ()
 writeRemoteRef32 r e = Command $ WriteRemoteRef32 r e
 
-writeEffectRemoteRefB :: (BoolE -> Arduino ()) -> Arduino BoolE -> Arduino ()
-writeEffectRemoteRefB f e = 
+extendB :: (BoolE -> Arduino ()) -> Arduino BoolE -> Arduino ()
+extendB f e = 
     case f (lit True) of (Command (WriteRemoteRefB r _)) -> Command $ WriteEffectRemoteRefB r e
 
-writeEffectRemoteRef8 :: (Word8E -> Arduino ()) -> Arduino Word8E -> Arduino ()
-writeEffectRemoteRef8 f e = 
+extend8 :: (Word8E -> Arduino ()) -> Arduino Word8E -> Arduino ()
+extend8 f e = 
     case f (lit 0) of (Command (WriteRemoteRef8 r _)) -> Command $ WriteEffectRemoteRef8 r e
 
-writeEffectRemoteRef16 :: (Word16E -> Arduino ()) -> Arduino Word16E -> Arduino ()
-writeEffectRemoteRef16 f e = 
+extend16 :: (Word16E -> Arduino ()) -> Arduino Word16E -> Arduino ()
+extend16 f e = 
     case f (lit 0) of (Command (WriteRemoteRef16 r _)) -> Command $ WriteEffectRemoteRef16 r e
 
-writeEffectRemoteRef32 :: (Word32E -> Arduino ()) -> Arduino Word32E -> Arduino ()
-writeEffectRemoteRef32 f e = 
+extend32 :: (Word32E -> Arduino ()) -> Arduino Word32E -> Arduino ()
+extend32 f e = 
     case f (lit 0) of (Command (WriteRemoteRef32 r _)) -> Command $ WriteEffectRemoteRef32 r e
 
 modifyRemoteRefB :: RemoteRef Bool -> (BoolE -> BoolE) -> Arduino ()
@@ -318,36 +318,36 @@ class RemoteReference a where
     newRemoteRef          :: Expr a -> Arduino (RemoteRef a)
     readRemoteRef         :: RemoteRef a -> Arduino (Expr a)
     writeRemoteRef        :: RemoteRef a -> Expr a -> Arduino ()
-    writeEffectRemoteRef  :: (Expr a -> Arduino ()) -> Arduino (Expr a) -> Arduino ()
     modifyRemoteRef       :: RemoteRef a -> (Expr a -> Expr a) -> Arduino ()
+    extend                :: (Expr a -> Arduino ()) -> Arduino (Expr a) -> Arduino ()
 
 instance RemoteReference Bool where
     newRemoteRef = newRemoteRefB
     readRemoteRef = readRemoteRefB
     writeRemoteRef = writeRemoteRefB
-    writeEffectRemoteRef = writeEffectRemoteRefB
     modifyRemoteRef = modifyRemoteRefB
+    extend = extendB
 
 instance RemoteReference Word8 where
     newRemoteRef = newRemoteRef8
     readRemoteRef = readRemoteRef8
     writeRemoteRef = writeRemoteRef8
-    writeEffectRemoteRef = writeEffectRemoteRef8
     modifyRemoteRef = modifyRemoteRef8
+    extend = extend8
 
 instance RemoteReference Word16 where
     newRemoteRef = newRemoteRef16
     readRemoteRef = readRemoteRef16
     writeRemoteRef = writeRemoteRef16
-    writeEffectRemoteRef = writeEffectRemoteRef16
     modifyRemoteRef = modifyRemoteRef16
+    extend = extend16
 
 instance RemoteReference Word32 where
     newRemoteRef = newRemoteRef32
     readRemoteRef = readRemoteRef32
     writeRemoteRef = writeRemoteRef32
-    writeEffectRemoteRef = writeEffectRemoteRef32
     modifyRemoteRef = modifyRemoteRef32
+    extend = extend32
 
 data Control =
       Loop (Arduino ())
