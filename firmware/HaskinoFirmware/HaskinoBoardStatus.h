@@ -12,6 +12,7 @@
 #define ATmega645_TYPE      8
 #define SAM3X8E_TYPE        9
 #define X86_TYPE            10
+#define QUARK_TYPE          11
 
 bool parseBoardStatusMessage(int size, const byte *msg, byte *local);
 void sendVersionReply(byte *local);

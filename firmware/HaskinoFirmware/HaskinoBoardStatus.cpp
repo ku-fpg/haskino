@@ -68,6 +68,8 @@ static bool handleRequestType(int size, const byte *msg, byte *local)
                                 SAM3X8E_TYPE};
 #elif defined(ARDUINO_LINUX)
                                 X86_TYPE};
+#elif defined(INTEL_EDISON)
+                                QUARK_TYPE};
 #else
 #error "Please define a new processor type board"
 #endif

@@ -701,6 +701,7 @@ data Processor = ATMEGA8
                | ATMEGA645
                | SAM3X8E
                | X86
+               | QUARK
                | UNKNOWN_PROCESSOR Word8
     deriving Show
 
@@ -716,4 +717,5 @@ getProcessor  7 = ATMEGA644
 getProcessor  8 = ATMEGA645
 getProcessor  9 = SAM3X8E
 getProcessor 10 = X86
+getProcessor 11 = QUARK
 getProcessor  n = UNKNOWN_PROCESSOR n

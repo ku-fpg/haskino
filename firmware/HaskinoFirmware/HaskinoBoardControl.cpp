@@ -55,7 +55,11 @@ bool parseBoardControlMessage(int size, const byte *msg, byte *local)
 
 static bool handleSetPinMode(int size, const byte *msg)
     {
+#ifdef INTEL_EDISON
+    gpio_setup(msg[1], msg[2]);
+#else
     pinMode(msg[1], msg[2]);
+#endif
     return false;
     }
 

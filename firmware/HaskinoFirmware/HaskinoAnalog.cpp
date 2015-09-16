@@ -61,7 +61,20 @@ static bool handleWritePin(int size, const byte *msg)
     byte pinNo = msg[1];
     byte value = msg[2];
 
+#ifdef INTEL_EDISON
+    // ToDo:
+    if (value == 0)
+        {
+        pwm_disable(pinNo);
+        }
+    else
+        {
+        pwm_configure(pinNo, 20408163, value * (20408163 / 255));
+        pwm_enable(pinNo);
+        }
+#else
     analogWrite(pinNo, value);
+#endif
     return false;
     }
 

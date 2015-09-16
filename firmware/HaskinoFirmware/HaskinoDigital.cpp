@@ -32,7 +32,11 @@ bool parseDigitalMessage(int size, const byte *msg, byte *local)
 static bool handleReadPin(int size, const byte *msg, byte *local)
     {
     byte pinNo = msg[1];
+#ifdef INTEL_EDISON
+    byte digitalReply = gpio_read(pinNo);
+#else
     byte digitalReply = digitalRead(pinNo);
+#endif
 
     sendReply(sizeof(digitalReply), DIG_RESP_READ_PIN, &digitalReply, local);
     return false;
@@ -43,7 +47,11 @@ static bool handleWritePin(int size, const byte *msg)
     byte pinNo = msg[1];
     byte value = msg[2];
 
+#ifdef INTEL_EDISON
+    gpio_write(pinNo, value);
+#else
     digitalWrite(pinNo, value);
+#endif
     return false;
     }
 
