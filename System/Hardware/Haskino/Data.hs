@@ -180,6 +180,7 @@ data Command =
      | DeleteTaskE TaskIDE
      | ScheduleTask TaskID TimeMillis
      | ScheduleTaskE TaskIDE TimeMillisE
+     | BootTaskE TaskIDE
      | ScheduleReset
      | WriteRemoteRefB (RemoteRef Bool) BoolE
      | WriteRemoteRef8 (RemoteRef Word8) Word8E
@@ -265,6 +266,9 @@ scheduleTaskE tid tt = Command $ ScheduleTaskE tid tt
 
 scheduleReset :: Arduino ()
 scheduleReset = Command ScheduleReset
+
+bootTaskE :: TaskIDE -> Arduino ()
+bootTaskE tid = Command $ BootTaskE tid
 
 while :: BoolE -> Arduino () -> Arduino()
 while be ps = Command $ While be ps
@@ -585,6 +589,7 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE
                  | SCHED_CMD_ADD_TO_TASK_E
                  | SCHED_CMD_SCHED_TASK_E
                  | SCHED_CMD_QUERY_E
+                 | SCHED_CMD_BOOT_TASK_E
                  | REF_CMD_NEW
                  | REF_CMD_READ
                  | REF_CMD_WRITE
@@ -636,6 +641,7 @@ firmwareCmdVal SCHED_CMD_DELETE_TASK_E  = 0xA8
 firmwareCmdVal SCHED_CMD_ADD_TO_TASK_E  = 0xA9
 firmwareCmdVal SCHED_CMD_SCHED_TASK_E   = 0xAA
 firmwareCmdVal SCHED_CMD_QUERY_E        = 0xAB
+firmwareCmdVal SCHED_CMD_BOOT_TASK_E    = 0xAC
 firmwareCmdVal REF_CMD_NEW              = 0xB0
 firmwareCmdVal REF_CMD_READ             = 0xB1
 firmwareCmdVal REF_CMD_WRITE            = 0xB2
@@ -682,8 +688,8 @@ getFirmwareReply 0x2C = Right BS_RESP_STRING
 getFirmwareReply 0x38 = Right DIG_RESP_READ_PIN
 getFirmwareReply 0x48 = Right ALG_RESP_READ_PIN
 getFirmwareReply 0x58 = Right I2C_RESP_READ
-getFirmwareReply 0xAC = Right SCHED_RESP_QUERY
-getFirmwareReply 0xAD = Right SCHED_RESP_QUERY_ALL
+getFirmwareReply 0xAD = Right SCHED_RESP_QUERY
+getFirmwareReply 0xAE = Right SCHED_RESP_QUERY_ALL
 getFirmwareReply 0xB8 = Right REF_RESP_NEW
 getFirmwareReply 0xC8 = Right EXP_RESP_EVAL
 getFirmwareReply n    = Left n

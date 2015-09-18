@@ -85,6 +85,8 @@ packageCommand (ScheduleTask tid tt) =
     buildCommand SCHED_CMD_SCHED_TASK (tid : word32ToBytes tt)
 packageCommand (ScheduleTaskE tid tt) =
     buildCommand SCHED_CMD_SCHED_TASK_E (packageExpr tid ++ packageExpr tt)
+packageCommand (BootTaskE tid) =
+    buildCommand SCHED_CMD_BOOT_TASK_E (packageExpr tid)
 packageCommand (CreateTask tid m) =
     (framePackage cmd) `B.append` (genAddToTaskCmds td)
   where

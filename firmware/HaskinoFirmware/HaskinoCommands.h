@@ -103,10 +103,11 @@
 #define SCHED_CMD_ADD_TO_TASK_E (SCHED_CMD_TYPE | 0x9)
 #define SCHED_CMD_SCHED_TASK_E  (SCHED_CMD_TYPE | 0xA)
 #define SCHED_CMD_QUERY_E       (SCHED_CMD_TYPE | 0xB)
+#define SCHED_CMD_BOOT_TASK_E   (SCHED_CMD_TYPE | 0xC)
 
 // Scheduler responses
-#define SCHED_RESP_QUERY        (SCHED_CMD_TYPE | 0xC)
-#define SCHED_RESP_QUERY_ALL    (SCHED_CMD_TYPE | 0xD)
+#define SCHED_RESP_QUERY        (SCHED_CMD_TYPE | 0xD)
+#define SCHED_RESP_QUERY_ALL    (SCHED_CMD_TYPE | 0xE)
 
 // Reference commands
 #define REF_CMD_TYPE            0xB0
