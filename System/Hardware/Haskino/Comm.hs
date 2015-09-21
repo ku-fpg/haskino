@@ -146,9 +146,10 @@ send conn commands =
       sendBind c (Local local)   k cmds = sendLocal c local k cmds
       sendBind c (Procedure procedure) k cmds = sendProcedure c procedure k cmds
       sendBind c (RemoteBinding procedure) k cmds = sendRemoteBinding c procedure k cmds
-      sendBind c (LiftIO m) k cmds = do 
+      sendBind c (LiftIO m) k cmds = do
+          sendToArduino c cmds
           res <- m
-          send' c (k res) cmds
+          send' c (k res) B.empty
 
       sendControl :: ArduinoConnection -> Control -> (a -> Arduino b) -> B.ByteString -> IO b
       sendControl c (Loop ps) k cmds = do

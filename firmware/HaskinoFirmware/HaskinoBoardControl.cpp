@@ -65,7 +65,7 @@ static bool handleSetPinMode(int size, const byte *msg)
 
 static void millisDelay(unsigned long millis)
     {
-    if (isRunningTask())
+    if (isRunningTask() && !isCodeBlock())
         {
         delayRunningTask(millis);
         }

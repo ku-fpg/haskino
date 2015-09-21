@@ -353,7 +353,8 @@ void schedulerBootTask()
             {
             task->data[i] = EEPROM[ index ];
             }
-        scheduleById(BOOT_TASK_ID, 0);
+        task->currLen = taskSize;           
+        scheduleById(BOOT_TASK_ID, 10);
         }
     }
 
