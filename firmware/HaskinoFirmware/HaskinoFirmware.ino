@@ -1,6 +1,5 @@
-#include <Wire.h>
-
 #include <Arduino.h>
+#include <Wire.h>
 #include "HaskinoComm.h"
 #include "HaskinoCommands.h"
 #include "HaskinoBoardStatus.h"
@@ -21,6 +20,7 @@ void setup()
 {
     Serial.begin(115200);
     sendVersionReply(NULL);
+    schedulerBootTask();
 }
 
 /*==============================================================================

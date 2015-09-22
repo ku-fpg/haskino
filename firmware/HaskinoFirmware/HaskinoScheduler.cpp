@@ -1,8 +1,12 @@
 #include <Arduino.h>
+#include <EEPROM.h>
 #include "HaskinoComm.h"
 #include "HaskinoCommands.h"
 #include "HaskinoExpr.h"
 #include "HaskinoScheduler.h"
+
+#define BOOT_TASK_INDEX_START   6
+#define BOOT_TASK_ID            255
 
 typedef struct task_t 
     {
@@ -29,6 +33,7 @@ static bool handleAddToTaskE(int size, const byte *msg);
 static bool handleScheduleTaskE(int size, const byte *msg);
 static bool handleQueryE(int size, const byte *msg, byte *local);
 static bool handleReset(int size, const byte *msg);
+static bool handleBootTaskE(int size, const byte *msg);
 static void deleteTask(TASK* task);
 static TASK *findTask(int id);
 static bool executeTask(TASK *task);
@@ -77,7 +82,10 @@ bool parseSchedulerMessage(int size, const byte *msg, byte *local)
         case SCHED_CMD_RESET:
             return handleReset(size, msg);
             break;
-        }
+         case SCHED_CMD_BOOT_TASK_E:
+            return handleBootTaskE(size, msg);
+            break;
+       }
     return false;
     }
 
@@ -297,7 +305,57 @@ static bool handleReset(int size, const byte *msg)
         {
         deleteTask(firstTask);
         }
+    // Clear any stored task in EEPROM
+    EEPROM[ 0 ] = 0;
+    EEPROM[ 1 ] = 0;
+    EEPROM[ 2 ] = 0;
+    EEPROM[ 3 ] = 0;
     return false;
+    }
+
+static bool handleBootTaskE(int size, const byte *msg)
+    {
+    TASK *task;
+    byte *expr = (byte *) &msg[1];
+    byte id = evalWord8Expr(&expr);
+
+    if ((task = findTask(id)) != NULL)
+        {
+        unsigned int index = BOOT_TASK_INDEX_START;
+
+        EEPROM[ 0 ] = 'H';
+        EEPROM[ 1 ] = 'A';
+        EEPROM[ 2 ] = 'S';
+        EEPROM[ 3 ] = 'K';
+        EEPROM[ 4 ] = task->currLen & 0xFF;
+        EEPROM[ 5 ] = task->currLen >> 8;
+
+        for (int i=0;i<task->currLen;i++,index++)
+            {
+            EEPROM[ index ] = task->data[i];
+            }
+        }
+    return false;
+    }
+
+void schedulerBootTask()
+    {
+    if (EEPROM[ 0 ] == 'H' && EEPROM[ 1 ] == 'A' &&
+        EEPROM[ 2 ] == 'S' && EEPROM[ 3 ] == 'K')
+        {
+        TASK *task;
+        uint16_t taskSize = EEPROM[ 4 ] | (EEPROM[ 5 ] << 8);
+        int index = BOOT_TASK_INDEX_START;
+
+        createById(BOOT_TASK_ID, taskSize);
+        task = findTask(BOOT_TASK_ID);
+        for (int i=0;i<taskSize;i++,index++)
+            {
+            task->data[i] = EEPROM[ index ];
+            }
+        task->currLen = taskSize;           
+        scheduleById(BOOT_TASK_ID, 10);
+        }
     }
 
 void schedulerRunTasks()
