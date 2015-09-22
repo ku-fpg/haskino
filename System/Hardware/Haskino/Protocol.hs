@@ -166,6 +166,7 @@ packageCodeBlock commands =
           packageCodeBlock' (k ()) (B.append cmds (lenPackage (packageCommand cmd)))
       packBind (Local local) k cmds = packLocal local k cmds
       packBind (Procedure procedure) k cmds = packProcedure procedure k cmds
+      packBind (RemoteBinding binding) k cmds = packRemoteBinding binding k cmds
 
       -- For sending as part of a Scheduler task, locals make no sense.  
       -- Instead of signalling an error, at this point they are just ignored.
@@ -198,6 +199,12 @@ packageCodeBlock commands =
       packProcedure (ReadRemoteRef8 (RemoteRefW8 i)) k cmds = packageCodeBlock' (k (Ref8 i)) cmds
       packProcedure (ReadRemoteRef16 (RemoteRefW16 i)) k cmds = packageCodeBlock' (k (Ref16 i)) cmds
       packProcedure (ReadRemoteRef32 (RemoteRefW32 i)) k cmds = packageCodeBlock' (k (Ref32 i)) cmds
+
+      packRemoteBinding :: RemoteBinding a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
+      packRemoteBinding (NewRemoteRefB e) k cmds = packageCodeBlock' (k (RemoteRefB 0)) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefB e))))
+      packRemoteBinding (NewRemoteRef8 e) k cmds = packageCodeBlock' (k (RemoteRefW8 0)) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRef8 e))))
+      packRemoteBinding (NewRemoteRef16 e) k cmds = packageCodeBlock' (k (RemoteRefW16 0)) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRef16 e))))
+      packRemoteBinding (NewRemoteRef32 e) k cmds = packageCodeBlock' (k (RemoteRefW32 0)) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRef32 e))))
 
       packageCodeBlock' :: Arduino a -> B.ByteString -> B.ByteString
       packageCodeBlock' (Bind m k) cmds = packBind m k cmds
