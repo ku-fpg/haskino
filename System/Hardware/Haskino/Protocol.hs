@@ -45,54 +45,54 @@ buildCommand cmd bs = B.pack $ firmwareCmdVal cmd : bs
 
 -- | Package a request as a sequence of bytes to be sent to the board
 -- using the Haskino Firmware protocol.
-packageCommand :: Command -> B.ByteString
-packageCommand SystemReset = buildCommand BC_CMD_SYSTEM_RESET []
-packageCommand (SetPinMode p m) = 
-    buildCommand BC_CMD_SET_PIN_MODE [p, fromIntegral $ fromEnum m]
-packageCommand (SetPinModeE p m) =
-    buildCommand BC_CMD_SET_PIN_MODE_E (packageExpr p ++ [fromIntegral $ fromEnum m])
-packageCommand (DigitalWrite p b) = 
-    buildCommand DIG_CMD_WRITE_PIN [p, if b then 1 else 0]
-packageCommand (DigitalWriteE p b) =
-    buildCommand DIG_CMD_WRITE_PIN_E (packageExpr p ++ packageExpr b)
-packageCommand (AnalogWrite p w) = 
-    buildCommand ALG_CMD_WRITE_PIN (p : (word16ToBytes w))
-packageCommand (AnalogWriteE p w) =
-    buildCommand ALG_CMD_WRITE_PIN_E (packageExpr p ++ packageExpr w)
-packageCommand (Tone p f (Just d)) =
-    buildCommand ALG_CMD_TONE_PIN (p : (word16ToBytes f) ++ (word32ToBytes d))
-packageCommand (Tone p f Nothing) =
-    packageCommand (Tone p f (Just 0))
-packageCommand (ToneE p f (Just d)) =
-    buildCommand ALG_CMD_TONE_PIN_E (packageExpr p ++ packageExpr f ++ packageExpr d)
-packageCommand (ToneE p f Nothing) =
-    packageCommand (ToneE p f (Just 0))
-packageCommand (NoTone p) =
-    buildCommand ALG_CMD_NOTONE_PIN [p]
-packageCommand (NoToneE p) =
-    buildCommand ALG_CMD_NOTONE_PIN_E (packageExpr  p)
-packageCommand (I2CWrite sa w8s) = 
-    buildCommand I2C_CMD_WRITE (sa : w8s)
+packageCommand :: Command -> Int -> (B.ByteString, Int)
+packageCommand SystemReset ix = (buildCommand BC_CMD_SYSTEM_RESET [], ix)
+packageCommand (SetPinMode p m) ix = 
+    (buildCommand BC_CMD_SET_PIN_MODE [p, fromIntegral $ fromEnum m], ix)
+packageCommand (SetPinModeE p m) ix =
+    (buildCommand BC_CMD_SET_PIN_MODE_E (packageExpr p ++ [fromIntegral $ fromEnum m]), ix)
+packageCommand (DigitalWrite p b) ix = 
+    (buildCommand DIG_CMD_WRITE_PIN [p, if b then 1 else 0], ix)
+packageCommand (DigitalWriteE p b) ix =
+    (buildCommand DIG_CMD_WRITE_PIN_E (packageExpr p ++ packageExpr b), ix)
+packageCommand (AnalogWrite p w) ix = 
+    (buildCommand ALG_CMD_WRITE_PIN (p : (word16ToBytes w)), ix)
+packageCommand (AnalogWriteE p w) ix =
+    (buildCommand ALG_CMD_WRITE_PIN_E (packageExpr p ++ packageExpr w), ix)
+packageCommand (Tone p f (Just d)) ix =
+    (buildCommand ALG_CMD_TONE_PIN (p : (word16ToBytes f) ++ (word32ToBytes d)), ix)
+packageCommand (Tone p f Nothing) ix =
+    packageCommand (Tone p f (Just 0)) ix
+packageCommand (ToneE p f (Just d)) ix =
+    (buildCommand ALG_CMD_TONE_PIN_E (packageExpr p ++ packageExpr f ++ packageExpr d), ix)
+packageCommand (ToneE p f Nothing) ix =
+    packageCommand (ToneE p f (Just 0)) ix
+packageCommand (NoTone p) ix =
+    (buildCommand ALG_CMD_NOTONE_PIN [p], ix)
+packageCommand (NoToneE p) ix =
+    (buildCommand ALG_CMD_NOTONE_PIN_E (packageExpr  p), ix)
+packageCommand (I2CWrite sa w8s) ix = 
+    (buildCommand I2C_CMD_WRITE (sa : w8s), ix)
 -- ToDo: packageCommand c (I2CWriteE sa w8s) = 
 --    return $ buildCommand I2C_CMD_WRITE_E (sa : w8s)
-packageCommand I2CConfig = 
-    buildCommand I2C_CMD_CONFIG []
-packageCommand (DeleteTask tid) = 
-    buildCommand SCHED_CMD_DELETE_TASK [tid]
-packageCommand (DeleteTaskE tid) =
-    buildCommand SCHED_CMD_DELETE_TASK_E (packageExpr tid)
-packageCommand (ScheduleTask tid tt) = 
-    buildCommand SCHED_CMD_SCHED_TASK (tid : word32ToBytes tt)
-packageCommand (ScheduleTaskE tid tt) =
-    buildCommand SCHED_CMD_SCHED_TASK_E (packageExpr tid ++ packageExpr tt)
-packageCommand ScheduleReset =
-    buildCommand SCHED_CMD_RESET []
-packageCommand (BootTaskE tid) =
-    buildCommand SCHED_CMD_BOOT_TASK_E (packageExpr tid)
-packageCommand (CreateTask tid m) =
-    (framePackage cmd) `B.append` (genAddToTaskCmds td)
+packageCommand I2CConfig ix = 
+    (buildCommand I2C_CMD_CONFIG [], ix)
+packageCommand (DeleteTask tid) ix = 
+    (buildCommand SCHED_CMD_DELETE_TASK [tid], ix)
+packageCommand (DeleteTaskE tid) ix =
+    (buildCommand SCHED_CMD_DELETE_TASK_E (packageExpr tid), ix)
+packageCommand (ScheduleTask tid tt) ix = 
+    (buildCommand SCHED_CMD_SCHED_TASK (tid : word32ToBytes tt), ix)
+packageCommand (ScheduleTaskE tid tt) ix =
+    (buildCommand SCHED_CMD_SCHED_TASK_E (packageExpr tid ++ packageExpr tt), ix)
+packageCommand ScheduleReset ix =
+    (buildCommand SCHED_CMD_RESET [], ix)
+packageCommand (BootTaskE tid) ix =
+    (buildCommand SCHED_CMD_BOOT_TASK_E (packageExpr tid), ix)
+packageCommand (CreateTask tid m) ix =
+    ((framePackage cmd) `B.append` (genAddToTaskCmds td), ix')
   where
-    td = packageCodeBlock m
+    (td, ix') = packageCodeBlock m ix
     taskSize = fromIntegral (B.length td)
     cmd = buildCommand SCHED_CMD_CREATE_TASK (tid : (word16ToBytes taskSize))                                   
     -- Max command data size is max frame size - 3 (command,checksum,frame flag) 
@@ -102,10 +102,10 @@ packageCommand (CreateTask tid m) =
             `B.append` (genAddToTaskCmds (B.drop maxCmdSize tds))
     genAddToTaskCmds tds = addToTask tds
     addToTask tds' = framePackage $ buildCommand SCHED_CMD_ADD_TO_TASK ([tid, fromIntegral $ B.length tds'] ++ (B.unpack tds'))
-packageCommand (CreateTaskE tid m) =
-    (framePackage cmd) `B.append` (genAddToTaskCmds td)
+packageCommand (CreateTaskE tid m) ix =
+    ((framePackage cmd) `B.append` (genAddToTaskCmds td), ix')
   where
-    td = packageCodeBlock m
+    (td, ix') = packageCodeBlock m ix
     taskSize = fromIntegral (B.length td)
     cmd = buildCommand SCHED_CMD_CREATE_TASK_E ((packageExpr tid) ++ (packageExpr (Lit16 taskSize)))                                   
     -- Max command data size is max frame size - 3 (command,checksum,frame flag) 
@@ -117,103 +117,113 @@ packageCommand (CreateTaskE tid m) =
     addToTask tds' = framePackage $ buildCommand SCHED_CMD_ADD_TO_TASK_E ((packageExpr tid) ++ 
                                                                           (packageExpr (Lit8 (fromIntegral (B.length tds')))) ++ 
                                                                           (B.unpack tds'))
-packageCommand (WriteRemoteRefB (RemoteRefB i) e) =
-    buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_BOOL, fromIntegral i] ++ packageExpr e)
-packageCommand (WriteRemoteRef8 (RemoteRefW8 i) e) =
-    buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD8, fromIntegral i] ++ packageExpr e)
-packageCommand (WriteRemoteRef16 (RemoteRefW16 i) e) =
-    buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD16, fromIntegral i] ++ packageExpr e)
-packageCommand (WriteRemoteRef32 (RemoteRefW32 i) e) =
-    buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD32, fromIntegral i] ++ packageExpr e)
-packageCommand (WriteEffectRemoteRefB (RemoteRefB i) cb) =
-    buildCommand REF_CMD_WRITE_EFFECT ([refTypeCmdVal REF_BOOL, fromIntegral i] ++ B.unpack (packageCodeBlock cb))
-packageCommand (WriteEffectRemoteRef8 (RemoteRefW8 i) cb) =
-    buildCommand REF_CMD_WRITE_EFFECT ([refTypeCmdVal REF_WORD8, fromIntegral i] ++ B.unpack (packageCodeBlock cb))
-packageCommand (WriteEffectRemoteRef16 (RemoteRefW16 i) cb) =
-    buildCommand REF_CMD_WRITE_EFFECT ([refTypeCmdVal REF_WORD16, fromIntegral i] ++ B.unpack (packageCodeBlock cb))
-packageCommand (WriteEffectRemoteRef32 (RemoteRefW32 i) cb) =
-    buildCommand REF_CMD_WRITE_EFFECT ([refTypeCmdVal REF_WORD32, fromIntegral i] ++ B.unpack (packageCodeBlock cb))
-packageCommand (ModifyRemoteRefB (RemoteRefB i) f) =
-    buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_BOOL, fromIntegral i] ++ packageExpr (f (RefB i)))
-packageCommand (ModifyRemoteRef8 (RemoteRefW8 i) f) =
-    buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD8, fromIntegral i] ++ packageExpr (f (Ref8 i)))
-packageCommand (ModifyRemoteRef16 (RemoteRefW16 i) f) =
-    buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD16, fromIntegral i] ++ packageExpr (f (Ref16 i)))
-packageCommand (ModifyRemoteRef32 (RemoteRefW32 i) f) =
-    buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD32, fromIntegral i] ++ packageExpr (f (Ref32 i)))
--- ToDo: Do we need to check maximum frame size on conditionals?
-packageCommand (While e cb) =
-    buildCommand BC_CMD_WHILE ((packageExpr e) ++ (B.unpack pc))
+packageCommand (WriteRemoteRefB (RemoteRefB i) e) ix =
+    (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_BOOL, fromIntegral i] ++ packageExpr e), ix)
+packageCommand (WriteRemoteRef8 (RemoteRefW8 i) e) ix =
+    (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD8, fromIntegral i] ++ packageExpr e), ix)
+packageCommand (WriteRemoteRef16 (RemoteRefW16 i) e) ix =
+    (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD16, fromIntegral i] ++ packageExpr e), ix)
+packageCommand (WriteRemoteRef32 (RemoteRefW32 i) e) ix =
+    (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD32, fromIntegral i] ++ packageExpr e), ix)
+packageCommand (WriteEffectRemoteRefB (RemoteRefB i) cb) ix =
+    (buildCommand REF_CMD_WRITE_EFFECT ([refTypeCmdVal REF_BOOL, fromIntegral i] ++ B.unpack pcb), ix')
   where
-    pc = packageCodeBlock cb
-packageCommand (IfThenElse e cb1 cb2) =
-    buildCommand BC_CMD_IF_THEN_ELSE (thenSize ++ pe ++ (B.unpack pc1) ++ (B.unpack pc2))
+    (pcb, ix') = packageCodeBlock cb ix
+packageCommand (WriteEffectRemoteRef8 (RemoteRefW8 i) cb) ix =
+    (buildCommand REF_CMD_WRITE_EFFECT ([refTypeCmdVal REF_WORD8, fromIntegral i] ++ B.unpack pcb), ix')
+  where
+    (pcb, ix') = packageCodeBlock cb ix
+packageCommand (WriteEffectRemoteRef16 (RemoteRefW16 i) cb) ix =
+    (buildCommand REF_CMD_WRITE_EFFECT ([refTypeCmdVal REF_WORD16, fromIntegral i] ++ B.unpack pcb), ix')
+  where
+    (pcb, ix') = packageCodeBlock cb ix
+packageCommand (WriteEffectRemoteRef32 (RemoteRefW32 i) cb) ix =
+    (buildCommand REF_CMD_WRITE_EFFECT ([refTypeCmdVal REF_WORD32, fromIntegral i] ++ B.unpack pcb), ix')
+  where
+    (pcb, ix') = packageCodeBlock cb ix
+packageCommand (ModifyRemoteRefB (RemoteRefB i) f) ix =
+    (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_BOOL, fromIntegral i] ++ packageExpr (f (RefB i))), ix)
+packageCommand (ModifyRemoteRef8 (RemoteRefW8 i) f) ix =
+    (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD8, fromIntegral i] ++ packageExpr (f (Ref8 i))), ix)
+packageCommand (ModifyRemoteRef16 (RemoteRefW16 i) f) ix =
+    (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD16, fromIntegral i] ++ packageExpr (f (Ref16 i))), ix)
+packageCommand (ModifyRemoteRef32 (RemoteRefW32 i) f) ix =
+    (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD32, fromIntegral i] ++ packageExpr (f (Ref32 i))), ix)
+-- ToDo: Do we need to check maximum frame size on conditionals?
+packageCommand (While e cb) ix =
+    (buildCommand BC_CMD_WHILE ((packageExpr e) ++ (B.unpack pc)), ix')
+  where
+    (pc, ix') = packageCodeBlock cb ix
+packageCommand (IfThenElse e cb1 cb2) ix =
+    (buildCommand BC_CMD_IF_THEN_ELSE (thenSize ++ pe ++ (B.unpack pc1) ++ (B.unpack pc2)), ix'')
   where
     pe = packageExpr e
-    pc1 = packageCodeBlock cb1  
-    pc2 = packageCodeBlock cb2  
+    (pc1, ix') = packageCodeBlock cb1 ix
+    (pc2, ix'') = packageCodeBlock cb2 ix'
     thenSize = word16ToBytes $ fromIntegral (B.length pc1)
 
 -- ToDo:  Create locally scoped remote refs by passing ID offsets 
 -- through pack calls and incrementing them whan packing newRemoteRef calls.
-packageCodeBlock :: Arduino a -> B.ByteString
-packageCodeBlock commands =
-      packageCodeBlock' commands B.empty
+packageCodeBlock :: Arduino a -> Int -> (B.ByteString, Int)
+packageCodeBlock commands ix =
+      packageCodeBlock' commands ix B.empty
   where
-      packBind :: Arduino a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
-      packBind (Return a) k cmds = packageCodeBlock' (k a) cmds
-      packBind (Bind m k1) k2 cmds = packBind m (\ r -> Bind (k1 r) k2) cmds
-      packBind (Command cmd) k cmds =
+      packBind :: Arduino a -> Int -> (a -> Arduino b) -> B.ByteString -> (B.ByteString, Int)
+      packBind (Return a) ix k cmds = packageCodeBlock' (k a) ix cmds
+      packBind (Bind m k1) ix k2 cmds = packBind m ix (\ r -> Bind (k1 r) k2) cmds
+      packBind (Command cmd) ix k cmds =
           -- Instead of framing each command as is done with sending them
           -- seperately, here a byte which contains the command length
           -- is prepended.
-          packageCodeBlock' (k ()) (B.append cmds (lenPackage (packageCommand cmd)))
-      packBind (Local local) k cmds = packLocal local k cmds
-      packBind (Procedure procedure) k cmds = packProcedure procedure k cmds
-      packBind (RemoteBinding binding) k cmds = packRemoteBinding binding k cmds
+          packageCodeBlock' (k ()) ix' (B.append cmds (lenPackage pc))
+        where 
+          (pc, ix') = packageCommand cmd ix
+      packBind (Local local) ix k cmds = packLocal local ix k cmds
+      packBind (Procedure procedure) ix k cmds = packProcedure procedure ix k cmds
+      packBind (RemoteBinding binding) ix k cmds = packRemoteBinding binding ix k cmds
 
       -- For sending as part of a Scheduler task, locals make no sense.  
       -- Instead of signalling an error, at this point they are just ignored.
-      packLocal :: Local a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
-      packLocal (Debug _) k cmds = packageCodeBlock' (k ()) cmds
-      packLocal (Die _ _) k cmds = packageCodeBlock' (k ()) cmds
+      packLocal :: Local a -> Int -> (a -> Arduino b) -> B.ByteString -> (B.ByteString, Int)
+      packLocal (Debug _) ix k cmds = packageCodeBlock' (k ()) ix cmds
+      packLocal (Die _ _) ix k cmds = packageCodeBlock' (k ()) ix cmds
 
-      packProcedure :: Procedure a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
-      packProcedure QueryFirmware k cmds = packageCodeBlock' (k 0) (B.append cmds (lenPackage (packageProcedure QueryFirmware)))
-      packProcedure QueryFirmwareE k cmds = packageCodeBlock' (k (lit 0)) (B.append cmds (lenPackage (packageProcedure QueryFirmwareE)))
-      packProcedure QueryProcessor k cmds = packageCodeBlock' (k ATMEGA8) (B.append cmds (lenPackage (packageProcedure QueryProcessor)))
-      packProcedure Micros k cmds = packageCodeBlock' (k 0) (B.append cmds (lenPackage (packageProcedure Micros)))
-      packProcedure MicrosE k cmds = packageCodeBlock' (k (lit 0)) (B.append cmds (lenPackage (packageProcedure MicrosE)))
-      packProcedure Millis k cmds = packageCodeBlock' (k 0) (B.append cmds (lenPackage (packageProcedure Millis)))
-      packProcedure MillisE k cmds = packageCodeBlock' (k (lit 0)) (B.append cmds (lenPackage (packageProcedure MillisE)))
-      packProcedure (DelayMillis ms) k cmds = packageCodeBlock' (k ()) (B.append cmds (lenPackage (packageProcedure (DelayMillis ms))))
-      packProcedure (DelayMillisE ms) k cmds = packageCodeBlock' (k ()) (B.append cmds (lenPackage (packageProcedure (DelayMillisE ms))))
-      packProcedure (DelayMicros ms) k cmds = packageCodeBlock' (k ()) (B.append cmds (lenPackage (packageProcedure (DelayMicros ms))))
-      packProcedure (DelayMicrosE ms) k cmds = packageCodeBlock' (k ()) (B.append cmds (lenPackage (packageProcedure (DelayMicrosE ms))))
-      packProcedure (DigitalRead p) k cmds = packageCodeBlock' (k False) (B.append cmds (lenPackage (packageProcedure (DigitalRead p))))
-      packProcedure (DigitalReadE p) k cmds = packageCodeBlock' (k (lit False)) (B.append cmds (lenPackage (packageProcedure (DigitalReadE p))))
-      packProcedure (AnalogRead p) k cmds = packageCodeBlock' (k 0) (B.append cmds (lenPackage (packageProcedure (AnalogRead p))))
-      packProcedure (AnalogReadE p) k cmds = packageCodeBlock' (k (lit 0)) (B.append cmds (lenPackage (packageProcedure (AnalogReadE p))))
-      packProcedure (I2CRead p n) k cmds = packageCodeBlock' (k []) (B.append cmds (lenPackage (packageProcedure (I2CRead p n))))
-      packProcedure (I2CReadE p n) k cmds = packageCodeBlock' (k []) (B.append cmds (lenPackage (packageProcedure (I2CReadE p n))))
-      packProcedure QueryAllTasks k cmds = packageCodeBlock' (k ([])) (B.append cmds (lenPackage (packageProcedure QueryAllTasks)))
-      packProcedure (QueryTask t) k cmds = packageCodeBlock' (k Nothing) (B.append cmds (lenPackage (packageProcedure (QueryTask t))))
-      packProcedure (QueryTaskE t) k cmds = packageCodeBlock' (k Nothing) (B.append cmds (lenPackage (packageProcedure (QueryTaskE t))))
-      packProcedure (ReadRemoteRefB (RemoteRefB i)) k cmds = packageCodeBlock' (k (RefB i)) cmds
-      packProcedure (ReadRemoteRef8 (RemoteRefW8 i)) k cmds = packageCodeBlock' (k (Ref8 i)) cmds
-      packProcedure (ReadRemoteRef16 (RemoteRefW16 i)) k cmds = packageCodeBlock' (k (Ref16 i)) cmds
-      packProcedure (ReadRemoteRef32 (RemoteRefW32 i)) k cmds = packageCodeBlock' (k (Ref32 i)) cmds
+      packProcedure :: Procedure a -> Int -> (a -> Arduino b) -> B.ByteString -> (B.ByteString, Int)
+      packProcedure QueryFirmware ix k cmds = packageCodeBlock' (k 0) ix (B.append cmds (lenPackage (packageProcedure QueryFirmware)))
+      packProcedure QueryFirmwareE ix k cmds = packageCodeBlock' (k (lit 0)) ix (B.append cmds (lenPackage (packageProcedure QueryFirmwareE)))
+      packProcedure QueryProcessor ix k cmds = packageCodeBlock' (k ATMEGA8) ix (B.append cmds (lenPackage (packageProcedure QueryProcessor)))
+      packProcedure Micros ix k cmds = packageCodeBlock' (k 0) ix (B.append cmds (lenPackage (packageProcedure Micros)))
+      packProcedure MicrosE ix k cmds = packageCodeBlock' (k (lit 0)) ix (B.append cmds (lenPackage (packageProcedure MicrosE)))
+      packProcedure Millis ix k cmds = packageCodeBlock' (k 0) ix (B.append cmds (lenPackage (packageProcedure Millis)))
+      packProcedure MillisE ix k cmds = packageCodeBlock' (k (lit 0)) ix (B.append cmds (lenPackage (packageProcedure MillisE)))
+      packProcedure (DelayMillis ms) ix k cmds = packageCodeBlock' (k ()) ix (B.append cmds (lenPackage (packageProcedure (DelayMillis ms))))
+      packProcedure (DelayMillisE ms) ix k cmds = packageCodeBlock' (k ()) ix (B.append cmds (lenPackage (packageProcedure (DelayMillisE ms))))
+      packProcedure (DelayMicros ms) ix k cmds = packageCodeBlock' (k ()) ix (B.append cmds (lenPackage (packageProcedure (DelayMicros ms))))
+      packProcedure (DelayMicrosE ms) ix k cmds = packageCodeBlock' (k ()) ix (B.append cmds (lenPackage (packageProcedure (DelayMicrosE ms))))
+      packProcedure (DigitalRead p) ix k cmds = packageCodeBlock' (k False) ix (B.append cmds (lenPackage (packageProcedure (DigitalRead p))))
+      packProcedure (DigitalReadE p) ix k cmds = packageCodeBlock' (k (lit False)) ix (B.append cmds (lenPackage (packageProcedure (DigitalReadE p))))
+      packProcedure (AnalogRead p) ix k cmds = packageCodeBlock' (k 0) ix (B.append cmds (lenPackage (packageProcedure (AnalogRead p))))
+      packProcedure (AnalogReadE p) ix k cmds = packageCodeBlock' (k (lit 0)) ix (B.append cmds (lenPackage (packageProcedure (AnalogReadE p))))
+      packProcedure (I2CRead p n) ix k cmds = packageCodeBlock' (k []) ix (B.append cmds (lenPackage (packageProcedure (I2CRead p n))))
+      packProcedure (I2CReadE p n) ix k cmds = packageCodeBlock' (k []) ix (B.append cmds (lenPackage (packageProcedure (I2CReadE p n))))
+      packProcedure QueryAllTasks ix k cmds = packageCodeBlock' (k ([])) ix (B.append cmds (lenPackage (packageProcedure QueryAllTasks)))
+      packProcedure (QueryTask t) ix k cmds = packageCodeBlock' (k Nothing) ix (B.append cmds (lenPackage (packageProcedure (QueryTask t))))
+      packProcedure (QueryTaskE t) ix k cmds = packageCodeBlock' (k Nothing) ix (B.append cmds (lenPackage (packageProcedure (QueryTaskE t))))
+      packProcedure (ReadRemoteRefB (RemoteRefB i)) ix k cmds = packageCodeBlock' (k (RefB i)) ix cmds
+      packProcedure (ReadRemoteRef8 (RemoteRefW8 i)) ix k cmds = packageCodeBlock' (k (Ref8 i)) ix cmds
+      packProcedure (ReadRemoteRef16 (RemoteRefW16 i)) ix k cmds = packageCodeBlock' (k (Ref16 i)) ix cmds
+      packProcedure (ReadRemoteRef32 (RemoteRefW32 i)) ix k cmds = packageCodeBlock' (k (Ref32 i)) ix cmds
 
-      packRemoteBinding :: RemoteBinding a -> (a -> Arduino b) -> B.ByteString -> B.ByteString
-      packRemoteBinding (NewRemoteRefB e) k cmds = packageCodeBlock' (k (RemoteRefB 0)) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefB e))))
-      packRemoteBinding (NewRemoteRef8 e) k cmds = packageCodeBlock' (k (RemoteRefW8 0)) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRef8 e))))
-      packRemoteBinding (NewRemoteRef16 e) k cmds = packageCodeBlock' (k (RemoteRefW16 0)) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRef16 e))))
-      packRemoteBinding (NewRemoteRef32 e) k cmds = packageCodeBlock' (k (RemoteRefW32 0)) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRef32 e))))
+      packRemoteBinding :: RemoteBinding a -> Int -> (a -> Arduino b) -> B.ByteString -> (B.ByteString, Int)
+      packRemoteBinding (NewRemoteRefB e) ix k cmds = packageCodeBlock' (k (RemoteRefB ix)) (ix+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefB e) ix)))
+      packRemoteBinding (NewRemoteRef8 e) ix k cmds = packageCodeBlock' (k (RemoteRefW8 ix)) (ix+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRef8 e) ix)))
+      packRemoteBinding (NewRemoteRef16 e) ix k cmds = packageCodeBlock' (k (RemoteRefW16 ix)) (ix+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRef16 e) ix)))
+      packRemoteBinding (NewRemoteRef32 e) ix k cmds = packageCodeBlock' (k (RemoteRefW32 ix)) (ix+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRef32 e) ix)))
 
-      packageCodeBlock' :: Arduino a -> B.ByteString -> B.ByteString
-      packageCodeBlock' (Bind m k) cmds = packBind m k cmds
-      packageCodeBlock' (Return a) cmds = cmds
-      packageCodeBlock' cmd        cmds = packBind cmd Return cmds
+      packageCodeBlock' :: Arduino a -> Int -> B.ByteString -> (B.ByteString, Int)
+      packageCodeBlock' (Bind m k) ix cmds = packBind m ix k cmds
+      packageCodeBlock' (Return a) ix cmds = (cmds, ix)
+      packageCodeBlock' cmd        ix cmds = packBind cmd ix Return cmds
 
       lenPackage :: B.ByteString -> B.ByteString
       lenPackage package = B.cons (fromIntegral $ B.length package) package      
@@ -244,11 +254,11 @@ packageProcedure (Eval8 e)           = buildCommand EXP_CMD_EVAL ((refTypeCmdVal
 packageProcedure (Eval16 e)          = buildCommand EXP_CMD_EVAL ((refTypeCmdVal REF_WORD16) : (packageExpr e))
 packageProcedure (Eval32 e)          = buildCommand EXP_CMD_EVAL ((refTypeCmdVal REF_WORD32) : (packageExpr e))
 
-packageRemoteBinding :: RemoteBinding a -> B.ByteString
-packageRemoteBinding (NewRemoteRefB e)   = buildCommand REF_CMD_NEW ((refTypeCmdVal REF_BOOL) : (packageExpr e))
-packageRemoteBinding (NewRemoteRef8 e)   = buildCommand REF_CMD_NEW ((refTypeCmdVal REF_WORD8) : (packageExpr e))
-packageRemoteBinding (NewRemoteRef16 e)  = buildCommand REF_CMD_NEW ((refTypeCmdVal REF_WORD16) : (packageExpr e))
-packageRemoteBinding (NewRemoteRef32 e)  = buildCommand REF_CMD_NEW ((refTypeCmdVal REF_WORD32) : (packageExpr e))
+packageRemoteBinding :: RemoteBinding a -> Int -> B.ByteString
+packageRemoteBinding (NewRemoteRefB e)  ix = buildCommand REF_CMD_NEW ([(refTypeCmdVal REF_BOOL), fromIntegral ix] ++ (packageExpr e))
+packageRemoteBinding (NewRemoteRef8 e)  ix = buildCommand REF_CMD_NEW ([(refTypeCmdVal REF_WORD8), fromIntegral ix] ++(packageExpr e))
+packageRemoteBinding (NewRemoteRef16 e) ix = buildCommand REF_CMD_NEW ([(refTypeCmdVal REF_WORD16), fromIntegral ix] ++ (packageExpr e))
+packageRemoteBinding (NewRemoteRef32 e) ix = buildCommand REF_CMD_NEW ([(refTypeCmdVal REF_WORD32), fromIntegral ix] ++ (packageExpr e))
 
 packageSubExpr :: Word8 -> Expr a -> [Word8]
 packageSubExpr ec e = ec : packageExpr e

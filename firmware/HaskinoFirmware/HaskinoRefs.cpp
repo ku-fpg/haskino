@@ -13,7 +13,6 @@ typedef struct ref_record {
 } REF_RECORD;
 
 static REF_RECORD haskinoRefs[MAX_REFS];
-static int nextFreeRefIndex = 0;
 
 static bool handleNewRef(int type, int size, const byte *msg, byte *local);
 static bool handleReadRef(int type, int size, const byte *msg, byte *local);
@@ -45,7 +44,7 @@ bool parseRefMessage(int size, const byte *msg, byte *local)
 
 bool readRefBool(int refIndex)
     {
-    if (refIndex < nextFreeRefIndex)
+    if (haskinoRefs[refIndex].ref != NULL)
         return *((bool *) haskinoRefs[refIndex].ref);
     else
         {
@@ -56,7 +55,7 @@ bool readRefBool(int refIndex)
 
 uint8_t readRefWord8(int refIndex)
     {
-    if (refIndex < nextFreeRefIndex)
+    if (haskinoRefs[refIndex].ref != NULL)
         return *((uint8_t *) haskinoRefs[refIndex].ref);
     else
         {
@@ -67,7 +66,7 @@ uint8_t readRefWord8(int refIndex)
 
 uint16_t readRefWord16(int refIndex)
     {
-    if (refIndex < nextFreeRefIndex)
+    if (haskinoRefs[refIndex].ref != NULL)
         return *((uint16_t *) haskinoRefs[refIndex].ref);
     else
         {
@@ -78,7 +77,7 @@ uint16_t readRefWord16(int refIndex)
 
 uint32_t readRefWord32(int refIndex)
     {
-    if (refIndex < nextFreeRefIndex)
+    if (haskinoRefs[refIndex].ref != NULL)
         return *((uint32_t *) haskinoRefs[refIndex].ref);
     else
         {
@@ -106,21 +105,22 @@ static bool handleNewRef(int type, int size, const byte *msg, byte *local)
     {
     int count = 1;
     int spaceNeeded = typeToSize(type) * count;
-    byte *expr = (byte *) &msg[2];
+    byte refIndex = msg[2];
+    byte *expr = (byte *) &msg[3];
     void *memory;
-    byte refIndex;
 
-    if ((nextFreeRefIndex >= MAX_REFS) ||
+    if ((refIndex >= MAX_REFS) ||
         ((memory = malloc(spaceNeeded)) == NULL))
         {
         sendReply(0, REF_RESP_NEW, NULL, local);
         }
     else
         {
-        haskinoRefs[nextFreeRefIndex].ref = memory;
-        haskinoRefs[nextFreeRefIndex].type = type;
-        haskinoRefs[nextFreeRefIndex].len = count;
-        refIndex = nextFreeRefIndex;
+        if (haskinoRefs[refIndex].ref != NULL)
+            free(haskinoRefs[refIndex].ref);
+        haskinoRefs[refIndex].ref = memory;
+        haskinoRefs[refIndex].type = type;
+        haskinoRefs[refIndex].len = count;
         switch (type)
             {
             case EXPR_BOOL:
@@ -137,7 +137,6 @@ static bool handleNewRef(int type, int size, const byte *msg, byte *local)
                 break;
             }
         sendReply(sizeof(byte), REF_RESP_NEW, (byte *) &refIndex, local);
-        nextFreeRefIndex++;
         }
     return false;
     }

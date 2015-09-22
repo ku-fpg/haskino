@@ -73,6 +73,8 @@ openArduino verbose fp = do
           dc <- newChan
           tid <- setupListener port debugger dc
           liftIO $ putMVar listenerTid tid
+          refIndex <- newEmptyMVar
+          liftIO $ putMVar refIndex 0
           debugger $ "Started listener thread: " ++ show tid
           let initState = ArduinoConnection {
                              message       = debugger
@@ -82,6 +84,7 @@ openArduino verbose fp = do
                            , processor     = UNKNOWN_PROCESSOR 255
                            , deviceChannel = dc
                            , listenerTid   = listenerTid
+                           , refIndex      = refIndex
                         }
           -- Step 1: Send a reset to get things going
           send initState systemReset
@@ -136,12 +139,21 @@ send conn commands =
       sendBind :: ArduinoConnection -> Arduino a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendBind c (Return a)      k cmds = send' c (k a) cmds
       sendBind c (Bind m k1)    k2 cmds = sendBind c m (\ r -> Bind (k1 r) k2) cmds
-      sendBind c (Command (CreateTask tid as)) k cmds = 
-          send' c (k ()) (B.append cmds (packageCommand (CreateTask tid as)))
-      sendBind c (Command (CreateTaskE tid as)) k cmds = 
-          send' c (k ()) (B.append cmds (packageCommand (CreateTaskE tid as)))
-      sendBind c (Command cmd) k cmds =
-          send' c (k ()) (B.append cmds (framePackage (packageCommand cmd)))
+      sendBind c (Command (CreateTask tid as)) k cmds = do
+          ix <- takeMVar (refIndex c)
+          let (pc, ix') = packageCommand (CreateTask tid as) ix
+          putMVar (refIndex c) ix'
+          send' c (k ()) (B.append cmds pc)
+      sendBind c (Command (CreateTaskE tid as)) k cmds = do
+          ix <- takeMVar (refIndex c)
+          let (pc, ix') = packageCommand (CreateTaskE tid as) ix
+          putMVar (refIndex c) ix'
+          send' c (k ()) (B.append cmds pc)
+      sendBind c (Command cmd) k cmds = do
+          ix <- takeMVar (refIndex c)
+          let (pc, ix') = packageCommand cmd ix
+          putMVar (refIndex c) ix'
+          send' c (k ()) (B.append cmds (framePackage pc))
       sendBind c (Control ctrl)  k cmds = sendControl c ctrl k cmds
       sendBind c (Local local)   k cmds = sendLocal c local k cmds
       sendBind c (Procedure procedure) k cmds = sendProcedure c procedure k cmds
@@ -179,7 +191,10 @@ send conn commands =
 
       sendRemoteBinding :: ArduinoConnection -> RemoteBinding a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendRemoteBinding c b k cmds = do
-          sendToArduino c (B.append cmds (framePackage $ packageRemoteBinding b))
+          ix <- takeMVar (refIndex c)
+          let prb = packageRemoteBinding b ix
+          putMVar (refIndex c) (ix+1)
+          sendToArduino c (B.append cmds (framePackage prb))
           qr <- waitResponse c (RemoteBinding b)
           send' c (k qr) B.empty
 
