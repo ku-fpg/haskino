@@ -30,7 +30,7 @@ example = do let button = lit 2
                                    delayMillis 100 
 
 exampleProg :: IO ()
-exampleProg = withArduino False "/dev/cu.usbmodem1421" $ do
+exampleProg = withArduino True "/dev/cu.usbmodem1421" $ do
               let tid = lit 1
               createTaskE tid example
               bootTaskE tid
