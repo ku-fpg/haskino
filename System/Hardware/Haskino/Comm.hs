@@ -140,19 +140,13 @@ send conn commands =
       sendBind c (Return a)      k cmds = send' c (k a) cmds
       sendBind c (Bind m k1)    k2 cmds = sendBind c m (\ r -> Bind (k1 r) k2) cmds
       sendBind c (Command (CreateTask tid as)) k cmds = do
-          ix <- takeMVar (refIndex c)
-          let (pc, ix') = packageCommand (CreateTask tid as) ix
-          putMVar (refIndex c) ix'
+          pc <- packageCommandIndex c (CreateTask tid as) 
           send' c (k ()) (B.append cmds pc)
       sendBind c (Command (CreateTaskE tid as)) k cmds = do
-          ix <- takeMVar (refIndex c)
-          let (pc, ix') = packageCommand (CreateTaskE tid as) ix
-          putMVar (refIndex c) ix'
+          pc <- packageCommandIndex c (CreateTaskE tid as) 
           send' c (k ()) (B.append cmds pc)
       sendBind c (Command cmd) k cmds = do
-          ix <- takeMVar (refIndex c)
-          let (pc, ix') = packageCommand cmd ix
-          putMVar (refIndex c) ix'
+          pc <- packageCommandIndex c cmd 
           send' c (k ()) (B.append cmds (framePackage pc))
       sendBind c (Control ctrl)  k cmds = sendControl c ctrl k cmds
       sendBind c (Local local)   k cmds = sendLocal c local k cmds
@@ -162,6 +156,13 @@ send conn commands =
           sendToArduino c cmds
           res <- m
           send' c (k res) B.empty
+
+      packageCommandIndex :: ArduinoConnection -> Command -> IO B.ByteString
+      packageCommandIndex c cmd = do
+          ix <- takeMVar (refIndex c)
+          let (pc, ix') = packageCommand cmd ix
+          putMVar (refIndex c) ix'
+          return pc
 
       sendControl :: ArduinoConnection -> Control -> (a -> Arduino b) -> B.ByteString -> IO b
       sendControl c (Loop ps) k cmds = do
