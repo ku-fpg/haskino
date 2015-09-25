@@ -5,9 +5,9 @@
 #include "HaskinoExpr.h"
 
 static bool handleReadPin(int size, const byte *msg, byte *local);
-static bool handleWritePin(int size, const byte *msg);
+static bool handleWritePin(int size, const byte *msg, byte *local);
 static bool handleReadPinE(int size, const byte *msg, byte *local);
-static bool handleWritePinE(int size, const byte *msg);
+static bool handleWritePinE(int size, const byte *msg, byte *local);
 
 bool parseDigitalMessage(int size, const byte *msg, byte *local)
     {
@@ -17,13 +17,13 @@ bool parseDigitalMessage(int size, const byte *msg, byte *local)
             handleReadPin(size, msg, local);
             break;
         case DIG_CMD_WRITE_PIN:
-            handleWritePin(size, msg);
+            handleWritePin(size, msg, local);
             break;
         case DIG_CMD_READ_PIN_E:
             handleReadPinE(size, msg, local);
             break;
         case DIG_CMD_WRITE_PIN_E:
-            handleWritePinE(size, msg);
+            handleWritePinE(size, msg, local);
             break;
         }
     return false;
@@ -42,7 +42,7 @@ static bool handleReadPin(int size, const byte *msg, byte *local)
     return false;
     }
 
-static bool handleWritePin(int size, const byte *msg)
+static bool handleWritePin(int size, const byte *msg, byte *local)
     {
     byte pinNo = msg[1];
     byte value = msg[2];
@@ -58,18 +58,21 @@ static bool handleWritePin(int size, const byte *msg)
 static bool handleReadPinE(int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[1];
-    byte pinNo = evalWord8Expr(&expr);
-    byte digitalReply = digitalRead(pinNo);
+    byte pinNo = evalWord8ExprOrBind(&expr, local);
+    byte digitalReply[2];
 
-    sendReply(sizeof(digitalReply), DIG_RESP_READ_PIN, &digitalReply, local);
+    digitalReply[0] = EXPR(EXPR_WORD8, EXPR_LIT);
+    digitalReply[1] = digitalRead(pinNo);
+
+    sendReply(sizeof(digitalReply), DIG_RESP_READ_PIN, digitalReply, local);
     return false;
     }
 
-static bool handleWritePinE(int size, const byte *msg)
+static bool handleWritePinE(int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[1];
-    byte pinNo = evalWord8Expr(&expr);
-    byte value = evalBoolExpr(&expr);
+    byte pinNo = evalWord8ExprOrBind(&expr, local);
+    byte value = evalBoolExprOrBind(&expr, local);
 
     digitalWrite(pinNo, value);
     return false;

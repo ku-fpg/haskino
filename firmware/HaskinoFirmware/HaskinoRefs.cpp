@@ -16,8 +16,8 @@ static REF_RECORD haskinoRefs[MAX_REFS];
 
 static bool handleNewRef(int type, int size, const byte *msg, byte *local);
 static bool handleReadRef(int type, int size, const byte *msg, byte *local);
-static bool handleWriteRef(int type, int size, const byte *msg);
-static bool handleWriteEffectRef(int type, int size, const byte *msg);
+static bool handleWriteRef(int type, int size, const byte *msg, byte *local);
+/* static bool handleWriteEffectRef(int type, int size, const byte *msg); */
 
 bool parseRefMessage(int size, const byte *msg, byte *local)
     {
@@ -33,11 +33,11 @@ bool parseRefMessage(int size, const byte *msg, byte *local)
             handleReadRef(type, size, msg, local);
             break;
         case REF_CMD_WRITE:
-            handleWriteRef(type, size, msg);
+            handleWriteRef(type, size, msg, local);
             break;
-        case REF_CMD_WRITE_EFFECT:
+/*        case REF_CMD_WRITE_EFFECT:
             handleWriteEffectRef(type, size, msg);
-            break;
+            break; */
         }
     return false;
     }
@@ -124,16 +124,16 @@ static bool handleNewRef(int type, int size, const byte *msg, byte *local)
         switch (type)
             {
             case EXPR_BOOL:
-                *((bool *) memory) = evalBoolExpr(&expr);
+                *((bool *) memory) = evalBoolExprOrBind(&expr, local);
                 break;
             case EXPR_WORD8:
-                *((uint8_t *) memory) = evalWord8Expr(&expr);
+                *((uint8_t *) memory) = evalWord8ExprOrBind(&expr, local);
                 break;
             case EXPR_WORD16:
-                *((uint16_t *) memory) = evalWord16Expr(&expr);
+                *((uint16_t *) memory) = evalWord16ExprOrBind(&expr, local);
                 break;
             case EXPR_WORD32:
-                *((uint32_t *) memory) = evalWord32Expr(&expr);
+                *((uint32_t *) memory) = evalWord32ExprOrBind(&expr, local);
                 break;
             }
         sendReply(sizeof(byte), REF_RESP_NEW, (byte *) &refIndex, local);
@@ -174,7 +174,7 @@ static bool handleReadRef(int type, int size, const byte *msg, byte *local)
     return false;
     }
 
-static bool handleWriteRef(int type, int size, const byte *msg)
+static bool handleWriteRef(int type, int size, const byte *msg, byte *local)
     {
     byte refIndex = msg[2];
     byte *expr = (byte *) &msg[3];
@@ -188,26 +188,26 @@ static bool handleWriteRef(int type, int size, const byte *msg)
     switch (type)
         {
         case EXPR_BOOL:
-            bVal = evalBoolExpr(&expr);
+            bVal = evalBoolExprOrBind(&expr, local);
             *((bool *) haskinoRefs[refIndex].ref) = bVal;
             break;
         case EXPR_WORD8:
-            w8Val = evalWord8Expr(&expr);
+            w8Val = evalWord8ExprOrBind(&expr, local);
             *((uint8_t *) haskinoRefs[refIndex].ref) = w8Val;
             break;
         case EXPR_WORD16:
-            w16Val = evalWord16Expr(&expr);
+            w16Val = evalWord16ExprOrBind(&expr, local);
             *((uint16_t *) haskinoRefs[refIndex].ref) = w16Val;
             break;
         case EXPR_WORD32:
-            w32Val = evalWord32Expr(&expr);
+            w32Val = evalWord32ExprOrBind(&expr, local);
             *((uint32_t *) haskinoRefs[refIndex].ref) = w32Val;
             break;
         }
     return false;
     }
 
-static bool handleWriteEffectRef(int type, int size, const byte *msg)
+/*static bool handleWriteEffectRef(int type, int size, const byte *msg)
     {
     byte refIndex = msg[2];
     byte *codeBlock = (byte *) &msg[3];
@@ -241,4 +241,4 @@ static bool handleWriteEffectRef(int type, int size, const byte *msg)
             break;
         }
     return false;
-    }
+    } */

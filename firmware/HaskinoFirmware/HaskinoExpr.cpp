@@ -4,6 +4,33 @@
 #include "HaskinoExpr.h"
 #include "HaskinoRefs.h"
 
+bool evalBoolExpr(byte **ppExpr); 
+uint8_t evalWord8Expr(byte **ppExpr); 
+uint16_t evalWord16Expr(byte **ppExpr); 
+uint32_t evalWord32Expr(byte **ppExpr);
+
+bool evalBoolExprOrBind(byte **ppExpr, byte *local)
+    {
+    byte *pExpr = *ppExpr;
+    byte exprOp = *pExpr & EXPR_OP_MASK;
+
+    if (exprOp == EXPR_BIND)
+        {
+        if (local == NULL)
+            {
+            return false;
+            }
+        else
+            {
+            return evalBoolExpr(&local);
+            }
+        }
+    else
+        {
+        return evalBoolExpr(ppExpr);
+        }
+    }
+
 bool evalBoolExpr(byte **ppExpr) 
     {
     byte *pExpr = *ppExpr;
@@ -79,6 +106,28 @@ bool evalBoolExpr(byte **ppExpr)
             sendStringf("Unknown ExOp %d", exprOp);
         }
         return val;
+    }
+
+uint8_t evalWord8ExprOrBind(byte **ppExpr, byte *local)
+    {
+    byte *pExpr = *ppExpr;
+    byte exprOp = *pExpr & EXPR_OP_MASK;
+
+    if (exprOp == EXPR_BIND)
+        {
+        if (local == NULL)
+            {
+            return 0;
+            }
+        else
+            {
+            return evalWord8Expr(&local);
+            }
+        }
+    else
+        {
+        return evalWord8Expr(ppExpr);
+        }
     }
 
 uint8_t evalWord8Expr(byte **ppExpr) 
@@ -195,6 +244,28 @@ uint8_t evalWord8Expr(byte **ppExpr)
             sendStringf("Unknown ExOp %d", exprOp);
         }
         return val;
+    }
+
+uint16_t evalWord16ExprOrBind(byte **ppExpr, byte *local)
+    {
+    byte *pExpr = *ppExpr;
+    byte exprOp = *pExpr & EXPR_OP_MASK;
+
+    if (exprOp == EXPR_BIND)
+        {
+        if (local == NULL)
+            {
+            return 0;
+            }
+        else
+            {
+            return evalWord16Expr(&local);
+            }
+        }
+    else
+        {
+        return evalWord16Expr(ppExpr);
+        }
     }
 
 uint16_t evalWord16Expr(byte **ppExpr) 
@@ -316,6 +387,28 @@ uint16_t evalWord16Expr(byte **ppExpr)
             sendStringf("Unknown ExOp %d", exprOp);
         }
         return val;
+    }
+
+uint32_t evalWord32ExprOrBind(byte **ppExpr, byte *local)
+    {
+    byte *pExpr = *ppExpr;
+    byte exprOp = *pExpr & EXPR_OP_MASK;
+
+    if (exprOp == EXPR_BIND)
+        {
+        if (local == NULL)
+            {
+            return 0;
+            }
+        else
+            {
+            return evalWord32Expr(&local);
+            }
+        }
+    else
+        {
+        return evalWord32Expr(ppExpr);
+        }
     }
 
 uint32_t evalWord32Expr(byte **ppExpr) 

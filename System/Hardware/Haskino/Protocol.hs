@@ -16,7 +16,7 @@ module System.Hardware.Haskino.Protocol(framePackage, packageCommand,
                                             unpackageResponse, parseQueryResult,
                                             maxFirmwareSize) where
 
-import Data.Bits            (xor)
+import Data.Bits            (xor,shiftR)
 import Data.Word (Word8, Word16, Word32)
 
 import Control.Concurrent   (modifyMVar_, readMVar)
@@ -190,20 +190,20 @@ packageCodeBlock commands ix =
 
       packProcedure :: Procedure a -> Int -> (a -> Arduino b) -> B.ByteString -> (B.ByteString, Int)
       packProcedure QueryFirmware ix k cmds = packageCodeBlock' (k 0) ix (B.append cmds (lenPackage (packageProcedure QueryFirmware)))
-      packProcedure QueryFirmwareE ix k cmds = packageCodeBlock' (k (lit 0)) ix (B.append cmds (lenPackage (packageProcedure QueryFirmwareE)))
+      packProcedure QueryFirmwareE ix k cmds = packageCodeBlock' (k remBind) ix (B.append cmds (lenPackage (packageProcedure QueryFirmwareE)))
       packProcedure QueryProcessor ix k cmds = packageCodeBlock' (k ATMEGA8) ix (B.append cmds (lenPackage (packageProcedure QueryProcessor)))
       packProcedure Micros ix k cmds = packageCodeBlock' (k 0) ix (B.append cmds (lenPackage (packageProcedure Micros)))
-      packProcedure MicrosE ix k cmds = packageCodeBlock' (k (lit 0)) ix (B.append cmds (lenPackage (packageProcedure MicrosE)))
+      packProcedure MicrosE ix k cmds = packageCodeBlock' (k remBind) ix (B.append cmds (lenPackage (packageProcedure MicrosE)))
       packProcedure Millis ix k cmds = packageCodeBlock' (k 0) ix (B.append cmds (lenPackage (packageProcedure Millis)))
-      packProcedure MillisE ix k cmds = packageCodeBlock' (k (lit 0)) ix (B.append cmds (lenPackage (packageProcedure MillisE)))
+      packProcedure MillisE ix k cmds = packageCodeBlock' (k remBind) ix (B.append cmds (lenPackage (packageProcedure MillisE)))
       packProcedure (DelayMillis ms) ix k cmds = packageCodeBlock' (k ()) ix (B.append cmds (lenPackage (packageProcedure (DelayMillis ms))))
       packProcedure (DelayMillisE ms) ix k cmds = packageCodeBlock' (k ()) ix (B.append cmds (lenPackage (packageProcedure (DelayMillisE ms))))
       packProcedure (DelayMicros ms) ix k cmds = packageCodeBlock' (k ()) ix (B.append cmds (lenPackage (packageProcedure (DelayMicros ms))))
       packProcedure (DelayMicrosE ms) ix k cmds = packageCodeBlock' (k ()) ix (B.append cmds (lenPackage (packageProcedure (DelayMicrosE ms))))
       packProcedure (DigitalRead p) ix k cmds = packageCodeBlock' (k False) ix (B.append cmds (lenPackage (packageProcedure (DigitalRead p))))
-      packProcedure (DigitalReadE p) ix k cmds = packageCodeBlock' (k (lit False)) ix (B.append cmds (lenPackage (packageProcedure (DigitalReadE p))))
+      packProcedure (DigitalReadE p) ix k cmds = packageCodeBlock' (k remBind) ix (B.append cmds (lenPackage (packageProcedure (DigitalReadE p))))
       packProcedure (AnalogRead p) ix k cmds = packageCodeBlock' (k 0) ix (B.append cmds (lenPackage (packageProcedure (AnalogRead p))))
-      packProcedure (AnalogReadE p) ix k cmds = packageCodeBlock' (k (lit 0)) ix (B.append cmds (lenPackage (packageProcedure (AnalogReadE p))))
+      packProcedure (AnalogReadE p) ix k cmds = packageCodeBlock' (k remBind) ix (B.append cmds (lenPackage (packageProcedure (AnalogReadE p))))
       packProcedure (I2CRead p n) ix k cmds = packageCodeBlock' (k []) ix (B.append cmds (lenPackage (packageProcedure (I2CRead p n))))
       packProcedure (I2CReadE p n) ix k cmds = packageCodeBlock' (k []) ix (B.append cmds (lenPackage (packageProcedure (I2CReadE p n))))
       packProcedure QueryAllTasks ix k cmds = packageCodeBlock' (k ([])) ix (B.append cmds (lenPackage (packageProcedure QueryAllTasks)))
@@ -281,6 +281,7 @@ packageRef n ec = [ec, fromIntegral n]
 packageExpr :: Expr a -> [Word8]
 packageExpr (LitB b) = [exprCmdVal EXPR_BOOL EXPR_LIT, if b then 1 else 0]
 packageExpr (RefB n) = packageRef n (exprCmdVal EXPR_BOOL EXPR_REF)
+packageExpr (RemBindB) = [exprCmdVal EXPR_BOOL EXPR_BIND]
 packageExpr (NotB e) = packageSubExpr (exprCmdVal EXPR_BOOL EXPR_NOT) e 
 packageExpr (AndB e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_BOOL EXPR_AND) e1 e2 
 packageExpr (OrB e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_BOOL EXPR_OR) e1 e2 
@@ -292,6 +293,7 @@ packageExpr (Eq32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_EQ) e1
 packageExpr (Less32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_LESS) e1 e2 
 packageExpr (Lit8 w) = [exprCmdVal EXPR_WORD8 EXPR_LIT, w]
 packageExpr (Ref8 n) = packageRef n (exprCmdVal EXPR_BOOL EXPR_REF)
+packageExpr (RemBind8) = [exprCmdVal EXPR_WORD8 EXPR_BIND]
 packageExpr (Neg8 e) = packageSubExpr (exprCmdVal EXPR_WORD8 EXPR_NEG) e
 packageExpr (Sign8 e) = packageSubExpr (exprCmdVal EXPR_WORD8 EXPR_SIGN) e
 packageExpr (Add8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_ADD) e1 e2 
@@ -311,6 +313,7 @@ packageExpr (SetB8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_SETB) 
 packageExpr (ClrB8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_CLRB) e1 e2 
 packageExpr (Lit16 w) = (exprCmdVal EXPR_WORD16 EXPR_LIT) : word16ToBytes w
 packageExpr (Ref16 n) = packageRef n (exprCmdVal EXPR_BOOL EXPR_REF)
+packageExpr (RemBind16) = [exprCmdVal EXPR_WORD16 EXPR_BIND]
 packageExpr (Neg16 e) = packageSubExpr (exprCmdVal EXPR_WORD16 EXPR_NEG) e
 packageExpr (Sign16 e) = packageSubExpr (exprCmdVal EXPR_WORD16 EXPR_SIGN) e
 packageExpr (Add16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_ADD) e1 e2 
@@ -330,6 +333,7 @@ packageExpr (SetB16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_SETB
 packageExpr (ClrB16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_CLRB) e1 e2 
 packageExpr (Lit32 w) = (exprCmdVal EXPR_WORD32 EXPR_LIT) : word32ToBytes w
 packageExpr (Ref32 n) = packageRef n (exprCmdVal EXPR_BOOL EXPR_REF)
+packageExpr (RemBind32) = [exprCmdVal EXPR_WORD32 EXPR_BIND]
 packageExpr (Neg32 e) = packageSubExpr (exprCmdVal EXPR_WORD32 EXPR_NEG) e
 packageExpr (Sign32 e) = packageSubExpr (exprCmdVal EXPR_WORD32 EXPR_SIGN) e
 packageExpr (Add32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_ADD) e1 e2 
@@ -354,16 +358,16 @@ unpackageResponse [] = Unimplemented (Just "<EMPTY-REPLY>") []
 unpackageResponse (cmdWord:args)
   | Right cmd <- getFirmwareReply cmdWord
   = case (cmd, args) of
-      (BC_RESP_DELAY, [])             -> DelayResp
-      (BS_RESP_VERSION, [majV, minV]) -> Firmware (bytesToWord16 (majV,minV))
-      (BS_RESP_TYPE, [p])             -> ProcessorType p
-      (BS_RESP_MICROS, [m0,m1,m2,m3]) -> MicrosReply (bytesToWord32 (m0,m1,m2,m3))
-      (BS_RESP_MILLIS, [m0,m1,m2,m3]) -> MillisReply (bytesToWord32 (m0,m1,m2,m3))
-      (BS_RESP_STRING, rest)          -> StringMessage (getString rest)
-      (DIG_RESP_READ_PIN, [b])        -> DigitalReply b
-      (ALG_RESP_READ_PIN, [bl,bh])    -> AnalogReply (bytesToWord16 (bl,bh))
-      (I2C_RESP_READ, xs)             -> I2CReply xs
-      (SCHED_RESP_QUERY_ALL, ts)      -> QueryAllTasksReply ts
+      (BC_RESP_DELAY, [])               -> DelayResp
+      (BS_RESP_VERSION, [majV, minV])   -> Firmware (bytesToWord16 (majV,minV))
+      (BS_RESP_TYPE, [p])               -> ProcessorType p
+      (BS_RESP_MICROS, [l,m0,m1,m2,m3]) -> MicrosReply (bytesToWord32 (m0,m1,m2,m3))
+      (BS_RESP_MILLIS, [l,m0,m1,m2,m3]) -> MillisReply (bytesToWord32 (m0,m1,m2,m3))
+      (BS_RESP_STRING, rest)            -> StringMessage (getString rest)
+      (DIG_RESP_READ_PIN, [l,b])        -> DigitalReply b
+      (ALG_RESP_READ_PIN, [l,bl,bh])    -> AnalogReply (bytesToWord16 (bl,bh))
+      (I2C_RESP_READ, xs)               -> I2CReply xs
+      (SCHED_RESP_QUERY_ALL, ts)        -> QueryAllTasksReply ts
       (SCHED_RESP_QUERY, ts) | length ts == 0 -> 
           QueryTaskReply Nothing
       (SCHED_RESP_QUERY, ts) | length ts >= 9 -> 
@@ -374,13 +378,13 @@ unpackageResponse (cmdWord:args)
                                    bytesToWord32 (tt0,tt1,tt2,tt3)))  
       (REF_RESP_NEW , [w])            -> NewReply w
       (REF_RESP_NEW , [])             -> FailedNewRef
-      (EXP_RESP_EVAL, t : [b1, b2]) | t == refTypeCmdVal REF_BOOL 
+      (EXP_RESP_EVAL, t : [b1, b2]) | t `shiftR` 5 == refTypeCmdVal REF_BOOL 
                                       -> EvalBReply (if bytesToWord16 (b1, b2) == 0 then False else True)
-      (EXP_RESP_EVAL, t : [b]) | t == refTypeCmdVal REF_WORD8 
+      (EXP_RESP_EVAL, t : [b]) | t `shiftR` 5 == refTypeCmdVal REF_WORD8 
                                       -> Eval8Reply b
-      (EXP_RESP_EVAL, t : [b1,b2]) | t == refTypeCmdVal REF_WORD16 
+      (EXP_RESP_EVAL, t : [b1,b2]) | t `shiftR` 5 == refTypeCmdVal REF_WORD16 
                                       -> Eval16Reply (bytesToWord16 (b1, b2))
-      (EXP_RESP_EVAL, t : [b1,b2,b3,b4]) | t == refTypeCmdVal REF_WORD32 
+      (EXP_RESP_EVAL, t : [b1,b2,b3,b4]) | t `shiftR` 5 == refTypeCmdVal REF_WORD32 
                                       -> Eval32Reply (bytesToWord32 (b1, b2, b3, b4))
       _                               -> Unimplemented (Just (show cmd)) args
   | True

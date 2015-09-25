@@ -17,8 +17,8 @@ static int nextFreeRefIndex = 0;
 
 static bool handleNewRef(int type, int size, const byte *msg, byte *local);
 static bool handleReadRef(int type, int size, const byte *msg, byte *local);
-static bool handleWriteRef(int type, int size, const byte *msg);
-static bool handleWriteEffectRef(int type, int size, const byte *msg);
+static bool handleWriteRef(int type, int size, const byte *msg,  byte *local);
+/* static bool handleWriteEffectRef(int type, int size, const byte *msg); */
 
 bool parseRefMessage(int size, const byte *msg, byte *local)
     {
@@ -34,11 +34,11 @@ bool parseRefMessage(int size, const byte *msg, byte *local)
             handleReadRef(type, size, msg, local);
             break;
         case REF_CMD_WRITE:
-            handleWriteRef(type, size, msg);
+            handleWriteRef(type, size, msg, local);
             break;
-        case REF_CMD_WRITE_EFFECT:
-            handleWriteEffectRef(type, size, msg);
-            break;
+/*        case REF_CMD_WRITE_EFFECT:
+            handleWriteEffectRef(type, size, msg, local);
+            break; */
         }
     return false;
     }
@@ -175,7 +175,7 @@ static bool handleReadRef(int type, int size, const byte *msg, byte *local)
     return false;
     }
 
-static bool handleWriteRef(int type, int size, const byte *msg)
+static bool handleWriteRef(int type, int size, const byte *msg, byte *local)
     {
     byte refIndex = msg[2];
     byte *expr = (byte *) &msg[3];
@@ -207,7 +207,7 @@ static bool handleWriteRef(int type, int size, const byte *msg)
         }
     return false;
     }
-
+/*
 static bool handleWriteEffectRef(int type, int size, const byte *msg)
     {
     byte refIndex = msg[2];
@@ -243,3 +243,4 @@ static bool handleWriteEffectRef(int type, int size, const byte *msg)
         }
     return false;
     }
+*/

@@ -8,52 +8,52 @@
 #include "HaskinoScheduler.h"
 #include "SoftReset.h"
 
-static bool handleSetPinMode(int size, const byte *msg);
-static bool handleDelayMillis(int size, const byte *msg);
-static bool handleDelayMicros(int size, const byte *msg);
-static bool handleSystemReset(int size, const byte *msg);
-static bool handleSetPinModeE(int size, const byte *msg);
-static bool handleDelayMillisE(int size, const byte *msg);
-static bool handleDelayMicrosE(int size, const byte *msg);
-static bool handleWhile(int size, const byte *msg);
-static bool handleIfThenElse(int size, const byte *msg);
+static bool handleSetPinMode(int size, const byte *msg, byte *local);
+static bool handleDelayMillis(int size, const byte *msg, byte *local);
+static bool handleDelayMicros(int size, const byte *msg, byte *local);
+static bool handleSystemReset(int size, const byte *msg, byte *local);
+static bool handleSetPinModeE(int size, const byte *msg, byte *local);
+static bool handleDelayMillisE(int size, const byte *msg, byte *local);
+static bool handleDelayMicrosE(int size, const byte *msg, byte *local);
+static bool handleWhile(int size, const byte *msg, byte *local);
+static bool handleIfThenElse(int size, const byte *msg, byte *local);
 
 bool parseBoardControlMessage(int size, const byte *msg, byte *local)
     {
     switch (msg[0] ) 
         {
         case BC_CMD_SET_PIN_MODE:
-            return handleSetPinMode(size, msg);
+            return handleSetPinMode(size, msg, local);
             break;
         case BC_CMD_DELAY_MILLIS:
-            return handleDelayMillis(size, msg);
+            return handleDelayMillis(size, msg, local);
             break;
         case BC_CMD_DELAY_MICROS:
-            return handleDelayMicros(size, msg);
+            return handleDelayMicros(size, msg, local);
             break;
         case BC_CMD_SYSTEM_RESET:
-            return handleSystemReset(size, msg);
+            return handleSystemReset(size, msg, local);
             break;
         case BC_CMD_SET_PIN_MODE_E:
-            return handleSetPinModeE(size, msg);
+            return handleSetPinModeE(size, msg, local);
             break;
         case BC_CMD_DELAY_MILLIS_E:
-            return handleDelayMillisE(size, msg);
+            return handleDelayMillisE(size, msg, local);
             break;
         case BC_CMD_DELAY_MICROS_E:
-            return handleDelayMicrosE(size, msg);
+            return handleDelayMicrosE(size, msg, local);
             break;
         case BC_CMD_WHILE:
-            return handleWhile(size, msg);
+            return handleWhile(size, msg, local);
             break;
         case BC_CMD_IF_THEN_ELSE:
-            return handleIfThenElse(size, msg);
+            return handleIfThenElse(size, msg, local);
             break;
         }
     return false;
     }
 
-static bool handleSetPinMode(int size, const byte *msg)
+static bool handleSetPinMode(int size, const byte *msg, byte *local)
     {
 #ifdef INTEL_EDISON
     gpio_setup(msg[1], msg[2]);
@@ -79,7 +79,7 @@ static void millisDelay(unsigned long millis)
         }
     }
 
-static bool handleDelayMillis(int size, const byte *msg)
+static bool handleDelayMillis(int size, const byte *msg, byte *local)
     {
     unsigned long millis;
     memcpy(&millis, &msg[1], 4);
@@ -88,7 +88,7 @@ static bool handleDelayMillis(int size, const byte *msg)
     return true;
     }
 
-static bool handleDelayMicros(int size, const byte *msg)
+static bool handleDelayMicros(int size, const byte *msg, byte *local)
     {
     unsigned int micros;
     memcpy(&micros, &msg[1], 2);
@@ -100,41 +100,41 @@ static bool handleDelayMicros(int size, const byte *msg)
     return false;
     }
 
-static bool handleSetPinModeE(int size, const byte *msg)
+static bool handleSetPinModeE(int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[1];
-    byte pinNo = evalWord8Expr(&expr);
+    byte pinNo = evalWord8ExprOrBind(&expr, local);
     pinMode(pinNo, *expr);
     return false;
     }
 
-static bool handleDelayMillisE(int size, const byte *msg)
+static bool handleDelayMillisE(int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[1];
-    uint32_t millis = evalWord32Expr(&expr);
+    uint32_t millis = evalWord32ExprOrBind(&expr, local);
 
     millisDelay(millis);
     return true;
     }
 
-static bool handleDelayMicrosE(int size, const byte *msg)
+static bool handleDelayMicrosE(int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[1];
-    uint32_t micros = evalWord16Expr(&expr);
+    uint32_t micros = evalWord16ExprOrBind(&expr, local);
     delayMicroseconds(micros);
     return false;
     }
 
-static bool handleSystemReset(int size, const byte *msg)
+static bool handleSystemReset(int size, const byte *msg, byte *local)
     {
     soft_restart();
     return false;
     }
 
-static bool handleWhile(int size, const byte *msg)
+static bool handleWhile(int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[1];
-    bool condition = evalBoolExpr(&expr);
+    bool condition = evalBoolExprOrBind(&expr, local);
     byte *codeBlock = expr;
     int whileSize = size - (expr - msg);
 
@@ -143,18 +143,18 @@ static bool handleWhile(int size, const byte *msg)
         runCodeBlock(whileSize, codeBlock, NULL);
 
         expr = (byte *) &msg[1];
-        condition = evalBoolExpr(&expr);
+        condition = evalBoolExprOrBind(&expr, local);
         }
 
     return false;
     }
 
-static bool handleIfThenElse(int size, const byte *msg)
+static bool handleIfThenElse(int size, const byte *msg, byte *local)
     {
     uint16_t thenSize, elseSize;
     memcpy(&thenSize, &msg[1], sizeof(thenSize));
     byte *expr = (byte *) &msg[3];
-    bool condition = evalBoolExpr(&expr);
+    bool condition = evalBoolExprOrBind(&expr, local);
     byte *codeBlock = expr;
 
     if (condition)

@@ -2,6 +2,7 @@
 #include "HaskinoBoardStatus.h"
 #include "HaskinoComm.h"
 #include "HaskinoCommands.h"
+#include "HaskinoExpr.h"
 #include "HaskinoFirmware.h"
 
 static bool handleRequestVersion(int size, const byte *msg, byte *local);
@@ -79,15 +80,25 @@ static bool handleRequestType(int size, const byte *msg, byte *local)
 
 static bool handleRequestMicros(int size, const byte *msg, byte *local)
     {
-    uint32_t microReply = micros();
+    uint32_t ms;
+    byte microReply[5];
 
-    sendReply(sizeof(uint32_t), BS_RESP_MICROS, (byte *) &microReply, local);
+    microReply[0] = EXPR(EXPR_WORD32, EXPR_LIT);
+    ms = micros();
+    memcpy(&microReply[1], &ms, sizeof(ms));
+
+    sendReply(sizeof(microReply), BS_RESP_MICROS, (byte *) &microReply, local);
     return false;
     }
 
 static bool handleRequestMillis(int size, const byte *msg, byte *local)
     {
-    uint32_t milliReply = millis();
+    uint32_t ms;
+    byte milliReply[5];
+
+    milliReply[0] = EXPR(EXPR_WORD32, EXPR_LIT);
+    ms = millis();
+    memcpy(&milliReply[1], &ms, sizeof(ms));
 
     sendReply(sizeof(uint32_t), BS_RESP_MILLIS, (byte *) &milliReply, local);
     return false;

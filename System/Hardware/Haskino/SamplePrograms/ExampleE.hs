@@ -24,7 +24,7 @@ exampleE = withArduino False "/dev/cu.usbmodem1421" $ do
            setPinModeE button INPUT
            setPinModeE led1 OUTPUT
            setPinModeE led2 OUTPUT
-           while (lit True) $ do writeRemoteRef x  <<= digitalReadE button
+           while (lit True) $ do writeRemoteRef x  =<< digitalReadE button
                                  ex <- readRemoteRef x
                                  digitalWriteE led1 ex
                                  digitalWriteE led2 (notB ex)

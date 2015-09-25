@@ -1,6 +1,8 @@
 #ifndef HaskinoExprH
 #define HaskinoExprH
 
+#define EXPR(a,b) ((a << EXPR_TYPE_SHFT) | b)
+
 #define EXPR_TYPE_MASK 0xE0
 #define EXPR_TYPE_SHFT 5
 #define EXPR_BOOL   0x01
@@ -32,10 +34,11 @@
 #define EXPR_SETB 0x14
 #define EXPR_CLRB 0x15
 #define EXPR_TSTB 0x16
+#define EXPR_BIND 0x17
 
-bool evalBoolExpr(byte **ppExpr); 
-uint8_t evalWord8Expr(byte **ppExpr); 
-uint16_t evalWord16Expr(byte **ppExpr); 
-uint32_t evalWord32Expr(byte **ppExpr);
+bool evalBoolExprOrBind(byte **ppExpr, byte *local);
+uint8_t evalWord8ExprOrBind(byte **ppExpr, byte *local);
+uint16_t evalWord16ExprOrBind(byte **ppExpr, byte *local);
+uint32_t evalWord32ExprOrBind(byte **ppExpr, byte *local);
 
 #endif /* HaskinoExprH */

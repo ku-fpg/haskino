@@ -49,6 +49,10 @@ data Expr a where
   Ref8      :: Int -> Word8E
   Ref16     :: Int -> Word16E
   Ref32     :: Int -> Word32E
+  RemBindB  :: BoolE
+  RemBind8  :: Word8E
+  RemBind16 :: Word16E
+  RemBind32 :: Word32E
   NotB      :: BoolE -> BoolE
   AndB      :: BoolE -> BoolE -> BoolE
   OrB       :: BoolE -> BoolE -> BoolE
@@ -112,20 +116,25 @@ data Expr a where
 
 deriving instance Show a => Show (Expr a)
 
-class LiteralB a where
-    lit  :: a -> Expr a
+class ExprB a where
+    lit     :: a -> Expr a
+    remBind :: Expr a
 
-instance LiteralB Word8 where
+instance ExprB Word8 where
     lit = Lit8
+    remBind = RemBind8
 
-instance LiteralB Word16 where
+instance ExprB Word16 where
     lit = Lit16
+    remBind = RemBind16
 
-instance LiteralB Word32 where
+instance ExprB Word32 where
     lit = Lit32
+    remBind = RemBind32
 
-instance LiteralB Bool where
+instance ExprB Bool where
     lit = LitB
+    remBind = RemBindB
 
 -- ToDo:  Add BitsB class for and, or, xor, complement and shifts
 -- ToDo:  Add fromInteger/toInteger properly to do typing on Arduino
@@ -306,6 +315,8 @@ data ExprOp = EXPR_LIT
             | EXPR_BIT
             | EXPR_SETB
             | EXPR_CLRB
+            | EXPR_TSTB
+            | EXPR_BIND
 
 -- | Compute the numeric value of a command
 exprTypeVal :: ExprType -> Word8
@@ -337,6 +348,8 @@ exprOpVal EXPR_IF   = 0x12
 exprOpVal EXPR_BIT  = 0x13
 exprOpVal EXPR_SETB = 0x14
 exprOpVal EXPR_CLRB = 0x15
+exprOpVal EXPR_TSTB = 0x16
+exprOpVal EXPR_BIND = 0x17
 
 exprCmdVal :: ExprType -> ExprOp -> Word8
 exprCmdVal t o = exprTypeVal t `DB.shiftL` 5 DB..|. exprOpVal o
