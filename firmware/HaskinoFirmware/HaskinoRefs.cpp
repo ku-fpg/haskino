@@ -17,7 +17,6 @@ static REF_RECORD haskinoRefs[MAX_REFS];
 static bool handleNewRef(int type, int size, const byte *msg, byte *local);
 static bool handleReadRef(int type, int size, const byte *msg, byte *local);
 static bool handleWriteRef(int type, int size, const byte *msg, byte *local);
-/* static bool handleWriteEffectRef(int type, int size, const byte *msg); */
 
 bool parseRefMessage(int size, const byte *msg, byte *local)
     {
@@ -35,9 +34,6 @@ bool parseRefMessage(int size, const byte *msg, byte *local)
         case REF_CMD_WRITE:
             handleWriteRef(type, size, msg, local);
             break;
-/*        case REF_CMD_WRITE_EFFECT:
-            handleWriteEffectRef(type, size, msg);
-            break; */
         }
     return false;
     }
@@ -206,39 +202,3 @@ static bool handleWriteRef(int type, int size, const byte *msg, byte *local)
         }
     return false;
     }
-
-/*static bool handleWriteEffectRef(int type, int size, const byte *msg)
-    {
-    byte refIndex = msg[2];
-    byte *codeBlock = (byte *) &msg[3];
-    int blockSize = size - 3;
-    bool bVal;
-    uint8_t w8Val;
-    uint16_t w16Val;
-    uint32_t w32Val;
-    uint32_t val;
-
-    // ToDo:  Check for param errors
-    runCodeBlock(blockSize, codeBlock,(byte *) &val);
-
-    switch (type)
-        {
-        case EXPR_BOOL:
-            memcpy((byte *) &bVal, (const byte *) &val, sizeof(bVal));
-            *((bool *) haskinoRefs[refIndex].ref) = bVal;
-            break;
-        case EXPR_WORD8:
-            memcpy((byte *) &w8Val, (const byte *) &val, sizeof(w8Val));
-            *((uint8_t *) haskinoRefs[refIndex].ref) = w8Val;
-            break;
-        case EXPR_WORD16:
-            memcpy((byte *) &w16Val, (const byte *) &val, sizeof(w16Val));
-            *((uint16_t *) haskinoRefs[refIndex].ref) = w16Val;
-            break;
-        case EXPR_WORD32:
-            memcpy((byte *) &w32Val, (const byte *) &val, sizeof(w32Val));
-            *((uint32_t *) haskinoRefs[refIndex].ref) = w32Val;
-            break;
-        }
-    return false;
-    } */

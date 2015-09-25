@@ -19,15 +19,15 @@ import Data.Word
 
 blinkRefE :: IO ()
 blinkRefE = withArduino False "/dev/cu.usbmodem1421" $ do
-           let led = lit 13
-           let delay = lit 1000
+           let led = 13
+           let delay = 1000
            setPinModeE led OUTPUT
-           r <- newRemoteRef $ lit True
-           while (lit True)  $ do onOff <- readRemoteRef r 
-                                  digitalWriteE led onOff
-                                  delayMillisE delay
-                                  modifyRemoteRef r (\x -> notB x)
-                                  onOff <- readRemoteRef r 
-                                  digitalWriteE led onOff
-                                  delayMillisE delay
-                                  modifyRemoteRef r (\x -> notB x)
+           r <- newRemoteRef true
+           while true  $ do onOff <- readRemoteRef r 
+                            digitalWriteE led onOff
+                            delayMillisE delay
+                            modifyRemoteRef r (\x -> notB x)
+                            onOff <- readRemoteRef r 
+                            digitalWriteE led onOff
+                            delayMillisE delay
+                            modifyRemoteRef r (\x -> notB x)

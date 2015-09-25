@@ -38,8 +38,8 @@ myTask led = do digitalWriteE led (lit True)
 
 scheduledBlinkE :: IO ()
 scheduledBlinkE = withArduino True "/dev/cu.usbmodem1421" $ do
-    let led = lit 13
-    let tid = lit 1
+    let led = 13
+    let tid = 1
     setPinModeE led OUTPUT
     -- Create the task which blinks with a 2 second period
     createTaskE tid (myTask led)

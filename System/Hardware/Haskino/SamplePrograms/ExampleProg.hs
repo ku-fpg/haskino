@@ -15,8 +15,11 @@ import System.Hardware.Haskino
 import Data.Boolean
 import Data.Word
 
+test :: Expr Word8
+test = 2 * 4
+
 example :: Arduino ()
-example = do let button = lit 2
+example = do let button = 2 :: Expr Word8
              let led1 = lit 6
              let led2 = lit 7
              x <- newRemoteRef (lit False)

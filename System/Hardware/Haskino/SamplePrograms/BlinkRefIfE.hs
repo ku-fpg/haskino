@@ -30,12 +30,12 @@ blinkOnOff ref led del = do onOff <- readRemoteRef ref
 
 blinkRefIfE :: IO ()
 blinkRefIfE = withArduino False "/dev/cu.usbmodem1421" $ do
-              let led = lit 13
-              let slow = lit 2000
-              let fast = lit 1000
+              let led = 13
+              let slow = 2000
+              let fast = 1000
               setPinModeE led OUTPUT
-              r1 <- newRemoteRef $ lit True
-              r2 <- newRemoteRef $ lit False
-              while (lit True)  $ do slowFast <- readRemoteRef r2
-                                     ifThenElse (slowFast) (blinkOnOff r1 led slow) (blinkOnOff r1 led fast)
-                                     modifyRemoteRef r2 (\x -> notB x)
+              r1 <- newRemoteRef true
+              r2 <- newRemoteRef false
+              while true  $ do slowFast <- readRemoteRef r2
+                               ifThenElse (slowFast) (blinkOnOff r1 led slow) (blinkOnOff r1 led fast)
+                               modifyRemoteRef r2 (\x -> notB x)

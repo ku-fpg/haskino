@@ -19,10 +19,10 @@ import Data.Word
 
 blinkE :: IO ()
 blinkE = withArduino True "/dev/cu.usbmodem1421" $ do
-           let led = lit 13
-           let delay = lit 1000
+           let led = 13
+           let delay = 1000
            setPinModeE led OUTPUT
-           while (lit True) $ do digitalWriteE led (lit True)
-                                 delayMillisE delay
-                                 digitalWriteE led (lit False)
-                                 delayMillisE delay
+           while true $ do digitalWriteE led true
+                           delayMillisE delay
+                           digitalWriteE led false
+                           delayMillisE delay

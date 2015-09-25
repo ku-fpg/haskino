@@ -187,10 +187,6 @@ data Command =
      | WriteRemoteRef8 (RemoteRef Word8) Word8E
      | WriteRemoteRef16 (RemoteRef Word16) Word16E
      | WriteRemoteRef32 (RemoteRef Word32) Word32E
-     | WriteEffectRemoteRefB (RemoteRef Bool) (Arduino BoolE)
-     | WriteEffectRemoteRef8 (RemoteRef Word8) (Arduino Word8E)
-     | WriteEffectRemoteRef16 (RemoteRef Word16) (Arduino Word16E)
-     | WriteEffectRemoteRef32 (RemoteRef Word32) (Arduino Word32E)
      | ModifyRemoteRefB (RemoteRef Bool) (BoolE -> BoolE)
      | ModifyRemoteRef8 (RemoteRef Word8) (Word8E -> Word8E)
      | ModifyRemoteRef16 (RemoteRef Word16) (Word16E -> Word16E)
@@ -288,22 +284,6 @@ writeRemoteRef16 r e = Command $ WriteRemoteRef16 r e
 
 writeRemoteRef32 :: RemoteRef Word32 -> Word32E -> Arduino ()
 writeRemoteRef32 r e = Command $ WriteRemoteRef32 r e
-
-extendB :: (BoolE -> Arduino ()) -> Arduino BoolE -> Arduino ()
-extendB f e = 
-    case f (lit True) of (Command (WriteRemoteRefB r _)) -> Command $ WriteEffectRemoteRefB r e
-
-extend8 :: (Word8E -> Arduino ()) -> Arduino Word8E -> Arduino ()
-extend8 f e = 
-    case f (lit 0) of (Command (WriteRemoteRef8 r _)) -> Command $ WriteEffectRemoteRef8 r e
-
-extend16 :: (Word16E -> Arduino ()) -> Arduino Word16E -> Arduino ()
-extend16 f e = 
-    case f (lit 0) of (Command (WriteRemoteRef16 r _)) -> Command $ WriteEffectRemoteRef16 r e
-
-extend32 :: (Word32E -> Arduino ()) -> Arduino Word32E -> Arduino ()
-extend32 f e = 
-    case f (lit 0) of (Command (WriteRemoteRef32 r _)) -> Command $ WriteEffectRemoteRef32 r e
 
 modifyRemoteRefB :: RemoteRef Bool -> (BoolE -> BoolE) -> Arduino ()
 modifyRemoteRefB r f = Command $ ModifyRemoteRefB r f
@@ -587,7 +567,6 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE
                  | REF_CMD_NEW
                  | REF_CMD_READ
                  | REF_CMD_WRITE
-                 | REF_CMD_WRITE_EFFECT
                  | EXP_CMD_EVAL
                 deriving Show
 
@@ -639,7 +618,6 @@ firmwareCmdVal SCHED_CMD_BOOT_TASK_E    = 0xAC
 firmwareCmdVal REF_CMD_NEW              = 0xB0
 firmwareCmdVal REF_CMD_READ             = 0xB1
 firmwareCmdVal REF_CMD_WRITE            = 0xB2
-firmwareCmdVal REF_CMD_WRITE_EFFECT     = 0xB3
 firmwareCmdVal EXP_CMD_EVAL             = 0xC0
 
 data RefType = REF_BOOL

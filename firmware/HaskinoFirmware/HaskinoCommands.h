@@ -115,7 +115,6 @@
 #define REF_CMD_NEW             (REF_CMD_TYPE | 0x0)
 #define REF_CMD_READ            (REF_CMD_TYPE | 0x1)
 #define REF_CMD_WRITE           (REF_CMD_TYPE | 0x2)
-#define REF_CMD_WRITE_EFFECT    (REF_CMD_TYPE | 0x3)
 
 // Reference  response
 #define REF_RESP_NEW            (REF_CMD_TYPE | 0x8)

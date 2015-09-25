@@ -15,20 +15,17 @@ import System.Hardware.Haskino
 import Data.Boolean
 import Data.Word
 
-import Control.Concurrent   (threadDelay)
-import Control.Monad.Trans (liftIO)
-
 exampleE :: IO ()
 exampleE = withArduino True "/dev/cu.usbmodem1421" $ do
-           let button = lit 2
-           let led1 = lit 6
-           let led2 = lit 7
-           x <- newRemoteRef (lit False)
+           let button = 2
+           let led1 = 6
+           let led2 = 7
+           x <- newRemoteRef false
            setPinModeE button INPUT
            setPinModeE led1 OUTPUT
            setPinModeE led2 OUTPUT
-           while (lit True) $ do writeRemoteRef x  =<< digitalReadE button
-                                 ex <- readRemoteRef x
-                                 digitalWriteE led1 ex
-                                 digitalWriteE led2 (notB ex)
-                                 delayMillis 100 
+           while true $ do writeRemoteRef x  =<< digitalReadE button
+                           ex <- readRemoteRef x
+                           digitalWriteE led1 ex
+                           digitalWriteE led2 (notB ex)
+                           delayMillis 100 

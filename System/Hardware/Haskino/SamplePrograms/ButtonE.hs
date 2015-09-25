@@ -22,15 +22,15 @@ import Data.Word
 
 example :: IO ()
 example = withArduino False "/dev/cu.usbmodem1421" $ do
-           let button = lit 2
-           let led1 = lit 6
-           let led2 = lit 7
+           let button = 2
+           let led1 = 6
+           let led2 = 7
            x <- newRemoteRef false
            setPinModeE button INPUT
            setPinModeE led1 OUTPUT
            setPinModeE led2 OUTPUT
-           while (lit True) $ do writeEffectRemoteRef x (digitalReadE button)
-                                 ex <- readRemoteRef x
-                                 digitalWriteE led1 ex
-                                 digitalWriteE led2 (notB ex)
-                                 delayMillis 100 
+           while true $ do writeRemoteRef x =<< digitalReadE button
+                           ex <- readRemoteRef x
+                           digitalWriteE led1 ex
+                           digitalWriteE led2 (notB ex)
+                           delayMillis 100 

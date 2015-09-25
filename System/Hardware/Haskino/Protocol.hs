@@ -125,22 +125,6 @@ packageCommand (WriteRemoteRef16 (RemoteRefW16 i) e) ix =
     (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD16, fromIntegral i] ++ packageExpr e), ix)
 packageCommand (WriteRemoteRef32 (RemoteRefW32 i) e) ix =
     (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD32, fromIntegral i] ++ packageExpr e), ix)
-packageCommand (WriteEffectRemoteRefB (RemoteRefB i) cb) ix =
-    (buildCommand REF_CMD_WRITE_EFFECT ([refTypeCmdVal REF_BOOL, fromIntegral i] ++ B.unpack pcb), ix')
-  where
-    (pcb, ix') = packageCodeBlock cb ix
-packageCommand (WriteEffectRemoteRef8 (RemoteRefW8 i) cb) ix =
-    (buildCommand REF_CMD_WRITE_EFFECT ([refTypeCmdVal REF_WORD8, fromIntegral i] ++ B.unpack pcb), ix')
-  where
-    (pcb, ix') = packageCodeBlock cb ix
-packageCommand (WriteEffectRemoteRef16 (RemoteRefW16 i) cb) ix =
-    (buildCommand REF_CMD_WRITE_EFFECT ([refTypeCmdVal REF_WORD16, fromIntegral i] ++ B.unpack pcb), ix')
-  where
-    (pcb, ix') = packageCodeBlock cb ix
-packageCommand (WriteEffectRemoteRef32 (RemoteRefW32 i) cb) ix =
-    (buildCommand REF_CMD_WRITE_EFFECT ([refTypeCmdVal REF_WORD32, fromIntegral i] ++ B.unpack pcb), ix')
-  where
-    (pcb, ix') = packageCodeBlock cb ix
 packageCommand (ModifyRemoteRefB (RemoteRefB i) f) ix =
     (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_BOOL, fromIntegral i] ++ packageExpr (f (RefB i))), ix)
 packageCommand (ModifyRemoteRef8 (RemoteRefW8 i) f) ix =
