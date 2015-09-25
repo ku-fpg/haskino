@@ -3,6 +3,7 @@
 #include "HaskinoCodeBlock.h"
 #include "HaskinoComm.h"
 #include "HaskinoCommands.h"
+#include "HaskinoConfig.h"
 #include "HaskinoExpr.h"
 #include "HaskinoFirmware.h"
 #include "HaskinoScheduler.h"
@@ -140,7 +141,8 @@ static bool handleWhile(int size, const byte *msg, byte *local)
 
     while (condition)
         {
-        runCodeBlock(whileSize, codeBlock, NULL);
+        byte loopLocal[MAX_LOCAL_BIND];
+        runCodeBlock(whileSize, codeBlock, loopLocal);
 
         expr = (byte *) &msg[1];
         condition = evalBoolExprOrBind(&expr, local);
@@ -156,15 +158,16 @@ static bool handleIfThenElse(int size, const byte *msg, byte *local)
     byte *expr = (byte *) &msg[3];
     bool condition = evalBoolExprOrBind(&expr, local);
     byte *codeBlock = expr;
+    byte blockLocal[MAX_LOCAL_BIND];
 
     if (condition)
         {
-        runCodeBlock(thenSize, codeBlock, NULL);
+        runCodeBlock(thenSize, codeBlock, blockLocal);
         }
     else
         {
         elseSize = size - (thenSize + (codeBlock - msg));
-        runCodeBlock(elseSize, codeBlock + thenSize, NULL);
+        runCodeBlock(elseSize, codeBlock + thenSize, blockLocal);
         }
 
     return false;

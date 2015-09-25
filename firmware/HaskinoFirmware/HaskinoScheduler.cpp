@@ -2,6 +2,7 @@
 #include <EEPROM.h>
 #include "HaskinoComm.h"
 #include "HaskinoCommands.h"
+#include "HaskinoConfig.h"
 #include "HaskinoExpr.h"
 #include "HaskinoScheduler.h"
 
@@ -385,6 +386,8 @@ void schedulerRunTasks()
 
 static bool executeTask(TASK *task)
     {
+    byte local[MAX_LOCAL_BIND];
+
     // Find end of next command
     bool taskRescheduled;
 
@@ -394,7 +397,7 @@ static bool executeTask(TASK *task)
         byte cmdSize = msg[0];
         byte *cmd = &msg[1];
 
-        taskRescheduled = parseMessage(cmdSize, cmd, NULL);  
+        taskRescheduled = parseMessage(cmdSize, cmd, local);  
 
         task->currPos += cmdSize + 1;
         if (taskRescheduled)

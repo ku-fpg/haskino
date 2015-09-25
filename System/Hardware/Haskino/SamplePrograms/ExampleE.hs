@@ -15,8 +15,11 @@ import System.Hardware.Haskino
 import Data.Boolean
 import Data.Word
 
+import Control.Concurrent   (threadDelay)
+import Control.Monad.Trans (liftIO)
+
 exampleE :: IO ()
-exampleE = withArduino False "/dev/cu.usbmodem1421" $ do
+exampleE = withArduino True "/dev/cu.usbmodem1421" $ do
            let button = lit 2
            let led1 = lit 6
            let led2 = lit 7
@@ -29,3 +32,4 @@ exampleE = withArduino False "/dev/cu.usbmodem1421" $ do
                                  digitalWriteE led1 ex
                                  digitalWriteE led2 (notB ex)
                                  delayMillis 100 
+           liftIO $ threadDelay 10000
