@@ -319,42 +319,35 @@ modifyRemoteRef32 r f = Command $ ModifyRemoteRef32 r f
 
 -- ToDo: Readd servo and stepper functions
 
-infixr 1 <<=
-
 class RemoteReference a where
     newRemoteRef          :: Expr a -> Arduino (RemoteRef a)
     readRemoteRef         :: RemoteRef a -> Arduino (Expr a)
     writeRemoteRef        :: RemoteRef a -> Expr a -> Arduino ()
     modifyRemoteRef       :: RemoteRef a -> (Expr a -> Expr a) -> Arduino ()
-    (<<=)                 :: (Expr a -> Arduino ()) -> Arduino (Expr a) -> Arduino ()
 
 instance RemoteReference Bool where
     newRemoteRef = newRemoteRefB
     readRemoteRef = readRemoteRefB
     writeRemoteRef = writeRemoteRefB
     modifyRemoteRef = modifyRemoteRefB
-    (<<=) = extendB
 
 instance RemoteReference Word8 where
     newRemoteRef = newRemoteRef8
     readRemoteRef = readRemoteRef8
     writeRemoteRef = writeRemoteRef8
     modifyRemoteRef = modifyRemoteRef8
-    (<<=) = extend8
 
 instance RemoteReference Word16 where
     newRemoteRef = newRemoteRef16
     readRemoteRef = readRemoteRef16
     writeRemoteRef = writeRemoteRef16
     modifyRemoteRef = modifyRemoteRef16
-    (<<=) = extend16
 
 instance RemoteReference Word32 where
     newRemoteRef = newRemoteRef32
     readRemoteRef = readRemoteRef32
     writeRemoteRef = writeRemoteRef32
     modifyRemoteRef = modifyRemoteRef32
-    (<<=) = extend32
 
 data Control =
       Loop (Arduino ())
