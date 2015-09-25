@@ -15,9 +15,6 @@ import System.Hardware.Haskino
 import Data.Boolean
 import Data.Word
 
-test :: Expr Word8
-test = 2 * 4
-
 example :: Arduino ()
 example = do let button = 2 :: Expr Word8
              let led1 = lit 6
@@ -26,14 +23,14 @@ example = do let button = 2 :: Expr Word8
              setPinModeE button INPUT
              setPinModeE led1 OUTPUT
              setPinModeE led2 OUTPUT
-             while (lit True) $ do writeRemoteRef x  =<< digitalReadE button
-                                   ex <- readRemoteRef x
-                                   digitalWriteE led1 ex
-                                   digitalWriteE led2 (notB ex)
-                                   delayMillis 100 
+             while true $ do writeRemoteRef x  =<< digitalReadE button
+                             ex <- readRemoteRef x
+                             digitalWriteE led1 ex
+                             digitalWriteE led2 (notB ex)
+                             delayMillis 100 
 
 exampleProg :: IO ()
-exampleProg = withArduino True "/dev/cu.usbmodem1421" $ do
-              let tid = lit 1
+exampleProg = withArduino False "/dev/cu.usbmodem1421" $ do
+              let tid = 1
               createTaskE tid example
               bootTaskE tid
