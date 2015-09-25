@@ -32,4 +32,3 @@ exampleE = withArduino True "/dev/cu.usbmodem1421" $ do
                                  digitalWriteE led1 ex
                                  digitalWriteE led2 (notB ex)
                                  delayMillis 100 
-           liftIO $ threadDelay 10000
