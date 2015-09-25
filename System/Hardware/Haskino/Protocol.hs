@@ -32,7 +32,7 @@ maxFirmwareSize :: Int
 maxFirmwareSize = 256
 
 framePackage :: B.ByteString -> B.ByteString
-framePackage bs = B.append (B.concatMap escape bs) (B.pack [check bs, 0x7E])
+framePackage bs = B.append (B.concatMap escape bs) (B.append (escape $ check bs) (B.singleton 0x7E))
   where
     escape :: Word8 -> B.ByteString
     escape c = if c == 0x7E || c == 0x7D

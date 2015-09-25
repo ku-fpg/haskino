@@ -33,5 +33,4 @@ exampleProg :: IO ()
 exampleProg = withArduino True "/dev/cu.usbmodem1421" $ do
               let tid = lit 1
               createTaskE tid example
-              -- bootTaskE tid
-              scheduleTaskE tid 10
+              bootTaskE tid
