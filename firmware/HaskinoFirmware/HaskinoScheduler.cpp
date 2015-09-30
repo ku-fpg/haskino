@@ -32,8 +32,9 @@ static bool handleReset(int size, const byte *msg, byte *local);
 static bool handleBootTask(int size, const byte *msg, byte *local);
 static void deleteTask(TASK* task);
 static TASK *findTask(int id);
+static bool createById(byte id, unsigned int taskSize);
+static bool scheduleById(byte id, unsigned long deltaMillis);
 static bool executeTask(TASK *task);
-static bool deleteById(byte id);
 
 static TASK *firstTask = NULL;
 static TASK *runningTask = NULL;
@@ -122,8 +123,10 @@ static void deleteTask(TASK* task)
     free(task);
     }
 
-static bool deleteById(byte id)
+static bool handleDeleteTask(int size, const byte *msg, byte *local)
     {
+    byte *expr = (byte *) &msg[1];
+    byte id = evalWord8ExprOrBind(&expr, local);
     TASK *task;
 
     if ((task = findTask(id)) != NULL)
@@ -133,15 +136,12 @@ static bool deleteById(byte id)
     return false;
     }
 
-static bool handleDeleteTask(int size, const byte *msg, byte *local)
+static bool handleAddToTask(int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[1];
     byte id = evalWord8ExprOrBind(&expr, local);
-    return deleteById(id);
-    }
-
-static bool addToTaskById(byte id, byte addSize, const byte *data)
-    {
+    byte addSize = evalWord8ExprOrBind(&expr, local);
+    const byte *data = expr;
     TASK *task;
 
     if ((task = findTask(id)) != NULL)
@@ -153,16 +153,6 @@ static bool addToTaskById(byte id, byte addSize, const byte *data)
             }
         }
     return false;
-    }
-
-static bool handleAddToTask(int size, const byte *msg, byte *local)
-    {
-    byte *expr = (byte *) &msg[1];
-    byte id = evalWord8ExprOrBind(&expr, local);
-    byte addSize = evalWord8ExprOrBind(&expr, local);
-    const byte *data = expr;
-
-    return addToTaskById(id, addSize, data);
     }
 
 static bool scheduleById(byte id, unsigned long deltaMillis)
@@ -184,8 +174,10 @@ static bool handleScheduleTask(int size, const byte *msg, byte *local)
     return scheduleById(id, deltaMillis);
     }
 
-static bool queryById(byte id, byte *local)
+static bool handleQuery(int size, const byte *msg, byte *local)
     {
+    byte *expr = (byte *) &msg[1];
+    byte id = evalWord8ExprOrBind(&expr, local);
     byte queryReply[10];
     uint16_t *sizeReply = (uint16_t *) queryReply;
     uint16_t *lenReply = (uint16_t *) &queryReply[2];
@@ -206,13 +198,6 @@ static bool queryById(byte id, byte *local)
         sendReply(0, SCHED_RESP_QUERY, queryReply, local);
         }
     return false;
-    }
-
-static bool handleQuery(int size, const byte *msg, byte *local)
-    {
-    byte *expr = (byte *) &msg[1];
-    byte id = evalWord8ExprOrBind(&expr, local);
-    return queryById(id, local);
     }
 
 static bool handleQueryAll(int size, const byte *msg, byte *local)
