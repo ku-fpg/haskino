@@ -22,19 +22,14 @@ typedef struct task_t
     byte           data[];
     } TASK;
 
+static bool handleQueryAll(int size, const byte *msg, byte *local);
 static bool handleCreateTask(int size, const byte *msg, byte *local);
 static bool handleDeleteTask(int size, const byte *msg, byte *local);
 static bool handleAddToTask(int size, const byte *msg, byte *local);
 static bool handleScheduleTask(int size, const byte *msg, byte *local);
 static bool handleQuery(int size, const byte *msg, byte *local);
-static bool handleQueryAll(int size, const byte *msg, byte *local);
-static bool handleCreateTaskE(int size, const byte *msg, byte *local);
-static bool handleDeleteTaskE(int size, const byte *msg, byte *local);
-static bool handleAddToTaskE(int size, const byte *msg, byte *local);
-static bool handleScheduleTaskE(int size, const byte *msg, byte *local);
-static bool handleQueryE(int size, const byte *msg, byte *local);
 static bool handleReset(int size, const byte *msg, byte *local);
-static bool handleBootTaskE(int size, const byte *msg, byte *local);
+static bool handleBootTask(int size, const byte *msg, byte *local);
 static void deleteTask(TASK* task);
 static TASK *findTask(int id);
 static bool executeTask(TASK *task);
@@ -47,6 +42,9 @@ bool parseSchedulerMessage(int size, const byte *msg, byte *local)
     {
     switch (msg[0]) 
         {
+        case SCHED_CMD_QUERY_ALL:
+            return handleQueryAll(size, msg, local);
+            break;
         case SCHED_CMD_CREATE_TASK:
             return handleCreateTask(size, msg, local);
             break;
@@ -62,29 +60,11 @@ bool parseSchedulerMessage(int size, const byte *msg, byte *local)
         case SCHED_CMD_QUERY:
             return handleQuery(size, msg, local);
             break;
-        case SCHED_CMD_QUERY_ALL:
-            return handleQueryAll(size, msg, local);
-            break;
-        case SCHED_CMD_CREATE_TASK_E:
-            return handleCreateTaskE(size, msg, local);
-            break;
-        case SCHED_CMD_DELETE_TASK_E:
-            return handleDeleteTaskE(size, msg, local);
-            break;
-        case SCHED_CMD_ADD_TO_TASK_E:
-            return handleAddToTaskE(size, msg, local);
-            break;
-        case SCHED_CMD_SCHED_TASK_E:
-            return handleScheduleTaskE(size, msg, local);
-            break;
-        case SCHED_CMD_QUERY_E:
-            return handleQueryE(size, msg, local);
-            break;
         case SCHED_CMD_RESET:
             return handleReset(size, msg, local);
             break;
-         case SCHED_CMD_BOOT_TASK_E:
-            return handleBootTaskE(size, msg, local);
+         case SCHED_CMD_BOOT_TASK:
+            return handleBootTask(size, msg, local);
             break;
        }
     return false;
@@ -124,15 +104,6 @@ static bool createById(byte id, unsigned int taskSize)
 
 static bool handleCreateTask(int size, const byte *msg, byte *local)
     {
-    byte id = msg[1];
-    unsigned int taskSize;
-    memcpy(&taskSize, &msg[2], 2);
-
-    return createById(id, taskSize);
-    }
-
-static bool handleCreateTaskE(int size, const byte *msg, byte *local)
-    {
     byte *expr = (byte *) &msg[1];
     byte id = evalWord8ExprOrBind(&expr, local);
     unsigned int taskSize = evalWord16ExprOrBind(&expr, local);
@@ -164,12 +135,6 @@ static bool deleteById(byte id)
 
 static bool handleDeleteTask(int size, const byte *msg, byte *local)
     {
-    byte id = msg[1];
-    return deleteById(id);
-    }
-
-static bool handleDeleteTaskE(int size, const byte *msg, byte *local)
-    {
     byte *expr = (byte *) &msg[1];
     byte id = evalWord8ExprOrBind(&expr, local);
     return deleteById(id);
@@ -192,15 +157,6 @@ static bool addToTaskById(byte id, byte addSize, const byte *data)
 
 static bool handleAddToTask(int size, const byte *msg, byte *local)
     {
-    byte id = msg[1];
-    byte addSize = msg[2];
-    const byte *data = &msg[3];
-
-    return addToTaskById(id, addSize, data);
-    }
-
-static bool handleAddToTaskE(int size, const byte *msg, byte *local)
-    {
     byte *expr = (byte *) &msg[1];
     byte id = evalWord8ExprOrBind(&expr, local);
     byte addSize = evalWord8ExprOrBind(&expr, local);
@@ -221,14 +177,6 @@ static bool scheduleById(byte id, unsigned long deltaMillis)
     }
 
 static bool handleScheduleTask(int size, const byte *msg, byte *local)
-    {
-    byte id = msg[1];
-    unsigned long deltaMillis;
-    memcpy(&deltaMillis, &msg[2], 4);
-    return scheduleById(id, deltaMillis);
-    }
-
-static bool handleScheduleTaskE(int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[1];
     byte id = evalWord8ExprOrBind(&expr, local);
@@ -261,12 +209,6 @@ static bool queryById(byte id, byte *local)
     }
 
 static bool handleQuery(int size, const byte *msg, byte *local)
-    {
-    byte id = msg[1];
-    return queryById(id, local);
-    }
-
-static bool handleQueryE(int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[1];
     byte id = evalWord8ExprOrBind(&expr, local);
@@ -314,7 +256,7 @@ static bool handleReset(int size, const byte *msg, byte *local)
     return false;
     }
 
-static bool handleBootTaskE(int size, const byte *msg, byte *local)
+static bool handleBootTask(int size, const byte *msg, byte *local)
     {
     TASK *task;
     byte *expr = (byte *) &msg[1];

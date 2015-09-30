@@ -12,13 +12,10 @@
 
 // Board Control commands
 #define BC_CMD_TYPE             0x10
-#define BC_CMD_SET_PIN_MODE     (BC_CMD_TYPE | 0x0)
-#define BC_CMD_DELAY_MILLIS     (BC_CMD_TYPE | 0x1)
-#define BC_CMD_DELAY_MICROS     (BC_CMD_TYPE | 0x2)
 #define BC_CMD_SYSTEM_RESET     (BC_CMD_TYPE | 0x3)
-#define BC_CMD_SET_PIN_MODE_E   (BC_CMD_TYPE | 0x4)
-#define BC_CMD_DELAY_MILLIS_E   (BC_CMD_TYPE | 0x5)
-#define BC_CMD_DELAY_MICROS_E   (BC_CMD_TYPE | 0x6)
+#define BC_CMD_SET_PIN_MODE     (BC_CMD_TYPE | 0x4)
+#define BC_CMD_DELAY_MILLIS     (BC_CMD_TYPE | 0x5)
+#define BC_CMD_DELAY_MICROS     (BC_CMD_TYPE | 0x6)
 #define BC_CMD_WHILE            (BC_CMD_TYPE | 0x7)
 #define BC_CMD_IF_THEN_ELSE     (BC_CMD_TYPE | 0x8)
 
@@ -41,24 +38,18 @@
 
 // Digital commands
 #define DIG_CMD_TYPE            0x30
-#define DIG_CMD_READ_PIN        (DIG_CMD_TYPE | 0x0)
-#define DIG_CMD_WRITE_PIN       (DIG_CMD_TYPE | 0x1)
-#define DIG_CMD_READ_PIN_E      (DIG_CMD_TYPE | 0x2)
-#define DIG_CMD_WRITE_PIN_E     (DIG_CMD_TYPE | 0x3)
+#define DIG_CMD_READ_PIN        (DIG_CMD_TYPE | 0x2)
+#define DIG_CMD_WRITE_PIN       (DIG_CMD_TYPE | 0x3)
 
 // Digital responses
 #define DIG_RESP_READ_PIN       (DIG_CMD_TYPE | 0x8)
 
 // Analog commands
 #define ALG_CMD_TYPE            0x40
-#define ALG_CMD_READ_PIN        (ALG_CMD_TYPE | 0x0)
-#define ALG_CMD_WRITE_PIN       (ALG_CMD_TYPE | 0x1)
-#define ALG_CMD_TONE_PIN        (ALG_CMD_TYPE | 0x2)
-#define ALG_CMD_NOTONE_PIN      (ALG_CMD_TYPE | 0x3)
-#define ALG_CMD_READ_PIN_E      (ALG_CMD_TYPE | 0x4)
-#define ALG_CMD_WRITE_PIN_E     (ALG_CMD_TYPE | 0x5)
-#define ALG_CMD_TONE_PIN_E      (ALG_CMD_TYPE | 0x6)
-#define ALG_CMD_NOTONE_PIN_E    (ALG_CMD_TYPE | 0x7)
+#define ALG_CMD_READ_PIN        (ALG_CMD_TYPE | 0x4)
+#define ALG_CMD_WRITE_PIN       (ALG_CMD_TYPE | 0x5)
+#define ALG_CMD_TONE_PIN        (ALG_CMD_TYPE | 0x6)
+#define ALG_CMD_NOTONE_PIN      (ALG_CMD_TYPE | 0x7)
 
 // Analog responses
 #define ALG_RESP_READ_PIN       (ALG_CMD_TYPE | 0x8)
@@ -66,10 +57,8 @@
 // I2C commands
 #define I2C_CMD_TYPE            0x50
 #define I2C_CMD_CONFIG          (I2C_CMD_TYPE | 0x0)
-#define I2C_CMD_READ            (I2C_CMD_TYPE | 0x1)
-#define I2C_CMD_WRITE           (I2C_CMD_TYPE | 0x2)
-#define I2C_CMD_READ_E          (I2C_CMD_TYPE | 0x3)
-#define I2C_CMD_WRITE_E         (I2C_CMD_TYPE | 0x4)
+#define I2C_CMD_READ            (I2C_CMD_TYPE | 0x3)
+#define I2C_CMD_WRITE           (I2C_CMD_TYPE | 0x4)
 
 // I2C responses
 #define I2C_RESP_READ           (I2C_CMD_TYPE | 0x8)
@@ -91,19 +80,14 @@
 
 // Scheduler commands
 #define SCHED_CMD_TYPE          0xA0
-#define SCHED_CMD_CREATE_TASK   (SCHED_CMD_TYPE | 0x0)
-#define SCHED_CMD_DELETE_TASK   (SCHED_CMD_TYPE | 0x1)
-#define SCHED_CMD_ADD_TO_TASK   (SCHED_CMD_TYPE | 0x2)
-#define SCHED_CMD_SCHED_TASK    (SCHED_CMD_TYPE | 0x3)
-#define SCHED_CMD_QUERY         (SCHED_CMD_TYPE | 0x4)
 #define SCHED_CMD_QUERY_ALL     (SCHED_CMD_TYPE | 0x5)
 #define SCHED_CMD_RESET         (SCHED_CMD_TYPE | 0x6)
-#define SCHED_CMD_CREATE_TASK_E (SCHED_CMD_TYPE | 0x7)
-#define SCHED_CMD_DELETE_TASK_E (SCHED_CMD_TYPE | 0x8)
-#define SCHED_CMD_ADD_TO_TASK_E (SCHED_CMD_TYPE | 0x9)
-#define SCHED_CMD_SCHED_TASK_E  (SCHED_CMD_TYPE | 0xA)
-#define SCHED_CMD_QUERY_E       (SCHED_CMD_TYPE | 0xB)
-#define SCHED_CMD_BOOT_TASK_E   (SCHED_CMD_TYPE | 0xC)
+#define SCHED_CMD_CREATE_TASK   (SCHED_CMD_TYPE | 0x7)
+#define SCHED_CMD_DELETE_TASK   (SCHED_CMD_TYPE | 0x8)
+#define SCHED_CMD_ADD_TO_TASK   (SCHED_CMD_TYPE | 0x9)
+#define SCHED_CMD_SCHED_TASK    (SCHED_CMD_TYPE | 0xA)
+#define SCHED_CMD_QUERY         (SCHED_CMD_TYPE | 0xB)
+#define SCHED_CMD_BOOT_TASK     (SCHED_CMD_TYPE | 0xC)
 
 // Scheduler responses
 #define SCHED_RESP_QUERY        (SCHED_CMD_TYPE | 0xD)
