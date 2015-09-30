@@ -159,27 +159,18 @@ type VarSize = Word8
 
 data Command =
        SystemReset                              -- ^ Send system reset
-     | SetPinMode Pin PinMode                   -- ^ Set the mode on a pin
      | SetPinModeE PinE PinMode                 -- ^ Set the mode on a pin
 --  ToDo: PinMode expression?
 --     | DigitalPortWrite Port Word8            -- ^ Set the values on a port digitally
 --     | DigitalPortWriteE Port (Expr Word8)
-     | DigitalWrite Pin Bool                    -- ^ Set the value on a pin digitally
      | DigitalWriteE PinE BoolE              
-     | AnalogWrite Pin Word16                   -- ^ Send an analog-write; used for servo control
      | AnalogWriteE PinE Word16E
-     | Tone Pin Word16 (Maybe Word32)           -- ^ Play a tone on a pin
      | ToneE PinE Word16E (Maybe Word32E)       -- ^ Play a tone on a pin
-     | NoTone Pin                               -- ^ Stop playing a tone on a pin
      | NoToneE PinE                             -- ^ Stop playing a tone on a pin
-     | I2CWrite SlaveAddress [Word8]
      | I2CWriteE SlaveAddressE [Word8E]
      | I2CConfig
-     | CreateTask TaskID (Arduino ())
      | CreateTaskE TaskIDE (Arduino ())
-     | DeleteTask TaskID
      | DeleteTaskE TaskIDE
-     | ScheduleTask TaskID TimeMillis
      | ScheduleTaskE TaskIDE TimeMillisE
      | BootTaskE TaskIDE
      | ScheduleReset
@@ -199,7 +190,7 @@ systemReset :: Arduino ()
 systemReset = Command SystemReset
 
 setPinMode :: Pin -> PinMode -> Arduino ()
-setPinMode p pm = Command $ SetPinMode p pm
+setPinMode p pm = Command $ SetPinModeE (lit p) pm
 
 setPinModeE :: PinE -> PinMode -> Arduino ()
 setPinModeE p pm = Command $ SetPinModeE p pm
@@ -211,31 +202,32 @@ setPinModeE p pm = Command $ SetPinModeE p pm
 -- digitalPortWriteE p w = Command $ DigitalPortWriteE p w
 
 digitalWrite :: Pin -> Bool -> Arduino ()
-digitalWrite p b = Command $ DigitalWrite p b
+digitalWrite p b = Command $ DigitalWriteE (lit p) (lit b)
 
 digitalWriteE :: PinE -> BoolE -> Arduino ()
 digitalWriteE p b = Command $ DigitalWriteE p b
 
 analogWrite :: Pin -> Word16 -> Arduino ()
-analogWrite p w = Command $ AnalogWrite p w
+analogWrite p w = Command $ AnalogWriteE (lit p) (lit w)
 
 analogWriteE :: PinE -> Word16E -> Arduino ()
 analogWriteE p w = Command $ AnalogWriteE p w
 
 tone :: Pin -> Word16 -> Maybe Word32 -> Arduino ()
-tone p f d = Command $ Tone p f d
+tone p f Nothing = Command $ ToneE (lit p) (lit f) Nothing
+tone p f (Just d) = Command $ ToneE (lit p) (lit f) (Just $ lit d)
 
 toneE :: PinE -> Word16E -> Maybe Word32E -> Arduino ()
 toneE p f d = Command $ ToneE p f d
 
 noTone :: Pin -> Arduino ()
-noTone p = Command $ NoTone p
+noTone p = Command $ NoToneE (lit p)
 
 noToneE :: PinE -> Arduino ()
 noToneE p = Command $ NoToneE p
 
 i2cWrite :: SlaveAddress -> [Word8] -> Arduino ()
-i2cWrite sa ws = Command $ I2CWrite sa ws
+i2cWrite sa ws = Command $ I2CWriteE (lit sa) (map lit ws)
 
 i2cWriteE :: SlaveAddressE -> [Word8E] -> Arduino ()
 i2cWriteE sa ws = Command $ I2CWriteE sa ws
@@ -244,19 +236,19 @@ i2cConfig :: Arduino ()
 i2cConfig = Command $ I2CConfig
 
 createTask :: TaskID -> Arduino () -> Arduino ()
-createTask tid ps = Command (CreateTask tid ps)
+createTask tid ps = Command $ CreateTaskE (lit tid) ps
 
 createTaskE :: TaskIDE -> Arduino () -> Arduino ()
-createTaskE tid ps = Command (CreateTaskE tid ps)
+createTaskE tid ps = Command  $ CreateTaskE tid ps
 
 deleteTask :: TaskID -> Arduino ()
-deleteTask tid = Command $ DeleteTask tid
+deleteTask tid = Command $ DeleteTaskE (lit tid)
 
 deleteTaskE :: TaskIDE -> Arduino ()
 deleteTaskE tid = Command $ DeleteTaskE tid
 
 scheduleTask :: TaskID -> TimeMillis -> Arduino ()
-scheduleTask tid tt = Command $ ScheduleTask tid tt
+scheduleTask tid tt = Command $ ScheduleTaskE (lit tid) (lit tt)
 
 scheduleTaskE :: TaskIDE -> TimeMillisE -> Arduino ()
 scheduleTaskE tid tt = Command $ ScheduleTaskE tid tt
@@ -303,7 +295,8 @@ class RemoteReference a where
     newRemoteRef          :: Expr a -> Arduino (RemoteRef a)
     readRemoteRef         :: RemoteRef a -> Arduino (Expr a)
     writeRemoteRef        :: RemoteRef a -> Expr a -> Arduino ()
-    modifyRemoteRef       :: RemoteRef a -> (Expr a -> Expr a) -> Arduino ()
+    modifyRemoteRef       :: RemoteRef a -> (Expr a -> Expr a) -> 
+                             Arduino ()
 
 instance RemoteReference Bool where
     newRemoteRef = newRemoteRefB
@@ -521,10 +514,7 @@ data Response = DelayResp
 
 -- | Haskino Firmware commands, see: 
 -- | https://github.com/ku-fpg/haskino/wiki/Haskino-Firmware-Protocol-Definition
-data FirmwareCmd = BC_CMD_SET_PIN_MODE
-                 | BC_CMD_DELAY_MILLIS
-                 | BC_CMD_DELAY_MICROS
-                 | BC_CMD_SET_PIN_MODE_E
+data FirmwareCmd = BC_CMD_SET_PIN_MODE_E
                  | BC_CMD_DELAY_MILLIS_E
                  | BC_CMD_DELAY_MICROS_E
                  | BC_CMD_SYSTEM_RESET
@@ -534,28 +524,15 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE
                  | BS_CMD_REQUEST_TYPE
                  | BS_CMD_REQUEST_MICROS
                  | BS_CMD_REQUEST_MILLIS
-                 | DIG_CMD_READ_PIN
-                 | DIG_CMD_WRITE_PIN
                  | DIG_CMD_READ_PIN_E
                  | DIG_CMD_WRITE_PIN_E
-                 | ALG_CMD_READ_PIN
-                 | ALG_CMD_WRITE_PIN
-                 | ALG_CMD_TONE_PIN
-                 | ALG_CMD_NOTONE_PIN
                  | ALG_CMD_READ_PIN_E
                  | ALG_CMD_WRITE_PIN_E
                  | ALG_CMD_TONE_PIN_E
                  | ALG_CMD_NOTONE_PIN_E
                  | I2C_CMD_CONFIG
-                 | I2C_CMD_READ
-                 | I2C_CMD_WRITE
                  | I2C_CMD_READ_E
                  | I2C_CMD_WRITE_E
-                 | SCHED_CMD_CREATE_TASK
-                 | SCHED_CMD_DELETE_TASK
-                 | SCHED_CMD_ADD_TO_TASK
-                 | SCHED_CMD_SCHED_TASK
-                 | SCHED_CMD_QUERY
                  | SCHED_CMD_QUERY_ALL
                  | SCHED_CMD_RESET
                  | SCHED_CMD_CREATE_TASK_E
@@ -572,41 +549,25 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE
 
 -- | Compute the numeric value of a command
 firmwareCmdVal :: FirmwareCmd -> Word8
-firmwareCmdVal BC_CMD_SET_PIN_MODE      = 0x10
-firmwareCmdVal BC_CMD_DELAY_MILLIS      = 0x11
-firmwareCmdVal BC_CMD_DELAY_MICROS      = 0x12
-firmwareCmdVal BC_CMD_SYSTEM_RESET      = 0x13
 firmwareCmdVal BC_CMD_SET_PIN_MODE_E    = 0x14
 firmwareCmdVal BC_CMD_DELAY_MILLIS_E    = 0x15
 firmwareCmdVal BC_CMD_DELAY_MICROS_E    = 0x16
+firmwareCmdVal BC_CMD_SYSTEM_RESET      = 0x13
 firmwareCmdVal BC_CMD_WHILE             = 0x17
 firmwareCmdVal BC_CMD_IF_THEN_ELSE      = 0x18
 firmwareCmdVal BS_CMD_REQUEST_VERSION   = 0x20
 firmwareCmdVal BS_CMD_REQUEST_TYPE      = 0x21
 firmwareCmdVal BS_CMD_REQUEST_MILLIS    = 0x22
 firmwareCmdVal BS_CMD_REQUEST_MICROS    = 0x23
-firmwareCmdVal DIG_CMD_READ_PIN         = 0x30
-firmwareCmdVal DIG_CMD_WRITE_PIN        = 0x31
 firmwareCmdVal DIG_CMD_READ_PIN_E       = 0x32
 firmwareCmdVal DIG_CMD_WRITE_PIN_E      = 0x33
-firmwareCmdVal ALG_CMD_READ_PIN         = 0x40
-firmwareCmdVal ALG_CMD_WRITE_PIN        = 0x41
-firmwareCmdVal ALG_CMD_TONE_PIN         = 0x42
-firmwareCmdVal ALG_CMD_NOTONE_PIN       = 0x43
 firmwareCmdVal ALG_CMD_READ_PIN_E       = 0x44
 firmwareCmdVal ALG_CMD_WRITE_PIN_E      = 0x45
 firmwareCmdVal ALG_CMD_TONE_PIN_E       = 0x46
 firmwareCmdVal ALG_CMD_NOTONE_PIN_E     = 0x47
 firmwareCmdVal I2C_CMD_CONFIG           = 0x50
-firmwareCmdVal I2C_CMD_READ             = 0x51
-firmwareCmdVal I2C_CMD_WRITE            = 0x52
 firmwareCmdVal I2C_CMD_READ_E           = 0x53
 firmwareCmdVal I2C_CMD_WRITE_E          = 0x54
-firmwareCmdVal SCHED_CMD_CREATE_TASK    = 0xA0
-firmwareCmdVal SCHED_CMD_DELETE_TASK    = 0xA1
-firmwareCmdVal SCHED_CMD_ADD_TO_TASK    = 0xA2
-firmwareCmdVal SCHED_CMD_SCHED_TASK     = 0xA3
-firmwareCmdVal SCHED_CMD_QUERY          = 0xA4
 firmwareCmdVal SCHED_CMD_QUERY_ALL      = 0xA5
 firmwareCmdVal SCHED_CMD_RESET          = 0xA6
 firmwareCmdVal SCHED_CMD_CREATE_TASK_E  = 0xA7

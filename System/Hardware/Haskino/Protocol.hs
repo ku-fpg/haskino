@@ -47,61 +47,30 @@ buildCommand cmd bs = B.pack $ firmwareCmdVal cmd : bs
 -- using the Haskino Firmware protocol.
 packageCommand :: Command -> Int -> (B.ByteString, Int)
 packageCommand SystemReset ix = (buildCommand BC_CMD_SYSTEM_RESET [], ix)
-packageCommand (SetPinMode p m) ix = 
-    (buildCommand BC_CMD_SET_PIN_MODE [p, fromIntegral $ fromEnum m], ix)
 packageCommand (SetPinModeE p m) ix =
     (buildCommand BC_CMD_SET_PIN_MODE_E (packageExpr p ++ [fromIntegral $ fromEnum m]), ix)
-packageCommand (DigitalWrite p b) ix = 
-    (buildCommand DIG_CMD_WRITE_PIN [p, if b then 1 else 0], ix)
 packageCommand (DigitalWriteE p b) ix =
     (buildCommand DIG_CMD_WRITE_PIN_E (packageExpr p ++ packageExpr b), ix)
-packageCommand (AnalogWrite p w) ix = 
-    (buildCommand ALG_CMD_WRITE_PIN (p : (word16ToBytes w)), ix)
 packageCommand (AnalogWriteE p w) ix =
     (buildCommand ALG_CMD_WRITE_PIN_E (packageExpr p ++ packageExpr w), ix)
-packageCommand (Tone p f (Just d)) ix =
-    (buildCommand ALG_CMD_TONE_PIN (p : (word16ToBytes f) ++ (word32ToBytes d)), ix)
-packageCommand (Tone p f Nothing) ix =
-    packageCommand (Tone p f (Just 0)) ix
 packageCommand (ToneE p f (Just d)) ix =
     (buildCommand ALG_CMD_TONE_PIN_E (packageExpr p ++ packageExpr f ++ packageExpr d), ix)
 packageCommand (ToneE p f Nothing) ix =
     packageCommand (ToneE p f (Just 0)) ix
-packageCommand (NoTone p) ix =
-    (buildCommand ALG_CMD_NOTONE_PIN [p], ix)
 packageCommand (NoToneE p) ix =
     (buildCommand ALG_CMD_NOTONE_PIN_E (packageExpr  p), ix)
-packageCommand (I2CWrite sa w8s) ix = 
-    (buildCommand I2C_CMD_WRITE (sa : w8s), ix)
 -- ToDo: packageCommand c (I2CWriteE sa w8s) = 
 --    return $ buildCommand I2C_CMD_WRITE_E (sa : w8s)
 packageCommand I2CConfig ix = 
     (buildCommand I2C_CMD_CONFIG [], ix)
-packageCommand (DeleteTask tid) ix = 
-    (buildCommand SCHED_CMD_DELETE_TASK [tid], ix)
 packageCommand (DeleteTaskE tid) ix =
     (buildCommand SCHED_CMD_DELETE_TASK_E (packageExpr tid), ix)
-packageCommand (ScheduleTask tid tt) ix = 
-    (buildCommand SCHED_CMD_SCHED_TASK (tid : word32ToBytes tt), ix)
 packageCommand (ScheduleTaskE tid tt) ix =
     (buildCommand SCHED_CMD_SCHED_TASK_E (packageExpr tid ++ packageExpr tt), ix)
 packageCommand ScheduleReset ix =
     (buildCommand SCHED_CMD_RESET [], ix)
 packageCommand (BootTaskE tid) ix =
     (buildCommand SCHED_CMD_BOOT_TASK_E (packageExpr tid), ix)
-packageCommand (CreateTask tid m) ix =
-    ((framePackage cmd) `B.append` (genAddToTaskCmds td), ix')
-  where
-    (td, ix') = packageCodeBlock m ix
-    taskSize = fromIntegral (B.length td)
-    cmd = buildCommand SCHED_CMD_CREATE_TASK (tid : (word16ToBytes taskSize))                                   
-    -- Max command data size is max frame size - 3 (command,checksum,frame flag) 
-    maxCmdSize = maxFirmwareSize - 3
-    genAddToTaskCmds tds | fromIntegral (B.length tds) > maxCmdSize = 
-        addToTask (B.take maxCmdSize tds) 
-            `B.append` (genAddToTaskCmds (B.drop maxCmdSize tds))
-    genAddToTaskCmds tds = addToTask tds
-    addToTask tds' = framePackage $ buildCommand SCHED_CMD_ADD_TO_TASK ([tid, fromIntegral $ B.length tds'] ++ (B.unpack tds'))
 packageCommand (CreateTaskE tid m) ix =
     ((framePackage cmd) `B.append` (genAddToTaskCmds td), ix')
   where
@@ -217,21 +186,21 @@ packageProcedure QueryFirmware       = buildCommand BS_CMD_REQUEST_VERSION []
 packageProcedure QueryFirmwareE      = buildCommand BS_CMD_REQUEST_VERSION []
 packageProcedure QueryProcessor      = buildCommand BS_CMD_REQUEST_TYPE []
 packageProcedure Micros              = buildCommand BS_CMD_REQUEST_MICROS []
-packageProcedure MicrosE             = buildCommand BS_CMD_REQUEST_MICROS[]
+packageProcedure MicrosE             = buildCommand BS_CMD_REQUEST_MICROS []
 packageProcedure Millis              = buildCommand BS_CMD_REQUEST_MILLIS []
 packageProcedure MillisE             = buildCommand BS_CMD_REQUEST_MILLIS []
-packageProcedure (DigitalRead p)     = buildCommand DIG_CMD_READ_PIN [p]
+packageProcedure (DigitalRead p)     = buildCommand DIG_CMD_READ_PIN_E (packageExpr $ lit p)
 packageProcedure (DigitalReadE pe)   = buildCommand DIG_CMD_READ_PIN_E (packageExpr pe)
-packageProcedure (AnalogRead p)      = buildCommand ALG_CMD_READ_PIN [p]
+packageProcedure (AnalogRead p)      = buildCommand ALG_CMD_READ_PIN_E (packageExpr $ lit p)
 packageProcedure (AnalogReadE pe)    = buildCommand ALG_CMD_READ_PIN_E (packageExpr pe)
-packageProcedure (I2CRead sa cnt)    = buildCommand I2C_CMD_READ [sa,cnt]
+packageProcedure (I2CRead sa cnt)    = buildCommand I2C_CMD_READ_E ((packageExpr $ lit sa) ++ (packageExpr $ lit cnt))
 packageProcedure (I2CReadE sae cnte) = buildCommand I2C_CMD_READ_E ((packageExpr sae) ++ (packageExpr cnte))
 packageProcedure QueryAllTasks       = buildCommand SCHED_CMD_QUERY_ALL []
-packageProcedure (QueryTask tid)     = buildCommand SCHED_CMD_QUERY [tid]
+packageProcedure (QueryTask tid)     = buildCommand SCHED_CMD_QUERY_E (packageExpr $ lit tid)
 packageProcedure (QueryTaskE tide)   = buildCommand SCHED_CMD_QUERY_E (packageExpr tide)
-packageProcedure (DelayMillis ms)    = buildCommand BC_CMD_DELAY_MILLIS (word32ToBytes ms)
+packageProcedure (DelayMillis ms)    = buildCommand BC_CMD_DELAY_MILLIS_E (packageExpr $ lit ms)
 packageProcedure (DelayMillisE ms)   = buildCommand BC_CMD_DELAY_MILLIS_E (packageExpr ms)
-packageProcedure (DelayMicros ms)    = buildCommand BC_CMD_DELAY_MICROS (word32ToBytes ms)
+packageProcedure (DelayMicros ms)    = buildCommand BC_CMD_DELAY_MICROS_E (packageExpr $ lit ms)
 packageProcedure (DelayMicrosE ms)   = buildCommand BC_CMD_DELAY_MICROS_E (packageExpr ms)
 packageProcedure (EvalB e)           = buildCommand EXP_CMD_EVAL ((refTypeCmdVal REF_BOOL) : (packageExpr e))
 packageProcedure (Eval8 e)           = buildCommand EXP_CMD_EVAL ((refTypeCmdVal REF_WORD8) : (packageExpr e))
