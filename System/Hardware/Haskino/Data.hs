@@ -514,9 +514,9 @@ data Response = DelayResp
 
 -- | Haskino Firmware commands, see: 
 -- | https://github.com/ku-fpg/haskino/wiki/Haskino-Firmware-Protocol-Definition
-data FirmwareCmd = BC_CMD_SET_PIN_MODE_E
-                 | BC_CMD_DELAY_MILLIS_E
-                 | BC_CMD_DELAY_MICROS_E
+data FirmwareCmd = BC_CMD_SET_PIN_MODE
+                 | BC_CMD_DELAY_MILLIS
+                 | BC_CMD_DELAY_MICROS
                  | BC_CMD_SYSTEM_RESET
                  | BC_CMD_WHILE
                  | BC_CMD_IF_THEN_ELSE
@@ -524,23 +524,23 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE_E
                  | BS_CMD_REQUEST_TYPE
                  | BS_CMD_REQUEST_MICROS
                  | BS_CMD_REQUEST_MILLIS
-                 | DIG_CMD_READ_PIN_E
-                 | DIG_CMD_WRITE_PIN_E
-                 | ALG_CMD_READ_PIN_E
-                 | ALG_CMD_WRITE_PIN_E
-                 | ALG_CMD_TONE_PIN_E
-                 | ALG_CMD_NOTONE_PIN_E
+                 | DIG_CMD_READ_PIN
+                 | DIG_CMD_WRITE_PIN
+                 | ALG_CMD_READ_PIN
+                 | ALG_CMD_WRITE_PIN
+                 | ALG_CMD_TONE_PIN
+                 | ALG_CMD_NOTONE_PIN
                  | I2C_CMD_CONFIG
-                 | I2C_CMD_READ_E
-                 | I2C_CMD_WRITE_E
+                 | I2C_CMD_READ
+                 | I2C_CMD_WRITE
                  | SCHED_CMD_QUERY_ALL
                  | SCHED_CMD_RESET
-                 | SCHED_CMD_CREATE_TASK_E
-                 | SCHED_CMD_DELETE_TASK_E
-                 | SCHED_CMD_ADD_TO_TASK_E
-                 | SCHED_CMD_SCHED_TASK_E
-                 | SCHED_CMD_QUERY_E
-                 | SCHED_CMD_BOOT_TASK_E
+                 | SCHED_CMD_CREATE_TASK
+                 | SCHED_CMD_DELETE_TASK
+                 | SCHED_CMD_ADD_TO_TASK
+                 | SCHED_CMD_SCHED_TASK
+                 | SCHED_CMD_QUERY
+                 | SCHED_CMD_BOOT_TASK
                  | REF_CMD_NEW
                  | REF_CMD_READ
                  | REF_CMD_WRITE
@@ -549,33 +549,33 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE_E
 
 -- | Compute the numeric value of a command
 firmwareCmdVal :: FirmwareCmd -> Word8
-firmwareCmdVal BC_CMD_SET_PIN_MODE_E    = 0x14
-firmwareCmdVal BC_CMD_DELAY_MILLIS_E    = 0x15
-firmwareCmdVal BC_CMD_DELAY_MICROS_E    = 0x16
-firmwareCmdVal BC_CMD_SYSTEM_RESET      = 0x13
+firmwareCmdVal BC_CMD_SET_PIN_MODE      = 0x14
+firmwareCmdVal BC_CMD_DELAY_MILLIS      = 0x15
+firmwareCmdVal BC_CMD_DELAY_MICROS      = 0x16
+firmwareCmdVal BC_CMD_SYSTEM_RESET      = 0x10
 firmwareCmdVal BC_CMD_WHILE             = 0x17
 firmwareCmdVal BC_CMD_IF_THEN_ELSE      = 0x18
 firmwareCmdVal BS_CMD_REQUEST_VERSION   = 0x20
 firmwareCmdVal BS_CMD_REQUEST_TYPE      = 0x21
 firmwareCmdVal BS_CMD_REQUEST_MILLIS    = 0x22
 firmwareCmdVal BS_CMD_REQUEST_MICROS    = 0x23
-firmwareCmdVal DIG_CMD_READ_PIN_E       = 0x32
-firmwareCmdVal DIG_CMD_WRITE_PIN_E      = 0x33
-firmwareCmdVal ALG_CMD_READ_PIN_E       = 0x44
-firmwareCmdVal ALG_CMD_WRITE_PIN_E      = 0x45
-firmwareCmdVal ALG_CMD_TONE_PIN_E       = 0x46
-firmwareCmdVal ALG_CMD_NOTONE_PIN_E     = 0x47
+firmwareCmdVal DIG_CMD_READ_PIN         = 0x32
+firmwareCmdVal DIG_CMD_WRITE_PIN        = 0x33
+firmwareCmdVal ALG_CMD_READ_PIN         = 0x44
+firmwareCmdVal ALG_CMD_WRITE_PIN        = 0x45
+firmwareCmdVal ALG_CMD_TONE_PIN         = 0x46
+firmwareCmdVal ALG_CMD_NOTONE_PIN       = 0x47
 firmwareCmdVal I2C_CMD_CONFIG           = 0x50
-firmwareCmdVal I2C_CMD_READ_E           = 0x53
-firmwareCmdVal I2C_CMD_WRITE_E          = 0x54
+firmwareCmdVal I2C_CMD_READ             = 0x53
+firmwareCmdVal I2C_CMD_WRITE            = 0x54
 firmwareCmdVal SCHED_CMD_QUERY_ALL      = 0xA5
 firmwareCmdVal SCHED_CMD_RESET          = 0xA6
-firmwareCmdVal SCHED_CMD_CREATE_TASK_E  = 0xA7
-firmwareCmdVal SCHED_CMD_DELETE_TASK_E  = 0xA8
-firmwareCmdVal SCHED_CMD_ADD_TO_TASK_E  = 0xA9
-firmwareCmdVal SCHED_CMD_SCHED_TASK_E   = 0xAA
-firmwareCmdVal SCHED_CMD_QUERY_E        = 0xAB
-firmwareCmdVal SCHED_CMD_BOOT_TASK_E    = 0xAC
+firmwareCmdVal SCHED_CMD_CREATE_TASK    = 0xA7
+firmwareCmdVal SCHED_CMD_DELETE_TASK    = 0xA8
+firmwareCmdVal SCHED_CMD_ADD_TO_TASK    = 0xA9
+firmwareCmdVal SCHED_CMD_SCHED_TASK     = 0xAA
+firmwareCmdVal SCHED_CMD_QUERY          = 0xAB
+firmwareCmdVal SCHED_CMD_BOOT_TASK      = 0xAC
 firmwareCmdVal REF_CMD_NEW              = 0xB0
 firmwareCmdVal REF_CMD_READ             = 0xB1
 firmwareCmdVal REF_CMD_WRITE            = 0xB2
