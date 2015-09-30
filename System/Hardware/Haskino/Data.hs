@@ -67,7 +67,7 @@ instance MonadIO Arduino where
   liftIO m = LiftIO m
 
 type Pin  = Word8
-type PinE = Word8E
+type PinE = Expr Word8
 
 -- | Bailing out: print the given string on stdout and die
 runDie :: ArduinoConnection -> String -> [String] -> IO a
@@ -143,16 +143,16 @@ data ArduinoConnection = ArduinoConnection {
 type VarMap = M.Map String Word8
 
 type SlaveAddress = Word8
-type SlaveAddressE = Word8E
+type SlaveAddressE = Expr Word8
 type MinPulse = Word16
 type MaxPulse = Word16
 type TaskLength = Word16
 type TaskID = Word8
-type TaskIDE = Word8E
+type TaskIDE = Expr Word8
 type TimeMillis = Word32
-type TimeMillisE = Word32E
+type TimeMillisE = Expr Word32
 type TimeMicros = Word32
-type TimeMicrosE = Word32E
+type TimeMicrosE = Expr Word32
 type TaskPos = Word16
 type VarSize = Word8
 -- ToDo: Readd Stepper types
@@ -163,27 +163,27 @@ data Command =
 --  ToDo: PinMode expression?
 --     | DigitalPortWrite Port Word8            -- ^ Set the values on a port digitally
 --     | DigitalPortWriteE Port (Expr Word8)
-     | DigitalWriteE PinE BoolE              
-     | AnalogWriteE PinE Word16E
-     | ToneE PinE Word16E (Maybe Word32E)       -- ^ Play a tone on a pin
+     | DigitalWriteE PinE (Expr Bool)              
+     | AnalogWriteE PinE (Expr Word16)
+     | ToneE PinE (Expr Word16) (Maybe (Expr Word32))       -- ^ Play a tone on a pin
      | NoToneE PinE                             -- ^ Stop playing a tone on a pin
-     | I2CWriteE SlaveAddressE [Word8E]
+     | I2CWriteE SlaveAddressE [Expr Word8]
      | I2CConfig
      | CreateTaskE TaskIDE (Arduino ())
      | DeleteTaskE TaskIDE
      | ScheduleTaskE TaskIDE TimeMillisE
      | BootTaskE TaskIDE
      | ScheduleReset
-     | WriteRemoteRefB (RemoteRef Bool) BoolE
-     | WriteRemoteRef8 (RemoteRef Word8) Word8E
-     | WriteRemoteRef16 (RemoteRef Word16) Word16E
-     | WriteRemoteRef32 (RemoteRef Word32) Word32E
-     | ModifyRemoteRefB (RemoteRef Bool) (BoolE -> BoolE)
-     | ModifyRemoteRef8 (RemoteRef Word8) (Word8E -> Word8E)
-     | ModifyRemoteRef16 (RemoteRef Word16) (Word16E -> Word16E)
-     | ModifyRemoteRef32 (RemoteRef Word32) (Word32E -> Word32E)
-     | While BoolE (Arduino ())
-     | IfThenElse BoolE (Arduino ()) (Arduino ())
+     | WriteRemoteRefB (RemoteRef Bool) (Expr Bool)
+     | WriteRemoteRef8 (RemoteRef Word8) (Expr Word8)
+     | WriteRemoteRef16 (RemoteRef Word16) (Expr Word16)
+     | WriteRemoteRef32 (RemoteRef Word32) (Expr Word32)
+     | ModifyRemoteRefB (RemoteRef Bool) (Expr Bool -> Expr Bool)
+     | ModifyRemoteRef8 (RemoteRef Word8) (Expr Word8 -> Expr Word8)
+     | ModifyRemoteRef16 (RemoteRef Word16) (Expr Word16 -> Expr Word16)
+     | ModifyRemoteRef32 (RemoteRef Word32) (Expr Word32 -> Expr Word32)
+     | While (Expr Bool) (Arduino ())
+     | IfThenElse (Expr Bool) (Arduino ()) (Arduino ())
      -- ToDo: add one wire and encoder procedures, readd stepper and servo
 
 systemReset :: Arduino ()
@@ -204,20 +204,20 @@ setPinModeE p pm = Command $ SetPinModeE p pm
 digitalWrite :: Pin -> Bool -> Arduino ()
 digitalWrite p b = Command $ DigitalWriteE (lit p) (lit b)
 
-digitalWriteE :: PinE -> BoolE -> Arduino ()
+digitalWriteE :: PinE -> Expr Bool -> Arduino ()
 digitalWriteE p b = Command $ DigitalWriteE p b
 
 analogWrite :: Pin -> Word16 -> Arduino ()
 analogWrite p w = Command $ AnalogWriteE (lit p) (lit w)
 
-analogWriteE :: PinE -> Word16E -> Arduino ()
+analogWriteE :: PinE -> Expr Word16 -> Arduino ()
 analogWriteE p w = Command $ AnalogWriteE p w
 
 tone :: Pin -> Word16 -> Maybe Word32 -> Arduino ()
 tone p f Nothing = Command $ ToneE (lit p) (lit f) Nothing
 tone p f (Just d) = Command $ ToneE (lit p) (lit f) (Just $ lit d)
 
-toneE :: PinE -> Word16E -> Maybe Word32E -> Arduino ()
+toneE :: PinE -> Expr Word16 -> Maybe (Expr Word32) -> Arduino ()
 toneE p f d = Command $ ToneE p f d
 
 noTone :: Pin -> Arduino ()
@@ -229,7 +229,7 @@ noToneE p = Command $ NoToneE p
 i2cWrite :: SlaveAddress -> [Word8] -> Arduino ()
 i2cWrite sa ws = Command $ I2CWriteE (lit sa) (map lit ws)
 
-i2cWriteE :: SlaveAddressE -> [Word8E] -> Arduino ()
+i2cWriteE :: SlaveAddressE -> [Expr Word8] -> Arduino ()
 i2cWriteE sa ws = Command $ I2CWriteE sa ws
 
 i2cConfig :: Arduino ()
@@ -259,34 +259,34 @@ scheduleReset = Command ScheduleReset
 bootTaskE :: TaskIDE -> Arduino ()
 bootTaskE tid = Command $ BootTaskE tid
 
-while :: BoolE -> Arduino () -> Arduino()
+while :: Expr Bool -> Arduino () -> Arduino()
 while be ps = Command $ While be ps
 
-ifThenElse :: BoolE -> Arduino () -> Arduino() -> Arduino()
+ifThenElse :: Expr Bool -> Arduino () -> Arduino() -> Arduino()
 ifThenElse be tps eps = Command $ IfThenElse be tps eps
 
-writeRemoteRefB :: RemoteRef Bool -> BoolE -> Arduino ()
+writeRemoteRefB :: RemoteRef Bool -> Expr Bool -> Arduino ()
 writeRemoteRefB r e = Command $ WriteRemoteRefB r e
 
-writeRemoteRef8 :: RemoteRef Word8 -> Word8E -> Arduino ()
+writeRemoteRef8 :: RemoteRef Word8 -> Expr Word8 -> Arduino ()
 writeRemoteRef8 r e = Command $ WriteRemoteRef8 r e
 
-writeRemoteRef16 :: RemoteRef Word16 -> Word16E -> Arduino ()
+writeRemoteRef16 :: RemoteRef Word16 -> Expr Word16 -> Arduino ()
 writeRemoteRef16 r e = Command $ WriteRemoteRef16 r e
 
-writeRemoteRef32 :: RemoteRef Word32 -> Word32E -> Arduino ()
+writeRemoteRef32 :: RemoteRef Word32 -> Expr Word32 -> Arduino ()
 writeRemoteRef32 r e = Command $ WriteRemoteRef32 r e
 
-modifyRemoteRefB :: RemoteRef Bool -> (BoolE -> BoolE) -> Arduino ()
+modifyRemoteRefB :: RemoteRef Bool -> (Expr Bool -> Expr Bool) -> Arduino ()
 modifyRemoteRefB r f = Command $ ModifyRemoteRefB r f
 
-modifyRemoteRef8 :: RemoteRef Word8 -> (Word8E -> Word8E) -> Arduino ()
+modifyRemoteRef8 :: RemoteRef Word8 -> (Expr Word8 -> Expr Word8) -> Arduino ()
 modifyRemoteRef8 r f = Command $ ModifyRemoteRef8 r f
 
-modifyRemoteRef16 :: RemoteRef Word16 -> (Word16E -> Word16E) -> Arduino ()
+modifyRemoteRef16 :: RemoteRef Word16 -> (Expr Word16 -> Expr Word16) -> Arduino ()
 modifyRemoteRef16 r f = Command $ ModifyRemoteRef16 r f
 
-modifyRemoteRef32 :: RemoteRef Word32 -> (Word32E -> Word32E) -> Arduino ()
+modifyRemoteRef32 :: RemoteRef Word32 -> (Expr Word32 -> Expr Word32) -> Arduino ()
 modifyRemoteRef32 r f = Command $ ModifyRemoteRef32 r f
 
 -- ToDo: Readd servo and stepper functions
@@ -342,13 +342,13 @@ die msg msgs = Local $ Die msg msgs
 
 data Procedure :: * -> * where
      QueryFirmware  :: Procedure Word16                   -- ^ Query the Firmware version installed
-     QueryFirmwareE :: Procedure Word16E                  -- ^ Query the Firmware version installed
+     QueryFirmwareE :: Procedure (Expr Word16)                  -- ^ Query the Firmware version installed
      QueryProcessor :: Procedure Processor                -- ^ Query the type of processor on 
 -- ToDo: E version of QueryProcessor, handle Expr Processor
      Micros         :: Procedure Word32
-     MicrosE        :: Procedure Word32E
+     MicrosE        :: Procedure (Expr Word32)
      Millis         :: Procedure Word32
-     MillisE        :: Procedure Word32E
+     MillisE        :: Procedure (Expr Word32)
      DelayMillis    :: TimeMillis -> Procedure ()
      DelayMicros    :: TimeMicros -> Procedure ()
      DelayMillisE   :: TimeMillisE -> Procedure ()
@@ -356,33 +356,33 @@ data Procedure :: * -> * where
 --     DigitalPortRead  :: Port -> Procedure Word8          -- ^ Read the values on a port digitally
 --     DigitalPortReadE :: Port -> Procedure (Expr Word8)
      DigitalRead    :: Pin -> Procedure Bool            -- ^ Read the avlue ona pin digitally
-     DigitalReadE   :: PinE -> Procedure BoolE         -- ^ Read the avlue ona pin digitally
+     DigitalReadE   :: PinE -> Procedure (Expr Bool)         -- ^ Read the avlue ona pin digitally
      AnalogRead     :: Pin -> Procedure Word16          -- ^ Read the analog value on a pin
-     AnalogReadE    :: PinE -> Procedure Word16E          
+     AnalogReadE    :: PinE -> Procedure (Expr Word16)          
      I2CRead :: SlaveAddress -> Word8 -> Procedure [Word8]
-     I2CReadE :: SlaveAddressE -> Word8E -> Procedure [Word8]
+     I2CReadE :: SlaveAddressE -> Expr Word8 -> Procedure [Word8]
      QueryAllTasks :: Procedure [TaskID]
 -- ToDo: E version of QueryAllTasks, handle Expr [Word8]
      QueryTask  :: TaskID -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
      QueryTaskE :: TaskIDE -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
      -- Todo: add one wire queries, readd pulse?
-     ReadRemoteRefB  :: RemoteRef Bool   -> Procedure BoolE
-     ReadRemoteRef8  :: RemoteRef Word8  -> Procedure Word8E
-     ReadRemoteRef16 :: RemoteRef Word16 -> Procedure Word16E
-     ReadRemoteRef32 :: RemoteRef Word32 -> Procedure Word32E
+     ReadRemoteRefB  :: RemoteRef Bool   -> Procedure (Expr Bool)
+     ReadRemoteRef8  :: RemoteRef Word8  -> Procedure (Expr Word8)
+     ReadRemoteRef16 :: RemoteRef Word16 -> Procedure (Expr Word16)
+     ReadRemoteRef32 :: RemoteRef Word32 -> Procedure (Expr Word32)
      -- The following are for supporting testing of the Haskino Firmware's
      -- interpreter.
-     EvalB           :: BoolE  -> Procedure Bool
-     Eval8           :: Word8E -> Procedure Word8
-     Eval16          :: Word16E -> Procedure Word16
-     Eval32          :: Word32E -> Procedure Word32
+     EvalB           :: Expr Bool  -> Procedure Bool
+     Eval8           :: Expr Word8 -> Procedure Word8
+     Eval16          :: Expr Word16 -> Procedure Word16
+     Eval32          :: Expr Word32 -> Procedure Word32
 
 deriving instance Show a => Show (Procedure a)
 
 queryFirmware :: Arduino Word16
 queryFirmware = Procedure QueryFirmware
 
-queryFirmwareE :: Arduino Word16E
+queryFirmwareE :: Arduino (Expr Word16)
 queryFirmwareE = Procedure QueryFirmwareE
 
 queryProcessor :: Arduino Processor
@@ -391,13 +391,13 @@ queryProcessor = Procedure QueryProcessor
 micros :: Arduino Word32
 micros = Procedure Micros
 
-microsE :: Arduino Word32E
+microsE :: Arduino (Expr Word32)
 microsE = Procedure MicrosE
 
 millis :: Arduino Word32
 millis = Procedure Millis
 
-millisE :: Arduino Word32E
+millisE :: Arduino (Expr Word32)
 millisE = Procedure MillisE
 
 delayMillis :: TimeMillis -> Arduino ()
@@ -423,19 +423,19 @@ delayMicrosE t = Procedure $ DelayMicrosE t
 digitalRead :: Pin -> Arduino Bool
 digitalRead p = Procedure $ DigitalRead p
 
-digitalReadE :: PinE -> Arduino BoolE
+digitalReadE :: PinE -> Arduino (Expr Bool)
 digitalReadE p = Procedure $ DigitalReadE p
 
 analogRead :: Pin -> Arduino Word16
 analogRead p = Procedure $ AnalogRead p
 
-analogReadE :: PinE -> Arduino Word16E
+analogReadE :: PinE -> Arduino (Expr Word16)
 analogReadE p = Procedure $ AnalogReadE p
 
 i2cRead :: SlaveAddress -> Word8 -> Arduino [Word8]
 i2cRead sa cnt = Procedure $ I2CRead sa cnt
 
-i2cReadE :: SlaveAddressE -> Word8E -> Arduino [Word8]
+i2cReadE :: SlaveAddressE -> Expr Word8 -> Arduino [Word8]
 i2cReadE sa cnt = Procedure $ I2CReadE sa cnt
 
 queryAllTasks :: Arduino [TaskID]
@@ -447,46 +447,46 @@ queryTask tid = Procedure $ QueryTask tid
 queryTaskE :: TaskIDE -> Arduino (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
 queryTaskE tid = Procedure $ QueryTaskE tid
 
-readRemoteRefB :: RemoteRef Bool -> Arduino BoolE
+readRemoteRefB :: RemoteRef Bool -> Arduino (Expr Bool)
 readRemoteRefB n = Procedure $ ReadRemoteRefB n
 
-readRemoteRef8 :: RemoteRef Word8 -> Arduino Word8E
+readRemoteRef8 :: RemoteRef Word8 -> Arduino (Expr Word8)
 readRemoteRef8 n = Procedure $ ReadRemoteRef8 n
 
-readRemoteRef16 :: RemoteRef Word16 -> Arduino Word16E
+readRemoteRef16 :: RemoteRef Word16 -> Arduino (Expr Word16)
 readRemoteRef16 n = Procedure $ ReadRemoteRef16 n
 
-readRemoteRef32 :: RemoteRef Word32 -> Arduino Word32E
+readRemoteRef32 :: RemoteRef Word32 -> Arduino (Expr Word32)
 readRemoteRef32 n = Procedure $ ReadRemoteRef32 n
 
-evalB :: BoolE -> Arduino Bool
+evalB :: Expr Bool -> Arduino Bool
 evalB e = Procedure $ EvalB e
 
-eval8 :: Word8E -> Arduino Word8
+eval8 :: Expr Word8 -> Arduino Word8
 eval8 e = Procedure $ Eval8 e
 
-eval16 :: Word16E -> Arduino Word16
+eval16 :: Expr Word16 -> Arduino Word16
 eval16 e = Procedure $ Eval16 e
 
-eval32 :: Word32E -> Arduino Word32
+eval32 :: Expr Word32 -> Arduino Word32
 eval32 e = Procedure $ Eval32 e
 
 data RemoteBinding :: * -> * where
-     NewRemoteRefB    :: BoolE   -> RemoteBinding (RemoteRef Bool)
-     NewRemoteRef8    :: Word8E  -> RemoteBinding (RemoteRef Word8)
-     NewRemoteRef16   :: Word16E -> RemoteBinding (RemoteRef Word16)
-     NewRemoteRef32   :: Word32E -> RemoteBinding (RemoteRef Word32)
+     NewRemoteRefB    :: Expr Bool   -> RemoteBinding (RemoteRef Bool)
+     NewRemoteRef8    :: Expr Word8  -> RemoteBinding (RemoteRef Word8)
+     NewRemoteRef16   :: Expr Word16 -> RemoteBinding (RemoteRef Word16)
+     NewRemoteRef32   :: Expr Word32 -> RemoteBinding (RemoteRef Word32)
 
-newRemoteRefB :: BoolE -> Arduino (RemoteRef Bool)
+newRemoteRefB :: Expr Bool -> Arduino (RemoteRef Bool)
 newRemoteRefB n = RemoteBinding $ NewRemoteRefB n
 
-newRemoteRef8 :: Word8E -> Arduino (RemoteRef Word8)
+newRemoteRef8 :: Expr Word8 -> Arduino (RemoteRef Word8)
 newRemoteRef8 n = RemoteBinding $ NewRemoteRef8 n
 
-newRemoteRef16 :: Word16E -> Arduino (RemoteRef Word16)
+newRemoteRef16 :: Expr Word16 -> Arduino (RemoteRef Word16)
 newRemoteRef16 n = RemoteBinding $ NewRemoteRef16 n
 
-newRemoteRef32 :: Word32E -> Arduino (RemoteRef Word32)
+newRemoteRef32 :: Expr Word32 -> Arduino (RemoteRef Word32)
 newRemoteRef32 n = RemoteBinding $ NewRemoteRef32 n
 
 -- | A response, as returned from the Arduino
