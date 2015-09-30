@@ -514,10 +514,10 @@ data Response = DelayResp
 
 -- | Haskino Firmware commands, see: 
 -- | https://github.com/ku-fpg/haskino/wiki/Haskino-Firmware-Protocol-Definition
-data FirmwareCmd = BC_CMD_SET_PIN_MODE
+data FirmwareCmd = BC_CMD_SYSTEM_RESET
+                 | BC_CMD_SET_PIN_MODE
                  | BC_CMD_DELAY_MILLIS
                  | BC_CMD_DELAY_MICROS
-                 | BC_CMD_SYSTEM_RESET
                  | BC_CMD_WHILE
                  | BC_CMD_IF_THEN_ELSE
                  | BS_CMD_REQUEST_VERSION
@@ -533,13 +533,13 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE
                  | I2C_CMD_CONFIG
                  | I2C_CMD_READ
                  | I2C_CMD_WRITE
-                 | SCHED_CMD_QUERY_ALL
-                 | SCHED_CMD_RESET
                  | SCHED_CMD_CREATE_TASK
                  | SCHED_CMD_DELETE_TASK
                  | SCHED_CMD_ADD_TO_TASK
                  | SCHED_CMD_SCHED_TASK
+                 | SCHED_CMD_QUERY_ALL
                  | SCHED_CMD_QUERY
+                 | SCHED_CMD_RESET
                  | SCHED_CMD_BOOT_TASK
                  | REF_CMD_NEW
                  | REF_CMD_READ
@@ -549,33 +549,33 @@ data FirmwareCmd = BC_CMD_SET_PIN_MODE
 
 -- | Compute the numeric value of a command
 firmwareCmdVal :: FirmwareCmd -> Word8
-firmwareCmdVal BC_CMD_SET_PIN_MODE      = 0x14
-firmwareCmdVal BC_CMD_DELAY_MILLIS      = 0x15
-firmwareCmdVal BC_CMD_DELAY_MICROS      = 0x16
 firmwareCmdVal BC_CMD_SYSTEM_RESET      = 0x10
-firmwareCmdVal BC_CMD_WHILE             = 0x17
-firmwareCmdVal BC_CMD_IF_THEN_ELSE      = 0x18
+firmwareCmdVal BC_CMD_SET_PIN_MODE      = 0x11
+firmwareCmdVal BC_CMD_DELAY_MILLIS      = 0x12
+firmwareCmdVal BC_CMD_DELAY_MICROS      = 0x13
+firmwareCmdVal BC_CMD_WHILE             = 0x14
+firmwareCmdVal BC_CMD_IF_THEN_ELSE      = 0x15
 firmwareCmdVal BS_CMD_REQUEST_VERSION   = 0x20
 firmwareCmdVal BS_CMD_REQUEST_TYPE      = 0x21
 firmwareCmdVal BS_CMD_REQUEST_MILLIS    = 0x22
 firmwareCmdVal BS_CMD_REQUEST_MICROS    = 0x23
-firmwareCmdVal DIG_CMD_READ_PIN         = 0x32
-firmwareCmdVal DIG_CMD_WRITE_PIN        = 0x33
-firmwareCmdVal ALG_CMD_READ_PIN         = 0x44
-firmwareCmdVal ALG_CMD_WRITE_PIN        = 0x45
-firmwareCmdVal ALG_CMD_TONE_PIN         = 0x46
-firmwareCmdVal ALG_CMD_NOTONE_PIN       = 0x47
+firmwareCmdVal DIG_CMD_READ_PIN         = 0x30
+firmwareCmdVal DIG_CMD_WRITE_PIN        = 0x31
+firmwareCmdVal ALG_CMD_READ_PIN         = 0x40
+firmwareCmdVal ALG_CMD_WRITE_PIN        = 0x41
+firmwareCmdVal ALG_CMD_TONE_PIN         = 0x42
+firmwareCmdVal ALG_CMD_NOTONE_PIN       = 0x43
 firmwareCmdVal I2C_CMD_CONFIG           = 0x50
-firmwareCmdVal I2C_CMD_READ             = 0x53
-firmwareCmdVal I2C_CMD_WRITE            = 0x54
+firmwareCmdVal I2C_CMD_READ             = 0x51
+firmwareCmdVal I2C_CMD_WRITE            = 0x52
+firmwareCmdVal SCHED_CMD_CREATE_TASK    = 0xA0
+firmwareCmdVal SCHED_CMD_DELETE_TASK    = 0xA1
+firmwareCmdVal SCHED_CMD_ADD_TO_TASK    = 0xA2
+firmwareCmdVal SCHED_CMD_SCHED_TASK     = 0xA3
+firmwareCmdVal SCHED_CMD_QUERY          = 0xA4
 firmwareCmdVal SCHED_CMD_QUERY_ALL      = 0xA5
 firmwareCmdVal SCHED_CMD_RESET          = 0xA6
-firmwareCmdVal SCHED_CMD_CREATE_TASK    = 0xA7
-firmwareCmdVal SCHED_CMD_DELETE_TASK    = 0xA8
-firmwareCmdVal SCHED_CMD_ADD_TO_TASK    = 0xA9
-firmwareCmdVal SCHED_CMD_SCHED_TASK     = 0xAA
-firmwareCmdVal SCHED_CMD_QUERY          = 0xAB
-firmwareCmdVal SCHED_CMD_BOOT_TASK      = 0xAC
+firmwareCmdVal SCHED_CMD_BOOT_TASK      = 0xA7
 firmwareCmdVal REF_CMD_NEW              = 0xB0
 firmwareCmdVal REF_CMD_READ             = 0xB1
 firmwareCmdVal REF_CMD_WRITE            = 0xB2
@@ -612,7 +612,7 @@ data FirmwareReply =  BC_RESP_DELAY
                 deriving Show
 
 getFirmwareReply :: Word8 -> Either Word8 FirmwareReply
-getFirmwareReply 0x19 = Right BC_RESP_DELAY
+getFirmwareReply 0x18 = Right BC_RESP_DELAY
 getFirmwareReply 0x28 = Right BS_RESP_VERSION
 getFirmwareReply 0x29 = Right BS_RESP_TYPE
 getFirmwareReply 0x2A = Right BS_RESP_MICROS
@@ -621,8 +621,8 @@ getFirmwareReply 0x2C = Right BS_RESP_STRING
 getFirmwareReply 0x38 = Right DIG_RESP_READ_PIN
 getFirmwareReply 0x48 = Right ALG_RESP_READ_PIN
 getFirmwareReply 0x58 = Right I2C_RESP_READ
-getFirmwareReply 0xAD = Right SCHED_RESP_QUERY
-getFirmwareReply 0xAE = Right SCHED_RESP_QUERY_ALL
+getFirmwareReply 0xA8 = Right SCHED_RESP_QUERY
+getFirmwareReply 0xA9 = Right SCHED_RESP_QUERY_ALL
 getFirmwareReply 0xB8 = Right REF_RESP_NEW
 getFirmwareReply 0xC8 = Right EXP_RESP_EVAL
 getFirmwareReply n    = Left n
