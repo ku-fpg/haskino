@@ -141,14 +141,15 @@ void sendReplyByte(byte replyByte)
     outgoingChecksum += replyByte;
     }
 
-void sendReply(int count, byte replyType, const byte *reply, byte *local)
+void sendReply(int count, byte replyType, const byte *reply, 
+               byte *local, byte bind)
     {
     const byte *nextChar = reply;
     int i;
 
     if (local)
         {
-        memcpy(local, reply, count);
+        memcpy(&local[bind * BIND_SPACING], reply, count);
         }
     else
         {
@@ -169,5 +170,5 @@ void sendStringf(const char *fmt, ...)
     va_start(argp, fmt);
     vsprintf(buffer, fmt, argp);
     va_end(argp);
-    sendReply(strlen(buffer), BS_RESP_STRING, (const byte *) buffer, NULL);
-}
+    sendReply(strlen(buffer), BS_RESP_STRING, (const byte *) buffer, NULL, 0);
+    }

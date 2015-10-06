@@ -99,6 +99,7 @@ static int typeToSize(int type)
 
 static bool handleNewRef(int type, int size, const byte *msg, byte *local)
     {
+    byte bind = msg[2];
     int count = 1;
     int spaceNeeded = typeToSize(type) * count;
     byte refIndex = msg[2];
@@ -108,7 +109,7 @@ static bool handleNewRef(int type, int size, const byte *msg, byte *local)
     if ((refIndex >= MAX_REFS) ||
         ((memory = malloc(spaceNeeded)) == NULL))
         {
-        sendReply(0, REF_RESP_NEW, NULL, local);
+        sendReply(0, REF_RESP_NEW, NULL, local, bind);
         }
     else
         {
@@ -132,15 +133,15 @@ static bool handleNewRef(int type, int size, const byte *msg, byte *local)
                 *((uint32_t *) memory) = evalWord32ExprOrBind(&expr, local);
                 break;
             }
-        sendReply(sizeof(byte), REF_RESP_NEW, (byte *) &refIndex, local);
+        sendReply(sizeof(byte), REF_RESP_NEW, (byte *) &refIndex, local, bind);
         }
     return false;
     }
 
-// ToDo:  Is this needed?  Probably not, perhaps a debug mechanism.
 static bool handleReadRef(int type, int size, const byte *msg, byte *local)
     {
-    byte refIndex = msg[2];
+    byte bind = msg[2];
+    byte refIndex = msg[3];
     bool bVal;
     uint8_t w8Val;
     uint16_t w16Val;
@@ -152,19 +153,19 @@ static bool handleReadRef(int type, int size, const byte *msg, byte *local)
         {
         case EXPR_BOOL:
             bVal = *((bool *) haskinoRefs[refIndex].ref);
-            sendReply(sizeof(bool), REF_RESP_READ, (byte *) &bVal, local);
+            sendReply(sizeof(bool), REF_RESP_READ, (byte *) &bVal, local, bind);
             break;
         case EXPR_WORD8:
             w8Val = *((uint8_t *) haskinoRefs[refIndex].ref);
-            sendReply(sizeof(uint8_t), REF_RESP_READ, (byte *) &w8Val, local);
+            sendReply(sizeof(uint8_t), REF_RESP_READ, (byte *) &w8Val, local, bind);
             break;
         case EXPR_WORD16:
             w16Val = *((uint16_t *) haskinoRefs[refIndex].ref);
-            sendReply(sizeof(uint16_t), REF_RESP_READ, (byte *) &w16Val, local);
+            sendReply(sizeof(uint16_t), REF_RESP_READ, (byte *) &w16Val, local, bind);
             break;
         case EXPR_WORD32:
             w32Val = *((uint32_t *) haskinoRefs[refIndex].ref);
-            sendReply(sizeof(uint32_t), REF_RESP_READ, (byte *) &w32Val, local);
+            sendReply(sizeof(uint32_t), REF_RESP_READ, (byte *) &w32Val, local, bind);
             break;
         }
     return false;

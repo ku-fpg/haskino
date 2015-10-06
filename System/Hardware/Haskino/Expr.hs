@@ -43,10 +43,10 @@ data Expr a where
   Ref8      :: Int -> Expr Word8
   Ref16     :: Int -> Expr Word16
   Ref32     :: Int -> Expr Word32
-  RemBindB  :: Expr Bool
-  RemBind8  :: Expr Word8
-  RemBind16 :: Expr Word16
-  RemBind32 :: Expr Word32
+  RemBindB  :: Int -> Expr Bool
+  RemBind8  :: Int -> Expr Word8
+  RemBind16 :: Int -> Expr Word16
+  RemBind32 :: Int -> Expr Word32
   NotB      :: Expr Bool -> Expr Bool
   AndB      :: Expr Bool -> Expr Bool -> Expr Bool
   OrB       :: Expr Bool -> Expr Bool -> Expr Bool
@@ -112,7 +112,7 @@ deriving instance Show a => Show (Expr a)
 
 class ExprB a where
     lit     :: a -> Expr a
-    remBind :: Expr a
+    remBind :: Int -> Expr a
 
 instance ExprB Word8 where
     lit = Lit8

@@ -64,7 +64,7 @@ static bool handleDelayMillis(int size, const byte *msg, byte *local)
         delay(millis);
         if (!isCodeBlock())
             {
-            sendReply(0, BC_RESP_DELAY, NULL, NULL);
+            sendReply(0, BC_RESP_DELAY, NULL, NULL,0);
             }
         }
     return true;
@@ -77,7 +77,7 @@ static bool handleDelayMicros(int size, const byte *msg, byte *local)
     delayMicroseconds(micros);
     if (!isRunningTask() && !isCodeBlock())
         {
-        sendReply(0, BC_RESP_DELAY, NULL, NULL);
+        sendReply(0, BC_RESP_DELAY, NULL, NULL,0);
         }
     return false;
     }

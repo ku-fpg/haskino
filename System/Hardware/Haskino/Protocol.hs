@@ -74,7 +74,7 @@ packageCommand (BootTaskE tid) ix =
 packageCommand (CreateTaskE tid m) ix =
     ((framePackage cmd) `B.append` (genAddToTaskCmds td), ix')
   where
-    (td, ix') = packageCodeBlock m ix
+    (td, ix') = packageCodeBlock m ix 0
     taskSize = fromIntegral (B.length td)
     cmd = buildCommand SCHED_CMD_CREATE_TASK ((packageExpr tid) ++ (packageExpr (Lit16 taskSize)))                                   
     -- Max command data size is max frame size - 3 (command,checksum,frame flag) 
@@ -167,9 +167,9 @@ packageCodeBlock commands ix =
       packProcedure (QueryTask t) ix ib k cmds = packageCodeBlock' (k Nothing) ix ib (B.append cmds (lenPackage (packageProcedure (QueryTask t))))
       packProcedure (QueryTaskE t) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (QueryTaskE t))))
       packProcedure (ReadRemoteRefB (RemoteRefB i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefB (RemoteRefB i)))))
-      packProcedure (ReadRemoteRef8 (RemoteRefW8 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRef8 (RemoteRef8 i)))))
-      packProcedure (ReadRemoteRef16 (RemoteRefW16 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRef16 (RemoteRef16 i)))))
-      packProcedure (ReadRemoteRef32 (RemoteRefW32 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRef32 (RemoteRef32 i)))))
+      packProcedure (ReadRemoteRef8 (RemoteRefW8 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRef8 (RemoteRefW8 i)))))
+      packProcedure (ReadRemoteRef16 (RemoteRefW16 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRef16 (RemoteRefW16 i)))))
+      packProcedure (ReadRemoteRef32 (RemoteRefW32 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRef32 (RemoteRefW32 i)))))
 
       packRemoteBinding :: RemoteBinding a -> Int -> Int -> (a -> Arduino b) -> B.ByteString -> (B.ByteString, Int, Int)
       packRemoteBinding (NewRemoteRefB e) ix ib k cmds = packageCodeBlock' (k (RemoteRefB ix)) (ix+1) ib (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefB e) ix)))
@@ -185,31 +185,35 @@ packageCodeBlock commands ix =
       lenPackage :: B.ByteString -> B.ByteString
       lenPackage package = B.cons (fromIntegral $ B.length package) package      
 
-packageProcedure :: Procedure a -> B.ByteString
-packageProcedure QueryFirmware       = buildCommand BS_CMD_REQUEST_VERSION []
-packageProcedure QueryFirmwareE      = buildCommand BS_CMD_REQUEST_VERSION []
-packageProcedure QueryProcessor      = buildCommand BS_CMD_REQUEST_TYPE []
-packageProcedure Micros              = buildCommand BS_CMD_REQUEST_MICROS []
-packageProcedure MicrosE             = buildCommand BS_CMD_REQUEST_MICROS []
-packageProcedure Millis              = buildCommand BS_CMD_REQUEST_MILLIS []
-packageProcedure MillisE             = buildCommand BS_CMD_REQUEST_MILLIS []
-packageProcedure (DigitalRead p)     = buildCommand DIG_CMD_READ_PIN (packageExpr $ lit p)
-packageProcedure (DigitalReadE pe)   = buildCommand DIG_CMD_READ_PIN (packageExpr pe)
-packageProcedure (AnalogRead p)      = buildCommand ALG_CMD_READ_PIN (packageExpr $ lit p)
-packageProcedure (AnalogReadE pe)    = buildCommand ALG_CMD_READ_PIN (packageExpr pe)
-packageProcedure (I2CRead sa cnt)    = buildCommand I2C_CMD_READ ((packageExpr $ lit sa) ++ (packageExpr $ lit cnt))
-packageProcedure (I2CReadE sae cnte) = buildCommand I2C_CMD_READ ((packageExpr sae) ++ (packageExpr cnte))
-packageProcedure QueryAllTasks       = buildCommand SCHED_CMD_QUERY_ALL []
-packageProcedure (QueryTask tid)     = buildCommand SCHED_CMD_QUERY (packageExpr $ lit tid)
-packageProcedure (QueryTaskE tide)   = buildCommand SCHED_CMD_QUERY (packageExpr tide)
-packageProcedure (DelayMillis ms)    = buildCommand BC_CMD_DELAY_MILLIS (packageExpr $ lit ms)
-packageProcedure (DelayMillisE ms)   = buildCommand BC_CMD_DELAY_MILLIS (packageExpr ms)
-packageProcedure (DelayMicros ms)    = buildCommand BC_CMD_DELAY_MICROS (packageExpr $ lit ms)
-packageProcedure (DelayMicrosE ms)   = buildCommand BC_CMD_DELAY_MICROS (packageExpr ms)
-packageProcedure (EvalB e)           = buildCommand EXP_CMD_EVAL ((refTypeCmdVal REF_BOOL) : (packageExpr e))
-packageProcedure (Eval8 e)           = buildCommand EXP_CMD_EVAL ((refTypeCmdVal REF_WORD8) : (packageExpr e))
-packageProcedure (Eval16 e)          = buildCommand EXP_CMD_EVAL ((refTypeCmdVal REF_WORD16) : (packageExpr e))
-packageProcedure (Eval32 e)          = buildCommand EXP_CMD_EVAL ((refTypeCmdVal REF_WORD32) : (packageExpr e))
+packageProcedure :: Procedure a -> Int -> B.ByteString
+packageProcedure QueryFirmware ib    = buildCommand BS_CMD_REQUEST_VERSION []
+packageProcedure QueryFirmwareE ib   = buildCommand BS_CMD_REQUEST_VERSION []
+packageProcedure QueryProcessor ib   = buildCommand BS_CMD_REQUEST_TYPE []
+packageProcedure Micros ib           = buildCommand BS_CMD_REQUEST_MICROS []
+packageProcedure MicrosE ib          = buildCommand BS_CMD_REQUEST_MICROS []
+packageProcedure Millis ib           = buildCommand BS_CMD_REQUEST_MILLIS []
+packageProcedure MillisE ib          = buildCommand BS_CMD_REQUEST_MILLIS []
+packageProcedure (DigitalRead p) ib  = buildCommand DIG_CMD_READ_PIN (packageExpr $ lit p)
+packageProcedure (DigitalReadE pe) ib = buildCommand DIG_CMD_READ_PIN (packageExpr pe)
+packageProcedure (AnalogRead p) ib   = buildCommand ALG_CMD_READ_PIN (packageExpr $ lit p)
+packageProcedure (AnalogReadE pe) ib = buildCommand ALG_CMD_READ_PIN (packageExpr pe)
+packageProcedure (I2CRead sa cnt) ib = buildCommand I2C_CMD_READ ((packageExpr $ lit sa) ++ (packageExpr $ lit cnt))
+packageProcedure (I2CReadE sae cnte) ib = buildCommand I2C_CMD_READ ((packageExpr sae) ++ (packageExpr cnte))
+packageProcedure QueryAllTasks ib    = buildCommand SCHED_CMD_QUERY_ALL []
+packageProcedure (QueryTask tid) ib  = buildCommand SCHED_CMD_QUERY (packageExpr $ lit tid)
+packageProcedure (QueryTaskE tide) ib = buildCommand SCHED_CMD_QUERY (packageExpr tide)
+packageProcedure (DelayMillis ms) ib  = buildCommand BC_CMD_DELAY_MILLIS (packageExpr $ lit ms)
+packageProcedure (DelayMillisE ms) ib = buildCommand BC_CMD_DELAY_MILLIS (packageExpr ms)
+packageProcedure (DelayMicros ms) ib  = buildCommand BC_CMD_DELAY_MICROS (packageExpr $ lit ms)
+packageProcedure (DelayMicrosE ms) ib = buildCommand BC_CMD_DELAY_MICROS (packageExpr ms)
+packageProcedure (EvalB e) ib        = buildCommand EXP_CMD_EVAL ((refTypeCmdVal REF_BOOL) : (packageExpr e))
+packageProcedure (Eval8 e) ib        = buildCommand EXP_CMD_EVAL ((refTypeCmdVal REF_WORD8) : (packageExpr e))
+packageProcedure (Eval16 e) ib       = buildCommand EXP_CMD_EVAL ((refTypeCmdVal REF_WORD16) : (packageExpr e))
+packageProcedure (Eval32 e) ib       = buildCommand EXP_CMD_EVAL ((refTypeCmdVal REF_WORD32) : (packageExpr e))
+packageProcedure (ReadRemoteRefB (RemoteRefB i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_BOOL, i]
+packageProcedure (ReadRemoteRef8 (RemoteRefW8 i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_WORD8, i]
+packageProcedure (ReadRemoteRef16 (RemoteRefW16 i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_WORD16, i]
+packageProcedure (ReadRemoteRef32 (RemoteRefW32 i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_WORD32, i]
 
 packageRemoteBinding :: RemoteBinding a -> Int -> B.ByteString
 packageRemoteBinding (NewRemoteRefB e)  ix = buildCommand REF_CMD_NEW ([(refTypeCmdVal REF_BOOL), fromIntegral ix] ++ (packageExpr e))

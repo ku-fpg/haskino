@@ -15,6 +15,8 @@ typedef struct task_t
     struct task_t *prev;
     byte           id;
     uint16_t       size;
+    uint16_t       bindSize;
+    byte          *bind;
     uint16_t       currLen;
     uint16_t       currPos;
     uint32_t       millis;
@@ -84,21 +86,31 @@ static TASK *findTask(int id)
     return NULL;
     }
 
-static bool createById(byte id, unsigned int taskSize)
+static bool createById(byte id, unsigned int taskSize, unsigned int bindSize)
     {
     TASK *newTask;
+    byte *bind;
 
     if ((findTask(id) == NULL) &&
          ((newTask = (TASK *) malloc(taskSize + sizeof(TASK))) != NULL ))
         {
-        newTask->next = firstTask;
-        newTask->prev = NULL;
-        firstTask = newTask;
-        newTask->id = id;
-        newTask->size = taskSize;
-        newTask->currLen = 0;
-        newTask->currPos = 0;
-        newTask->endData = newTask->data + newTask->size;
+        if ((bind = (byte *) malloc(bindSize)) == NULL)
+            {
+            free(newTask);
+            }
+        else
+            {
+            newTask->next = firstTask;
+            newTask->prev = NULL;
+            firstTask = newTask;
+            newTask->id = id;
+            newTask->size = taskSize;
+            newTask->bindSize = bindSize;
+            newTask->bind = bind;
+            newTask->currLen = 0;
+            newTask->currPos = 0;
+            newTask->endData = newTask->data + newTask->size;
+            }
         }
     return false;
     }
@@ -108,8 +120,9 @@ static bool handleCreateTask(int size, const byte *msg, byte *local)
     byte *expr = (byte *) &msg[1];
     byte id = evalWord8ExprOrBind(&expr, local);
     unsigned int taskSize = evalWord16ExprOrBind(&expr, local);
+    unsigned int bindSize = evalWord16ExprOrBind(&expr, local);
 
-    return createById(id, taskSize);
+    return createById(id, taskSize, bindSize);
     }
 
 static void deleteTask(TASK* task)
@@ -191,11 +204,11 @@ static bool handleQuery(int size, const byte *msg, byte *local)
         *lenReply = task->currLen;
         *posReply = task->currPos;
         *millisReply = task->millis - millis();
-        sendReply(sizeof(queryReply), SCHED_RESP_QUERY, queryReply, local);
+        sendReply(sizeof(queryReply), SCHED_RESP_QUERY, queryReply, NULL, 0);
         }
     else
         {
-        sendReply(0, SCHED_RESP_QUERY, queryReply, local);
+        sendReply(0, SCHED_RESP_QUERY, queryReply, NULL, 0);
         }
     return false;
     }
@@ -257,6 +270,8 @@ static bool handleBootTask(int size, const byte *msg, byte *local)
         EEPROM[ 3 ] = 'K';
         EEPROM[ 4 ] = task->currLen & 0xFF;
         EEPROM[ 5 ] = task->currLen >> 8;
+        EEPROM[ 6 ] = task->bindSize & 0xFF;
+        EEPROM[ 7 ] = task->bindSize >> 8;
 
         for (int i=0;i<task->currLen;i++,index++)
             {
@@ -273,9 +288,10 @@ void schedulerBootTask()
         {
         TASK *task;
         uint16_t taskSize = EEPROM[ 4 ] | (EEPROM[ 5 ] << 8);
+        uint16_t bindSize = EEPROM[ 6 ] | (EEPROM[ 7 ] << 8);
         int index = BOOT_TASK_INDEX_START;
 
-        createById(BOOT_TASK_ID, taskSize);
+        createById(BOOT_TASK_ID, taskSize, bindSize);
         task = findTask(BOOT_TASK_ID);
         for (int i=0;i<taskSize;i++,index++)
             {
@@ -313,8 +329,6 @@ void schedulerRunTasks()
 
 static bool executeTask(TASK *task)
     {
-    byte local[MAX_LOCAL_BIND];
-
     // Find end of next command
     bool taskRescheduled;
 
@@ -324,7 +338,7 @@ static bool executeTask(TASK *task)
         byte cmdSize = msg[0];
         byte *cmd = &msg[1];
 
-        taskRescheduled = parseMessage(cmdSize, cmd, local);  
+        taskRescheduled = parseMessage(cmdSize, cmd, task->bind);  
 
         task->currPos += cmdSize + 1;
         if (taskRescheduled)

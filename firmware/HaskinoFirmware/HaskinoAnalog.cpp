@@ -31,7 +31,8 @@ bool parseAnalogMessage(int size, const byte *msg, byte *local)
 
 static bool handleReadPin(int size, const byte *msg, byte *local)
     {
-    byte *expr = (byte *) &msg[1];
+    byte bind = msg[1];
+    byte *expr = (byte *) &msg[2];
     byte pinNo = evalWord8ExprOrBind(&expr, local);
     uint16_t analogValue;
     byte analogReply[3];
@@ -41,7 +42,7 @@ static bool handleReadPin(int size, const byte *msg, byte *local)
     memcpy(&analogReply[1], &analogValue, sizeof(analogValue));
 
     sendReply(sizeof(analogReply), ALG_RESP_READ_PIN, 
-              (byte *) &analogReply, local);
+              (byte *) &analogReply, local, bind);
     return false;
     }
 

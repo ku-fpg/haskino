@@ -13,6 +13,8 @@ bool evalBoolExprOrBind(byte **ppExpr, byte *local)
     {
     byte *pExpr = *ppExpr;
     byte exprOp = *pExpr & EXPR_OP_MASK;
+    byte bind = pExpr[1];
+    byte *bindPtr = &local[bind * BIND_SPACING];
 
     if (exprOp == EXPR_BIND)
         {
@@ -22,7 +24,7 @@ bool evalBoolExprOrBind(byte **ppExpr, byte *local)
             }
         else
             {
-            return evalBoolExpr(&local);
+            return evalBoolExpr(&bindPtr);
             }
         }
     else
@@ -112,6 +114,8 @@ uint8_t evalWord8ExprOrBind(byte **ppExpr, byte *local)
     {
     byte *pExpr = *ppExpr;
     byte exprOp = *pExpr & EXPR_OP_MASK;
+    byte bind = pExpr[1];
+    byte *bindPtr = &local[bind * BIND_SPACING];
 
     if (exprOp == EXPR_BIND)
         {
@@ -121,7 +125,7 @@ uint8_t evalWord8ExprOrBind(byte **ppExpr, byte *local)
             }
         else
             {
-            return evalWord8Expr(&local);
+            return evalWord8Expr(&bindPtr);
             }
         }
     else
@@ -250,6 +254,8 @@ uint16_t evalWord16ExprOrBind(byte **ppExpr, byte *local)
     {
     byte *pExpr = *ppExpr;
     byte exprOp = *pExpr & EXPR_OP_MASK;
+    byte bind = pExpr[1];
+    byte *bindPtr = &local[bind * BIND_SPACING];
 
     if (exprOp == EXPR_BIND)
         {
@@ -259,7 +265,7 @@ uint16_t evalWord16ExprOrBind(byte **ppExpr, byte *local)
             }
         else
             {
-            return evalWord16Expr(&local);
+            return evalWord16Expr(&bindPtr);
             }
         }
     else
@@ -393,6 +399,8 @@ uint32_t evalWord32ExprOrBind(byte **ppExpr, byte *local)
     {
     byte *pExpr = *ppExpr;
     byte exprOp = *pExpr & EXPR_OP_MASK;
+    byte bind = pExpr[1];
+    byte *bindPtr = &local[bind * BIND_SPACING];
 
     if (exprOp == EXPR_BIND)
         {
@@ -402,7 +410,7 @@ uint32_t evalWord32ExprOrBind(byte **ppExpr, byte *local)
             }
         else
             {
-            return evalWord32Expr(&local);
+            return evalWord32Expr(&bindPtr);
             }
         }
     else

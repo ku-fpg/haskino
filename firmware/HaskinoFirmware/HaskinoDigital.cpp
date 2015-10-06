@@ -23,14 +23,16 @@ bool parseDigitalMessage(int size, const byte *msg, byte *local)
 
 static bool handleReadPin(int size, const byte *msg, byte *local)
     {
-    byte *expr = (byte *) &msg[1];
+    byte bind = msg[1];
+    byte *expr = (byte *) &msg[2];
     byte pinNo = evalWord8ExprOrBind(&expr, local);
     byte digitalReply[2];
 
     digitalReply[0] = EXPR(EXPR_WORD8, EXPR_LIT);
     digitalReply[1] = digitalRead(pinNo);
 
-    sendReply(sizeof(digitalReply), DIG_RESP_READ_PIN, digitalReply, local);
+    sendReply(sizeof(digitalReply), DIG_RESP_READ_PIN, 
+              digitalReply, local, bind);
     return false;
     }
 

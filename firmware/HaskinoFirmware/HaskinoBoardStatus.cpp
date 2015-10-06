@@ -30,22 +30,24 @@ bool parseBoardStatusMessage(int size, const byte *msg, byte *local)
     return false;
     }
 
-void sendVersionReply(byte *local)
+void sendVersionReply(byte *local, byte bind)
     {
     static byte versionReply[2] = {FIRMWARE_MINOR,
                                    FIRMWARE_MAJOR};
         
-    sendReply(sizeof(versionReply), BS_RESP_VERSION, versionReply, local);
+    sendReply(sizeof(versionReply), BS_RESP_VERSION, versionReply, local, bind);
     }
 
 static bool handleRequestVersion(int size, const byte *msg, byte *local)
     {
-    sendVersionReply(local);
+    byte bind = msg[1];
+    sendVersionReply(local, bind);
     return false;
     }
 
 static bool handleRequestType(int size, const byte *msg, byte *local)
     {
+    byte bind = msg[1];
     static byte typeReply[1] = {
 #if defined(__AVR_ATmega8__)
                                 ATmega8_TYPE};
@@ -74,12 +76,13 @@ static bool handleRequestType(int size, const byte *msg, byte *local)
 #else
 #error "Please define a new processor type board"
 #endif
-    sendReply(sizeof(typeReply), BS_RESP_TYPE, typeReply, local);
+    sendReply(sizeof(typeReply), BS_RESP_TYPE, typeReply, local, bind);
     return false;
     }
 
 static bool handleRequestMicros(int size, const byte *msg, byte *local)
     {
+    byte bind = msg[1];
     uint32_t ms;
     byte microReply[5];
 
@@ -87,12 +90,14 @@ static bool handleRequestMicros(int size, const byte *msg, byte *local)
     ms = micros();
     memcpy(&microReply[1], &ms, sizeof(ms));
 
-    sendReply(sizeof(microReply), BS_RESP_MICROS, (byte *) &microReply, local);
+    sendReply(sizeof(microReply), BS_RESP_MICROS, 
+              (byte *) &microReply, local, bind);
     return false;
     }
 
 static bool handleRequestMillis(int size, const byte *msg, byte *local)
     {
+    byte bind = msg[1];
     uint32_t ms;
     byte milliReply[5];
 
@@ -100,6 +105,7 @@ static bool handleRequestMillis(int size, const byte *msg, byte *local)
     ms = millis();
     memcpy(&milliReply[1], &ms, sizeof(ms));
 
-    sendReply(sizeof(uint32_t), BS_RESP_MILLIS, (byte *) &milliReply, local);
+    sendReply(sizeof(uint32_t), BS_RESP_MILLIS, 
+              (byte *) &milliReply, local, bind);
     return false;
     }

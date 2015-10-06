@@ -140,8 +140,6 @@ data ArduinoConnection = ArduinoConnection {
               , refIndex      :: MVar Int                             -- ^ Index used for remote references
               }
 
-type VarMap = M.Map String Word8
-
 type SlaveAddress = Word8
 type SlaveAddressE = Expr Word8
 type MinPulse = Word16
@@ -608,6 +606,7 @@ data FirmwareReply =  BC_RESP_DELAY
                    |  SCHED_RESP_QUERY
                    |  SCHED_RESP_QUERY_ALL
                    |  REF_RESP_NEW
+                   |  REF_RESP_READ
                    |  EXP_RESP_EVAL
                 deriving Show
 
@@ -624,6 +623,7 @@ getFirmwareReply 0x58 = Right I2C_RESP_READ
 getFirmwareReply 0xA8 = Right SCHED_RESP_QUERY
 getFirmwareReply 0xA9 = Right SCHED_RESP_QUERY_ALL
 getFirmwareReply 0xB8 = Right REF_RESP_NEW
+getFirmwareReply 0xB9 = Right REF_RESP_READ
 getFirmwareReply 0xC8 = Right EXP_RESP_EVAL
 getFirmwareReply n    = Left n
 

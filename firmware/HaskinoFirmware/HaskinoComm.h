@@ -10,7 +10,8 @@ void handleInput();
 void startReplyFrame(byte replyType);
 void endReplyFrame();
 void sendReplyByte(byte replyByte);
-void sendReply(int count, byte replyType, const byte *reply, byte *local);
+void sendReply(int count, byte replyType, const byte *reply, 
+               byte *local, byte bind);
 void sendStringf(const char *fmt, ...);
 bool parseMessage(int size, const byte *msg, byte *local);
 

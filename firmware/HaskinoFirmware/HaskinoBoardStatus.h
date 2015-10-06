@@ -15,6 +15,6 @@
 #define QUARK_TYPE          11
 
 bool parseBoardStatusMessage(int size, const byte *msg, byte *local);
-void sendVersionReply(byte *local);
+void sendVersionReply(byte *local, byte bind);
 
 #endif /* HaskinoBoardStatusH */
