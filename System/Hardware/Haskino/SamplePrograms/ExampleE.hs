@@ -11,6 +11,9 @@
 
 module System.Hardware.Haskino.SamplePrograms.ExampleE where
 
+import Control.Concurrent   (threadDelay)
+import Control.Monad.Trans (liftIO)
+
 import System.Hardware.Haskino
 import Data.Boolean
 import Data.Word
@@ -29,3 +32,6 @@ exampleE = withArduino True "/dev/cu.usbmodem1421" $ do
                            digitalWriteE led1 ex
                            digitalWriteE led2 (notB ex)
                            delayMillis 100 
+           liftIO $ print "Delaying 10500 milliseconds"
+           liftIO $ threadDelay (10500 * 1000)
+           deleteTaskE 1

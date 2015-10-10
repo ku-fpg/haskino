@@ -157,7 +157,7 @@ send conn commands =
       packageCommandIndex :: ArduinoConnection -> Command -> IO B.ByteString
       packageCommandIndex c cmd = do
           ix <- takeMVar (refIndex c)
-          let (pc, ix') = packageCommand cmd ix
+          let (pc, ix') = packageCommand cmd ix 0
           putMVar (refIndex c) ix'
           return pc
 
@@ -183,14 +183,14 @@ send conn commands =
               ReadRemoteRef16 (RemoteRefW16 i) -> send' c (k (Ref16 i)) cmds
               ReadRemoteRef32 (RemoteRefW32 i) -> send' c (k (Ref32 i)) cmds
               _ -> do 
-                  sendToArduino c (B.append cmds (framePackage $ packageProcedure procedure))
+                  sendToArduino c (B.append cmds (framePackage $ packageProcedure procedure 0))
                   qr <- waitResponse c (Procedure procedure)
                   send' c (k qr) B.empty
 
       sendRemoteBinding :: ArduinoConnection -> RemoteBinding a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendRemoteBinding c b k cmds = do
           ix <- takeMVar (refIndex c)
-          let prb = packageRemoteBinding b ix
+          let prb = packageRemoteBinding b ix 0
           putMVar (refIndex c) (ix+1)
           sendToArduino c (B.append cmds (framePackage prb))
           qr <- waitResponse c (RemoteBinding b)

@@ -500,6 +500,10 @@ data Response = DelayResp
               | QueryAllTasksReply [Word8]           -- ^ Response to Query All Tasks
               | QueryTaskReply (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
               | NewReply Word8
+              | ReadRefBReply Bool
+              | ReadRef8Reply Word8
+              | ReadRef16Reply Word16
+              | ReadRef32Reply Word32
               | FailedNewRef
               | EvalBReply Bool
               | Eval8Reply Word8
