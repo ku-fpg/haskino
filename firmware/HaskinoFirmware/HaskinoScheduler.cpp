@@ -9,21 +9,6 @@
 #define BOOT_TASK_INDEX_START   8
 #define BOOT_TASK_ID            255
 
-typedef struct task_t 
-    {
-    struct task_t *next;
-    struct task_t *prev;
-    byte           id;
-    uint16_t       size;
-    uint16_t       bindSize;
-    byte          *bind;
-    uint16_t       currLen;
-    uint16_t       currPos;
-    uint32_t       millis;
-    byte          *endData;
-    byte           data[];
-    } TASK;
-
 static bool handleQueryAll(int size, const byte *msg, byte *local);
 static bool handleCreateTask(int size, const byte *msg, byte *local);
 static bool handleDeleteTask(int size, const byte *msg, byte *local);
@@ -89,27 +74,35 @@ static TASK *findTask(int id)
 static bool createById(byte id, unsigned int taskSize, unsigned int bindSize)
     {
     TASK *newTask;
+    CONTEXT *newContext;
     byte *bind;
 
     if ((findTask(id) == NULL) &&
          ((newTask = (TASK *) malloc(taskSize + sizeof(TASK))) != NULL ))
         {
-        if ((bind = (byte *) malloc(bindSize)) == NULL)
+        if ((newContext = (CONTEXT *) malloc(sizeof(CONTEXT))) == NULL)
             {
+            free(newTask);
+            }
+        else if ((bind = (byte *) malloc(bindSize)) == NULL)
+            {
+            free(newContext);
             free(newTask);
             }
         else
             {
             newTask->next = firstTask;
             newTask->prev = NULL;
+            newTask->context = newContext;
             firstTask = newTask;
             newTask->id = id;
             newTask->size = taskSize;
-            newTask->bindSize = bindSize;
-            newTask->bind = bind;
             newTask->currLen = 0;
             newTask->currPos = 0;
             newTask->endData = newTask->data + newTask->size;
+            newContext->task = newTask;
+            newContext->bindSize = bindSize;
+            newContext->bind = bind;
             }
         }
     return false;
@@ -270,8 +263,8 @@ static bool handleBootTask(int size, const byte *msg, byte *local)
         EEPROM[ 3 ] = 'K';
         EEPROM[ 4 ] = task->currLen & 0xFF;
         EEPROM[ 5 ] = task->currLen >> 8;
-        EEPROM[ 6 ] = task->bindSize & 0xFF;
-        EEPROM[ 7 ] = task->bindSize >> 8;
+        EEPROM[ 6 ] = task->context->bindSize & 0xFF;
+        EEPROM[ 7 ] = task->context->bindSize >> 8;
 
         for (int i=0;i<task->currLen;i++,index++)
             {
@@ -338,7 +331,7 @@ static bool executeTask(TASK *task)
         byte cmdSize = msg[0];
         byte *cmd = &msg[1];
 
-        taskRescheduled = parseMessage(cmdSize, cmd, task->bind);  
+        taskRescheduled = parseMessage(cmdSize, cmd, task->context->bind);  
 
         task->currPos += cmdSize + 1;
         if (taskRescheduled)
