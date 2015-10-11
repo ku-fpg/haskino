@@ -25,7 +25,7 @@ static bool handleReadPin(int size, const byte *msg, byte *local)
     {
     byte bind = msg[1];
     byte *expr = (byte *) &msg[2];
-    byte pinNo = evalWord8ExprOrBind(&expr, local);
+    byte pinNo = evalWord8Expr(&expr, local);
     byte digitalReply[2];
 
     digitalReply[0] = EXPR(EXPR_WORD8, EXPR_LIT);
@@ -39,8 +39,8 @@ static bool handleReadPin(int size, const byte *msg, byte *local)
 static bool handleWritePin(int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[1];
-    byte pinNo = evalWord8ExprOrBind(&expr, local);
-    byte value = evalBoolExprOrBind(&expr, local);
+    byte pinNo = evalWord8Expr(&expr, local);
+    byte value = evalBoolExpr(&expr, local);
 
     digitalWrite(pinNo, value);
     return false;

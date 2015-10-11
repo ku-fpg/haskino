@@ -33,7 +33,7 @@ static bool handleReadPin(int size, const byte *msg, byte *local)
     {
     byte bind = msg[1];
     byte *expr = (byte *) &msg[2];
-    byte pinNo = evalWord8ExprOrBind(&expr, local);
+    byte pinNo = evalWord8Expr(&expr, local);
     uint16_t analogValue;
     byte analogReply[3];
 
@@ -49,8 +49,8 @@ static bool handleReadPin(int size, const byte *msg, byte *local)
 static bool handleWritePin(int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[1];
-    byte pinNo = evalWord8ExprOrBind(&expr, local);
-    byte value = evalWord8ExprOrBind(&expr, local);
+    byte pinNo = evalWord8Expr(&expr, local);
+    byte value = evalWord8Expr(&expr, local);
 
 #ifdef INTEL_EDISON
     // ToDo:
@@ -72,9 +72,9 @@ static bool handleWritePin(int size, const byte *msg, byte *local)
 static bool handleTonePin(int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[1];
-    byte pinNo = evalWord8ExprOrBind(&expr, local);
-    unsigned int freq = evalWord16ExprOrBind(&expr, local);
-    unsigned long duration = evalWord32ExprOrBind(&expr, local);
+    byte pinNo = evalWord8Expr(&expr, local);
+    unsigned int freq = evalWord16Expr(&expr, local);
+    unsigned long duration = evalWord32Expr(&expr, local);
 
     if (duration == 0)
         {
@@ -90,7 +90,7 @@ static bool handleTonePin(int size, const byte *msg, byte *local)
 static bool handleNoTonePin(int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[1];
-    byte pinNo = evalWord8ExprOrBind(&expr, local);
+    byte pinNo = evalWord8Expr(&expr, local);
 
     noTone(pinNo);
     return false;

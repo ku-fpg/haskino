@@ -45,7 +45,7 @@ bool parseBoardControlMessage(int size, const byte *msg, byte *local)
 static bool handleSetPinMode(int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[1];
-    byte pinNo = evalWord8ExprOrBind(&expr, local);
+    byte pinNo = evalWord8Expr(&expr, local);
     pinMode(pinNo, *expr);
     return false;
     }
@@ -53,7 +53,7 @@ static bool handleSetPinMode(int size, const byte *msg, byte *local)
 static bool handleDelayMillis(int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[1];
-    uint32_t millis = evalWord32ExprOrBind(&expr, local);
+    uint32_t millis = evalWord32Expr(&expr, local);
 
     if (isRunningTask() && !isCodeBlock())
         {
@@ -73,7 +73,7 @@ static bool handleDelayMillis(int size, const byte *msg, byte *local)
 static bool handleDelayMicros(int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[1];
-    uint32_t micros = evalWord16ExprOrBind(&expr, local);
+    uint32_t micros = evalWord16Expr(&expr, local);
     delayMicroseconds(micros);
     if (!isRunningTask() && !isCodeBlock())
         {
@@ -91,7 +91,7 @@ static bool handleSystemReset(int size, const byte *msg, byte *local)
 static bool handleWhile(int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[1];
-    bool condition = evalBoolExprOrBind(&expr, local);
+    bool condition = evalBoolExpr(&expr, local);
     byte *codeBlock = expr;
     int whileSize = size - (expr - msg);
 
@@ -101,7 +101,7 @@ static bool handleWhile(int size, const byte *msg, byte *local)
         runCodeBlock(whileSize, codeBlock, loopLocal);
 
         expr = (byte *) &msg[1];
-        condition = evalBoolExprOrBind(&expr, local);
+        condition = evalBoolExpr(&expr, local);
         }
 
     return false;
@@ -112,7 +112,7 @@ static bool handleIfThenElse(int size, const byte *msg, byte *local)
     uint16_t thenSize, elseSize;
     memcpy(&thenSize, &msg[1], sizeof(thenSize));
     byte *expr = (byte *) &msg[3];
-    bool condition = evalBoolExprOrBind(&expr, local);
+    bool condition = evalBoolExpr(&expr, local);
     byte *codeBlock = expr;
     byte blockLocal[MAX_LOCAL_BIND];
 

@@ -124,16 +124,16 @@ static bool handleNewRef(int type, int size, const byte *msg, byte *local)
         switch (type)
             {
             case EXPR_BOOL:
-                *((bool *) memory) = evalBoolExprOrBind(&expr, local);
+                *((bool *) memory) = evalBoolExpr(&expr, local);
                 break;
             case EXPR_WORD8:
-                *((uint8_t *) memory) = evalWord8ExprOrBind(&expr, local);
+                *((uint8_t *) memory) = evalWord8Expr(&expr, local);
                 break;
             case EXPR_WORD16:
-                *((uint16_t *) memory) = evalWord16ExprOrBind(&expr, local);
+                *((uint16_t *) memory) = evalWord16Expr(&expr, local);
                 break;
             case EXPR_WORD32:
-                *((uint32_t *) memory) = evalWord32ExprOrBind(&expr, local);
+                *((uint32_t *) memory) = evalWord32Expr(&expr, local);
                 break;
             }
         newReply[0] = EXPR(EXPR_WORD8, EXPR_LIT);
@@ -147,7 +147,7 @@ static bool handleReadRef(int type, int size, const byte *msg, byte *local)
     {
     byte bind = msg[2];
     byte *expr = (byte *) &msg[3];
-    byte refIndex = evalWord8ExprOrBind(&expr, local);
+    byte refIndex = evalWord8Expr(&expr, local);
     byte readReply[5];
     bool bVal;
     uint8_t w8Val;
@@ -160,7 +160,6 @@ static bool handleReadRef(int type, int size, const byte *msg, byte *local)
         case EXPR_BOOL:
             readReply[0] = EXPR(EXPR_BOOL, EXPR_LIT);
             readReply[1] = *((bool *) haskinoRefs[refIndex].ref);
-            sendStringf("Read Remote RefB %d - %d",refIndex,readReply[1]);
             sendReply(sizeof(bool)+1, REF_RESP_READ, readReply, local, bind);
             break;
         case EXPR_WORD8:
@@ -185,7 +184,7 @@ static bool handleReadRef(int type, int size, const byte *msg, byte *local)
 static bool handleWriteRef(int type, int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[2];
-    byte refIndex = evalWord8ExprOrBind(&expr, local);
+    byte refIndex = evalWord8Expr(&expr, local);
     bool bVal;
     uint8_t w8Val;
     uint16_t w16Val;
@@ -196,20 +195,19 @@ static bool handleWriteRef(int type, int size, const byte *msg, byte *local)
     switch (type)
         {
         case EXPR_BOOL:
-            bVal = evalBoolExprOrBind(&expr, local);
-            sendStringf("Write Remote Ref %d - %d",refIndex,bVal);
+            bVal = evalBoolExpr(&expr, local);
             *((bool *) haskinoRefs[refIndex].ref) = bVal;
             break;
         case EXPR_WORD8:
-            w8Val = evalWord8ExprOrBind(&expr, local);
+            w8Val = evalWord8Expr(&expr, local);
             *((uint8_t *) haskinoRefs[refIndex].ref) = w8Val;
             break;
         case EXPR_WORD16:
-            w16Val = evalWord16ExprOrBind(&expr, local);
+            w16Val = evalWord16Expr(&expr, local);
             *((uint16_t *) haskinoRefs[refIndex].ref) = w16Val;
             break;
         case EXPR_WORD32:
-            w32Val = evalWord32ExprOrBind(&expr, local);
+            w32Val = evalWord32Expr(&expr, local);
             *((uint32_t *) haskinoRefs[refIndex].ref) = w32Val;
             break;
         }

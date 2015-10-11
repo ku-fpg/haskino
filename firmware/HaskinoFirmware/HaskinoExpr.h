@@ -36,9 +36,9 @@
 #define EXPR_TSTB 0x16
 #define EXPR_BIND 0x17
 
-bool evalBoolExprOrBind(byte **ppExpr, byte *local);
-uint8_t evalWord8ExprOrBind(byte **ppExpr, byte *local);
-uint16_t evalWord16ExprOrBind(byte **ppExpr, byte *local);
-uint32_t evalWord32ExprOrBind(byte **ppExpr, byte *local);
+bool evalBoolExpr(byte **ppExpr, byte *local);
+uint8_t evalWord8Expr(byte **ppExpr, byte *local);
+uint16_t evalWord16Expr(byte **ppExpr, byte *local);
+uint32_t evalWord32Expr(byte **ppExpr, byte *local);
 
 #endif /* HaskinoExprH */

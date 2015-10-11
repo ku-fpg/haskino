@@ -118,9 +118,9 @@ static bool createById(byte id, unsigned int taskSize, unsigned int bindSize)
 static bool handleCreateTask(int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[1];
-    byte id = evalWord8ExprOrBind(&expr, local);
-    unsigned int taskSize = evalWord16ExprOrBind(&expr, local);
-    unsigned int bindSize = evalWord16ExprOrBind(&expr, local);
+    byte id = evalWord8Expr(&expr, local);
+    unsigned int taskSize = evalWord16Expr(&expr, local);
+    unsigned int bindSize = evalWord16Expr(&expr, local);
 
     return createById(id, taskSize, bindSize);
     }
@@ -139,7 +139,7 @@ static void deleteTask(TASK* task)
 static bool handleDeleteTask(int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[1];
-    byte id = evalWord8ExprOrBind(&expr, local);
+    byte id = evalWord8Expr(&expr, local);
     TASK *task;
 
     if ((task = findTask(id)) != NULL)
@@ -152,8 +152,8 @@ static bool handleDeleteTask(int size, const byte *msg, byte *local)
 static bool handleAddToTask(int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[1];
-    byte id = evalWord8ExprOrBind(&expr, local);
-    byte addSize = evalWord8ExprOrBind(&expr, local);
+    byte id = evalWord8Expr(&expr, local);
+    byte addSize = evalWord8Expr(&expr, local);
     const byte *data = expr;
     TASK *task;
 
@@ -182,15 +182,15 @@ static bool scheduleById(byte id, unsigned long deltaMillis)
 static bool handleScheduleTask(int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[1];
-    byte id = evalWord8ExprOrBind(&expr, local);
-    unsigned long deltaMillis = evalWord32ExprOrBind(&expr, local);
+    byte id = evalWord8Expr(&expr, local);
+    unsigned long deltaMillis = evalWord32Expr(&expr, local);
     return scheduleById(id, deltaMillis);
     }
 
 static bool handleQuery(int size, const byte *msg, byte *local)
     {
     byte *expr = (byte *) &msg[1];
-    byte id = evalWord8ExprOrBind(&expr, local);
+    byte id = evalWord8Expr(&expr, local);
     byte queryReply[10];
     uint16_t *sizeReply = (uint16_t *) queryReply;
     uint16_t *lenReply = (uint16_t *) &queryReply[2];
@@ -258,7 +258,7 @@ static bool handleBootTask(int size, const byte *msg, byte *local)
     {
     TASK *task;
     byte *expr = (byte *) &msg[1];
-    byte id = evalWord8ExprOrBind(&expr, local);
+    byte id = evalWord8Expr(&expr, local);
 
     if ((task = findTask(id)) != NULL)
         {
