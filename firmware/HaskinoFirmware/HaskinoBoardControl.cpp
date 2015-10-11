@@ -62,7 +62,7 @@ static bool handleDelayMillis(int size, const byte *msg, byte *local)
     else 
         {
         delay(millis);
-        if (!isCodeBlock())
+        if (!isRunningTask() && !isCodeBlock())
             {
             sendReply(0, BC_RESP_DELAY, NULL, NULL,0);
             }

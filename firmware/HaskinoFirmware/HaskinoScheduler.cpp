@@ -189,7 +189,7 @@ static bool handleScheduleTask(int size, const byte *msg, byte *local)
 
 static bool handleQuery(int size, const byte *msg, byte *local)
     {
-    byte *expr = (byte *) &msg[1];
+    byte *expr = (byte *) &msg[2];
     byte id = evalWord8Expr(&expr, local);
     byte queryReply[10];
     uint16_t *sizeReply = (uint16_t *) queryReply;
