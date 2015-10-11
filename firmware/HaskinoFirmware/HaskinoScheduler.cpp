@@ -6,7 +6,7 @@
 #include "HaskinoExpr.h"
 #include "HaskinoScheduler.h"
 
-#define BOOT_TASK_INDEX_START   6
+#define BOOT_TASK_INDEX_START   8
 #define BOOT_TASK_ID            255
 
 typedef struct task_t 
