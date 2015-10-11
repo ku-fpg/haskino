@@ -52,7 +52,7 @@ static bool handleSetPinMode(int size, const byte *msg, byte *local)
 
 static bool handleDelayMillis(int size, const byte *msg, byte *local)
     {
-    byte *expr = (byte *) &msg[1];
+    byte *expr = (byte *) &msg[2];
     uint32_t millis = evalWord32Expr(&expr, local);
 
     if (isRunningTask() && !isCodeBlock())
@@ -72,7 +72,7 @@ static bool handleDelayMillis(int size, const byte *msg, byte *local)
 
 static bool handleDelayMicros(int size, const byte *msg, byte *local)
     {
-    byte *expr = (byte *) &msg[1];
+    byte *expr = (byte *) &msg[2];
     uint32_t micros = evalWord16Expr(&expr, local);
     delayMicroseconds(micros);
     if (!isRunningTask() && !isCodeBlock())
@@ -97,8 +97,7 @@ static bool handleWhile(int size, const byte *msg, byte *local)
 
     while (condition)
         {
-        byte loopLocal[MAX_LOCAL_BIND];
-        runCodeBlock(whileSize, codeBlock, loopLocal);
+        runCodeBlock(whileSize, codeBlock, local);
 
         expr = (byte *) &msg[1];
         condition = evalBoolExpr(&expr, local);
@@ -114,16 +113,15 @@ static bool handleIfThenElse(int size, const byte *msg, byte *local)
     byte *expr = (byte *) &msg[3];
     bool condition = evalBoolExpr(&expr, local);
     byte *codeBlock = expr;
-    byte blockLocal[MAX_LOCAL_BIND];
 
     if (condition)
         {
-        runCodeBlock(thenSize, codeBlock, blockLocal);
+        runCodeBlock(thenSize, codeBlock, local);
         }
     else
         {
         elseSize = size - (thenSize + (codeBlock - msg));
-        runCodeBlock(elseSize, codeBlock + thenSize, blockLocal);
+        runCodeBlock(elseSize, codeBlock + thenSize, local);
         }
 
     return false;
