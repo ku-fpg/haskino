@@ -1,6 +1,8 @@
 #ifndef HaskinoServoH
 #define HaskinoServoH
 
-bool parseServoMessage(int size, const byte *msg, byte *local);
+#include "HaskinoScheduler.h"
+
+bool parseServoMessage(int size, const byte *msg, CONTEXT *context);
 
 #endif /* HaskinoServoH */

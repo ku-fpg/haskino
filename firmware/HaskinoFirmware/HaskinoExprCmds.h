@@ -1,6 +1,8 @@
 #ifndef HaskinoExprCmdsH
 #define HaskinoExprCmdsH
 
-bool parseExprMessage(int size, const byte *msg, byte *local);
+#include "HaskinoScheduler.h"
+
+bool parseExprMessage(int size, const byte *msg, CONTEXT *context);
 
 #endif /* HaskinoExprCmdsH */

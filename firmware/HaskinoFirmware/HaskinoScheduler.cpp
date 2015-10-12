@@ -9,14 +9,14 @@
 #define BOOT_TASK_INDEX_START   8
 #define BOOT_TASK_ID            255
 
-static bool handleQueryAll(int size, const byte *msg, byte *local);
-static bool handleCreateTask(int size, const byte *msg, byte *local);
-static bool handleDeleteTask(int size, const byte *msg, byte *local);
-static bool handleAddToTask(int size, const byte *msg, byte *local);
-static bool handleScheduleTask(int size, const byte *msg, byte *local);
-static bool handleQuery(int size, const byte *msg, byte *local);
-static bool handleReset(int size, const byte *msg, byte *local);
-static bool handleBootTask(int size, const byte *msg, byte *local);
+static bool handleQueryAll(int size, const byte *msg, CONTEXT *context);
+static bool handleCreateTask(int size, const byte *msg, CONTEXT *context);
+static bool handleDeleteTask(int size, const byte *msg, CONTEXT *context);
+static bool handleAddToTask(int size, const byte *msg, CONTEXT *context);
+static bool handleScheduleTask(int size, const byte *msg, CONTEXT *context);
+static bool handleQuery(int size, const byte *msg, CONTEXT *context);
+static bool handleReset(int size, const byte *msg, CONTEXT *context);
+static bool handleBootTask(int size, const byte *msg, CONTEXT *context);
 static void deleteTask(TASK* task);
 static TASK *findTask(int id);
 static bool createById(byte id, unsigned int taskSize);
@@ -25,37 +25,49 @@ static bool executeTask(TASK *task);
 
 static TASK *firstTask = NULL;
 static TASK *runningTask = NULL;
+static CONTEXT *defaultContext = NULL;
 
-bool parseSchedulerMessage(int size, const byte *msg, byte *local)
+bool parseSchedulerMessage(int size, const byte *msg, CONTEXT *context)
     {
     switch (msg[0]) 
         {
         case SCHED_CMD_QUERY_ALL:
-            return handleQueryAll(size, msg, local);
+            return handleQueryAll(size, msg, context);
             break;
         case SCHED_CMD_CREATE_TASK:
-            return handleCreateTask(size, msg, local);
+            return handleCreateTask(size, msg, context);
             break;
         case SCHED_CMD_DELETE_TASK:
-            return handleDeleteTask(size, msg, local);
+            return handleDeleteTask(size, msg, context);
             break;
         case SCHED_CMD_ADD_TO_TASK:
-            return handleAddToTask(size, msg, local);
+            return handleAddToTask(size, msg, context);
             break;
         case SCHED_CMD_SCHED_TASK:
-            return handleScheduleTask(size, msg, local);
+            return handleScheduleTask(size, msg, context);
             break;
         case SCHED_CMD_QUERY:
-            return handleQuery(size, msg, local);
+            return handleQuery(size, msg, context);
             break;
         case SCHED_CMD_RESET:
-            return handleReset(size, msg, local);
+            return handleReset(size, msg, context);
             break;
          case SCHED_CMD_BOOT_TASK:
-            return handleBootTask(size, msg, local);
+            return handleBootTask(size, msg, context);
             break;
        }
     return false;
+    }
+
+CONTEXT *schedulerDefaultContext()
+    {
+    if (defaultContext == NULL)
+        {
+        defaultContext = (CONTEXT *) calloc(1, sizeof(CONTEXT));
+        defaultContext->bind = (byte *) calloc(1, DEFAULT_BIND_COUNT * BIND_SPACING);
+        defaultContext->bindSize = DEFAULT_BIND_COUNT;
+        }
+    return defaultContext;
     }
 
 static TASK *findTask(int id)
@@ -108,12 +120,12 @@ static bool createById(byte id, unsigned int taskSize, unsigned int bindSize)
     return false;
     }
 
-static bool handleCreateTask(int size, const byte *msg, byte *local)
+static bool handleCreateTask(int size, const byte *msg, CONTEXT *context)
     {
     byte *expr = (byte *) &msg[1];
-    byte id = evalWord8Expr(&expr, local);
-    unsigned int taskSize = evalWord16Expr(&expr, local);
-    unsigned int bindSize = evalWord16Expr(&expr, local);
+    byte id = evalWord8Expr(&expr, context);
+    unsigned int taskSize = evalWord16Expr(&expr, context);
+    unsigned int bindSize = evalWord16Expr(&expr, context);
 
     return createById(id, taskSize, bindSize);
     }
@@ -129,10 +141,10 @@ static void deleteTask(TASK* task)
     free(task);
     }
 
-static bool handleDeleteTask(int size, const byte *msg, byte *local)
+static bool handleDeleteTask(int size, const byte *msg, CONTEXT *context)
     {
     byte *expr = (byte *) &msg[1];
-    byte id = evalWord8Expr(&expr, local);
+    byte id = evalWord8Expr(&expr, context);
     TASK *task;
 
     if ((task = findTask(id)) != NULL)
@@ -142,11 +154,11 @@ static bool handleDeleteTask(int size, const byte *msg, byte *local)
     return false;
     }
 
-static bool handleAddToTask(int size, const byte *msg, byte *local)
+static bool handleAddToTask(int size, const byte *msg, CONTEXT *context)
     {
     byte *expr = (byte *) &msg[1];
-    byte id = evalWord8Expr(&expr, local);
-    byte addSize = evalWord8Expr(&expr, local);
+    byte id = evalWord8Expr(&expr, context);
+    byte addSize = evalWord8Expr(&expr, context);
     const byte *data = expr;
     TASK *task;
 
@@ -172,49 +184,48 @@ static bool scheduleById(byte id, unsigned long deltaMillis)
     return false;
     }
 
-static bool handleScheduleTask(int size, const byte *msg, byte *local)
+static bool handleScheduleTask(int size, const byte *msg, CONTEXT *context)
     {
     byte *expr = (byte *) &msg[1];
-    byte id = evalWord8Expr(&expr, local);
-    unsigned long deltaMillis = evalWord32Expr(&expr, local);
+    byte id = evalWord8Expr(&expr, context);
+    unsigned long deltaMillis = evalWord32Expr(&expr, context);
     return scheduleById(id, deltaMillis);
     }
 
-static bool handleQuery(int size, const byte *msg, byte *local)
+static bool handleQuery(int size, const byte *msg, CONTEXT *context)
     {
     byte *expr = (byte *) &msg[2];
-    byte id = evalWord8Expr(&expr, local);
+    byte id = evalWord8Expr(&expr, context);
     byte queryReply[10];
     uint16_t *sizeReply = (uint16_t *) queryReply;
     uint16_t *lenReply = (uint16_t *) &queryReply[2];
     uint16_t *posReply = (uint16_t *) &queryReply[4];
     uint32_t *millisReply = (uint32_t *) &queryReply[6];
     TASK *task;
-
     if ((task = findTask(id)) != NULL)
         {
         *sizeReply = task->size;
         *lenReply = task->currLen;
         *posReply = task->currPos;
         *millisReply = task->millis - millis();
-        sendReply(sizeof(queryReply), SCHED_RESP_QUERY, queryReply, NULL, 0);
+        sendReply(sizeof(queryReply), SCHED_RESP_QUERY, queryReply, context, 0);
         }
     else
         {
-        sendReply(0, SCHED_RESP_QUERY, queryReply, NULL, 0);
+        sendReply(0, SCHED_RESP_QUERY, queryReply, context, 0);
         }
     return false;
     }
 
-static bool handleQueryAll(int size, const byte *msg, byte *local)
+static bool handleQueryAll(int size, const byte *msg, CONTEXT *context)
     {
     TASK *task = firstTask;
 
-    if (local)
+    if (context->task)
         {
         while(task != NULL)
             {
-            *local = task->id;
+            *context->bind = task->id;
             task = task->next;
 // ToDo Limit task reponse size??
             }
@@ -233,7 +244,7 @@ static bool handleQueryAll(int size, const byte *msg, byte *local)
     return false;
     }
 
-static bool handleReset(int size, const byte *msg, byte *local)
+static bool handleReset(int size, const byte *msg, CONTEXT *context)
     {
     while(firstTask != NULL)
         {
@@ -247,11 +258,11 @@ static bool handleReset(int size, const byte *msg, byte *local)
     return false;
     }
 
-static bool handleBootTask(int size, const byte *msg, byte *local)
+static bool handleBootTask(int size, const byte *msg, CONTEXT *context)
     {
     TASK *task;
     byte *expr = (byte *) &msg[1];
-    byte id = evalWord8Expr(&expr, local);
+    byte id = evalWord8Expr(&expr, context);
 
     if ((task = findTask(id)) != NULL)
         {
@@ -331,7 +342,7 @@ static bool executeTask(TASK *task)
         byte cmdSize = msg[0];
         byte *cmd = &msg[1];
 
-        taskRescheduled = parseMessage(cmdSize, cmd, task->context->bind);  
+        taskRescheduled = parseMessage(cmdSize, cmd, task->context);  
 
         task->currPos += cmdSize + 1;
         if (taskRescheduled)

@@ -1,6 +1,8 @@
 #ifndef HaskinoBoardStatusH
 #define HaskinoBoardStatusH
 
+#include "HaskinoScheduler.h"
+
 #define ATmega8_TYPE        0
 #define ATmega168_TYPE      1
 #define ATmega328P_TYPE     2
@@ -14,7 +16,7 @@
 #define X86_TYPE            10
 #define QUARK_TYPE          11
 
-bool parseBoardStatusMessage(int size, const byte *msg, byte *local);
-void sendVersionReply(byte *local, byte bind);
+bool parseBoardStatusMessage(int size, const byte *msg, CONTEXT *context);
+void sendVersionReply(CONTEXT *context, byte bind);
 
 #endif /* HaskinoBoardStatusH */

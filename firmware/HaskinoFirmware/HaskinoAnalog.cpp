@@ -4,36 +4,36 @@
 #include "HaskinoCommands.h"
 #include "HaskinoExpr.h"
 
-static bool handleReadPin(int size, const byte *msg, byte *local);
-static bool handleWritePin(int size, const byte *msg, byte *local);
-static bool handleTonePin(int size, const byte *msg, byte *local);
-static bool handleNoTonePin(int size, const byte *msg, byte *local);
+static bool handleReadPin(int size, const byte *msg, CONTEXT *context);
+static bool handleWritePin(int size, const byte *msg, CONTEXT *context);
+static bool handleTonePin(int size, const byte *msg, CONTEXT *context);
+static bool handleNoTonePin(int size, const byte *msg, CONTEXT *context);
 
-bool parseAnalogMessage(int size, const byte *msg, byte *local)
+bool parseAnalogMessage(int size, const byte *msg, CONTEXT *context)
     {
     switch (msg[0] ) 
         {
         case ALG_CMD_READ_PIN:
-            return handleReadPin(size, msg, local);
+            return handleReadPin(size, msg, context);
             break;
         case ALG_CMD_WRITE_PIN:
-            return handleWritePin(size, msg, local);
+            return handleWritePin(size, msg, context);
             break;
         case ALG_CMD_TONE_PIN:
-            return handleTonePin(size, msg, local);
+            return handleTonePin(size, msg, context);
             break;
         case ALG_CMD_NOTONE_PIN:
-            return handleNoTonePin(size, msg, local);
+            return handleNoTonePin(size, msg, context);
             break;
         }
     return false;
     }
 
-static bool handleReadPin(int size, const byte *msg, byte *local)
+static bool handleReadPin(int size, const byte *msg, CONTEXT *context)
     {
     byte bind = msg[1];
     byte *expr = (byte *) &msg[2];
-    byte pinNo = evalWord8Expr(&expr, local);
+    byte pinNo = evalWord8Expr(&expr, context);
     uint16_t analogValue;
     byte analogReply[3];
 
@@ -42,15 +42,15 @@ static bool handleReadPin(int size, const byte *msg, byte *local)
     memcpy(&analogReply[1], &analogValue, sizeof(analogValue));
 
     sendReply(sizeof(analogReply), ALG_RESP_READ_PIN, 
-              (byte *) &analogReply, local, bind);
+              (byte *) &analogReply, context, bind);
     return false;
     }
 
-static bool handleWritePin(int size, const byte *msg, byte *local)
+static bool handleWritePin(int size, const byte *msg, CONTEXT *context)
     {
     byte *expr = (byte *) &msg[1];
-    byte pinNo = evalWord8Expr(&expr, local);
-    byte value = evalWord8Expr(&expr, local);
+    byte pinNo = evalWord8Expr(&expr, context);
+    byte value = evalWord8Expr(&expr, context);
 
 #ifdef INTEL_EDISON
     // ToDo:
@@ -69,12 +69,12 @@ static bool handleWritePin(int size, const byte *msg, byte *local)
     return false;
     }
 
-static bool handleTonePin(int size, const byte *msg, byte *local)
+static bool handleTonePin(int size, const byte *msg, CONTEXT *context)
     {
     byte *expr = (byte *) &msg[1];
-    byte pinNo = evalWord8Expr(&expr, local);
-    unsigned int freq = evalWord16Expr(&expr, local);
-    unsigned long duration = evalWord32Expr(&expr, local);
+    byte pinNo = evalWord8Expr(&expr, context);
+    unsigned int freq = evalWord16Expr(&expr, context);
+    unsigned long duration = evalWord32Expr(&expr, context);
 
     if (duration == 0)
         {
@@ -87,10 +87,10 @@ static bool handleTonePin(int size, const byte *msg, byte *local)
     return false;
     }
 
-static bool handleNoTonePin(int size, const byte *msg, byte *local)
+static bool handleNoTonePin(int size, const byte *msg, CONTEXT *context)
     {
     byte *expr = (byte *) &msg[1];
-    byte pinNo = evalWord8Expr(&expr, local);
+    byte pinNo = evalWord8Expr(&expr, context);
 
     noTone(pinNo);
     return false;

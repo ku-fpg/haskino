@@ -1,6 +1,8 @@
 #ifndef HaskinoExprH
 #define HaskinoExprH
 
+#include "HaskinoScheduler.h"
+
 #define EXPR(a,b) ((a << EXPR_TYPE_SHFT) | b)
 
 #define EXPR_TYPE_MASK 0xE0
@@ -36,9 +38,9 @@
 #define EXPR_TSTB 0x16
 #define EXPR_BIND 0x17
 
-bool evalBoolExpr(byte **ppExpr, byte *local);
-uint8_t evalWord8Expr(byte **ppExpr, byte *local);
-uint16_t evalWord16Expr(byte **ppExpr, byte *local);
-uint32_t evalWord32Expr(byte **ppExpr, byte *local);
+bool evalBoolExpr(byte **ppExpr, CONTEXT *context);
+uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context);
+uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context);
+uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context);
 
 #endif /* HaskinoExprH */

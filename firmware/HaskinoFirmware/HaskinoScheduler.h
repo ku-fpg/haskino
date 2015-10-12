@@ -24,7 +24,8 @@ typedef struct context_t
     byte               *bind;
     } CONTEXT;
 
-bool parseSchedulerMessage(int size, const byte *msg, byte *local);
+bool parseSchedulerMessage(int size, const byte *msg, CONTEXT *context);
+CONTEXT *schedulerDefaultContext();
 void schedulerBootTask();
 void schedulerRunTasks();
 bool isRunningTask();

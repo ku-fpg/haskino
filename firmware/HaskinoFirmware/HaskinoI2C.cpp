@@ -4,35 +4,35 @@
 #include "HaskinoCommands.h"
 #include "HaskinoI2C.h"
 
-static bool handleConfig(int size, const byte *msg);
-static bool handleRead(int size, const byte *msg, byte *local);
-static bool handleWrite(int size, const byte *msg);
+static bool handleConfig(int size, const byte *msg, CONTEXT *context);
+static bool handleRead(int size, const byte *msg, CONTEXT *context);
+static bool handleWrite(int size, const byte *msg, CONTEXT *context);
 
-bool parseI2CMessage(int size, const byte *msg, byte *local)
+bool parseI2CMessage(int size, const byte *msg, CONTEXT *context)
     {
     switch (msg[0] ) 
         {
         case I2C_CMD_CONFIG:
-            return handleConfig(size, msg);
+            return handleConfig(size, msg, context);
             break;
         case I2C_CMD_READ:
-            return handleRead(size, msg, local);
+            return handleRead(size, msg, context);
             break;
         case I2C_CMD_WRITE:
-            return handleWrite(size, msg);
+            return handleWrite(size, msg, context);
             break;
         }
     return false;
     }
 
-static bool handleConfig(int size, const byte *msg)
+static bool handleConfig(int size, const byte *msg, CONTEXT *context)
     {
     Wire.begin();
     delay(10);
     return false;
     }
 
-static bool handleRead(int size, const byte *msg, byte *local)
+static bool handleRead(int size, const byte *msg, CONTEXT *context)
     {
     byte slaveAddress = msg[1];
     byte byteCount = msg[2];
@@ -50,8 +50,9 @@ static bool handleRead(int size, const byte *msg, byte *local)
         sendStringf("I2C: Too few bytes received");
         }
 
-    if (local)
+    if (context->bind)
         {
+        byte* local = context->bind;
         for (int i = 0; i < byteAvail; i++)
             { 
             *local++ = Wire.read();
@@ -71,7 +72,7 @@ static bool handleRead(int size, const byte *msg, byte *local)
     return false;
     }
 
-static bool handleWrite(int size, const byte *msg)
+static bool handleWrite(int size, const byte *msg, CONTEXT *context)
     {
     byte slaveAddress = msg[1];
     const byte *data = &msg[2];

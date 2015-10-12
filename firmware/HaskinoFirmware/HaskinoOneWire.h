@@ -1,6 +1,8 @@
 #ifndef HaskinoOneWireH
 #define HaskinoOneWireH
 
-bool parseOneWireMessage(int size, const byte *msg, byte *local);
+#include "HaskinoScheduler.h"
+
+bool parseOneWireMessage(int size, const byte *msg, CONTEXT *context);
 
 #endif /* HaskinoOneWireH */

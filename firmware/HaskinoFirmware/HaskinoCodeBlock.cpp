@@ -3,7 +3,7 @@
 
 static bool codeBlock = false;
 
-void runCodeBlock(int blockSize, const byte * block, byte *local)
+void runCodeBlock(int blockSize, const byte * block, CONTEXT *context)
     {
     int currPos = 0;
     codeBlock = true;
@@ -14,7 +14,7 @@ void runCodeBlock(int blockSize, const byte * block, byte *local)
         byte cmdSize = msg[0];
         const byte *cmd = &msg[1];
 
-        parseMessage(cmdSize, cmd, (byte *) local);  
+        parseMessage(cmdSize, cmd, context);  
 
         currPos += cmdSize + 1;
         }

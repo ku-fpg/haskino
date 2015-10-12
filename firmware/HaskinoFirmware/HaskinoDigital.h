@@ -1,6 +1,8 @@
 #ifndef HaskinoDigitalH
 #define HaskinoDigitalH
 
-bool parseDigitalMessage(int size, const byte *msg, byte *local);
+#include "HaskinoScheduler.h"
+
+bool parseDigitalMessage(int size, const byte *msg, CONTEXT *context);
 
 #endif /* HaskinoDigitalH */

@@ -5,47 +5,47 @@
 #include "HaskinoExpr.h"
 #include "HaskinoFirmware.h"
 
-static bool handleRequestVersion(int size, const byte *msg, byte *local);
-static bool handleRequestType(int size, const byte *msg, byte *local);
-static bool handleRequestMicros(int size, const byte *msg, byte *local);
-static bool handleRequestMillis(int size, const byte *msg, byte *local);
+static bool handleRequestVersion(int size, const byte *msg, CONTEXT *context);
+static bool handleRequestType(int size, const byte *msg, CONTEXT *context);
+static bool handleRequestMicros(int size, const byte *msg, CONTEXT *context);
+static bool handleRequestMillis(int size, const byte *msg, CONTEXT *context);
 
-bool parseBoardStatusMessage(int size, const byte *msg, byte *local)
+bool parseBoardStatusMessage(int size, const byte *msg, CONTEXT *context)
     {
     switch (msg[0] ) 
         {
         case BS_CMD_REQUEST_VERSION:
-            return handleRequestVersion(size, msg, local);
+            return handleRequestVersion(size, msg, context);
             break;
         case BS_CMD_REQUEST_TYPE:
-            return handleRequestType(size, msg, local);
+            return handleRequestType(size, msg, context);
             break;
         case BS_CMD_REQUEST_MICROS:
-            return handleRequestMicros(size, msg, local);
+            return handleRequestMicros(size, msg, context);
             break;
         case BS_CMD_REQUEST_MILLIS:
-            return handleRequestMillis(size, msg, local);
+            return handleRequestMillis(size, msg, context);
             break;
         }
     return false;
     }
 
-void sendVersionReply(byte *local, byte bind)
+void sendVersionReply(CONTEXT *context, byte bind)
     {
     static byte versionReply[2] = {FIRMWARE_MINOR,
                                    FIRMWARE_MAJOR};
         
-    sendReply(sizeof(versionReply), BS_RESP_VERSION, versionReply, local, bind);
+    sendReply(sizeof(versionReply), BS_RESP_VERSION, versionReply, context, bind);
     }
 
-static bool handleRequestVersion(int size, const byte *msg, byte *local)
+static bool handleRequestVersion(int size, const byte *msg, CONTEXT *context)
     {
     byte bind = msg[1];
-    sendVersionReply(local, bind);
+    sendVersionReply(context, bind);
     return false;
     }
 
-static bool handleRequestType(int size, const byte *msg, byte *local)
+static bool handleRequestType(int size, const byte *msg, CONTEXT *context)
     {
     byte bind = msg[1];
     static byte typeReply[1] = {
@@ -76,11 +76,11 @@ static bool handleRequestType(int size, const byte *msg, byte *local)
 #else
 #error "Please define a new processor type board"
 #endif
-    sendReply(sizeof(typeReply), BS_RESP_TYPE, typeReply, local, bind);
+    sendReply(sizeof(typeReply), BS_RESP_TYPE, typeReply, context, bind);
     return false;
     }
 
-static bool handleRequestMicros(int size, const byte *msg, byte *local)
+static bool handleRequestMicros(int size, const byte *msg, CONTEXT *context)
     {
     byte bind = msg[1];
     uint32_t ms;
@@ -91,11 +91,11 @@ static bool handleRequestMicros(int size, const byte *msg, byte *local)
     memcpy(&microReply[1], &ms, sizeof(ms));
 
     sendReply(sizeof(microReply), BS_RESP_MICROS, 
-              (byte *) &microReply, local, bind);
+              (byte *) &microReply, context, bind);
     return false;
     }
 
-static bool handleRequestMillis(int size, const byte *msg, byte *local)
+static bool handleRequestMillis(int size, const byte *msg, CONTEXT *context)
     {
     byte bind = msg[1];
     uint32_t ms;
@@ -106,6 +106,6 @@ static bool handleRequestMillis(int size, const byte *msg, byte *local)
     memcpy(&milliReply[1], &ms, sizeof(ms));
 
     sendReply(sizeof(uint32_t), BS_RESP_MILLIS, 
-              (byte *) &milliReply, local, bind);
+              (byte *) &milliReply, context, bind);
     return false;
     }

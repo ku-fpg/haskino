@@ -4,6 +4,7 @@
 #include "HaskinoAnalog.h"
 #include "HaskinoBoardControl.h"
 #include "HaskinoBoardStatus.h"
+#include "HaskinoCodeBlock.h"
 #include "HaskinoCommands.h"
 #include "HaskinoComm.h"
 #include "HaskinoConfig.h"
@@ -27,42 +28,42 @@ int processingMessage()
     return (messageCount != 0);
     }
 
-bool parseMessage(int size, const byte *msg, byte *local)
+bool parseMessage(int size, const byte *msg, CONTEXT *context)
     {
     switch (msg[0] & CMD_TYPE_MASK) 
         {
         case BC_CMD_TYPE:
-            return parseBoardControlMessage(size, msg, local);
+            return parseBoardControlMessage(size, msg, context);
             break;
         case BS_CMD_TYPE:
-            return parseBoardStatusMessage(size, msg, local);
+            return parseBoardStatusMessage(size, msg, context);
             break;
         case DIG_CMD_TYPE:
-            return parseDigitalMessage(size, msg, local);
+            return parseDigitalMessage(size, msg, context);
             break;
         case ALG_CMD_TYPE:
-            return parseAnalogMessage(size, msg, local);
+            return parseAnalogMessage(size, msg, context);
             break;
         case I2C_CMD_TYPE:
-            return parseI2CMessage(size, msg, local);
+            return parseI2CMessage(size, msg, context);
             break;
         case ONEW_CMD_TYPE:
-            return parseOneWireMessage(size, msg, local);
+            return parseOneWireMessage(size, msg, context);
             break;
         case SRVO_CMD_TYPE:
-            return parseServoMessage(size, msg, local);
+            return parseServoMessage(size, msg, context);
             break;
         case STEP_CMD_TYPE:
-            return parseStepperMessage(size, msg, local);
+            return parseStepperMessage(size, msg, context);
             break;
         case SCHED_CMD_TYPE:
-            return parseSchedulerMessage(size, msg, local);
+            return parseSchedulerMessage(size, msg, context);
             break;
         case REF_CMD_TYPE:
-            return parseRefMessage(size, msg, local);
+            return parseRefMessage(size, msg, context);
             break;
         case EXP_CMD_TYPE:
-            return parseExprMessage(size, msg, local);
+            return parseExprMessage(size, msg, context);
             break;
         }
         return false;
@@ -82,7 +83,7 @@ static void processChar(byte c)
                 }
             if (checksum == *msg)
                 {
-                parseMessage(messageCount-1, inputData, NULL);
+                parseMessage(messageCount-1, inputData, schedulerDefaultContext());
                 }
             }
         processingEscapeState = 0;
@@ -142,14 +143,14 @@ void sendReplyByte(byte replyByte)
     }
 
 void sendReply(int count, byte replyType, const byte *reply, 
-               byte *local, byte bind)
+               CONTEXT *context, byte bind)
     {
     const byte *nextChar = reply;
     int i;
 
-    if (local)
+    if (isCodeBlock() || context->task)
         {
-        memcpy(&local[bind * BIND_SPACING], reply, count);
+        memcpy(&context->bind[bind * BIND_SPACING], reply, count);
         }
     else
         {
