@@ -76,7 +76,7 @@ packageCommand (CreateTaskE tid m) ix _ =
   where
     (td, ix', ib') = packageCodeBlock m ix 0
     taskSize = fromIntegral (B.length td)
-    cmd = buildCommand SCHED_CMD_CREATE_TASK ((packageExpr tid) ++ (packageExpr (Lit16 taskSize)) ++ (packageExpr (Lit16 (fromIntegral ib'))))                                   
+    cmd = buildCommand SCHED_CMD_CREATE_TASK ((packageExpr tid) ++ (packageExpr (Lit16 taskSize)) ++ (packageExpr (Lit16 (fromIntegral (ib' + 1)))))                                   
     -- Max command data size is max frame size - 3 (command,checksum,frame flag) 
     maxCmdSize = maxFirmwareSize - 3
     genAddToTaskCmds tds | fromIntegral (B.length tds) > maxCmdSize = 
