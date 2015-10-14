@@ -39,14 +39,17 @@ data Expr a where
   Lit8      :: Word8 -> Expr Word8
   Lit16     :: Word16 -> Expr Word16
   Lit32     :: Word32 -> Expr Word32
+  LitList8  :: [Word8] -> Expr [Word8]
   RefB      :: Int -> Expr Bool
   Ref8      :: Int -> Expr Word8
   Ref16     :: Int -> Expr Word16
   Ref32     :: Int -> Expr Word32
+  RefList8  :: Int -> Expr [Word8]
   RemBindB  :: Int -> Expr Bool
   RemBind8  :: Int -> Expr Word8
   RemBind16 :: Int -> Expr Word16
   RemBind32 :: Int -> Expr Word32
+  RemBindList8 :: Int -> Expr [Word8]
   NotB      :: Expr Bool -> Expr Bool
   AndB      :: Expr Bool -> Expr Bool -> Expr Bool
   OrB       :: Expr Bool -> Expr Bool -> Expr Bool
@@ -107,6 +110,9 @@ data Expr a where
   Bit32     :: Expr Word8  -> Expr Word32
   SetB32    :: Expr Word32 -> Expr Word8 -> Expr Word32
   ClrB32    :: Expr Word32 -> Expr Word8 -> Expr Word32
+  ElemList8 :: Expr [Word8] -> Expr Word8 -> Expr Word8
+  ConsList8 :: Expr Word8 -> Expr [Word8] -> Expr [Word8]
+  ApndList8 :: Expr [Word8] -> Expr [Word8] -> Expr [Word8]
 
 deriving instance Show a => Show (Expr a)
 
@@ -129,6 +135,10 @@ instance ExprB Word32 where
 instance ExprB Bool where
     lit = LitB
     remBind = RemBindB
+
+instance ExprB [Word8] where
+    lit = LitList8
+    remBind = RemBindList8
 
 -- ToDo:  Add BitsB class for and, or, xor, complement and shifts
 -- ToDo:  Add fromInteger/toInteger properly to do typing on Arduino
@@ -281,11 +291,21 @@ instance BB.BitsB (Expr Word32) where
   clearBit = ClrB32
 --  testBit = (\x i -> x .&. bit i ==* bit i)
 
+(!!*) :: Expr [Word8] -> Expr Word8 -> Expr Word8
+(!!*) l i = ElemList8 l i
+
+(*:) :: Expr Word8 -> Expr [Word8] -> Expr [Word8]
+(*:) n l = ConsList8 n l
+
+(++*) :: Expr [Word8] -> Expr [Word8] -> Expr [Word8]
+(++*) l1 l2 = ApndList8 l1 l2
+
 -- | Haskino Firmware expresions, see:tbd 
 data ExprType = EXPR_BOOL
               | EXPR_WORD8
               | EXPR_WORD16
               | EXPR_WORD32
+              | EXPR_LIST8
 
 data ExprOp = EXPR_LIT
             | EXPR_REF
@@ -311,6 +331,9 @@ data ExprOp = EXPR_LIT
             | EXPR_CLRB
             | EXPR_TSTB
             | EXPR_BIND
+            | EXPR_ELEM
+            | EXPR_CONS
+            | EXPR_APND
 
 -- | Compute the numeric value of a command
 exprTypeVal :: ExprType -> Word8
@@ -318,6 +341,7 @@ exprTypeVal EXPR_BOOL   = 0x01
 exprTypeVal EXPR_WORD8  = 0x02
 exprTypeVal EXPR_WORD16 = 0x03
 exprTypeVal EXPR_WORD32 = 0x04
+exprTypeVal EXPR_LIST8  = 0x05
 
 exprOpVal :: ExprOp -> Word8
 exprOpVal EXPR_LIT  = 0x00
@@ -344,6 +368,9 @@ exprOpVal EXPR_SETB = 0x14
 exprOpVal EXPR_CLRB = 0x15
 exprOpVal EXPR_TSTB = 0x16
 exprOpVal EXPR_BIND = 0x17
+exprOpVal EXPR_ELEM = 0x18
+exprOpVal EXPR_CONS = 0x19
+exprOpVal EXPR_APND = 0x1A
 
 exprCmdVal :: ExprType -> ExprOp -> Word8
 exprCmdVal t o = exprTypeVal t `DB.shiftL` 5 DB..|. exprOpVal o

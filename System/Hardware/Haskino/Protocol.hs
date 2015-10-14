@@ -59,8 +59,8 @@ packageCommand (ToneE p f Nothing) ix ib =
     packageCommand (ToneE p f (Just 0)) ix ib
 packageCommand (NoToneE p) ix _ =
     (buildCommand ALG_CMD_NOTONE_PIN (packageExpr  p), ix)
--- ToDo: packageCommand c (I2CWriteE sa w8s) = 
---    return $ buildCommand I2C_CMD_WRITE (sa : w8s)
+packageCommand (I2CWrite sa w8s) ix _ = 
+    (buildCommand I2C_CMD_WRITE (packageExpr sa ++ packageExpr w8s), ix)
 packageCommand I2CConfig ix _ = 
     (buildCommand I2C_CMD_CONFIG [], ix)
 packageCommand (DeleteTaskE tid) ix _ =
@@ -162,7 +162,7 @@ packageCodeBlock commands ix ib =
       packProcedure (AnalogRead p) ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure (AnalogRead p) ib)))
       packProcedure (AnalogReadE p) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (AnalogReadE p) ib)))
       packProcedure (I2CRead p n) ix ib k cmds = packageCodeBlock' (k []) ix ib (B.append cmds (lenPackage (packageProcedure (I2CRead p n) ib)))
-      packProcedure (I2CReadE p n) ix ib k cmds = packageCodeBlock' (k []) ix ib (B.append cmds (lenPackage (packageProcedure (I2CReadE p n) ib)))
+      packProcedure (I2CReadE p n) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (I2CReadE p n) ib)))
       packProcedure QueryAllTasks ix ib k cmds = packageCodeBlock' (k ([])) ix ib (B.append cmds (lenPackage (packageProcedure QueryAllTasks ib)))
       packProcedure (QueryTask t) ix ib k cmds = packageCodeBlock' (k Nothing) ix ib (B.append cmds (lenPackage (packageProcedure (QueryTask t) ib)))
       packProcedure (QueryTaskE t) ix ib k cmds = packageCodeBlock' (k Nothing) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (QueryTaskE t) ib)))
@@ -312,6 +312,12 @@ packageExpr (If32 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_WORD32 EXPR_IF)
 packageExpr (Bit32 e) = packageSubExpr (exprCmdVal EXPR_WORD32 EXPR_BIT) e
 packageExpr (SetB32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_SETB) e1 e2 
 packageExpr (ClrB32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_CLRB) e1 e2 
+packageExpr (LitList8 ws) = [exprCmdVal EXPR_LIST8 EXPR_LIT, fromIntegral $ length ws] ++ ws
+packageExpr (RefList8 n) = packageRef n (exprCmdVal EXPR_LIST8 EXPR_REF)
+packageExpr (RemBindList8 b) = [exprCmdVal EXPR_LIST8 EXPR_BIND, fromIntegral b]
+packageExpr (ElemList8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_LIST8 EXPR_ELEM) e1 e2 
+packageExpr (ConsList8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_LIST8 EXPR_CONS) e1 e2 
+packageExpr (ApndList8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_LIST8 EXPR_APND) e1 e2 
 
 -- | Unpackage a Haskino Firmware response
 unpackageResponse :: [Word8] -> Response
@@ -378,7 +384,7 @@ parseQueryResult (Procedure (DigitalReadE p)) (DigitalReply d) = Just (if d == 0
 parseQueryResult (Procedure (AnalogRead p)) (AnalogReply a) = Just a
 parseQueryResult (Procedure (AnalogReadE p)) (AnalogReply a) = Just (lit a)
 parseQueryResult (Procedure (I2CRead saq cnt)) (I2CReply ds) = Just ds
-parseQueryResult (Procedure (I2CReadE saq cnt)) (I2CReply ds) = Just ds
+parseQueryResult (Procedure (I2CReadE saq cnt)) (I2CReply ds) = Just (lit ds)
 parseQueryResult (Procedure QueryAllTasks) (QueryAllTasksReply ts) = Just ts
 parseQueryResult (Procedure (QueryTask tid)) (QueryTaskReply tr) = Just tr
 parseQueryResult (Procedure (QueryTaskE tid)) (QueryTaskReply tr) = Just tr

@@ -165,7 +165,7 @@ data Command =
      | AnalogWriteE PinE (Expr Word16)
      | ToneE PinE (Expr Word16) (Maybe (Expr Word32))       -- ^ Play a tone on a pin
      | NoToneE PinE                             -- ^ Stop playing a tone on a pin
-     | I2CWriteE SlaveAddressE [Expr Word8]
+     | I2CWrite SlaveAddressE (Expr [Word8])
      | I2CConfig
      | CreateTaskE TaskIDE (Arduino ())
      | DeleteTaskE TaskIDE
@@ -225,10 +225,10 @@ noToneE :: PinE -> Arduino ()
 noToneE p = Command $ NoToneE p
 
 i2cWrite :: SlaveAddress -> [Word8] -> Arduino ()
-i2cWrite sa ws = Command $ I2CWriteE (lit sa) (map lit ws)
+i2cWrite sa ws = Command $ I2CWrite (lit sa) (lit ws)
 
-i2cWriteE :: SlaveAddressE -> [Expr Word8] -> Arduino ()
-i2cWriteE sa ws = Command $ I2CWriteE sa ws
+i2cWriteE :: SlaveAddressE -> Expr [Word8] -> Arduino ()
+i2cWriteE sa ws = Command $ I2CWrite sa ws
 
 i2cConfig :: Arduino ()
 i2cConfig = Command $ I2CConfig
@@ -358,7 +358,7 @@ data Procedure :: * -> * where
      AnalogRead     :: Pin -> Procedure Word16          -- ^ Read the analog value on a pin
      AnalogReadE    :: PinE -> Procedure (Expr Word16)          
      I2CRead :: SlaveAddress -> Word8 -> Procedure [Word8]
-     I2CReadE :: SlaveAddressE -> Expr Word8 -> Procedure [Word8]
+     I2CReadE :: SlaveAddressE -> Expr Word8 -> Procedure (Expr [Word8])
      QueryAllTasks :: Procedure [TaskID]
 -- ToDo: E version of QueryAllTasks, handle Expr [Word8]
      QueryTask  :: TaskID -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
@@ -433,7 +433,7 @@ analogReadE p = Procedure $ AnalogReadE p
 i2cRead :: SlaveAddress -> Word8 -> Arduino [Word8]
 i2cRead sa cnt = Procedure $ I2CRead sa cnt
 
-i2cReadE :: SlaveAddressE -> Expr Word8 -> Arduino [Word8]
+i2cReadE :: SlaveAddressE -> Expr Word8 -> Arduino (Expr [Word8])
 i2cReadE sa cnt = Procedure $ I2CReadE sa cnt
 
 queryAllTasks :: Arduino [TaskID]
