@@ -317,7 +317,8 @@ packageExpr (RefList8 n) = packageRef n (exprCmdVal EXPR_LIST8 EXPR_REF)
 packageExpr (RemBindList8 b) = [exprCmdVal EXPR_LIST8 EXPR_BIND, fromIntegral b]
 packageExpr (ElemList8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_LIST8 EXPR_ELEM) e1 e2 
 packageExpr (ConsList8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_LIST8 EXPR_CONS) e1 e2 
-packageExpr (ApndList8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_LIST8 EXPR_APND) e1 e2 
+packageExpr (ApndList8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_LIST8 EXPR_APND) e1 e2
+packageExpr (PackList8 es) = [exprCmdVal EXPR_LIST8 EXPR_PACK, fromIntegral $ length es] ++ (foldl (++) [] (map packageExpr es))
 
 -- | Unpackage a Haskino Firmware response
 unpackageResponse :: [Word8] -> Response

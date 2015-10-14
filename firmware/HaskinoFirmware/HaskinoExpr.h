@@ -41,6 +41,7 @@
 #define EXPR_ELEM 0x18
 #define EXPR_CONS 0x19
 #define EXPR_APND 0x1A
+#define EXPR_PACK 0x1B
 
 bool evalBoolExpr(byte **ppExpr, CONTEXT *context);
 uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context);

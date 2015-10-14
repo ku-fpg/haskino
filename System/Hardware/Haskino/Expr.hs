@@ -25,13 +25,6 @@ data RemoteRef a where
     RemoteRefW16 :: Int -> RemoteRef Word16
     RemoteRefW32 :: Int -> RemoteRef Word32
 
-remoteRefToExpr :: RemoteRef a -> Expr a
-remoteRefToExpr r = case r of
-                         RemoteRefB i -> RefB i
-                         RemoteRefW8 i -> Ref8 i
-                         RemoteRefW16 i -> Ref16 i
-                         RemoteRefW32 i -> Ref32 i
-
 deriving instance Show a => Show (RemoteRef a)
 
 data Expr a where
@@ -113,6 +106,7 @@ data Expr a where
   ElemList8 :: Expr [Word8] -> Expr Word8 -> Expr Word8
   ConsList8 :: Expr Word8 -> Expr [Word8] -> Expr [Word8]
   ApndList8 :: Expr [Word8] -> Expr [Word8] -> Expr [Word8]
+  PackList8 :: [Expr Word8] -> Expr [Word8]
 
 deriving instance Show a => Show (Expr a)
 
@@ -334,6 +328,7 @@ data ExprOp = EXPR_LIT
             | EXPR_ELEM
             | EXPR_CONS
             | EXPR_APND
+            | EXPR_PACK
 
 -- | Compute the numeric value of a command
 exprTypeVal :: ExprType -> Word8
@@ -371,6 +366,7 @@ exprOpVal EXPR_BIND = 0x17
 exprOpVal EXPR_ELEM = 0x18
 exprOpVal EXPR_CONS = 0x19
 exprOpVal EXPR_APND = 0x1A
+exprOpVal EXPR_PACK = 0x1B
 
 exprCmdVal :: ExprType -> ExprOp -> Word8
 exprCmdVal t o = exprTypeVal t `DB.shiftL` 5 DB..|. exprOpVal o
