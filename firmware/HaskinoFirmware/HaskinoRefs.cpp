@@ -82,6 +82,17 @@ uint32_t readRefWord32(int refIndex)
         }
     }
 
+uint8_t *readRefList8(int refIndex)
+    {
+    if (haskinoRefs[refIndex].ref != NULL)
+        return (uint8_t *) haskinoRefs[refIndex].ref;
+    else
+        {
+        sendStringf("readRefList8: Invalid ref index %d", refIndex);
+        return false;
+        }
+    }
+
 static int typeToSize(int type)
     {
     switch(type)

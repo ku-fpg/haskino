@@ -498,3 +498,117 @@ uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context)
         }
         return val;
     }
+
+byte sizeList8Expr(byte **ppExpr, CONTEXT *context)
+    {
+    byte *pExpr = *ppExpr;
+    byte exprOp = *pExpr & EXPR_OP_MASK;
+    byte bind, refNum;
+    byte *bindPtr, *refPtr;
+    byte size = 0;
+
+    switch (exprOp)
+        {
+        case EXPR_BIND:
+            bind = pExpr[1];
+            if (context->bind)
+                {
+                bindPtr = &context->bind[bind * BIND_SPACING];
+                size = sizeList8Expr(&bindPtr, context);
+                }
+            *ppExpr += 2; // Use Cmd and Bind bytes
+            break;
+        case EXPR_REF:
+            refNum = pExpr[1];
+            refPtr = readRefList8(refNum);
+            size = sizeList8Expr(&refPtr, context);
+            *ppExpr += 2; // Use Cmd and Ref bytes
+            break;
+        case EXPR_LIT:
+            size = pExpr[1];
+            *ppExpr += 2 + size; // Use Cmd and size bytes, + list size
+            break;
+        case EXPR_PACK:
+            size = pExpr[1];
+            *ppExpr += 2; // Use Cmd and size bytes
+            for (int ex = 0; ex < size; ex++)
+                {
+                evalWord8Expr(ppExpr, context);
+                }
+            break;
+        case EXPR_APND:
+            *ppExpr += 1; // Use command byte
+            size = sizeList8Expr(ppExpr, context) + sizeList8Expr(ppExpr, context);
+            break;
+        case EXPR_CONS:
+            *ppExpr += 1; // Use command byte
+            evalWord8Expr(ppExpr, context);
+            size = 1 + sizeList8Expr(ppExpr, context);
+        }
+        return size;
+    }
+
+void evalList8SubExpr(byte **ppExpr, CONTEXT *context, byte *listMem, byte index)
+    {
+    byte *pExpr = *ppExpr;
+    byte exprOp = *pExpr & EXPR_OP_MASK;
+    byte bind, refNum;
+    int size;
+    byte *bindPtr, *refPtr;
+
+    switch (exprOp)
+        {
+        case EXPR_BIND:
+            bind = pExpr[1];
+            if (context->bind)
+                {
+                bindPtr = &context->bind[bind * BIND_SPACING];
+                evalList8SubExpr(&bindPtr, context, listMem, index);
+                }
+            *ppExpr += 2; // Use Cmd and Bind bytes
+            break;
+        case EXPR_REF:
+            refNum = pExpr[1];
+            refPtr = readRefList8(refNum);
+            evalList8SubExpr(&refPtr, context, listMem, index);
+            *ppExpr += 2; // Use Cmd and Ref bytes
+            break;
+        case EXPR_LIT:
+            size = pExpr[1];
+            memcpy(&listMem[index], &pExpr[2], size);
+            *ppExpr += 2 + size; // Use Cmd and size bytes, + list size
+            break;
+        case EXPR_PACK:
+            size = pExpr[1];
+            *ppExpr += 2; // Use Cmd and size bytes
+            for (int ex = 0; ex < size; ex++, index++)
+                {
+                listMem[index] = evalWord8Expr(ppExpr, context);
+                }
+            break;
+        case EXPR_APND:
+            *ppExpr += 1; // Use command byte
+            evalList8SubExpr(ppExpr, context, listMem, index);
+            evalList8SubExpr(ppExpr, context, listMem, index + size);
+            break;
+        case EXPR_CONS:
+            *ppExpr += 1; // Use command byte
+            listMem[index] = evalWord8Expr(ppExpr, context);
+            evalList8SubExpr(ppExpr, context, listMem, index + 1);
+        }
+    }
+
+uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, byte bind)
+    {
+    byte *ppSizeExpr = *ppExpr;
+    byte size = sizeList8Expr(&ppSizeExpr, context); 
+
+    byte *listMem = (byte *) malloc(size);
+
+    evalList8SubExpr(ppExpr, context, listMem, 0);
+    if (context)
+        {
+
+        }
+    return listMem;
+    }
