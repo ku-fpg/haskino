@@ -544,6 +544,8 @@ byte sizeList8Expr(byte **ppExpr, CONTEXT *context)
             *ppExpr += 1; // Use command byte
             evalWord8Expr(ppExpr, context);
             size = 1 + sizeList8Expr(ppExpr, context);
+        default:
+            sendStringf("Unknown ExOp %d", exprOp);
         }
         return size;
     }
@@ -598,17 +600,30 @@ void evalList8SubExpr(byte **ppExpr, CONTEXT *context, byte *listMem, byte index
         }
     }
 
-uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, byte bind)
+uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc)
     {
-    byte *ppSizeExpr = *ppExpr;
-    byte size = sizeList8Expr(&ppSizeExpr, context); 
+    byte *pExpr = *ppExpr;
+    byte exprOp = *pExpr & EXPR_OP_MASK;
+    byte *ppSizeExpr;
+    byte size;
+    byte *listMem;
 
-    byte *listMem = (byte *) malloc(size);
-
-    evalList8SubExpr(ppExpr, context, listMem, 0);
-    if (context)
+    if (exprOp == EXPR_LIT)
         {
-
+        *alloc = false;
+        listMem = pExpr;
         }
+    else
+        {
+        *alloc = true;
+        ppSizeExpr = *ppExpr;
+        size = sizeList8Expr(&ppSizeExpr, context); 
+        
+        listMem = (byte *) malloc(size+2);
+        listMem[0] = EXPR(EXPR_LIST8, EXPR_LIT);
+        listMem[1] = size;
+        evalList8SubExpr(ppExpr, context, listMem, 2);
+        }
+
     return listMem;
     }

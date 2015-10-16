@@ -24,6 +24,7 @@ data RemoteRef a where
     RemoteRefW8  :: Int -> RemoteRef Word8
     RemoteRefW16 :: Int -> RemoteRef Word16
     RemoteRefW32 :: Int -> RemoteRef Word32
+    RemoteRefL8  :: Int -> RemoteRef [Word8]
 
 deriving instance Show a => Show (RemoteRef a)
 
@@ -103,8 +104,9 @@ data Expr a where
   Bit32     :: Expr Word8  -> Expr Word32
   SetB32    :: Expr Word32 -> Expr Word8 -> Expr Word32
   ClrB32    :: Expr Word32 -> Expr Word8 -> Expr Word32
-  ElemList8 :: Expr [Word8] -> Expr Word8 -> Expr Word8
-  ConsList8 :: Expr Word8 -> Expr [Word8] -> Expr [Word8]
+  ElemList8 :: Expr [Word8] -> Expr Word8   -> Expr Word8
+  LenList8  :: Expr [Word8] -> Expr Word8
+  ConsList8 :: Expr Word8   -> Expr [Word8] -> Expr [Word8]
   ApndList8 :: Expr [Word8] -> Expr [Word8] -> Expr [Word8]
   PackList8 :: [Expr Word8] -> Expr [Word8]
 
@@ -326,6 +328,7 @@ data ExprOp = EXPR_LIT
             | EXPR_TSTB
             | EXPR_BIND
             | EXPR_ELEM
+            | EXPR_LEN
             | EXPR_CONS
             | EXPR_APND
             | EXPR_PACK
@@ -364,9 +367,10 @@ exprOpVal EXPR_CLRB = 0x15
 exprOpVal EXPR_TSTB = 0x16
 exprOpVal EXPR_BIND = 0x17
 exprOpVal EXPR_ELEM = 0x18
-exprOpVal EXPR_CONS = 0x19
-exprOpVal EXPR_APND = 0x1A
-exprOpVal EXPR_PACK = 0x1B
+exprOpVal EXPR_LEN  = 0x19
+exprOpVal EXPR_CONS = 0x1A
+exprOpVal EXPR_APND = 0x1B
+exprOpVal EXPR_PACK = 0x1C
 
 exprCmdVal :: ExprType -> ExprOp -> Word8
 exprCmdVal t o = exprTypeVal t `DB.shiftL` 5 DB..|. exprOpVal o

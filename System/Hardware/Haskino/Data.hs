@@ -176,10 +176,12 @@ data Command =
      | WriteRemoteRef8 (RemoteRef Word8) (Expr Word8)
      | WriteRemoteRef16 (RemoteRef Word16) (Expr Word16)
      | WriteRemoteRef32 (RemoteRef Word32) (Expr Word32)
+     | WriteRemoteRefL8 (RemoteRef [Word8]) (Expr [Word8])
      | ModifyRemoteRefB (RemoteRef Bool) (Expr Bool -> Expr Bool)
      | ModifyRemoteRef8 (RemoteRef Word8) (Expr Word8 -> Expr Word8)
      | ModifyRemoteRef16 (RemoteRef Word16) (Expr Word16 -> Expr Word16)
      | ModifyRemoteRef32 (RemoteRef Word32) (Expr Word32 -> Expr Word32)
+     | ModifyRemoteRefL8 (RemoteRef [Word8]) (Expr [Word8] -> Expr [Word8])
      | While (Expr Bool) (Arduino ())
      | IfThenElse (Expr Bool) (Arduino ()) (Arduino ())
      -- ToDo: add one wire and encoder procedures, readd stepper and servo
@@ -275,6 +277,9 @@ writeRemoteRef16 r e = Command $ WriteRemoteRef16 r e
 writeRemoteRef32 :: RemoteRef Word32 -> Expr Word32 -> Arduino ()
 writeRemoteRef32 r e = Command $ WriteRemoteRef32 r e
 
+writeRemoteRefL8 :: RemoteRef [Word8] -> Expr [Word8] -> Arduino ()
+writeRemoteRefL8 r e = Command $ WriteRemoteRefL8 r e
+
 modifyRemoteRefB :: RemoteRef Bool -> (Expr Bool -> Expr Bool) -> Arduino ()
 modifyRemoteRefB r f = Command $ ModifyRemoteRefB r f
 
@@ -286,6 +291,9 @@ modifyRemoteRef16 r f = Command $ ModifyRemoteRef16 r f
 
 modifyRemoteRef32 :: RemoteRef Word32 -> (Expr Word32 -> Expr Word32) -> Arduino ()
 modifyRemoteRef32 r f = Command $ ModifyRemoteRef32 r f
+
+modifyRemoteRefL8 :: RemoteRef [Word8] -> (Expr [Word8] -> Expr [Word8]) -> Arduino ()
+modifyRemoteRefL8 r f = Command $ ModifyRemoteRefL8 r f
 
 -- ToDo: Readd servo and stepper functions
 
@@ -319,6 +327,12 @@ instance RemoteReference Word32 where
     readRemoteRef = readRemoteRef32
     writeRemoteRef = writeRemoteRef32
     modifyRemoteRef = modifyRemoteRef32
+
+instance RemoteReference [Word8] where
+    newRemoteRef = newRemoteRefL8
+    readRemoteRef = readRemoteRefL8
+    writeRemoteRef = writeRemoteRefL8
+    modifyRemoteRef = modifyRemoteRefL8
 
 data Control =
       Loop (Arduino ())
@@ -368,6 +382,7 @@ data Procedure :: * -> * where
      ReadRemoteRef8  :: RemoteRef Word8  -> Procedure (Expr Word8)
      ReadRemoteRef16 :: RemoteRef Word16 -> Procedure (Expr Word16)
      ReadRemoteRef32 :: RemoteRef Word32 -> Procedure (Expr Word32)
+     ReadRemoteRefL8 :: RemoteRef [Word8] -> Procedure (Expr [Word8])
      -- The following are for supporting testing of the Haskino Firmware's
      -- interpreter.
      EvalB           :: Expr Bool  -> Procedure Bool
@@ -457,6 +472,9 @@ readRemoteRef16 n = Procedure $ ReadRemoteRef16 n
 readRemoteRef32 :: RemoteRef Word32 -> Arduino (Expr Word32)
 readRemoteRef32 n = Procedure $ ReadRemoteRef32 n
 
+readRemoteRefL8 :: RemoteRef [Word8] -> Arduino (Expr [Word8])
+readRemoteRefL8 n = Procedure $ ReadRemoteRefL8 n
+
 evalB :: Expr Bool -> Arduino Bool
 evalB e = Procedure $ EvalB e
 
@@ -474,6 +492,7 @@ data RemoteBinding :: * -> * where
      NewRemoteRef8    :: Expr Word8  -> RemoteBinding (RemoteRef Word8)
      NewRemoteRef16   :: Expr Word16 -> RemoteBinding (RemoteRef Word16)
      NewRemoteRef32   :: Expr Word32 -> RemoteBinding (RemoteRef Word32)
+     NewRemoteRefL8   :: Expr [Word8] -> RemoteBinding (RemoteRef [Word8])
 
 newRemoteRefB :: Expr Bool -> Arduino (RemoteRef Bool)
 newRemoteRefB n = RemoteBinding $ NewRemoteRefB n
@@ -486,6 +505,9 @@ newRemoteRef16 n = RemoteBinding $ NewRemoteRef16 n
 
 newRemoteRef32 :: Expr Word32 -> Arduino (RemoteRef Word32)
 newRemoteRef32 n = RemoteBinding $ NewRemoteRef32 n
+
+newRemoteRefL8 :: Expr [Word8] -> Arduino (RemoteRef [Word8])
+newRemoteRefL8 n = RemoteBinding $ NewRemoteRefL8 n
 
 -- | A response, as returned from the Arduino
 data Response = DelayResp
@@ -504,6 +526,7 @@ data Response = DelayResp
               | ReadRef8Reply Word8
               | ReadRef16Reply Word16
               | ReadRef32Reply Word32
+              | ReadRefL8Reply [Word8]
               | FailedNewRef
               | EvalBReply Bool
               | Eval8Reply Word8
@@ -587,6 +610,7 @@ data RefType = REF_BOOL
              | REF_WORD8
              | REF_WORD16
              | REF_WORD32
+             | REF_LIST8
             deriving Show
 
 -- | Compute the numeric value of a reference type
@@ -595,6 +619,7 @@ refTypeCmdVal REF_BOOL                  = 0x01
 refTypeCmdVal REF_WORD8                 = 0x02
 refTypeCmdVal REF_WORD16                = 0x03
 refTypeCmdVal REF_WORD32                = 0x04
+refTypeCmdVal REF_LIST8                 = 0x05
 
 -- | Firmware replies, see: 
 -- | https://github.com/ku-fpg/haskino/wiki/Haskino-Firmware-Protocol-Definition

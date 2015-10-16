@@ -39,14 +39,15 @@
 #define EXPR_TSTB 0x16
 #define EXPR_BIND 0x17
 #define EXPR_ELEM 0x18
-#define EXPR_CONS 0x19
-#define EXPR_APND 0x1A
-#define EXPR_PACK 0x1B
+#define EXPR_LEN  0x19
+#define EXPR_CONS 0x1A
+#define EXPR_APND 0x1B
+#define EXPR_PACK 0x1C
 
 bool evalBoolExpr(byte **ppExpr, CONTEXT *context);
 uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context);
 uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context);
 uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context);
-uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, byte bind);
+uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc);
 
 #endif /* HaskinoExprH */

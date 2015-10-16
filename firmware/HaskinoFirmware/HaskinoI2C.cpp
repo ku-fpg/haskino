@@ -74,9 +74,16 @@ static bool handleRead(int size, const byte *msg, CONTEXT *context)
 
 static bool handleWrite(int size, const byte *msg, CONTEXT *context)
     {
-    byte slaveAddress = msg[1];
-    const byte *data = &msg[2];
-    byte byteCount = size - 2;
+    byte *expr = (byte *) &msg[1];
+    byte slaveAddress = evalWord8Expr(&expr, context);
+    bool alloc;
+    byte *list = evalList8Expr(&expr, context, &alloc);
+    byte listSize = list[1];
+    const byte *data = &list[2];
+    byte byteCount = size;
+
+    if (byteCount > listSize)
+        byteCount = listSize;
 
     if (byteCount > 0)
         {
