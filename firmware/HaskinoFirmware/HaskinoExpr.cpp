@@ -104,6 +104,9 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
     uint8_t e1,e2;
     bool conditional;
     uint16_t thenSize, elseSize;
+    uint8_t *listMem;
+    bool alloc;
+    uint8_t index;
     int refNum;
     byte bind;
     byte *bindPtr;
@@ -220,6 +223,22 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
                 *ppExpr += thenSize;
                 val = evalWord8Expr(ppExpr, context);
                 }
+            break;
+        case EXPR_LEN:
+            listMem = evalList8Expr(ppExpr, context, &alloc);
+            val = listMem[1];
+            if (alloc)
+                free(listMem);
+            break;
+        case EXPR_ELEM:
+            index = evalWord8Expr(ppExpr, context);
+            listMem = evalList8Expr(ppExpr, context, &alloc);
+            if (index < listMem[1])
+                val = listMem[2+index];
+            else // ToDo: handle out of bound index
+                val = 0;
+            if (alloc)
+                free(listMem);
             break;
         default:
             sendStringf("Unknown ExOp %d", exprOp);

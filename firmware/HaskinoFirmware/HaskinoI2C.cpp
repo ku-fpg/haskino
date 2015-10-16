@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include "HaskinoComm.h"
 #include "HaskinoCommands.h"
+#include "HaskinoExpr.h"
 #include "HaskinoI2C.h"
 
 static bool handleConfig(int size, const byte *msg, CONTEXT *context);
