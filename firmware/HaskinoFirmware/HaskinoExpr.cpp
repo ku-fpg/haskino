@@ -518,6 +518,23 @@ uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context)
         return val;
     }
 
+void putBindListPtr(CONTEXT *context, byte bind, byte *newPtr)
+    {
+    byte *bindPtr;
+    byte *listPtr;
+
+    if (context->bind)
+        {
+        bindPtr = &context->bind[bind * BIND_SPACING];
+        memcpy(&listPtr, &bindPtr[1], sizeof(byte *));
+        if (listPtr)
+            free(listPtr);
+        else
+            memcpy(&bindPtr[1], &newPtr, sizeof(byte *));
+        bindPtr[0] = EXPR(EXPR_LIST8, EXPR_PTR);
+        }
+    }
+
 byte sizeList8Expr(byte **ppExpr, CONTEXT *context)
     {
     byte *pExpr = *ppExpr;
@@ -537,6 +554,9 @@ byte sizeList8Expr(byte **ppExpr, CONTEXT *context)
                 }
             *ppExpr += 2; // Use Cmd and Bind bytes
             break;
+        case EXPR_PTR:
+            memcpy(bindPtr, &pExpr[1], sizeof(byte *));
+            size = sizeList8Expr(&bindPtr, context);
         case EXPR_REF:
             refNum = pExpr[1];
             refPtr = readRefList8(refNum);
@@ -588,6 +608,9 @@ void evalList8SubExpr(byte **ppExpr, CONTEXT *context, byte *listMem, byte index
                 }
             *ppExpr += 2; // Use Cmd and Bind bytes
             break;
+        case EXPR_PTR:
+            memcpy(bindPtr, &pExpr[1], sizeof(byte *));
+            evalList8SubExpr(&bindPtr, context, listMem, index);
         case EXPR_REF:
             refNum = pExpr[1];
             refPtr = readRefList8(refNum);
@@ -623,14 +646,39 @@ uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc)
     {
     byte *pExpr = *ppExpr;
     byte exprOp = *pExpr & EXPR_OP_MASK;
-    byte *ppSizeExpr;
-    byte size;
-    byte *listMem;
+    byte *ppSizeExpr, *listMem, *bindPtr;
+    byte size, bind, refNum;
 
+    // If it is a literal, just return a pointer to the list
     if (exprOp == EXPR_LIT)
         {
         *alloc = false;
         listMem = pExpr;
+        }
+    // Same case with a binding
+    else if (exprOp == EXPR_BIND)
+        {
+        bind = pExpr[1];
+        // If not context or bind space, allocate an empty list
+        if (!context || !context->bind)
+            {
+            *alloc = true;
+            listMem = (byte *) malloc(2);
+            listMem[0] = EXPR(EXPR_LIST8, EXPR_LIT);
+            listMem[1] = 0;
+            }
+        else
+            {
+            *alloc = false;
+            bindPtr = &context->bind[bind * BIND_SPACING];
+            memcpy(&listMem, &bindPtr[1], sizeof(byte *));
+            }
+        }
+    else if (exprOp == EXPR_REF)
+        {
+        *alloc = false;
+        refNum = pExpr[1];
+        listMem = readRefList8(refNum);
         }
     else
         {

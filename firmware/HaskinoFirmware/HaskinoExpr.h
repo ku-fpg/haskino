@@ -43,11 +43,13 @@
 #define EXPR_CONS 0x1A
 #define EXPR_APND 0x1B
 #define EXPR_PACK 0x1C
+#define EXPR_PTR  0x1F
 
 bool evalBoolExpr(byte **ppExpr, CONTEXT *context);
 uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context);
 uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context);
 uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context);
 uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc);
+void putBindListPtr(CONTEXT *context, byte bind, byte *newPtr);
 
 #endif /* HaskinoExprH */

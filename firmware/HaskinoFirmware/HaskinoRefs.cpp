@@ -108,6 +108,31 @@ static int typeToSize(int type)
         }
     } 
 
+static void storeListRef(byte *expr, CONTEXT *context, byte refIndex)
+    {
+    bool alloc;
+    byte *lVal = evalList8Expr(&expr, context, &alloc);
+
+    if (haskinoRefs[refIndex].ref != NULL)
+        {
+        free(haskinoRefs[refIndex].ref);
+        haskinoRefs[refIndex].ref != NULL;
+        }
+
+    if (alloc)
+        haskinoRefs[refIndex].ref = lVal;
+    else
+        {
+        // Need to copy expression
+        byte *newLVal = (byte *) malloc(lVal[1]+2);
+        if (newLVal)
+            {
+            memcpy(newLVal, lVal, lVal[1]+2);
+            haskinoRefs[refIndex].ref = newLVal;
+            }
+        }    
+    }
+
 static bool handleNewRef(int type, int size, const byte *msg, CONTEXT *context)
     {
     byte bind = msg[2];
@@ -117,19 +142,26 @@ static bool handleNewRef(int type, int size, const byte *msg, CONTEXT *context)
     byte *expr = (byte *) &msg[4];
     void *memory;
     byte newReply[2];
+    byte *listMem;
+    bool alloc;
 
     // ToDo: Handle overflow of ref numbers
 
     if ((refIndex >= MAX_REFS) ||
-        ((memory = malloc(spaceNeeded)) == NULL))
+        (((type != EXPR_LIST8) && (memory = malloc(spaceNeeded)) == NULL)))
         {
         sendReply(0, REF_RESP_NEW, NULL, context, bind);
         }
     else
         {
-        if (haskinoRefs[refIndex].ref != NULL)
-            free(haskinoRefs[refIndex].ref);
-        haskinoRefs[refIndex].ref = memory;
+        if (type != EXPR_LIST8)
+            {
+            if (haskinoRefs[refIndex].ref != NULL)
+                {
+                free(haskinoRefs[refIndex].ref);
+                }
+            haskinoRefs[refIndex].ref = memory;
+            }
         haskinoRefs[refIndex].type = type;
         haskinoRefs[refIndex].len = count;
         switch (type)
@@ -146,8 +178,11 @@ static bool handleNewRef(int type, int size, const byte *msg, CONTEXT *context)
             case EXPR_WORD32:
                 *((uint32_t *) memory) = evalWord32Expr(&expr, context);
                 break;
+            case EXPR_LIST8:
+                storeListRef(expr, context, refIndex);
+                break;
             }
-        newReply[0] = EXPR(EXPR_WORD8, EXPR_LIT);
+        newReply[0] = EXPR(type, EXPR_LIT);
         newReply[1] = refIndex;
         sendReply(sizeof(byte)+1, REF_RESP_NEW, newReply, context, bind);
         }
@@ -160,10 +195,7 @@ static bool handleReadRef(int type, int size, const byte *msg, CONTEXT *context)
     byte *expr = (byte *) &msg[3];
     byte refIndex = evalWord8Expr(&expr, context);
     byte readReply[5];
-    bool bVal;
-    uint8_t w8Val;
-    uint16_t w16Val;
-    uint32_t w32Val;
+    byte *lVal;
 
     // ToDo:  Check for param errors
     switch (type)
@@ -188,6 +220,10 @@ static bool handleReadRef(int type, int size, const byte *msg, CONTEXT *context)
             memcpy(&readReply[1], (byte *) haskinoRefs[refIndex].ref, sizeof(uint32_t));
             sendReply(sizeof(uint32_t)+1, REF_RESP_READ, readReply, context, bind);
             break;
+        case EXPR_LIST8:
+            lVal = (byte *) haskinoRefs[refIndex].ref;
+            sendReply(lVal[1]+2, REF_RESP_READ, lVal, context, bind);
+            break;
         }
     return false;
     }
@@ -200,6 +236,8 @@ static bool handleWriteRef(int type, int size, const byte *msg, CONTEXT *context
     uint8_t w8Val;
     uint16_t w16Val;
     uint32_t w32Val;
+    byte *lVal;
+    bool alloc;
 
     // ToDo:  Check for param errors
 
@@ -220,6 +258,9 @@ static bool handleWriteRef(int type, int size, const byte *msg, CONTEXT *context
         case EXPR_WORD32:
             w32Val = evalWord32Expr(&expr, context);
             *((uint32_t *) haskinoRefs[refIndex].ref) = w32Val;
+            break;
+        case EXPR_LIST8:
+            storeListRef(expr, context, refIndex);
             break;
         }
     return false;

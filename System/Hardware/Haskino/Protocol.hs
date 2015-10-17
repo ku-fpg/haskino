@@ -361,7 +361,7 @@ unpackageResponse (cmdWord:args)
                                       -> ReadRef16Reply (bytesToWord16 (b1, b2))
       (REF_RESP_READ , [l,b1,b2,b3,b4]) | l == exprCmdVal EXPR_WORD32 EXPR_LIT
                                       -> ReadRef32Reply (bytesToWord32 (b1, b2, b3, b4))
-      (REF_RESP_READ , l:bs) | l == exprCmdVal EXPR_LIST8 EXPR_LIT
+      (REF_RESP_READ , l:_:bs) | l == exprCmdVal EXPR_LIST8 EXPR_LIT
                                       -> ReadRefL8Reply bs
       (REF_RESP_NEW , [l,w])          -> NewReply w
       (REF_RESP_NEW , [])             -> FailedNewRef

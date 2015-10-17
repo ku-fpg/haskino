@@ -96,7 +96,7 @@ static bool createById(byte id, unsigned int taskSize, unsigned int bindSize)
             {
             free(newTask);
             }
-        else if ((bind = (byte *) malloc(bindSize)) == NULL)
+        else if ((bind = (byte *) calloc(1,bindSize*BIND_SPACING)) == NULL)
             {
             free(newContext);
             free(newTask);

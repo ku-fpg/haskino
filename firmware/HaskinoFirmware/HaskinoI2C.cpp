@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include "HaskinoComm.h"
 #include "HaskinoCommands.h"
+#include "HaskinoConfig.h"
 #include "HaskinoExpr.h"
 #include "HaskinoI2C.h"
 
@@ -35,8 +36,10 @@ static bool handleConfig(int size, const byte *msg, CONTEXT *context)
 
 static bool handleRead(int size, const byte *msg, CONTEXT *context)
     {
-    byte slaveAddress = msg[1];
-    byte byteCount = msg[2];
+    byte bind = msg[1];
+    byte *expr = (byte *) &msg[1];
+    byte slaveAddress = evalWord8Expr(&expr, context);
+    byte byteCount = evalWord8Expr(&expr, context);
     int byteAvail;
 
     Wire.requestFrom((int) slaveAddress, (int) byteCount);
@@ -51,13 +54,17 @@ static bool handleRead(int size, const byte *msg, CONTEXT *context)
         sendStringf("I2C: Too few bytes received");
         }
 
-    if (context->bind)
+    if (context && context->bind)
         {
-        byte* local = context->bind;
+        byte* bindPtr = &context->bind[bind * BIND_SPACING];
+        byte* localMem = (byte *) malloc(byteAvail+2);
+        byte* local = localMem;
+
         for (int i = 0; i < byteAvail; i++)
             { 
             *local++ = Wire.read();
             }
+        putBindListPtr(context, bind, localMem);
         }
     else 
         {
@@ -94,5 +101,8 @@ static bool handleWrite(int size, const byte *msg, CONTEXT *context)
         delayMicroseconds(70);
         }
 
+    if (alloc)
+        free(list);
+    
     return false;
     }
