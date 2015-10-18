@@ -589,7 +589,7 @@ byte sizeList8Expr(byte **ppExpr, CONTEXT *context)
         return size;
     }
 
-void evalList8SubExpr(byte **ppExpr, CONTEXT *context, byte *listMem, byte index)
+int evalList8SubExpr(byte **ppExpr, CONTEXT *context, byte *listMem, byte index)
     {
     byte *pExpr = *ppExpr;
     byte exprOp = *pExpr & EXPR_OP_MASK;
@@ -604,17 +604,17 @@ void evalList8SubExpr(byte **ppExpr, CONTEXT *context, byte *listMem, byte index
             if (context->bind)
                 {
                 bindPtr = &context->bind[bind * BIND_SPACING];
-                evalList8SubExpr(&bindPtr, context, listMem, index);
+                size = evalList8SubExpr(&bindPtr, context, listMem, index);
                 }
             *ppExpr += 2; // Use Cmd and Bind bytes
             break;
         case EXPR_PTR:
             memcpy(bindPtr, &pExpr[1], sizeof(byte *));
-            evalList8SubExpr(&bindPtr, context, listMem, index);
+            size = evalList8SubExpr(&bindPtr, context, listMem, index);
         case EXPR_REF:
             refNum = pExpr[1];
             refPtr = readRefList8(refNum);
-            evalList8SubExpr(&refPtr, context, listMem, index);
+            size = evalList8SubExpr(&refPtr, context, listMem, index);
             *ppExpr += 2; // Use Cmd and Ref bytes
             break;
         case EXPR_LIT:
@@ -632,14 +632,15 @@ void evalList8SubExpr(byte **ppExpr, CONTEXT *context, byte *listMem, byte index
             break;
         case EXPR_APND:
             *ppExpr += 1; // Use command byte
-            evalList8SubExpr(ppExpr, context, listMem, index);
-            evalList8SubExpr(ppExpr, context, listMem, index + size);
+            size = evalList8SubExpr(ppExpr, context, listMem, index);
+            size += evalList8SubExpr(ppExpr, context, listMem, index + size);
             break;
         case EXPR_CONS:
             *ppExpr += 1; // Use command byte
             listMem[index] = evalWord8Expr(ppExpr, context);
-            evalList8SubExpr(ppExpr, context, listMem, index + 1);
+            size = evalList8SubExpr(ppExpr, context, listMem, index + 1) + 1;
         }
+    return size;
     }
 
 uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc)
