@@ -223,11 +223,11 @@ packageProcedure (ReadRemoteRef32 (RemoteRefW32 i)) ib = buildCommand REF_CMD_RE
 packageProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_LIST8, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
 
 packageRemoteBinding :: RemoteBinding a -> Int -> Int -> B.ByteString
-packageRemoteBinding (NewRemoteRefB e)  ix ib = buildCommand REF_CMD_NEW ([fromIntegral ib, refTypeCmdVal REF_BOOL, fromIntegral ix] ++ (packageExpr e))
-packageRemoteBinding (NewRemoteRef8 e)  ix ib = buildCommand REF_CMD_NEW ([fromIntegral ib, refTypeCmdVal REF_WORD8, fromIntegral ix] ++(packageExpr e))
-packageRemoteBinding (NewRemoteRef16 e) ix ib = buildCommand REF_CMD_NEW ([fromIntegral ib, refTypeCmdVal REF_WORD16, fromIntegral ix] ++ (packageExpr e))
-packageRemoteBinding (NewRemoteRef32 e) ix ib = buildCommand REF_CMD_NEW ([fromIntegral ib, refTypeCmdVal REF_WORD32, fromIntegral ix] ++ (packageExpr e))
-packageRemoteBinding (NewRemoteRefL8 e) ix ib = buildCommand REF_CMD_NEW ([fromIntegral ib, refTypeCmdVal REF_LIST8, fromIntegral ix] ++ (packageExpr e))
+packageRemoteBinding (NewRemoteRefB e)  ix ib = buildCommand REF_CMD_NEW ([refTypeCmdVal REF_BOOL, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
+packageRemoteBinding (NewRemoteRef8 e)  ix ib = buildCommand REF_CMD_NEW ([refTypeCmdVal REF_WORD8, fromIntegral ib, fromIntegral ix] ++(packageExpr e))
+packageRemoteBinding (NewRemoteRef16 e) ix ib = buildCommand REF_CMD_NEW ([refTypeCmdVal REF_WORD16, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
+packageRemoteBinding (NewRemoteRef32 e) ix ib = buildCommand REF_CMD_NEW ([refTypeCmdVal REF_WORD32, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
+packageRemoteBinding (NewRemoteRefL8 e) ix ib = buildCommand REF_CMD_NEW ([refTypeCmdVal REF_LIST8, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
 
 packageSubExpr :: Word8 -> Expr a -> [Word8]
 packageSubExpr ec e = ec : packageExpr e
