@@ -389,6 +389,7 @@ data Procedure :: * -> * where
      Eval8           :: Expr Word8 -> Procedure Word8
      Eval16          :: Expr Word16 -> Procedure Word16
      Eval32          :: Expr Word32 -> Procedure Word32
+     EvalL8          :: Expr [Word8] -> Procedure [Word8]
 
 deriving instance Show a => Show (Procedure a)
 
@@ -486,6 +487,9 @@ eval16 e = Procedure $ Eval16 e
 
 eval32 :: Expr Word32 -> Arduino Word32
 eval32 e = Procedure $ Eval32 e
+
+evalL8 :: Expr [Word8] -> Arduino [Word8]
+evalL8 e = Procedure $ EvalL8 e
 
 data RemoteBinding :: * -> * where
      NewRemoteRefB    :: Expr Bool   -> RemoteBinding (RemoteRef Bool)

@@ -216,6 +216,7 @@ packageProcedure (EvalB e) ib        = buildCommand EXP_CMD_EVAL (([fromIntegral
 packageProcedure (Eval8 e) ib        = buildCommand EXP_CMD_EVAL (([fromIntegral ib, refTypeCmdVal REF_WORD8] ++ (packageExpr e)))
 packageProcedure (Eval16 e) ib       = buildCommand EXP_CMD_EVAL (([fromIntegral ib, refTypeCmdVal REF_WORD16] ++ (packageExpr e)))
 packageProcedure (Eval32 e) ib       = buildCommand EXP_CMD_EVAL (([fromIntegral ib, refTypeCmdVal REF_WORD32] ++ (packageExpr e)))
+packageProcedure (EvalL8 e) ib       = buildCommand EXP_CMD_EVAL (([fromIntegral ib, refTypeCmdVal REF_LIST8] ++ (packageExpr e)))
 packageProcedure (ReadRemoteRefB (RemoteRefB i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_BOOL, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
 packageProcedure (ReadRemoteRef8 (RemoteRefW8 i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_WORD8, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
 packageProcedure (ReadRemoteRef16 (RemoteRefW16 i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_WORD16, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]

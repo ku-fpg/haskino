@@ -583,6 +583,7 @@ byte sizeList8Expr(byte **ppExpr, CONTEXT *context)
             *ppExpr += 1; // Use command byte
             evalWord8Expr(ppExpr, context);
             size = 1 + sizeList8Expr(ppExpr, context);
+            break;
         default:
             sendStringf("Unknown ExOp %d", exprOp);
         }
@@ -639,6 +640,9 @@ int evalList8SubExpr(byte **ppExpr, CONTEXT *context, byte *listMem, byte index)
             *ppExpr += 1; // Use command byte
             listMem[index] = evalWord8Expr(ppExpr, context);
             size = evalList8SubExpr(ppExpr, context, listMem, index + 1) + 1;
+            break;
+        default:
+            sendStringf("Unknown ExOp %d", exprOp);
         }
     return size;
     }
