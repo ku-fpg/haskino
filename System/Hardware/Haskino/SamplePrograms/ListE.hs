@@ -22,12 +22,10 @@ listE = withArduino True "/dev/cu.usbmodem1421" $ do
            let l1 = lit [1,2,3,4]
            let l2 = lit [5,6,7,8]
            x <- newRemoteRef (l1 ++* l2)
-           -- x <- newRemoteRef l1
            a <- readRemoteRef x
            y <- newRemoteRef (0 *: l1)
            modifyRemoteRef y (\x -> 42 *: x ++* (lit [13,13]))
            b <- readRemoteRef y
-           z <- newRemoteRef (b !!* 5)
+           z <- newRemoteRef (b !!* 6)
            c <- readRemoteRef z
-           zz <- newRemoteRef (2 *: b)
            return ()

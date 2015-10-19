@@ -87,7 +87,7 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                         val = (e32_1 < e32_2); 
                     break;
                 default:
-                    sendStringf("Unknown ExType %d", exprType);
+                    sendStringf("evalBoolExpr Unknown ExType %d", exprType);
                 }
             break;
         default:
@@ -661,6 +661,7 @@ uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc)
         {
         *alloc = false;
         listMem = pExpr;
+        *ppExpr += 2 + listMem[1]; // Use command byte, length byte, and list
         }
     // Same case with a binding
     else if (exprOp == EXPR_BIND)
@@ -680,12 +681,14 @@ uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc)
             bindPtr = &context->bind[bind * BIND_SPACING];
             memcpy(&listMem, &bindPtr[1], sizeof(byte *));
             }
+        *ppExpr += 2; // Use command byte, byte byte
         }
     else if (exprOp == EXPR_REF)
         {
         *alloc = false;
         refNum = pExpr[1];
         listMem = readRefList8(refNum);
+        *ppExpr += 2; // Use command byte, byte byte
         }
     else
         {

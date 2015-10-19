@@ -415,4 +415,5 @@ parseQueryResult (Procedure (EvalB _)) (EvalBReply r) = Just $ r
 parseQueryResult (Procedure (Eval8 _)) (Eval8Reply r) = Just $ r
 parseQueryResult (Procedure (Eval16 _)) (Eval16Reply r) = Just $ r
 parseQueryResult (Procedure (Eval32 _)) (Eval32Reply r) = Just $ r
+parseQueryResult (Procedure (EvalL8 _)) (EvalL8Reply r) = Just $ r
 parseQueryResult q r = Nothing

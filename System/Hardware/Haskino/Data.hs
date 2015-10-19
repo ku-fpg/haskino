@@ -536,6 +536,7 @@ data Response = DelayResp
               | Eval8Reply Word8
               | Eval16Reply Word16
               | Eval32Reply Word32
+              | EvalL8Reply [Word8]
               | Unimplemented (Maybe String) [Word8] -- ^ Represents messages currently unsupported
               | EmptyFrame
               | InvalidChecksumFrame [Word8]
