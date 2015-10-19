@@ -10,9 +10,11 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
     byte exprOp = *pExpr & EXPR_OP_MASK;
     bool val = false;
     int refNum;
-    uint8_t e8_1,e8_2;
+    uint8_t e8_1,e8_2,l1len,l2len;
     uint16_t e16_1,e16_2;
     uint32_t e32_1,e32_2;
+    uint8_t *l1, *l2;
+    bool alloc1, alloc2;
     byte exprType;
     byte bind;
     byte *bindPtr;
@@ -85,6 +87,51 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                         val = (e32_1 == e32_2);
                     else 
                         val = (e32_1 < e32_2); 
+                    break;
+                case EXPR_LIST8:
+                    l1 = evalList8Expr(ppExpr, context, &alloc1);
+                    l2 = evalList8Expr(ppExpr, context, &alloc2);
+                    l1len = l1[1];
+                    l2len = l2[1];
+                    if (exprOp == EXPR_EQ)
+                        {
+                        if (l1len != l2len)
+                            val = false;
+                        else 
+                            {
+                            val = true;
+                            for (int i=0;i<l1len;i++)
+                                {
+                                if (l1[2+i] != l2[2+i])
+                                    {
+                                    val = false;
+                                    break;
+                                    }
+                                }
+                            }
+                        }
+                    else
+                        {
+                        val = false;
+                        for (int i=0;i<l1len;i++)
+                            {
+                            if (l2len < i)
+                                break;
+                            if (l1[2+i] < l2[2+i])
+                                {
+                                val = true;
+                                break;
+                                }
+                            else if (l1[2+i] > l2[2+i])
+                                break;
+                            }
+                            if (l2len > l1len)
+                                val = true;
+                        }
+                    if (alloc1)
+                        free(l1);
+                    if (alloc2)
+                        free(l2);
                     break;
                 default:
                     sendStringf("evalBoolExpr Unknown ExType %d", exprType);
@@ -557,7 +604,7 @@ byte sizeList8Expr(byte **ppExpr, CONTEXT *context)
             *ppExpr += 2; // Use Cmd and Bind bytes
             break;
         case EXPR_PTR:
-            memcpy(bindPtr, &pExpr[1], sizeof(byte *));
+            memcpy(bindPtr, &pExpr[1], 4);
             size = sizeList8Expr(&bindPtr, context);
         case EXPR_REF:
             refNum = pExpr[1];
@@ -612,7 +659,7 @@ int evalList8SubExpr(byte **ppExpr, CONTEXT *context, byte *listMem, byte index)
             *ppExpr += 2; // Use Cmd and Bind bytes
             break;
         case EXPR_PTR:
-            memcpy(bindPtr, &pExpr[1], sizeof(byte *));
+            memcpy(bindPtr, &pExpr[1], 4);
             size = evalList8SubExpr(&bindPtr, context, listMem, index);
         case EXPR_REF:
             refNum = pExpr[1];
@@ -689,6 +736,26 @@ uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc)
         refNum = pExpr[1];
         listMem = readRefList8(refNum);
         *ppExpr += 2; // Use command byte, byte byte
+        }
+    else if (exprOp == EXPR_IF)
+        {
+        uint16_t thenSize, elseSize;
+        bool conditional;
+
+        memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
+        memcpy((byte *) &elseSize, &pExpr[3], sizeof(uint16_t));
+        *ppExpr += 1 + 2*sizeof(uint16_t); // Use Cmd and Value bytes
+        conditional = evalBoolExpr(ppExpr, context);
+        if (conditional)
+            {
+            listMem = evalList8Expr(ppExpr, context, alloc);
+            *ppExpr += elseSize;
+            }
+        else
+            {
+            *ppExpr += thenSize;
+            listMem = evalList8Expr(ppExpr, context, alloc);
+            }
         }
     else
         {

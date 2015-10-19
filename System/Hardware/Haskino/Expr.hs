@@ -109,6 +109,9 @@ data Expr a where
   ConsList8 :: Expr Word8   -> Expr [Word8] -> Expr [Word8]
   ApndList8 :: Expr [Word8] -> Expr [Word8] -> Expr [Word8]
   PackList8 :: [Expr Word8] -> Expr [Word8]
+  EqL8      :: Expr [Word8] -> Expr [Word8] -> Expr Bool
+  LessL8    :: Expr [Word8] -> Expr [Word8] -> Expr Bool
+  IfL8      :: Expr Bool  -> Expr [Word8] -> Expr [Word8] -> Expr [Word8]
 
 deriving instance Show a => Show (Expr a)
 
@@ -286,6 +289,17 @@ instance BB.BitsB (Expr Word32) where
   setBit = SetB32
   clearBit = ClrB32
 --  testBit = (\x i -> x .&. bit i ==* bit i)
+
+type instance BooleanOf (Expr [Word8]) = Expr Bool
+
+instance B.EqB (Expr [Word8]) where
+  (==*) = EqL8
+
+instance B.OrdB (Expr [Word8]) where
+  (<*) = LessL8
+
+instance B.IfB (Expr [Word8]) where
+  ifB = IfL8
 
 infixl 9 !!*
 infixl 5 *:, ++*
