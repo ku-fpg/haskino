@@ -37,7 +37,7 @@ static bool handleConfig(int size, const byte *msg, CONTEXT *context)
 static bool handleRead(int size, const byte *msg, CONTEXT *context)
     {
     byte bind = msg[1];
-    byte *expr = (byte *) &msg[1];
+    byte *expr = (byte *) &msg[2];
     byte slaveAddress = evalWord8Expr(&expr, context);
     byte byteCount = evalWord8Expr(&expr, context);
     int byteAvail;
@@ -103,6 +103,6 @@ static bool handleWrite(int size, const byte *msg, CONTEXT *context)
 
     if (alloc)
         free(list);
-    
+
     return false;
     }

@@ -373,8 +373,8 @@ data Procedure :: * -> * where
      AnalogReadE    :: PinE -> Procedure (Expr Word16)          
      I2CRead :: SlaveAddress -> Word8 -> Procedure [Word8]
      I2CReadE :: SlaveAddressE -> Expr Word8 -> Procedure (Expr [Word8])
-     QueryAllTasks :: Procedure [TaskID]
--- ToDo: E version of QueryAllTasks, handle Expr [Word8]
+     QueryAllTasks  :: Procedure [TaskID]
+     QueryAllTasksE :: Procedure (Expr [TaskID])
      QueryTask  :: TaskID -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
      QueryTaskE :: TaskIDE -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
      -- Todo: add one wire queries, readd pulse?
@@ -454,6 +454,9 @@ i2cReadE sa cnt = Procedure $ I2CReadE sa cnt
 
 queryAllTasks :: Arduino [TaskID]
 queryAllTasks = Procedure QueryAllTasks
+
+queryAllTasksE :: Arduino (Expr [TaskID])
+queryAllTasksE = Procedure QueryAllTasksE
 
 queryTask :: TaskID -> Arduino (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
 queryTask tid = Procedure $ QueryTask tid

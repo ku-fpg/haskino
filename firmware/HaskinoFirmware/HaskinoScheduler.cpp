@@ -219,6 +219,7 @@ static bool handleQuery(int size, const byte *msg, CONTEXT *context)
 
 static bool handleQueryAll(int size, const byte *msg, CONTEXT *context)
     {
+    byte bind = msg[1];
     TASK *task = firstTask;
 
     if (context->task)
