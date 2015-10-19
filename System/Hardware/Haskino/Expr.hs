@@ -287,6 +287,9 @@ instance BB.BitsB (Expr Word32) where
   clearBit = ClrB32
 --  testBit = (\x i -> x .&. bit i ==* bit i)
 
+infixl 9 !!*
+infixl 5 *:, ++*
+
 (!!*) :: Expr [Word8] -> Expr Word8 -> Expr Word8
 (!!*) l i = ElemList8 l i
 
@@ -295,6 +298,10 @@ instance BB.BitsB (Expr Word32) where
 
 (++*) :: Expr [Word8] -> Expr [Word8] -> Expr [Word8]
 (++*) l1 l2 = ApndList8 l1 l2
+
+-- ToDo: overload length
+len :: Expr [Word8] -> Expr Word8
+len l = LenList8 l
 
 -- | Haskino Firmware expresions, see:tbd 
 data ExprType = EXPR_BOOL
