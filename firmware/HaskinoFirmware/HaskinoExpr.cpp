@@ -91,7 +91,7 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                 }
             break;
         default:
-            sendStringf("Unknown ExOp %d", exprOp);
+            sendStringf("evalBoolExpr Unknown ExOp %d", exprOp);
         }
         return val;
     }
@@ -225,14 +225,16 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
                 }
             break;
         case EXPR_LEN:
+            *ppExpr += 1; // Use command byte
             listMem = evalList8Expr(ppExpr, context, &alloc);
             val = listMem[1];
             if (alloc)
                 free(listMem);
             break;
         case EXPR_ELEM:
-            index = evalWord8Expr(ppExpr, context);
+            *ppExpr += 1; // Use command byte
             listMem = evalList8Expr(ppExpr, context, &alloc);
+            index = evalWord8Expr(ppExpr, context);
             if (index < listMem[1])
                 val = listMem[2+index];
             else // ToDo: handle out of bound index
@@ -241,7 +243,7 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
                 free(listMem);
             break;
         default:
-            sendStringf("Unknown ExOp %d", exprOp);
+            sendStringf("evalWord8Expr Unknown ExOp %d", exprOp);
         }
         return val;
     }
@@ -377,7 +379,7 @@ uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context)
             val = bit(e1);
             break;
         default:
-            sendStringf("Unknown ExOp %d", exprOp);
+            sendStringf("evalWord16Expr Unknown ExOp %d", exprOp);
         }
         return val;
     }
@@ -513,7 +515,7 @@ uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context)
             val = bit(e1);
             break;
         default:
-            sendStringf("Unknown ExOp %d", exprOp);
+            sendStringf("evalWord32Expr Unknown ExOp %d", exprOp);
         }
         return val;
     }
@@ -585,7 +587,7 @@ byte sizeList8Expr(byte **ppExpr, CONTEXT *context)
             size = 1 + sizeList8Expr(ppExpr, context);
             break;
         default:
-            sendStringf("Unknown ExOp %d", exprOp);
+            sendStringf("sizeList8Expr Unknown ExOp %d", exprOp);
         }
         return size;
     }
@@ -642,7 +644,7 @@ int evalList8SubExpr(byte **ppExpr, CONTEXT *context, byte *listMem, byte index)
             size = evalList8SubExpr(ppExpr, context, listMem, index + 1) + 1;
             break;
         default:
-            sendStringf("Unknown ExOp %d", exprOp);
+            sendStringf("evalList8SubExpr Unknown ExOp %d", exprOp);
         }
     return size;
     }

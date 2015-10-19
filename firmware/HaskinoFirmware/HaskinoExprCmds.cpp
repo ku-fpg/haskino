@@ -29,6 +29,8 @@ static bool handleEval(int type, int size, const byte *msg, CONTEXT *context)
     uint8_t word8Result;
     uint16_t word16Result;
     uint32_t word32Result;
+    uint8_t *listMem;
+    bool alloc;
 
     switch (type)
         {
@@ -55,6 +57,12 @@ static bool handleEval(int type, int size, const byte *msg, CONTEXT *context)
             word32Result = evalWord32Expr(&expr, context);
             memcpy(&reply[1], &word16Result, sizeof(word16Result));
             sendReply(1+sizeof(uint32_t), EXP_RESP_EVAL, (const byte *) &reply, NULL, 0);
+            break;
+        case EXPR_LIST8:
+            listMem = evalList8Expr(&expr, context, &alloc);
+            sendReply(listMem[1], EXP_RESP_EVAL, listMem, NULL, 0);
+            if (alloc)
+                free(listMem);
             break;
         }
         

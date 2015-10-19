@@ -29,4 +29,5 @@ listE = withArduino True "/dev/cu.usbmodem1421" $ do
            b <- readRemoteRef y
            z <- newRemoteRef (b !!* 5)
            c <- readRemoteRef z
+           zz <- newRemoteRef (2 *: b)
            return ()
