@@ -346,8 +346,8 @@ unpackageResponse (cmdWord:args)
       (BS_RESP_STRING, rest)            -> StringMessage (getString rest)
       (DIG_RESP_READ_PIN, [l,b])        -> DigitalReply b
       (ALG_RESP_READ_PIN, [l,bl,bh])    -> AnalogReply (bytesToWord16 (bl,bh))
-      (I2C_RESP_READ, xs)               -> I2CReply xs
-      (SCHED_RESP_QUERY_ALL, ts)        -> QueryAllTasksReply ts
+      (I2C_RESP_READ, _:_:xs)           -> I2CReply xs
+      (SCHED_RESP_QUERY_ALL, _:_:ts)    -> QueryAllTasksReply ts
       (SCHED_RESP_QUERY, ts) | length ts == 0 -> 
           QueryTaskReply Nothing
       (SCHED_RESP_QUERY, ts) | length ts >= 9 -> 

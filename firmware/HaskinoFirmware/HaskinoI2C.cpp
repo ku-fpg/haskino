@@ -40,6 +40,7 @@ static bool handleRead(int size, const byte *msg, CONTEXT *context)
     byte *expr = (byte *) &msg[2];
     byte slaveAddress = evalWord8Expr(&expr, context);
     byte byteCount = evalWord8Expr(&expr, context);
+    byte *localMem, *local;
     int byteAvail;
 
     Wire.requestFrom((int) slaveAddress, (int) byteCount);
@@ -54,28 +55,25 @@ static bool handleRead(int size, const byte *msg, CONTEXT *context)
         sendStringf("I2C: Too few bytes received");
         }
 
+    localMem = (byte *) malloc(byteAvail+2);
+    local = &localMem[2];
+
+    localMem[0] = EXPR(EXPR_LIST8, EXPR_LIT);
+    localMem[1] = byteAvail;
+
+    for (int i = 0; i < byteAvail; i++)
+        { 
+        *local++ = Wire.read();
+        }
+
     if (context && context->bind)
         {
-        byte* bindPtr = &context->bind[bind * BIND_SPACING];
-        byte* localMem = (byte *) malloc(byteAvail+2);
-        byte* local = localMem;
-
-        for (int i = 0; i < byteAvail; i++)
-            { 
-            *local++ = Wire.read();
-            }
         putBindListPtr(context, bind, localMem);
         }
     else 
         {
-        startReplyFrame(I2C_RESP_READ);
-
-        for (int i = 0; i < byteAvail; i++) 
-            {
-            sendReplyByte(Wire.read());
-            }
-
-        endReplyFrame();    
+        sendReply(byteAvail+2, I2C_RESP_READ, localMem, context, bind);
+        free(localMem);    
         }
     return false;
     }

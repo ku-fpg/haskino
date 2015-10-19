@@ -45,7 +45,7 @@ scheduledBlinkE = withArduino True "/dev/cu.usbmodem1421" $ do
     createTaskE tid (myTask led)
     -- Schedule the task to start in 5 seconds
     scheduleTaskE tid startDelay
-    tasks <- queryAllTasks
+    tasks <- queryAllTasksE
     liftIO $ print tasks
     -- Query to confirm task creation
     task <- queryTaskE tid
@@ -56,6 +56,6 @@ scheduledBlinkE = withArduino True "/dev/cu.usbmodem1421" $ do
     liftIO $ print "Delaying 10500 milliseconds"
     liftIO $ threadDelay (progDelay * 1000)
     deleteTaskE tid
-    tasks <- queryAllTasks
+    tasks <- queryAllTasksE
     liftIO $ print tasks
 

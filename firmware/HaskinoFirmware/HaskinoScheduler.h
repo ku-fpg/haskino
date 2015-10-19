@@ -29,6 +29,7 @@ CONTEXT *schedulerDefaultContext();
 void schedulerBootTask();
 void schedulerRunTasks();
 bool isRunningTask();
+int getTaskCount();
 void delayRunningTask(unsigned long ms);
 
 #endif /* HaskinoSchedulerH */

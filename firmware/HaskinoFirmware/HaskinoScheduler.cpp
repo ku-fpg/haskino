@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <EEPROM.h>
+#include "HaskinoCodeBlock.h"
 #include "HaskinoComm.h"
 #include "HaskinoCommands.h"
 #include "HaskinoConfig.h"
@@ -19,13 +20,19 @@ static bool handleReset(int size, const byte *msg, CONTEXT *context);
 static bool handleBootTask(int size, const byte *msg, CONTEXT *context);
 static void deleteTask(TASK* task);
 static TASK *findTask(int id);
-static bool createById(byte id, unsigned int taskSize);
+static bool createById(byte id, unsigned int taskSize, unsigned int bindSize);
 static bool scheduleById(byte id, unsigned long deltaMillis);
 static bool executeTask(TASK *task);
 
 static TASK *firstTask = NULL;
 static TASK *runningTask = NULL;
 static CONTEXT *defaultContext = NULL;
+static int taskCount = 0;
+
+int getTaskCount()
+    {
+    return taskCount;
+    }
 
 bool parseSchedulerMessage(int size, const byte *msg, CONTEXT *context)
     {
@@ -117,6 +124,8 @@ static bool createById(byte id, unsigned int taskSize, unsigned int bindSize)
             newContext->bind = bind;
             }
         }
+    taskCount++;
+
     return false;
     }
 
@@ -138,6 +147,7 @@ static void deleteTask(TASK* task)
         firstTask = task->next;
     if (task->next != NULL)
         task->next->prev = task->prev;
+    taskCount--;
     free(task);
     }
 
@@ -221,26 +231,36 @@ static bool handleQueryAll(int size, const byte *msg, CONTEXT *context)
     {
     byte bind = msg[1];
     TASK *task = firstTask;
+    int taskCount = getTaskCount();
+    byte* localMem = (byte *) malloc(taskCount+2);
+    byte* local = &localMem[2];
+    int i = 0;
 
-    if (context->task)
+    if (!localMem)
         {
-        while(task != NULL)
-            {
-            *context->bind = task->id;
-            task = task->next;
-// ToDo Limit task reponse size??
-            }
+        sendStringf("handleQueryAll - malloc error");
+        return false;
+        }
+
+    localMem[0] = EXPR(EXPR_LIST8, EXPR_LIT);
+
+    while(task != NULL && i < taskCount)
+        {
+        *local++ = task->id;
+        task = task->next;
+        i++;
+        }
+
+    localMem[1] = i;
+
+    if (isCodeBlock() || context->task)
+        {
+        putBindListPtr(context, bind, localMem);
         }
     else
         {
-        startReplyFrame(SCHED_RESP_QUERY_ALL);
-
-        while(task != NULL)
-            {
-            sendReplyByte(task->id);
-            task = task->next;
-            }
-        endReplyFrame();    
+        sendReply(i+2, SCHED_RESP_QUERY_ALL, localMem, context, bind);
+        free(localMem);    
         }
     return false;
     }
