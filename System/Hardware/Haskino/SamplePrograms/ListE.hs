@@ -13,7 +13,7 @@ module System.Hardware.Haskino.SamplePrograms.ListE where
 
 import Control.Monad.Trans (liftIO)
 import Data.Word
-import Data.Boolean.Bits
+import Data.Boolean
 import System.Hardware.Haskino
 -- import Data.Boolean
 
@@ -30,4 +30,6 @@ listE = withArduino True "/dev/cu.usbmodem1421" $ do
            c <- readRemoteRef z
            zz <- newRemoteRef (len b)
            d <- readRemoteRef zz
+           yy <- newRemoteRef (l1 ==* l2)
+           e <- readRemoteRef yy
            return ()
