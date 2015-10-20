@@ -29,6 +29,7 @@ data RemoteRef a where
 deriving instance Show a => Show (RemoteRef a)
 
 data Expr a where
+  LitU      :: () -> Expr ()
   LitB      :: Bool -> Expr Bool
   Lit8      :: Word8 -> Expr Word8
   Lit16     :: Word16 -> Expr Word16
@@ -316,6 +317,9 @@ infixl 5 *:, ++*
 -- ToDo: overload length
 len :: Expr [Word8] -> Expr Word8
 len l = LenList8 l
+
+pack :: [Expr Word8] -> Expr [Word8]
+pack l = PackList8 l
 
 -- | Haskino Firmware expresions, see:tbd 
 data ExprType = EXPR_BOOL
