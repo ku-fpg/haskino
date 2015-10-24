@@ -182,7 +182,12 @@ data Command =
      | ModifyRemoteRef16 (RemoteRef Word16) (Expr Word16 -> Expr Word16)
      | ModifyRemoteRef32 (RemoteRef Word32) (Expr Word32 -> Expr Word32)
      | ModifyRemoteRefL8 (RemoteRef [Word8]) (Expr [Word8] -> Expr [Word8])
-     | While (Expr Bool) (Arduino ())
+     | WhileRemoteRefB (RemoteRef Bool) (Expr Bool -> Expr Bool) (Arduino ())
+     | WhileRemoteRef8 (RemoteRef Word8) (Expr Word8 -> Expr Bool) (Arduino ())
+     | WhileRemoteRef16 (RemoteRef Word16) (Expr Word16 -> Expr Bool) (Arduino ())
+     | WhileRemoteRef32 (RemoteRef Word32) (Expr Word32 -> Expr Bool) (Arduino ())
+     | WhileRemoteRefL8 (RemoteRef [Word8]) (Expr [Word8] -> Expr Bool) (Arduino ())
+     | LoopE (Arduino ())
      | IfThenElse (Expr Bool) (Arduino ()) (Arduino ())
      -- ToDo: add one wire and encoder procedures, readd stepper and servo
 
@@ -259,8 +264,8 @@ scheduleReset = Command ScheduleReset
 bootTaskE :: TaskIDE -> Arduino ()
 bootTaskE tid = Command $ BootTaskE tid
 
-while :: Expr Bool -> Arduino () -> Arduino()
-while be ps = Command $ While be ps
+loopE :: Arduino () -> Arduino()
+loopE ps = Command $ LoopE ps
 
 ifThenElse :: Expr Bool -> Arduino () -> Arduino() -> Arduino()
 ifThenElse be tps eps = Command $ IfThenElse be tps eps
@@ -295,6 +300,21 @@ modifyRemoteRef32 r f = Command $ ModifyRemoteRef32 r f
 modifyRemoteRefL8 :: RemoteRef [Word8] -> (Expr [Word8] -> Expr [Word8]) -> Arduino ()
 modifyRemoteRefL8 r f = Command $ ModifyRemoteRefL8 r f
 
+whileRemoteRefB :: RemoteRef Bool -> (Expr Bool -> Expr Bool) -> Arduino () -> Arduino ()
+whileRemoteRefB r f cb  = Command $ WhileRemoteRefB r f cb
+
+whileRemoteRef8 :: RemoteRef Word8 -> (Expr Word8 -> Expr Bool) -> Arduino () -> Arduino ()
+whileRemoteRef8 r f cb = Command $ WhileRemoteRef8 r f cb
+
+whileRemoteRef16 :: RemoteRef Word16 -> (Expr Word16 -> Expr Bool) -> Arduino () -> Arduino ()
+whileRemoteRef16 r f cb = Command $ WhileRemoteRef16 r f cb
+
+whileRemoteRef32 :: RemoteRef Word32 -> (Expr Word32 -> Expr Bool) -> Arduino () -> Arduino ()
+whileRemoteRef32 r f cb = Command $ WhileRemoteRef32 r f cb
+
+whileRemoteRefL8 :: RemoteRef [Word8] -> (Expr [Word8] -> Expr Bool) -> Arduino () -> Arduino ()
+whileRemoteRefL8 r f cb = Command $ WhileRemoteRefL8 r f cb
+
 -- ToDo: Readd servo and stepper functions
 
 class RemoteReference a where
@@ -303,36 +323,43 @@ class RemoteReference a where
     writeRemoteRef        :: RemoteRef a -> Expr a -> Arduino ()
     modifyRemoteRef       :: RemoteRef a -> (Expr a -> Expr a) -> 
                              Arduino ()
+    while                 :: RemoteRef a -> (Expr a -> Expr Bool) -> 
+                             Arduino () -> Arduino ()
 
 instance RemoteReference Bool where
     newRemoteRef = newRemoteRefB
     readRemoteRef = readRemoteRefB
     writeRemoteRef = writeRemoteRefB
     modifyRemoteRef = modifyRemoteRefB
+    while = whileRemoteRefB
 
 instance RemoteReference Word8 where
     newRemoteRef = newRemoteRef8
     readRemoteRef = readRemoteRef8
     writeRemoteRef = writeRemoteRef8
     modifyRemoteRef = modifyRemoteRef8
+    while = whileRemoteRef8
 
 instance RemoteReference Word16 where
     newRemoteRef = newRemoteRef16
     readRemoteRef = readRemoteRef16
     writeRemoteRef = writeRemoteRef16
     modifyRemoteRef = modifyRemoteRef16
+    while = whileRemoteRef16
 
 instance RemoteReference Word32 where
     newRemoteRef = newRemoteRef32
     readRemoteRef = readRemoteRef32
     writeRemoteRef = writeRemoteRef32
     modifyRemoteRef = modifyRemoteRef32
+    while = whileRemoteRef32
 
 instance RemoteReference [Word8] where
     newRemoteRef = newRemoteRefL8
     readRemoteRef = readRemoteRefL8
     writeRemoteRef = writeRemoteRefL8
     modifyRemoteRef = modifyRemoteRefL8
+    while = whileRemoteRefL8
 
 data Control =
       Loop (Arduino ())
@@ -551,6 +578,7 @@ data FirmwareCmd = BC_CMD_SYSTEM_RESET
                  | BC_CMD_SET_PIN_MODE
                  | BC_CMD_DELAY_MILLIS
                  | BC_CMD_DELAY_MICROS
+                 | BC_CMD_LOOP
                  | BC_CMD_WHILE
                  | BC_CMD_IF_THEN_ELSE
                  | BS_CMD_REQUEST_VERSION
@@ -588,6 +616,7 @@ firmwareCmdVal BC_CMD_DELAY_MILLIS      = 0x12
 firmwareCmdVal BC_CMD_DELAY_MICROS      = 0x13
 firmwareCmdVal BC_CMD_WHILE             = 0x14
 firmwareCmdVal BC_CMD_IF_THEN_ELSE      = 0x15
+firmwareCmdVal BC_CMD_LOOP              = 0x16
 firmwareCmdVal BS_CMD_REQUEST_VERSION   = 0x20
 firmwareCmdVal BS_CMD_REQUEST_TYPE      = 0x21
 firmwareCmdVal BS_CMD_REQUEST_MILLIS    = 0x22

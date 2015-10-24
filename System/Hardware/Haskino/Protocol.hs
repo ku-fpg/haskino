@@ -107,8 +107,28 @@ packageCommand (ModifyRemoteRef32 (RemoteRefW32 i) f) ix _ =
 packageCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) ix _ =
     (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_LIST8, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefList8 i))), ix)
 -- ToDo: Do we need to check maximum frame size on conditionals?
-packageCommand (While e cb) ix ib =
-    (buildCommand BC_CMD_WHILE ((packageExpr e) ++ (B.unpack pc)), ix')
+packageCommand (WhileRemoteRefB (RemoteRefB i) f cb) ix ib =
+    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefB i)) ++ (B.unpack pc)), ix')
+  where
+    (pc, ix', _) = packageCodeBlock cb ix ib
+packageCommand (WhileRemoteRef8 (RemoteRefW8 i) f cb) ix ib =
+    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (Ref8 i)) ++ (B.unpack pc)), ix')
+  where
+    (pc, ix', _) = packageCodeBlock cb ix ib
+packageCommand (WhileRemoteRef16 (RemoteRefW16 i) f cb) ix ib =
+    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (Ref16 i)) ++ (B.unpack pc)), ix')
+  where
+    (pc, ix', _) = packageCodeBlock cb ix ib
+packageCommand (WhileRemoteRef32 (RemoteRefW32 i) f cb) ix ib =
+    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (Ref32 i)) ++ (B.unpack pc)), ix')
+  where
+    (pc, ix', _) = packageCodeBlock cb ix ib
+packageCommand (WhileRemoteRefL8 (RemoteRefL8 i) f cb) ix ib =
+    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefList8 i)) ++ (B.unpack pc)), ix')
+  where
+    (pc, ix', _) = packageCodeBlock cb ix ib
+packageCommand (LoopE cb) ix ib =
+    (buildCommand BC_CMD_LOOP (B.unpack pc), ix')
   where
     (pc, ix', _) = packageCodeBlock cb ix ib
 packageCommand (IfThenElse e cb1 cb2) ix ib =

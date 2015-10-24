@@ -22,7 +22,7 @@ blinkE = withArduino True "/dev/cu.usbmodem1421" $ do
            let led = 13
            let delay = 1000
            setPinModeE led OUTPUT
-           while true $ do digitalWriteE led true
-                           delayMillisE delay
-                           digitalWriteE led false
-                           delayMillisE delay
+           loopE $ do digitalWriteE led true
+                      delayMillisE delay
+                      digitalWriteE led false
+                      delayMillisE delay

@@ -6,6 +6,7 @@
 #include "HaskinoConfig.h"
 #include "HaskinoExpr.h"
 #include "HaskinoFirmware.h"
+#include "HaskinoRefs.h"
 #include "HaskinoScheduler.h"
 #include "SoftReset.h"
 
@@ -13,6 +14,7 @@ static bool handleSystemReset(int size, const byte *msg, CONTEXT *context);
 static bool handleSetPinMode(int size, const byte *msg, CONTEXT *context);
 static bool handleDelayMillis(int size, const byte *msg, CONTEXT *context);
 static bool handleDelayMicros(int size, const byte *msg, CONTEXT *context);
+static bool handleLoop(int size, const byte *msg, CONTEXT *context);
 static bool handleWhile(int size, const byte *msg, CONTEXT *context);
 static bool handleIfThenElse(int size, const byte *msg, CONTEXT *context);
 
@@ -31,6 +33,9 @@ bool parseBoardControlMessage(int size, const byte *msg, CONTEXT *context)
             break;
         case BC_CMD_DELAY_MICROS:
             return handleDelayMicros(size, msg, context);
+            break;
+        case BC_CMD_LOOP:
+            return handleLoop(size, msg, context);
             break;
         case BC_CMD_WHILE:
             return handleWhile(size, msg, context);
@@ -88,9 +93,25 @@ static bool handleSystemReset(int size, const byte *msg, CONTEXT *context)
     return false;
     }
 
-static bool handleWhile(int size, const byte *msg, CONTEXT *context)
+static bool handleLoop(int size, const byte *msg, CONTEXT *context)
     {
     byte *expr = (byte *) &msg[1];
+    byte *codeBlock = expr;
+    int loopSize = size - (expr - msg);
+
+    while (true)
+        {
+        runCodeBlock(loopSize, codeBlock, context);
+        }
+
+    return false;
+    }
+
+static bool handleWhile(int size, const byte *msg, CONTEXT *context)
+    {
+    byte *expr = (byte *) &msg[2];
+    byte refIndex = evalWord8Expr(&expr, context);
+    byte *condExpr = expr;
     bool condition = evalBoolExpr(&expr, context);
     byte *codeBlock = expr;
     int whileSize = size - (expr - msg);
@@ -99,7 +120,7 @@ static bool handleWhile(int size, const byte *msg, CONTEXT *context)
         {
         runCodeBlock(whileSize, codeBlock, context);
 
-        expr = (byte *) &msg[1];
+        expr = condExpr;
         condition = evalBoolExpr(&expr, context);
         }
 
