@@ -44,7 +44,7 @@ module System.Hardware.Haskino (
   --, StepDevice, StepType(..), NumSteps, StepSpeed, StepAccel, StepPerRev
   --, StepDelay(..), StepDir(..), stepperConfig, stepperStep
   -- ** Control structures
-  , loop, while, ifThenElse
+  , loop, while, ifThenElse, loopE
   -- ** Expressions
   , Expr(..), RemoteRef, lit, newRemoteRef, readRemoteRef, writeRemoteRef
   , modifyRemoteRef, evalB, eval8, eval16, eval32, (++*), (*:), (!!*), len, pack

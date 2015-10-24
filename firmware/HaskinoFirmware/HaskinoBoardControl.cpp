@@ -95,9 +95,8 @@ static bool handleSystemReset(int size, const byte *msg, CONTEXT *context)
 
 static bool handleLoop(int size, const byte *msg, CONTEXT *context)
     {
-    byte *expr = (byte *) &msg[1];
-    byte *codeBlock = expr;
-    int loopSize = size - (expr - msg);
+    byte *codeBlock = (byte *) &msg[1];
+    int loopSize = size - 1;
 
     while (true)
         {
@@ -109,7 +108,7 @@ static bool handleLoop(int size, const byte *msg, CONTEXT *context)
 
 static bool handleWhile(int size, const byte *msg, CONTEXT *context)
     {
-    byte *expr = (byte *) &msg[2];
+    byte *expr = (byte *) &msg[1];
     byte refIndex = evalWord8Expr(&expr, context);
     byte *condExpr = expr;
     bool condition = evalBoolExpr(&expr, context);
