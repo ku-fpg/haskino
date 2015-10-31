@@ -23,11 +23,11 @@ example = do let button = 2 :: Expr Word8
              setPinModeE button INPUT
              setPinModeE led1 OUTPUT
              setPinModeE led2 OUTPUT
-             while true $ do writeRemoteRef x  =<< digitalReadE button
-                             ex <- readRemoteRef x
-                             digitalWriteE led1 ex
-                             digitalWriteE led2 (notB ex)
-                             delayMillis 100 
+             loopE $ do writeRemoteRef x  =<< digitalReadE button
+                        ex <- readRemoteRef x
+                        digitalWriteE led1 ex
+                        digitalWriteE led2 (notB ex)
+                        delayMillis 100 
 
 scheduledExampleE :: IO ()
 scheduledExampleE = withArduino False "/dev/cu.usbmodem1421" $ do

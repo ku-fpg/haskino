@@ -23,11 +23,11 @@ blinkRefE = withArduino False "/dev/cu.usbmodem1421" $ do
            let delay = 1000
            setPinModeE led OUTPUT
            r <- newRemoteRef true
-           while true  $ do onOff <- readRemoteRef r 
-                            digitalWriteE led onOff
-                            delayMillisE delay
-                            modifyRemoteRef r (\x -> notB x)
-                            onOff <- readRemoteRef r 
-                            digitalWriteE led onOff
-                            delayMillisE delay
-                            modifyRemoteRef r (\x -> notB x)
+           loopE $ do onOff <- readRemoteRef r 
+                      digitalWriteE led onOff
+                      delayMillisE delay
+                      modifyRemoteRef r (\x -> notB x)
+                      onOff <- readRemoteRef r 
+                      digitalWriteE led onOff
+                      delayMillisE delay
+                      modifyRemoteRef r (\x -> notB x)

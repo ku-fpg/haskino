@@ -36,6 +36,6 @@ blinkRefIfE = withArduino False "/dev/cu.usbmodem1421" $ do
               setPinModeE led OUTPUT
               r1 <- newRemoteRef true
               r2 <- newRemoteRef false
-              while true  $ do slowFast <- readRemoteRef r2
-                               ifThenElse (slowFast) (blinkOnOff r1 led slow) (blinkOnOff r1 led fast)
-                               modifyRemoteRef r2 (\x -> notB x)
+              loopE $ do slowFast <- readRemoteRef r2
+                         ifThenElse (slowFast) (blinkOnOff r1 led slow) (blinkOnOff r1 led fast)
+                         modifyRemoteRef r2 (\x -> notB x)
