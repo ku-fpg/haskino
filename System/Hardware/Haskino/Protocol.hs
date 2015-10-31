@@ -107,26 +107,31 @@ packageCommand (ModifyRemoteRef32 (RemoteRefW32 i) f) ix _ =
 packageCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) ix _ =
     (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_LIST8, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefList8 i))), ix)
 -- ToDo: Do we need to check maximum frame size on conditionals?
-packageCommand (WhileRemoteRefB (RemoteRefB i) f cb) ix ib =
-    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefB i)) ++ (B.unpack pc)), ix')
+packageCommand (WhileRemoteRefB (RemoteRefB i) bf uf cb) ix ib =
+    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (RefB i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
   where
     (pc, ix', _) = packageCodeBlock cb ix ib
-packageCommand (WhileRemoteRef8 (RemoteRefW8 i) f cb) ix ib =
-    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (Ref8 i)) ++ (B.unpack pc)), ix')
+    ufe = packageExpr (uf (RefB i))
+packageCommand (WhileRemoteRef8 (RemoteRefW8 i) bf uf cb) ix ib =
+    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (Ref8 i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
   where
     (pc, ix', _) = packageCodeBlock cb ix ib
-packageCommand (WhileRemoteRef16 (RemoteRefW16 i) f cb) ix ib =
-    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (Ref16 i)) ++ (B.unpack pc)), ix')
+    ufe = packageExpr (uf (Ref8 i))
+packageCommand (WhileRemoteRef16 (RemoteRefW16 i) bf uf cb) ix ib =
+    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (Ref16 i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
   where
     (pc, ix', _) = packageCodeBlock cb ix ib
-packageCommand (WhileRemoteRef32 (RemoteRefW32 i) f cb) ix ib =
-    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (Ref32 i)) ++ (B.unpack pc)), ix')
+    ufe = packageExpr (uf (Ref16 i))
+packageCommand (WhileRemoteRef32 (RemoteRefW32 i) bf uf cb) ix ib =
+    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (Ref32 i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
   where
     (pc, ix', _) = packageCodeBlock cb ix ib
-packageCommand (WhileRemoteRefL8 (RemoteRefL8 i) f cb) ix ib =
-    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefList8 i)) ++ (B.unpack pc)), ix')
+    ufe = packageExpr (uf (Ref32 i))
+packageCommand (WhileRemoteRefL8 (RemoteRefL8 i) bf uf cb) ix ib =
+    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (RefList8 i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
   where
     (pc, ix', _) = packageCodeBlock cb ix ib
+    ufe = packageExpr (uf (RefList8 i))
 packageCommand (LoopE cb) ix ib =
     (buildCommand BC_CMD_LOOP (B.unpack pc), ix')
   where

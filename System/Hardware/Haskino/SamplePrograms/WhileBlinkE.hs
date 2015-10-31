@@ -23,9 +23,8 @@ whileBlinkE = withArduino True "/dev/cu.usbmodem1421" $ do
               let delay = 1000
               setPinModeE led OUTPUT
               i <- newRemoteRef (0 :: Expr Word8)
-              while i (\x -> x <* 3) $ do 
+              while i (\x -> x <* 3) (\x -> x + 1) $ do 
                   digitalWriteE led true
                   delayMillisE delay
                   digitalWriteE led false
                   delayMillisE delay
-                  modifyRemoteRef i (\x -> x + 1)

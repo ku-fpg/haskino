@@ -112,13 +112,35 @@ static bool handleWhile(int size, const byte *msg, CONTEXT *context)
     byte refIndex = evalWord8Expr(&expr, context);
     byte *condExpr = expr;
     bool condition = evalBoolExpr(&expr, context);
-    byte *codeBlock = expr;
-    int whileSize = size - (expr - msg);
+    byte updateLength = *expr++;
+    byte *updateExpr = expr;
+    byte exprType = *updateExpr >> EXPR_TYPE_SHFT;
+    byte *codeBlock = (expr + updateLength);
+    int whileSize = size - (expr + updateLength - msg);
 
     while (condition)
         {
         runCodeBlock(whileSize, codeBlock, context);
 
+        expr = updateExpr;
+        switch (exprType)
+            {
+            case EXPR_BOOL:
+                storeBoolRef(expr, context, refIndex);
+                break;
+            case EXPR_WORD8:
+                storeWord8Ref(expr, context, refIndex);
+                break;
+            case EXPR_WORD16:
+                storeWord16Ref(expr, context, refIndex);
+                break;
+            case EXPR_WORD32:
+                storeWord32Ref(expr, context, refIndex);
+                break;
+            case EXPR_LIST8:
+                storeList8Ref(expr, context, refIndex);
+                break;
+            }
         expr = condExpr;
         condition = evalBoolExpr(&expr, context);
         }

@@ -108,7 +108,35 @@ static int typeToSize(int type)
         }
     } 
 
-static void storeListRef(byte *expr, CONTEXT *context, byte refIndex)
+void storeBoolRef(byte *expr, CONTEXT *context, byte refIndex)
+    {
+    bool bVal = evalBoolExpr(&expr, context);
+
+    *((bool *) haskinoRefs[refIndex].ref) = bVal;
+    }
+
+void storeWord8Ref(byte *expr, CONTEXT *context, byte refIndex)
+    {
+    uint8_t w8Val = evalWord8Expr(&expr, context);
+
+    *((uint8_t *) haskinoRefs[refIndex].ref) = w8Val;
+    }
+
+void storeWord16Ref(byte *expr, CONTEXT *context, byte refIndex)
+    {
+    uint16_t w16Val = evalWord16Expr(&expr, context);
+
+    *((uint16_t *) haskinoRefs[refIndex].ref) = w16Val;
+    }
+
+void storeWord32Ref(byte *expr, CONTEXT *context, byte refIndex)
+    {
+    uint32_t w32Val = evalWord32Expr(&expr, context);
+
+    *((uint32_t *) haskinoRefs[refIndex].ref) = w32Val;
+    }
+
+void storeList8Ref(byte *expr, CONTEXT *context, byte refIndex)
     {
     bool alloc;
     byte *lVal = evalList8Expr(&expr, context, &alloc);
@@ -116,7 +144,7 @@ static void storeListRef(byte *expr, CONTEXT *context, byte refIndex)
     if (haskinoRefs[refIndex].ref != NULL)
         {
         free(haskinoRefs[refIndex].ref);
-        haskinoRefs[refIndex].ref != NULL;
+        haskinoRefs[refIndex].ref = NULL;
         }
 
     if (alloc)
@@ -142,8 +170,6 @@ static bool handleNewRef(int type, int size, const byte *msg, CONTEXT *context)
     byte *expr = (byte *) &msg[4];
     void *memory;
     byte newReply[2];
-    byte *listMem;
-    bool alloc;
 
     // ToDo: Handle overflow of ref numbers
 
@@ -167,19 +193,19 @@ static bool handleNewRef(int type, int size, const byte *msg, CONTEXT *context)
         switch (type)
             {
             case EXPR_BOOL:
-                *((bool *) memory) = evalBoolExpr(&expr, context);
+                storeBoolRef(expr, context, refIndex);
                 break;
             case EXPR_WORD8:
-                *((uint8_t *) memory) = evalWord8Expr(&expr, context);
+                storeWord8Ref(expr, context, refIndex);
                 break;
             case EXPR_WORD16:
-                *((uint16_t *) memory) = evalWord16Expr(&expr, context);
+                storeWord16Ref(expr, context, refIndex);
                 break;
             case EXPR_WORD32:
-                *((uint32_t *) memory) = evalWord32Expr(&expr, context);
+                storeWord32Ref(expr, context, refIndex);
                 break;
             case EXPR_LIST8:
-                storeListRef(expr, context, refIndex);
+                storeList8Ref(expr, context, refIndex);
                 break;
             }
         newReply[0] = EXPR(type, EXPR_LIT);
@@ -232,35 +258,25 @@ static bool handleWriteRef(int type, int size, const byte *msg, CONTEXT *context
     {
     byte *expr = (byte *) &msg[2];
     byte refIndex = evalWord8Expr(&expr, context);
-    bool bVal;
-    uint8_t w8Val;
-    uint16_t w16Val;
-    uint32_t w32Val;
-    byte *lVal;
-    bool alloc;
 
     // ToDo:  Check for param errors
 
     switch (type)
         {
         case EXPR_BOOL:
-            bVal = evalBoolExpr(&expr, context);
-            *((bool *) haskinoRefs[refIndex].ref) = bVal;
+            storeBoolRef(expr, context, refIndex);
             break;
         case EXPR_WORD8:
-            w8Val = evalWord8Expr(&expr, context);
-            *((uint8_t *) haskinoRefs[refIndex].ref) = w8Val;
+            storeWord8Ref(expr, context, refIndex);
             break;
         case EXPR_WORD16:
-            w16Val = evalWord16Expr(&expr, context);
-            *((uint16_t *) haskinoRefs[refIndex].ref) = w16Val;
+            storeWord16Ref(expr, context, refIndex);
             break;
         case EXPR_WORD32:
-            w32Val = evalWord32Expr(&expr, context);
-            *((uint32_t *) haskinoRefs[refIndex].ref) = w32Val;
+            storeWord32Ref(expr, context, refIndex);
             break;
         case EXPR_LIST8:
-            storeListRef(expr, context, refIndex);
+            storeList8Ref(expr, context, refIndex);
             break;
         }
     return false;

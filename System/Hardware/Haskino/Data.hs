@@ -182,11 +182,11 @@ data Command =
      | ModifyRemoteRef16 (RemoteRef Word16) (Expr Word16 -> Expr Word16)
      | ModifyRemoteRef32 (RemoteRef Word32) (Expr Word32 -> Expr Word32)
      | ModifyRemoteRefL8 (RemoteRef [Word8]) (Expr [Word8] -> Expr [Word8])
-     | WhileRemoteRefB (RemoteRef Bool) (Expr Bool -> Expr Bool) (Arduino ())
-     | WhileRemoteRef8 (RemoteRef Word8) (Expr Word8 -> Expr Bool) (Arduino ())
-     | WhileRemoteRef16 (RemoteRef Word16) (Expr Word16 -> Expr Bool) (Arduino ())
-     | WhileRemoteRef32 (RemoteRef Word32) (Expr Word32 -> Expr Bool) (Arduino ())
-     | WhileRemoteRefL8 (RemoteRef [Word8]) (Expr [Word8] -> Expr Bool) (Arduino ())
+     | WhileRemoteRefB (RemoteRef Bool) (Expr Bool -> Expr Bool) (Expr Bool -> Expr Bool) (Arduino ())
+     | WhileRemoteRef8 (RemoteRef Word8) (Expr Word8 -> Expr Bool) (Expr Word8 -> Expr Word8) (Arduino ())
+     | WhileRemoteRef16 (RemoteRef Word16) (Expr Word16 -> Expr Bool) (Expr Word16 -> Expr Word16) (Arduino ())
+     | WhileRemoteRef32 (RemoteRef Word32) (Expr Word32 -> Expr Bool) (Expr Word32 -> Expr Word32) (Arduino ())
+     | WhileRemoteRefL8 (RemoteRef [Word8]) (Expr [Word8] -> Expr Bool) (Expr [Word8] -> Expr [Word8]) (Arduino ())
      | LoopE (Arduino ())
      | IfThenElse (Expr Bool) (Arduino ()) (Arduino ())
      -- ToDo: add one wire and encoder procedures, readd stepper and servo
@@ -300,20 +300,20 @@ modifyRemoteRef32 r f = Command $ ModifyRemoteRef32 r f
 modifyRemoteRefL8 :: RemoteRef [Word8] -> (Expr [Word8] -> Expr [Word8]) -> Arduino ()
 modifyRemoteRefL8 r f = Command $ ModifyRemoteRefL8 r f
 
-whileRemoteRefB :: RemoteRef Bool -> (Expr Bool -> Expr Bool) -> Arduino () -> Arduino ()
-whileRemoteRefB r f cb  = Command $ WhileRemoteRefB r f cb
+whileRemoteRefB :: RemoteRef Bool -> (Expr Bool -> Expr Bool) -> (Expr Bool -> Expr Bool) -> Arduino () -> Arduino ()
+whileRemoteRefB r bf uf cb  = Command $ WhileRemoteRefB r bf uf cb
 
-whileRemoteRef8 :: RemoteRef Word8 -> (Expr Word8 -> Expr Bool) -> Arduino () -> Arduino ()
-whileRemoteRef8 r f cb = Command $ WhileRemoteRef8 r f cb
+whileRemoteRef8 :: RemoteRef Word8 -> (Expr Word8 -> Expr Bool) -> (Expr Word8 -> Expr Word8) -> Arduino () -> Arduino ()
+whileRemoteRef8 r bf uf cb = Command $ WhileRemoteRef8 r bf uf cb
 
-whileRemoteRef16 :: RemoteRef Word16 -> (Expr Word16 -> Expr Bool) -> Arduino () -> Arduino ()
-whileRemoteRef16 r f cb = Command $ WhileRemoteRef16 r f cb
+whileRemoteRef16 :: RemoteRef Word16 -> (Expr Word16 -> Expr Bool) -> (Expr Word16 -> Expr Word16) -> Arduino () -> Arduino ()
+whileRemoteRef16 r bf uf cb = Command $ WhileRemoteRef16 r bf uf cb
 
-whileRemoteRef32 :: RemoteRef Word32 -> (Expr Word32 -> Expr Bool) -> Arduino () -> Arduino ()
-whileRemoteRef32 r f cb = Command $ WhileRemoteRef32 r f cb
+whileRemoteRef32 :: RemoteRef Word32 -> (Expr Word32 -> Expr Bool) -> (Expr Word32 -> Expr Word32) -> Arduino () -> Arduino ()
+whileRemoteRef32 r bf uf cb = Command $ WhileRemoteRef32 r bf uf cb
 
-whileRemoteRefL8 :: RemoteRef [Word8] -> (Expr [Word8] -> Expr Bool) -> Arduino () -> Arduino ()
-whileRemoteRefL8 r f cb = Command $ WhileRemoteRefL8 r f cb
+whileRemoteRefL8 :: RemoteRef [Word8] -> (Expr [Word8] -> Expr Bool) -> (Expr [Word8] -> Expr [Word8]) -> Arduino () -> Arduino ()
+whileRemoteRefL8 r bf uf cb = Command $ WhileRemoteRefL8 r bf uf cb
 
 -- ToDo: Readd servo and stepper functions
 
@@ -324,7 +324,7 @@ class RemoteReference a where
     modifyRemoteRef       :: RemoteRef a -> (Expr a -> Expr a) -> 
                              Arduino ()
     while                 :: RemoteRef a -> (Expr a -> Expr Bool) -> 
-                             Arduino () -> Arduino ()
+                             (Expr a -> Expr a) -> Arduino () -> Arduino ()
 
 instance RemoteReference Bool where
     newRemoteRef = newRemoteRefB
