@@ -123,7 +123,7 @@ void startReplyFrame(byte replyType)
 
 void endReplyFrame()
     {
-    Serial.write(outgoingChecksum);
+    sendReplyByte(outgoingChecksum);
     Serial.write(HDLC_FRAME_FLAG);
     }
 
