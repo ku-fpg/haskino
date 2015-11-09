@@ -402,11 +402,11 @@ uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context)
             switch(exprOp)
                 {
                 case EXPR_SHFL:
-                    if (e8_1 > 8) e8_1 = 8;
+                    if (e8_1 > 16) e8_1 = 16;
                     val = e1 << e8_1;
                     break;
                 case EXPR_SHFR:
-                    if (e8_1 > 8) e8_1 = 8;
+                    if (e8_1 > 16) e8_1 = 16;
                     val = e1 >> e8_1;
                     break;
                 case EXPR_SETB:
@@ -546,11 +546,11 @@ uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context)
             switch(exprOp)
                 {
                 case EXPR_SHFL:
-                    if (e8_1 > 8) e8_1 = 8;
+                    if (e8_1 > 32) e8_1 = 32;
                     val = e1 << e8_1;
                     break;
                 case EXPR_SHFR:
-                    if (e8_1 > 8) e8_1 = 8;
+                    if (e8_1 > 32) e8_1 = 32;
                     val = e1 >> e8_1;
                     break;
                 case EXPR_SETB:
