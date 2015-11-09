@@ -212,6 +212,10 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
         case EXPR_MULT:
         case EXPR_DIV:
         case EXPR_REM:
+        case EXPR_SHFL:
+        case EXPR_SHFR:
+        case EXPR_SETB:
+        case EXPR_CLRB:
             *ppExpr += 1; // Use command byte
             e1 = evalWord8Expr(ppExpr, context);
             e2 = evalWord8Expr(ppExpr, context);
@@ -242,9 +246,11 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
                     val = e1 % e2;
                     break;
                 case EXPR_SHFL:
+                    if (e2 > 8) e2 = 8;
                     val = e1 << e2;
                     break;
                 case EXPR_SHFR:
+                    if (e2 > 8) e2 = 8;
                     val = e1 >> e2;
                     break;
                 case EXPR_SETB:
@@ -388,15 +394,19 @@ uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context)
             break;
         case EXPR_SHFL:
         case EXPR_SHFR:
+        case EXPR_SETB:
+        case EXPR_CLRB:
             *ppExpr += 1; // Use command byte
             e1 = evalWord16Expr(ppExpr, context);
             e8_1 = evalWord8Expr(ppExpr, context);
             switch(exprOp)
                 {
                 case EXPR_SHFL:
+                    if (e8_1 > 8) e8_1 = 8;
                     val = e1 << e8_1;
                     break;
                 case EXPR_SHFR:
+                    if (e8_1 > 8) e8_1 = 8;
                     val = e1 >> e8_1;
                     break;
                 case EXPR_SETB:
@@ -528,15 +538,19 @@ uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context)
             break;
         case EXPR_SHFR:
         case EXPR_SHFL:
+        case EXPR_SETB:
+        case EXPR_CLRB:
             *ppExpr += 1; // Use command byte
             e1 = evalWord32Expr(ppExpr, context);
             e8_1 = evalWord8Expr(ppExpr, context);
             switch(exprOp)
                 {
                 case EXPR_SHFL:
+                    if (e8_1 > 8) e8_1 = 8;
                     val = e1 << e8_1;
                     break;
                 case EXPR_SHFR:
+                    if (e8_1 > 8) e8_1 = 8;
                     val = e1 >> e8_1;
                     break;
                 case EXPR_SETB:
