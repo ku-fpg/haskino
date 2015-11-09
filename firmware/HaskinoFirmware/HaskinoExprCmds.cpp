@@ -61,7 +61,7 @@ static bool handleEval(int type, int size, const byte *msg, CONTEXT *context)
             break;
         case EXPR_LIST8:
             listMem = evalList8Expr(&expr, context, &alloc);
-            sendReply(listMem[1], EXP_RESP_EVAL, listMem, context, bind);
+            sendReply(2+listMem[1], EXP_RESP_EVAL, listMem, context, bind);
             if (alloc)
                 free(listMem);
             break;
