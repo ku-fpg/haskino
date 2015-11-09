@@ -18,67 +18,89 @@ import Test.QuickCheck.Monadic
 litEval :: Expr Word8 -> Word8
 litEval (Lit8 w) = w
 
-prop_add :: ArduinoConnection -> Word8 -> Word8 -> Property
-prop_add c x y = monadicIO $ do
+prop_add :: ArduinoConnection -> RemoteRef Word8 -> Word8 -> Word8 -> Property
+prop_add c r x y = monadicIO $ do
     let local = x + y
-    remote <- run $ send c $ eval8 $ (lit x) + (lit y)
-    assert (local == remote)
+    remote <- run $ send c $ do
+        writeRemoteRef r $ (lit x) + (lit y)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval remote)
 
-prop_sub :: ArduinoConnection -> Word8 -> Word8 -> Property
-prop_sub c x y = monadicIO $ do
+prop_sub :: ArduinoConnection -> RemoteRef Word8 -> Word8 -> Word8 -> Property
+prop_sub c r x y = monadicIO $ do
     let local = x - y
-    remote <- run $ send c $ eval8 $ (lit x) - (lit y)
-    assert (local == remote)
+    remote <- run $ send c $ do
+        writeRemoteRef r $ (lit x) - (lit y)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval remote)
 
-prop_mult :: ArduinoConnection -> Word8 -> Word8 -> Property
-prop_mult c x y = monadicIO $ do
+prop_mult :: ArduinoConnection -> RemoteRef Word8 -> Word8 -> Word8 -> Property
+prop_mult c r x y = monadicIO $ do
     let local = x * y
-    remote <- run $ send c $ eval8 $ (lit x) * (lit y)
-    assert (local == remote)
+    remote <- run $ send c $ do
+        writeRemoteRef r $ (lit x) * (lit y)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval remote)
 
-prop_div :: ArduinoConnection -> Word8 -> Word8 -> Property
-prop_div c x y = monadicIO $ do
+prop_div :: ArduinoConnection -> RemoteRef Word8 -> Word8 -> Word8 -> Property
+prop_div c r x y = monadicIO $ do
     if y == 0
     then assert (True)
     else do let local = x `P.div` y
-            remote <- run $ send c $ eval8 $ (lit x) `div` (lit y)
-            assert (local == remote)
+            remote <- run $ send c $ do
+                writeRemoteRef r $ (lit x) `div` (lit y)
+                v <- readRemoteRef r
+                return v
+            assert (local == litEval remote)
 
-prop_rem :: ArduinoConnection -> Word8 -> Word8 -> Property
-prop_rem c x y = monadicIO $ do
+prop_rem :: ArduinoConnection -> RemoteRef Word8 -> Word8 -> Word8 -> Property
+prop_rem c r x y = monadicIO $ do
     if y == 0
     then assert (True)
     else do let local = x `P.rem` y
-            remote <- run $ send c $ eval8 $ (lit x) `rem` (lit y)
-            assert (local == remote)
+            remote <- run $ send c $ do
+                writeRemoteRef r $ (lit x) `rem` (lit y)
+                v <- readRemoteRef r
+                return v
+            assert (local == litEval remote)
 
-prop_comp :: ArduinoConnection -> Word8 -> Property
-prop_comp c x = monadicIO $ do
+prop_comp :: ArduinoConnection -> RemoteRef Word8 -> Word8 -> Property
+prop_comp c r x = monadicIO $ do
     let local = DB.complement x
-    remote <- run $ send c $ eval8 $ complement (lit x) 
-    assert (local == remote)
+    remote <- run $ send c $ do
+        writeRemoteRef r $ complement (lit x) 
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval remote)
 
-prop_and :: ArduinoConnection -> Word8 -> Word8 -> Property
-prop_and c x y = monadicIO $ do
+prop_and :: ArduinoConnection -> RemoteRef Word8 -> Word8 -> Word8 -> Property
+prop_and c r x y = monadicIO $ do
     let local = x DB..&. y
-    remote <- run $ send c $ eval8 $ (lit x) .&. (lit y)
-    assert (local == remote)
+    remote <- run $ send c $ do
+        writeRemoteRef r $ (lit x) .&. (lit y)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval remote)
 
 main :: IO ()
 main = do
     conn <- openArduino False "/dev/cu.usbmodem1421"
+    ref <- send conn $ newRemoteRef 0
     print "Addition Tests:"
-    quickCheck (prop_add conn)
+    quickCheck (prop_add conn ref)
     print "Subtraction Tests:"
-    quickCheck (prop_sub conn)
+    quickCheck (prop_sub conn ref)
     print "Multiplcation Tests:"
-    quickCheck (prop_mult conn)
+    quickCheck (prop_mult conn ref)
     print "Division Tests:"
-    quickCheck (prop_div conn)
+    quickCheck (prop_div conn ref)
     print "Remainder Tests:"
-    quickCheck (prop_rem conn)
+    quickCheck (prop_rem conn ref)
     print "Complement Tests:"
-    quickCheck (prop_comp conn)
+    quickCheck (prop_comp conn ref)
     print "Bitwise And Tests:"
-    quickCheck (prop_and conn)
+    quickCheck (prop_and conn ref)
     closeArduino conn
