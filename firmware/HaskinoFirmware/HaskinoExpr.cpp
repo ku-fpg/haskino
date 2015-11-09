@@ -268,6 +268,7 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
                 }
             break;
         case EXPR_FINT:
+            *ppExpr += 1; // Use command byte
             val = evalWord32Expr(ppExpr, context);
             break;
         case EXPR_IF:
@@ -430,6 +431,7 @@ uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context)
                 }
             break;
         case EXPR_FINT:
+            *ppExpr += 1; // Use command byte
             val = evalWord32Expr(ppExpr, context);
             break;
         case EXPR_IF:
