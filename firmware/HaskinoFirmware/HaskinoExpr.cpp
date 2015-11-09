@@ -254,10 +254,16 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
                     val = e1 >> e2;
                     break;
                 case EXPR_SETB:
-                    val = bitSet(e1, e2);
+                    if (e2 > 7)
+                        val = e1;
+                    else
+                        val = bitSet(e1, e2);
                     break;
                 case EXPR_CLRB:
-                    val = bitClear(e1, e2);
+                    if (e2 > 7)
+                        val = e1;
+                    else
+                        val = bitClear(e1, e2);
                     break;
                 }
             break;
@@ -410,10 +416,16 @@ uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context)
                     val = e1 >> e8_1;
                     break;
                 case EXPR_SETB:
-                    val = bitSet(e1, e8_1);
+                    if (e2 > 15)
+                        val = e1;
+                    else
+                        val = bitSet(e1, e8_1);
                     break;
                 case EXPR_CLRB:
-                    val = bitClear(e1, e8_1);
+                    if (e2 > 15)
+                        val = e1;
+                    else
+                        val = bitClear(e1, e8_1);
                     break;
                 }
             break;
@@ -554,10 +566,16 @@ uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context)
                     val = e1 >> e8_1;
                     break;
                 case EXPR_SETB:
-                    val = bitSet(e1, e8_1);
+                    if (e2 > 31)
+                        val = e1;
+                    else
+                        val = bitSet(e1, e8_1);
                     break;
                 case EXPR_CLRB:
-                    val = bitClear(e1, e8_1);
+                    if (e2 > 31)
+                        val = e1;
+                    else
+                        val = bitClear(e1, e8_1);
                     break;
                 }
             break;
