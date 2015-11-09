@@ -44,6 +44,10 @@ data Expr a where
   RemBind16 :: Int -> Expr Word16
   RemBind32 :: Int -> Expr Word32
   RemBindList8 :: Int -> Expr [Word8]
+  FromInt8  :: Expr Word32 -> Expr Word8
+  FromInt16 :: Expr Word32 -> Expr Word16
+  ToInt8    :: Expr Word8  -> Expr Word32
+  ToInt16   :: Expr Word16 -> Expr Word32
   NotB      :: Expr Bool -> Expr Bool
   AndB      :: Expr Bool -> Expr Bool -> Expr Bool
   OrB       :: Expr Bool -> Expr Bool -> Expr Bool
@@ -170,16 +174,15 @@ instance B.IfB (Expr Word8) where
   ifB = If8
 
 instance BN.NumB (Expr Word8) where
-  type IntegerOf (Expr Word8) = Word8
-  fromIntegerB x = Lit8 x
+  type IntegerOf (Expr Word8) = Expr Word32
+  fromIntegerB e = FromInt8 e
 
 instance BN.IntegralB (Expr Word8) where
   div = Div8
   rem = Rem8
   quot = Div8
   mod = Rem8
-  toIntegerB x = case x of
-                      Lit8 n -> n
+  toIntegerB e = ToInt8 e
 
 instance BB.BitsB (Expr Word8) where
   type IntOf (Expr Word8) = Expr Word8
@@ -217,16 +220,15 @@ instance B.IfB (Expr Word16) where
   ifB = If16
 
 instance BN.NumB (Expr Word16) where
-  type IntegerOf (Expr Word16) = Word16
-  fromIntegerB x = Lit16 x
+  type IntegerOf (Expr Word16) = (Expr Word32)
+  fromIntegerB e = FromInt16 e
 
 instance BN.IntegralB (Expr Word16) where
   div = Div16
   rem = Rem16
   quot = Div16
   mod = Rem16
-  toIntegerB x = case x of
-                    Lit16 n -> n
+  toIntegerB e = ToInt16 e
 
 instance BB.BitsB (Expr Word16) where
   type IntOf (Expr Word16) = Expr Word8
@@ -264,16 +266,15 @@ instance B.IfB (Expr Word32) where
   ifB = If32
 
 instance BN.NumB (Expr Word32) where
-  type IntegerOf (Expr Word32) = Word32
-  fromIntegerB x = Lit32 x
+  type IntegerOf (Expr Word32) = (Expr Word32)
+  fromIntegerB e = e
 
 instance BN.IntegralB (Expr Word32) where
   div = Div32
   rem = Rem32
   quot = Div32
   mod = Rem32
-  toIntegerB x = case x of
-                    Lit32 n -> n
+  toIntegerB e = e
 
 instance BB.BitsB (Expr Word32) where
   type IntOf (Expr Word32) = Expr Word8
@@ -356,6 +357,8 @@ data ExprOp = EXPR_LIT
             | EXPR_CONS
             | EXPR_APND
             | EXPR_PACK
+            | EXPR_FINT
+            | EXPR_TINT
 
 -- | Compute the numeric value of a command
 exprTypeVal :: ExprType -> Word8
@@ -395,6 +398,8 @@ exprOpVal EXPR_LEN  = 0x19
 exprOpVal EXPR_CONS = 0x1A
 exprOpVal EXPR_APND = 0x1B
 exprOpVal EXPR_PACK = 0x1C
+exprOpVal EXPR_FINT = 0x1D
+exprOpVal EXPR_TINT = 0x1E
 
 exprCmdVal :: ExprType -> ExprOp -> Word8
 exprCmdVal t o = exprTypeVal t `DB.shiftL` 5 DB..|. exprOpVal o

@@ -43,6 +43,8 @@
 #define EXPR_CONS 0x1A
 #define EXPR_APND 0x1B
 #define EXPR_PACK 0x1C
+#define EXPR_FINT 0x1D
+#define EXPR_TINT 0x1E
 #define EXPR_PTR  0x1F
 
 bool evalBoolExpr(byte **ppExpr, CONTEXT *context);
