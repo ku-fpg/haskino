@@ -36,16 +36,15 @@
 #define EXPR_BIT  0x13
 #define EXPR_SETB 0x14
 #define EXPR_CLRB 0x15
-#define EXPR_TSTB 0x16
-#define EXPR_BIND 0x17
-#define EXPR_ELEM 0x18
-#define EXPR_LEN  0x19
-#define EXPR_CONS 0x1A
-#define EXPR_APND 0x1B
-#define EXPR_PACK 0x1C
-#define EXPR_FINT 0x1D
-#define EXPR_TINT 0x1E
-#define EXPR_PTR  0x1F
+#define EXPR_BIND 0x16
+#define EXPR_ELEM 0x17
+#define EXPR_LEN  0x18
+#define EXPR_CONS 0x19
+#define EXPR_APND 0x1A
+#define EXPR_PACK 0x1B
+#define EXPR_FINT 0x1C
+#define EXPR_TINT 0x1D
+#define EXPR_PTR  0x1E
 
 bool evalBoolExpr(byte **ppExpr, CONTEXT *context);
 uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context);

@@ -13,7 +13,7 @@
 
 module System.Hardware.Haskino.Expr where
 
-import       Data.Bits as DB
+import qualified Data.Bits as DB
 import       Data.Word (Word8, Word16, Word32)
 import       Data.Boolean as B
 import       Data.Boolean.Numbers as BN
@@ -197,7 +197,7 @@ instance BB.BitsB (Expr Word8) where
   bit = Bit8
   setBit = SetB8
   clearBit = ClrB8
---  testBit = (\x i -> x .&. bit i ==* bit i)
+  testBit = (\x i -> x .&. bit i ==* bit i)
 
 instance  Num (Expr Word16) where
   (+) x y = Add16 x y
@@ -243,7 +243,7 @@ instance BB.BitsB (Expr Word16) where
   bit = Bit16
   setBit = SetB16
   clearBit = ClrB16
---  testBit = (\x i -> x .&. bit i ==* bit i)
+  testBit = (\x i -> x .&. bit i ==* bit i)
 
 instance  Num (Expr Word32) where
   (+) x y = Add32 x y
@@ -289,7 +289,7 @@ instance BB.BitsB (Expr Word32) where
   bit = Bit32
   setBit = SetB32
   clearBit = ClrB32
---  testBit = (\x i -> x .&. bit i ==* bit i)
+  testBit = (\x i -> x .&. bit i ==* bit i)
 
 type instance BooleanOf (Expr [Word8]) = Expr Bool
 
@@ -350,7 +350,6 @@ data ExprOp = EXPR_LIT
             | EXPR_BIT
             | EXPR_SETB
             | EXPR_CLRB
-            | EXPR_TSTB
             | EXPR_BIND
             | EXPR_ELEM
             | EXPR_LEN
@@ -391,15 +390,14 @@ exprOpVal EXPR_IF   = 0x12
 exprOpVal EXPR_BIT  = 0x13
 exprOpVal EXPR_SETB = 0x14
 exprOpVal EXPR_CLRB = 0x15
-exprOpVal EXPR_TSTB = 0x16
-exprOpVal EXPR_BIND = 0x17
-exprOpVal EXPR_ELEM = 0x18
-exprOpVal EXPR_LEN  = 0x19
-exprOpVal EXPR_CONS = 0x1A
-exprOpVal EXPR_APND = 0x1B
-exprOpVal EXPR_PACK = 0x1C
-exprOpVal EXPR_FINT = 0x1D
-exprOpVal EXPR_TINT = 0x1E
+exprOpVal EXPR_BIND = 0x16
+exprOpVal EXPR_ELEM = 0x17
+exprOpVal EXPR_LEN  = 0x18
+exprOpVal EXPR_CONS = 0x19
+exprOpVal EXPR_APND = 0x1A
+exprOpVal EXPR_PACK = 0x1B
+exprOpVal EXPR_FINT = 0x1C
+exprOpVal EXPR_TINT = 0x1D
 
 exprCmdVal :: ExprType -> ExprOp -> Word8
 exprCmdVal t o = exprTypeVal t `DB.shiftL` 5 DB..|. exprOpVal o

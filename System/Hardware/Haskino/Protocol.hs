@@ -239,11 +239,6 @@ packageProcedure (DelayMillis ms) ib  = buildCommand BC_CMD_DELAY_MILLIS ((fromI
 packageProcedure (DelayMillisE ms) ib = buildCommand BC_CMD_DELAY_MILLIS ((fromIntegral ib) : (packageExpr ms))
 packageProcedure (DelayMicros ms) ib  = buildCommand BC_CMD_DELAY_MICROS ((fromIntegral ib) : (packageExpr $ lit ms))
 packageProcedure (DelayMicrosE ms) ib = buildCommand BC_CMD_DELAY_MICROS ((fromIntegral ib) : (packageExpr ms))
-packageProcedure (EvalB e) ib        = buildCommand EXP_CMD_EVAL (([refTypeCmdVal REF_BOOL, fromIntegral ib] ++ (packageExpr e)))
-packageProcedure (Eval8 e) ib        = buildCommand EXP_CMD_EVAL (([refTypeCmdVal REF_WORD8, fromIntegral ib] ++ (packageExpr e)))
-packageProcedure (Eval16 e) ib       = buildCommand EXP_CMD_EVAL (([refTypeCmdVal REF_WORD16, fromIntegral ib] ++ (packageExpr e)))
-packageProcedure (Eval32 e) ib       = buildCommand EXP_CMD_EVAL (([refTypeCmdVal REF_WORD32, fromIntegral ib] ++ (packageExpr e)))
-packageProcedure (EvalL8 e) ib       = buildCommand EXP_CMD_EVAL (([refTypeCmdVal REF_LIST8, fromIntegral ib] ++ (packageExpr e)))
 packageProcedure (ReadRemoteRefB (RemoteRefB i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_BOOL, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
 packageProcedure (ReadRemoteRef8 (RemoteRefW8 i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_WORD8, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
 packageProcedure (ReadRemoteRef16 (RemoteRefW16 i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_WORD16, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
@@ -400,14 +395,6 @@ unpackageResponse (cmdWord:args)
                                       -> ReadRefL8Reply bs
       (REF_RESP_NEW , [l,w])          -> NewReply w
       (REF_RESP_NEW , [])             -> FailedNewRef
-      (EXP_RESP_EVAL, t : [b1, b2]) | t `shiftR` 5 == refTypeCmdVal REF_BOOL 
-                                      -> EvalBReply (if bytesToWord16 (b1, b2) == 0 then False else True)
-      (EXP_RESP_EVAL, t : [b]) | t `shiftR` 5 == refTypeCmdVal REF_WORD8 
-                                      -> Eval8Reply b
-      (EXP_RESP_EVAL, t : [b1,b2]) | t `shiftR` 5 == refTypeCmdVal REF_WORD16 
-                                      -> Eval16Reply (bytesToWord16 (b1, b2))
-      (EXP_RESP_EVAL, t : [b1,b2,b3,b4]) | t `shiftR` 5 == refTypeCmdVal REF_WORD32 
-                                      -> Eval32Reply (bytesToWord32 (b1, b2, b3, b4))
       _                               -> Unimplemented (Just (show cmd)) args
   | True
   = Unimplemented Nothing (cmdWord : args)
@@ -446,9 +433,4 @@ parseQueryResult (Procedure (ReadRemoteRef8 _)) (ReadRef8Reply r) = Just $ lit r
 parseQueryResult (Procedure (ReadRemoteRef16 _)) (ReadRef16Reply r) = Just $ lit r
 parseQueryResult (Procedure (ReadRemoteRef32 _)) (ReadRef32Reply r) = Just $ lit r
 parseQueryResult (Procedure (ReadRemoteRefL8 _)) (ReadRefL8Reply r) = Just $ lit r
-parseQueryResult (Procedure (EvalB _)) (EvalBReply r) = Just $ r
-parseQueryResult (Procedure (Eval8 _)) (Eval8Reply r) = Just $ r
-parseQueryResult (Procedure (Eval16 _)) (Eval16Reply r) = Just $ r
-parseQueryResult (Procedure (Eval32 _)) (Eval32Reply r) = Just $ r
-parseQueryResult (Procedure (EvalL8 _)) (EvalL8Reply r) = Just $ r
 parseQueryResult q r = Nothing
