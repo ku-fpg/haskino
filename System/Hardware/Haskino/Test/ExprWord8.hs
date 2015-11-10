@@ -1,3 +1,13 @@
+-------------------------------------------------------------------------------
+-- |
+-- Module      :  System.Hardware.Haskino.Test.ExprWord8
+-- Copyright   :  (c) University of Kansas
+-- License     :  BSD3
+-- Stability   :  experimental
+--
+-- Quick Check tests for Expressions returning a Expr Word8
+-------------------------------------------------------------------------------
+
 {-# LANGUAGE GADTs #-}
 
 module System.Hardware.Haskino.Test.ExprWord8 where
@@ -6,7 +16,6 @@ import Prelude hiding
   ( quotRem, divMod, quot, rem, div, mod, properFraction, fromInteger, toInteger )
 import qualified Prelude as P
 import System.Hardware.Haskino
--- import System.Hardware.Haskino.Expr
 import Data.Boolean
 import Data.Boolean.Numbers
 import Data.Boolean.Bits
@@ -112,6 +121,15 @@ prop_or c r x y = monadicIO $ do
         return v
     assert (local == litEval remote)
 
+prop_xor :: ArduinoConnection -> RemoteRef Word8 -> Word8 -> Word8 -> Property
+prop_xor c r x y = monadicIO $ do
+    let local = x `DB.xor` y
+    remote <- run $ send c $ do
+        writeRemoteRef r $ (lit x) `xor` (lit y)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval remote)
+
 prop_shiftL :: ArduinoConnection -> RemoteRef Word8 -> Word8 -> Word8 -> Property
 prop_shiftL c r x y = monadicIO $ do
     let local = x `DB.shiftL` (fromIntegral y)
@@ -166,6 +184,27 @@ prop_from16 c r x = monadicIO $ do
         return v
     assert (local == litEval remote)
 
+prop_ifb :: ArduinoConnection -> RemoteRef Word8 -> Bool -> Word8 -> Word8 -> Property
+prop_ifb c r b x y = monadicIO $ do
+    let local = if b then x + y else x - y
+    remote <- run $ send c $ do
+        writeRemoteRef r $ ifB (lit b) (lit x + lit y) (lit x - lit y)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval remote)
+
+prop_arith :: ArduinoConnection -> RemoteRef Word8 -> 
+              Word8 -> Word8 -> Word8 -> Word8 -> Word8 -> Word8 -> Property
+prop_arith c r a b d e f g = monadicIO $ do
+    if g == 0
+    then assert (True)
+    else do let local = a * b + d * e - f `P.div` g
+            remote <- run $ send c $ do
+                writeRemoteRef r $ (lit a) * (lit b) + (lit d) * (lit e) - (lit f) `div` (lit g) 
+                v <- readRemoteRef r
+                return v
+            assert (local == litEval remote)
+
 main :: IO ()
 main = do
     conn <- openArduino False "/dev/cu.usbmodem1421"
@@ -174,6 +213,8 @@ main = do
     quickCheck (prop_neg conn ref)
     print "Signum Tests:"
     quickCheck (prop_sign conn ref)
+    print "Addition Tests:"
+    quickCheck (prop_add conn ref)
     print "Subtraction Tests:"
     quickCheck (prop_sub conn ref)
     print "Multiplcation Tests:"
@@ -188,6 +229,8 @@ main = do
     quickCheck (prop_and conn ref)
     print "Bitwise Or Tests:"
     quickCheck (prop_or conn ref)
+    print "Bitwise Xor Tests:"
+    quickCheck (prop_xor conn ref)
     print "Shift Left Tests:"
     quickCheck (prop_shiftL conn ref)
     print "Shift Right Tests:"
@@ -200,4 +243,8 @@ main = do
     quickCheck (prop_from32 conn ref)
     print "From Word16 Tests:"
     quickCheck (prop_from16 conn ref)
+    print "ifB Tests:"
+    quickCheck (prop_ifb conn ref)
+    print "Arithemtic Tests:"
+    quickCheck (prop_arith conn ref)
     closeArduino conn
