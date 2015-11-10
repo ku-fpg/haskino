@@ -72,27 +72,23 @@ prop_mult c r x y = monadicIO $ do
         return v
     assert (local == litEval remote)
 
-prop_div :: ArduinoConnection -> RemoteRef Word8 -> Word8 -> Word8 -> Property
-prop_div c r x y = monadicIO $ do
-    if y == 0
-    then assert (True)
-    else do let local = x `P.div` y
-            remote <- run $ send c $ do
-                writeRemoteRef r $ (lit x) `div` (lit y)
-                v <- readRemoteRef r
-                return v
-            assert (local == litEval remote)
+prop_div :: ArduinoConnection -> RemoteRef Word8 -> Word8 -> NonZero Word8 -> Property
+prop_div c r x (NonZero y) = monadicIO $ do
+    let local = x `P.div` y
+    remote <- run $ send c $ do
+        writeRemoteRef r $ (lit x) `div` (lit y)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval remote)
 
-prop_rem :: ArduinoConnection -> RemoteRef Word8 -> Word8 -> Word8 -> Property
-prop_rem c r x y = monadicIO $ do
-    if y == 0
-    then assert (True)
-    else do let local = x `P.rem` y
-            remote <- run $ send c $ do
-                writeRemoteRef r $ (lit x) `rem` (lit y)
-                v <- readRemoteRef r
-                return v
-            assert (local == litEval remote)
+prop_rem :: ArduinoConnection -> RemoteRef Word8 -> Word8 -> NonZero Word8 -> Property
+prop_rem c r x (NonZero y) = monadicIO $ do
+    let local = x `P.rem` y
+    remote <- run $ send c $ do
+        writeRemoteRef r $ (lit x) `rem` (lit y)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval remote)
 
 prop_comp :: ArduinoConnection -> RemoteRef Word8 -> Word8 -> Property
 prop_comp c r x = monadicIO $ do
@@ -194,16 +190,14 @@ prop_ifb c r b x y = monadicIO $ do
     assert (local == litEval remote)
 
 prop_arith :: ArduinoConnection -> RemoteRef Word8 -> 
-              Word8 -> Word8 -> Word8 -> Word8 -> Word8 -> Word8 -> Property
-prop_arith c r a b d e f g = monadicIO $ do
-    if g == 0
-    then assert (True)
-    else do let local = a * b + d * e - f `P.div` g
-            remote <- run $ send c $ do
-                writeRemoteRef r $ (lit a) * (lit b) + (lit d) * (lit e) - (lit f) `div` (lit g) 
-                v <- readRemoteRef r
-                return v
-            assert (local == litEval remote)
+              Word8 -> Word8 -> Word8 -> Word8 -> Word8 -> NonZero Word8 -> Property
+prop_arith c r a b d e f (NonZero g) = monadicIO $ do
+    let local = a * b + d * e - f `P.div` g
+    remote <- run $ send c $ do
+        writeRemoteRef r $ (lit a) * (lit b) + (lit d) * (lit e) - (lit f) `div` (lit g) 
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval remote)
 
 main :: IO ()
 main = do
