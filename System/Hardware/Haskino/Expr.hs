@@ -194,7 +194,6 @@ instance BB.BitsB (Expr Word8) where
   bit = Bit8
   setBit = SetB8
   clearBit = ClrB8
-  testBit = (\x i -> x .&. bit i ==* bit i)
 
 instance  Num (Expr Word16) where
   (+) x y = Add16 x y
@@ -240,7 +239,6 @@ instance BB.BitsB (Expr Word16) where
   bit = Bit16
   setBit = SetB16
   clearBit = ClrB16
-  testBit = (\x i -> x .&. bit i ==* bit i)
 
 instance  Num (Expr Word32) where
   (+) x y = Add32 x y
@@ -286,7 +284,6 @@ instance BB.BitsB (Expr Word32) where
   bit = Bit32
   setBit = SetB32
   clearBit = ClrB32
-  testBit = (\x i -> x .&. bit i ==* bit i)
 
 type instance BooleanOf (Expr [Word8]) = Expr Bool
 
