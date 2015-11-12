@@ -143,9 +143,6 @@ instance ExprB [Word8] where
     lit = LitList8
     remBind = RemBindList8
 
--- ToDo:  Add BitsB class for and, or, xor, complement and shifts
--- ToDo:  Add fromInteger/toInteger properly to do typing on Arduino
-
 instance B.Boolean (Expr Bool) where
   true  = LitB True
   false = LitB False
