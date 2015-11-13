@@ -10,6 +10,8 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
     byte exprOp = *pExpr & EXPR_OP_MASK;
     bool val = false;
     int refNum;
+    bool conditional;
+    uint16_t thenSize, elseSize;
     bool eB_1,eB_2;
     uint8_t e8_1,e8_2,l1len,l2len;
     uint16_t e16_1,e16_2;
@@ -58,6 +60,22 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                 val = val1 && val2;
             else 
                 val = val1 || val2; 
+            break;
+        case EXPR_IF:
+            memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
+            memcpy((byte *) &elseSize, &pExpr[3], sizeof(uint16_t));
+            *ppExpr += 1 + 2*sizeof(uint16_t); // Use Cmd and Value bytes
+            conditional = evalBoolExpr(ppExpr, context);
+            if (conditional)
+                {
+                val = evalBoolExpr(ppExpr, context);
+                *ppExpr += elseSize;
+                }
+            else
+                {
+                *ppExpr += thenSize;
+                val = evalBoolExpr(ppExpr, context);
+                }
             break;
         case EXPR_EQ:
         case EXPR_LESS:

@@ -10,7 +10,7 @@
 
 {-# LANGUAGE GADTs, ScopedTypeVariables, DataKinds #-}
 
-module System.Hardware.Haskino.Test.ExprWord8 where
+module System.Hardware.Haskino.Test.ExprList8 where
 
 import Prelude hiding 
   ( quotRem, divMod, quot, rem, div, mod, properFraction, fromInteger, toInteger )
