@@ -51,6 +51,9 @@ data Expr a where
   NotB      :: Expr Bool -> Expr Bool
   AndB      :: Expr Bool -> Expr Bool -> Expr Bool
   OrB       :: Expr Bool -> Expr Bool -> Expr Bool
+  EqB       :: Expr Bool -> Expr Bool -> Expr Bool
+  LessB     :: Expr Bool -> Expr Bool -> Expr Bool
+  IfB       :: Expr Bool  -> Expr Bool -> Expr Bool -> Expr Bool
   Neg8      :: Expr Word8 -> Expr Word8
   Sign8     :: Expr Word8 -> Expr Word8
   Add8      :: Expr Word8 -> Expr Word8 -> Expr Word8
@@ -150,6 +153,17 @@ instance B.Boolean (Expr Bool) where
   (&&*) = AndB
   (||*) = OrB
 
+type instance BooleanOf (Expr Bool) = Expr Bool
+
+instance B.EqB (Expr Bool) where
+  (==*) = EqB
+
+instance B.OrdB (Expr Bool) where
+  (<*) = LessB
+
+instance B.IfB (Expr Bool) where
+  ifB = IfB
+
 instance Num (Expr Word8) where
   (+) x y = Add8 x y
   (-) x y = Sub8 x y
@@ -194,6 +208,7 @@ instance BB.BitsB (Expr Word8) where
   bit = Bit8
   setBit = SetB8
   clearBit = ClrB8
+  testBit = \x i -> x .&. bit i /=* 0 
 
 instance  Num (Expr Word16) where
   (+) x y = Add16 x y
@@ -239,6 +254,7 @@ instance BB.BitsB (Expr Word16) where
   bit = Bit16
   setBit = SetB16
   clearBit = ClrB16
+  testBit = \x i -> x .&. bit i /=* 0 
 
 instance  Num (Expr Word32) where
   (+) x y = Add32 x y
@@ -284,6 +300,7 @@ instance BB.BitsB (Expr Word32) where
   bit = Bit32
   setBit = SetB32
   clearBit = ClrB32
+  testBit = \x i -> x .&. bit i /=* 0 
 
 type instance BooleanOf (Expr [Word8]) = Expr Bool
 

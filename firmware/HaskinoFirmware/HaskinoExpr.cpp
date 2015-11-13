@@ -10,6 +10,7 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
     byte exprOp = *pExpr & EXPR_OP_MASK;
     bool val = false;
     int refNum;
+    bool eB_1,eB_2;
     uint8_t e8_1,e8_2,l1len,l2len;
     uint16_t e16_1,e16_2;
     uint32_t e32_1,e32_2;
@@ -64,6 +65,14 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
             *ppExpr += 1; // Use command byte
             switch (exprType)
                 {
+                case EXPR_BOOL:
+                    eB_1 = evalBoolExpr(ppExpr, context);
+                    eB_2 = evalBoolExpr(ppExpr, context);
+                    if (exprOp == EXPR_EQ)
+                        val = (eB_1 == eB_2);
+                    else 
+                        val = (eB_1 < eB_2); 
+                    break;
                 case EXPR_WORD8:
                     e8_1 = evalWord8Expr(ppExpr, context);
                     e8_2 = evalWord8Expr(ppExpr, context);

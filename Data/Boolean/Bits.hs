@@ -91,7 +91,7 @@ class EqB a => BitsB a where
     -- instance of 'Num'.
     testBit           :: a -> IntOf a -> BooleanOf a
 
-    testBit x i = x .&. bit i /= 0 
+    testBit x i = x .&. bit i ==* bit i
 
     {-| Return the number of bits in the type of the argument.  The actual
         value of the argument is ignored.  The function 'bitSize' is

@@ -1,16 +1,16 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.Test.ExprList8
+-- Module      :  System.Hardware.Haskino.Test.ExprBool
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Quick Check tests for Expressions returning a Expr List8
+-- Quick Check tests for Expressions returning a Expr Bool
 -------------------------------------------------------------------------------
 
-{-# LANGUAGE GADTs, ScopedTypeVariables, DataKinds #-}
+{-# LANGUAGE GADTs #-}
 
-module System.Hardware.Haskino.Test.ExprWord8 where
+module System.Hardware.Haskino.Test.ExprBool where
 
 import Prelude hiding 
   ( quotRem, divMod, quot, rem, div, mod, properFraction, fromInteger, toInteger )
@@ -24,64 +24,46 @@ import qualified Data.Bits as DB
 import Test.QuickCheck hiding ((.&.))
 import Test.QuickCheck.Monadic
 
-litEvalL :: Expr [Word8] -> [Word8]
-litEvalL (LitList8 l) = l
-
-litEval8 :: Expr Word8 -> Word8
-litEval8 (Lit8 w) = w
-
 litEvalB :: Expr Bool -> Bool
-litEvalB (LitB b) = b
+litEvalB (LitB w) = w
 
-prop_cons :: ArduinoConnection -> RemoteRef [Word8] -> Word8  -> [Word8] -> Property
-prop_cons c r x xs = monadicIO $ do
-    let local = x : xs
+prop_not :: ArduinoConnection -> RemoteRef Bool -> Bool -> Property
+prop_not c r x = monadicIO $ do
+    let local = not x
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit x) *: (lit xs)
+        writeRemoteRef r $ notB (lit x)
         v <- readRemoteRef r
         return v
-    assert (local == litEvalL remote)
+    assert (local == litEvalB remote)
 
-prop_app :: ArduinoConnection -> RemoteRef [Word8] -> [Word8]  -> [Word8] -> Property
-prop_app c r xs ys = monadicIO $ do
-    let local = xs ++ ys
+prop_and :: ArduinoConnection -> RemoteRef Bool -> Bool -> Bool -> Property
+prop_and c r x y = monadicIO $ do
+    let local = x && y
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit xs) ++* (lit ys)
+        writeRemoteRef r $ (lit x) &&* (lit y)
         v <- readRemoteRef r
         return v
-    assert (local == litEvalL remote)
+    assert (local == litEvalB remote)
 
-prop_len :: ArduinoConnection -> RemoteRef Word8 -> [Word8] -> Property
-prop_len c r xs = monadicIO $ do
-    let local = length xs
+prop_or :: ArduinoConnection -> RemoteRef Bool -> Bool -> Bool -> Property
+prop_or c r x y = monadicIO $ do
+    let local = x || y
     remote <- run $ send c $ do
-        writeRemoteRef r $ len (lit xs)
+        writeRemoteRef r $ (lit x) ||* (lit y)
         v <- readRemoteRef r
         return v
-    assert (local == (fromIntegral $ litEval8 remote))
+    assert (local == litEvalB remote)
 
-prop_elem :: ArduinoConnection -> RemoteRef Word8 -> NonEmptyList Word8 -> Property
-prop_elem c r (NonEmpty xs) = 
-    forAll (choose (0::Word8, fromIntegral $ length xs - 1)) $ \e ->
-        monadicIO $ do
-            let local = xs !! (fromIntegral e)
-            remote <- run $ send c $ do
-                writeRemoteRef r $ (lit xs) !!* (lit e)
-                v <- readRemoteRef r
-                return v
-            assert (local == (fromIntegral $ litEval8 remote))
-
-prop_ifb :: ArduinoConnection -> RemoteRef [Word8] -> Bool -> Word8 -> Word8 -> 
-            [Word8] -> [Word8] -> Property
-prop_ifb c r b x y xs ys = monadicIO $ do
-    let local = if b then x : xs else y : ys
+prop_ifb :: ArduinoConnection -> RemoteRef Bool -> Bool -> Bool -> Bool -> Property
+prop_ifb c r b x y = monadicIO $ do
+    let local = if b then x else y
     remote <- run $ send c $ do
-        writeRemoteRef r $ ifB (lit b) (lit x *: lit xs) (lit y *: lit ys)
+        writeRemoteRef r $ ifB (lit b) (lit x) (lit y)
         v <- readRemoteRef r
         return v
-    assert (local == litEvalL remote)
+    assert (local == litEvalB remote)
 
-prop_eq :: ArduinoConnection -> RemoteRef Bool -> [Word8] -> [Word8] -> Property
+prop_eq :: ArduinoConnection -> RemoteRef Bool -> Bool -> Bool -> Property
 prop_eq c r x y = monadicIO $ do
     let local = x == y
     remote <- run $ send c $ do
@@ -90,7 +72,7 @@ prop_eq c r x y = monadicIO $ do
         return v
     assert (local == litEvalB remote)
 
-prop_neq :: ArduinoConnection -> RemoteRef Bool -> [Word8] -> [Word8] -> Property
+prop_neq :: ArduinoConnection -> RemoteRef Bool -> Bool -> Bool -> Property
 prop_neq c r x y = monadicIO $ do
     let local = x /= y
     remote <- run $ send c $ do
@@ -99,7 +81,7 @@ prop_neq c r x y = monadicIO $ do
         return v
     assert (local == litEvalB remote)
 
-prop_lt :: ArduinoConnection -> RemoteRef Bool -> [Word8] -> [Word8] -> Property
+prop_lt :: ArduinoConnection -> RemoteRef Bool -> Bool -> Bool -> Property
 prop_lt c r x y = monadicIO $ do
     let local = x < y
     remote <- run $ send c $ do
@@ -108,7 +90,7 @@ prop_lt c r x y = monadicIO $ do
         return v
     assert (local == litEvalB remote)
 
-prop_gt :: ArduinoConnection -> RemoteRef Bool -> [Word8] -> [Word8] -> Property
+prop_gt :: ArduinoConnection -> RemoteRef Bool -> Bool -> Bool -> Property
 prop_gt c r x y = monadicIO $ do
     let local = x > y
     remote <- run $ send c $ do
@@ -117,7 +99,7 @@ prop_gt c r x y = monadicIO $ do
         return v
     assert (local == litEvalB remote)
 
-prop_lte :: ArduinoConnection -> RemoteRef Bool -> [Word8] -> [Word8] -> Property
+prop_lte :: ArduinoConnection -> RemoteRef Bool -> Bool -> Bool -> Property
 prop_lte c r x y = monadicIO $ do
     let local = x <= y
     remote <- run $ send c $ do
@@ -126,7 +108,7 @@ prop_lte c r x y = monadicIO $ do
         return v
     assert (local == litEvalB remote)
 
-prop_gte :: ArduinoConnection -> RemoteRef Bool -> [Word8] -> [Word8] -> Property
+prop_gte :: ArduinoConnection -> RemoteRef Bool -> Bool -> Bool -> Property
 prop_gte c r x y = monadicIO $ do
     let local = x >= y
     remote <- run $ send c $ do
@@ -138,19 +120,15 @@ prop_gte c r x y = monadicIO $ do
 main :: IO ()
 main = do
     conn <- openArduino False "/dev/cu.usbmodem1421"
-    refL <- send conn $ newRemoteRef (lit [])
-    ref8 <- send conn $ newRemoteRef (lit 0)
     refB <- send conn $ newRemoteRef (lit False)
-    print "Cons Tests:"
-    quickCheck (prop_cons conn refL)
-    print "Apppend Tests:"
-    quickCheck (prop_app conn refL)
-    print "Length Tests:"
-    quickCheck (prop_len conn ref8)
-    print "Element Tests:"
-    quickCheck (prop_len conn ref8)
+    print "Not Tests:"
+    quickCheck (prop_not conn refB)
+    print "And Tests:"
+    quickCheck (prop_and conn refB)
+    print "Or Tests:"
+    quickCheck (prop_or conn refB)
     print "ifB Tests:"
-    quickCheck (prop_ifb conn refL)
+    quickCheck (prop_ifb conn refB)
     print "Equal Tests:"
     quickCheck (prop_eq conn refB)
     print "Not Equal Tests:"
