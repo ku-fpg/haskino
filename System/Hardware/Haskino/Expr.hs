@@ -70,7 +70,7 @@ data Expr a where
   Eq8       :: Expr Word8 -> Expr Word8 -> Expr Bool
   Less8     :: Expr Word8 -> Expr Word8 -> Expr Bool
   If8       :: Expr Bool  -> Expr Word8 -> Expr Word8 -> Expr Word8
-  Bit8      :: Expr Word8 -> Expr Word8
+  TestB8    :: Expr Word8 -> Expr Word8 -> Expr Bool
   SetB8     :: Expr Word8 -> Expr Word8 -> Expr Word8
   ClrB8     :: Expr Word8 -> Expr Word8 -> Expr Word8
   Neg16     :: Expr Word16 -> Expr Word16
@@ -89,7 +89,7 @@ data Expr a where
   Eq16      :: Expr Word16 -> Expr Word16 -> Expr Bool
   Less16    :: Expr Word16 -> Expr Word16 -> Expr Bool
   If16      :: Expr Bool   -> Expr Word16 -> Expr Word16 -> Expr Word16
-  Bit16     :: Expr Word8  -> Expr Word16
+  TestB16   :: Expr Word16  -> Expr Word8 -> Expr Bool
   SetB16    :: Expr Word16 -> Expr Word8 -> Expr Word16
   ClrB16    :: Expr Word16 -> Expr Word8 -> Expr Word16
   Neg32     :: Expr Word32 -> Expr Word32
@@ -108,7 +108,7 @@ data Expr a where
   Eq32      :: Expr Word32 -> Expr Word32 -> Expr Bool
   Less32    :: Expr Word32 -> Expr Word32 -> Expr Bool
   If32      :: Expr Bool   -> Expr Word32 -> Expr Word32 -> Expr Word32
-  Bit32     :: Expr Word8  -> Expr Word32
+  TestB32   :: Expr Word32 -> Expr Word8 -> Expr Bool
   SetB32    :: Expr Word32 -> Expr Word8 -> Expr Word32
   ClrB32    :: Expr Word32 -> Expr Word8 -> Expr Word32
   ElemList8 :: Expr [Word8] -> Expr Word8   -> Expr Word8
@@ -205,10 +205,10 @@ instance BB.BitsB (Expr Word8) where
   shiftR = ShfR8
   isSigned = (\_ -> lit False)
   bitSize = (\_ -> lit 8)
-  bit = Bit8
+  bit = \i -> 1 `shiftL` i
   setBit = SetB8
   clearBit = ClrB8
-  testBit = \x i -> x .&. bit i /=* 0 
+  testBit = TestB8 
 
 instance  Num (Expr Word16) where
   (+) x y = Add16 x y
@@ -251,10 +251,10 @@ instance BB.BitsB (Expr Word16) where
   shiftR = ShfR16
   isSigned = (\_ -> lit False)
   bitSize = (\_ -> lit 16)
-  bit = Bit16
+  bit = \i -> 1 `shiftL` i
   setBit = SetB16
   clearBit = ClrB16
-  testBit = \x i -> x .&. bit i /=* 0 
+  testBit = TestB16
 
 instance  Num (Expr Word32) where
   (+) x y = Add32 x y
@@ -297,10 +297,10 @@ instance BB.BitsB (Expr Word32) where
   shiftR = ShfR32
   isSigned = (\_ -> lit False)
   bitSize = (\_ -> lit 32)
-  bit = Bit32
+  bit = \i -> 1 `shiftL` i
   setBit = SetB32
   clearBit = ClrB32
-  testBit = \x i -> x .&. bit i /=* 0 
+  testBit = TestB32 
 
 type instance BooleanOf (Expr [Word8]) = Expr Bool
 
@@ -358,7 +358,7 @@ data ExprOp = EXPR_LIT
             | EXPR_EQ
             | EXPR_LESS
             | EXPR_IF
-            | EXPR_BIT
+            | EXPR_TSTB
             | EXPR_SETB
             | EXPR_CLRB
             | EXPR_BIND
@@ -398,7 +398,7 @@ exprOpVal EXPR_SHFR = 0x0F
 exprOpVal EXPR_EQ   = 0x10
 exprOpVal EXPR_LESS = 0x11
 exprOpVal EXPR_IF   = 0x12
-exprOpVal EXPR_BIT  = 0x13
+exprOpVal EXPR_TSTB = 0x13
 exprOpVal EXPR_SETB = 0x14
 exprOpVal EXPR_CLRB = 0x15
 exprOpVal EXPR_BIND = 0x16

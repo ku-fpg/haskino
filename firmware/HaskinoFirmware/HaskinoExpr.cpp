@@ -161,6 +161,37 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                     sendStringf("evalBoolExpr Unknown ExType %d", exprType);
                 }
             break;
+        case EXPR_TSTB:
+            exprType = *pExpr >> EXPR_TYPE_SHFT;
+            *ppExpr += 1; // Use command byte
+            switch (exprType)
+                {
+                case EXPR_WORD8:
+                    e8_1 = evalWord8Expr(ppExpr, context);
+                    e8_2 = evalWord8Expr(ppExpr, context);
+                    if (e8_2 > 7)
+                        val = false;
+                    else
+                        val = (e8_1 & (1 << e8_2)) != 0;
+                    break;
+                case EXPR_WORD16:
+                    e16_1 = evalWord16Expr(ppExpr, context);
+                    e8_2 = evalWord8Expr(ppExpr, context);
+                    if (e8_2 > 15)
+                        val = false;
+                    else
+                        val = (e8_1 & (1 << e8_2)) != 0;
+                    break;
+                case EXPR_WORD32:
+                    e32_1 = evalWord32Expr(ppExpr, context);
+                    e8_2 = evalWord8Expr(ppExpr, context);
+                    if (e8_2 > 31)
+                        val = false;
+                    else
+                        val = (e8_1 & (1 << e8_2)) != 0;
+                    break;
+                }
+            break;
         default:
             sendStringf("evalBoolExpr Unknown ExOp %d", exprOp);
         }
@@ -209,7 +240,6 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
         case EXPR_NEG:
         case EXPR_SIGN:
         case EXPR_COMP:
-        case EXPR_BIT:
             *ppExpr += 1; // Use command byte
             e1 = evalWord8Expr(ppExpr, context);
             switch (exprOp)
@@ -222,9 +252,6 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
                     break;
                 case EXPR_COMP:
                     val = ~e1;
-                    break;
-                case EXPR_BIT:
-                    val = bit(e1);
                     break;
                 }
             break;
@@ -474,11 +501,6 @@ uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context)
                 val = evalWord16Expr(ppExpr, context);
                 }
             break;
-        case EXPR_BIT:
-            *ppExpr += 1; // Use command byte
-            e1 = evalWord8Expr(ppExpr, context);
-            val = bit(e1);
-            break;
         default:
             sendStringf("evalWord16Expr Unknown ExOp %d", exprOp);
         }
@@ -630,11 +652,6 @@ uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context)
                 *ppExpr += thenSize;
                 val = evalWord32Expr(ppExpr, context);
                 }
-            break;
-        case EXPR_BIT:
-            *ppExpr += 1; // Use command byte
-            e1 = evalWord8Expr(ppExpr, context);
-            val = bit(e1);
             break;
         default:
             sendStringf("evalWord32Expr Unknown ExOp %d", exprOp);

@@ -165,6 +165,15 @@ prop_clearBit c r x y = monadicIO $ do
         return v
     assert (local == litEval32 remote)
 
+prop_testBit :: ArduinoConnection -> RemoteRef Bool -> Word32 -> Word8 -> Property
+prop_testBit c r x y = monadicIO $ do
+    let local = x `DB.testBit` (fromIntegral y)
+    remote <- run $ send c $ do
+        writeRemoteRef r $ (lit x) `testBit` (lit y)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEvalB remote)
+
 prop_to8 :: ArduinoConnection -> RemoteRef Word32 -> Word8 -> Property
 prop_to8 c r x = monadicIO $ do
     let local = fromIntegral x
@@ -291,6 +300,8 @@ main = do
     quickCheck (prop_setBit conn ref32)
     print "Clear Bit Tests:"
     quickCheck (prop_clearBit conn ref32)
+    print "Test Bit Tests:"
+    quickCheck (prop_testBit conn refB)
     print "To Word8 Tests:"
     quickCheck (prop_to8 conn ref32)
     print "To Word16 Tests:"
