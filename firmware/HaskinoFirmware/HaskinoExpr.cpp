@@ -180,7 +180,7 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                     if (e8_2 > 15)
                         val = false;
                     else
-                        val = (e8_1 & (1 << e8_2)) != 0;
+                        val = (e16_1 & (1 << e8_2)) != 0;
                     break;
                 case EXPR_WORD32:
                     e32_1 = evalWord32Expr(ppExpr, context);
@@ -188,7 +188,7 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                     if (e8_2 > 31)
                         val = false;
                     else
-                        val = (e8_1 & (1 << e8_2)) != 0;
+                        val = (e32_1 & (1 << e8_2)) != 0;
                     break;
                 }
             break;
