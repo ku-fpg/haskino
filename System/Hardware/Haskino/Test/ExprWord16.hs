@@ -265,6 +265,24 @@ prop_arith c r a b d e f (NonZero g) = monadicIO $ do
         return v
     assert (local == litEval16 remote)
 
+prop_bind :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> Word16 -> Word16 -> Word16 -> Property
+prop_bind c r a b d e = monadicIO $ do
+    let local = a * b + d * e
+    remote <- run $ send c $ do
+        writeRemoteRef r $ (lit a) 
+        a' <- readRemoteRef r
+        writeRemoteRef r $ a' * (lit b) 
+        ab' <- readRemoteRef r
+        writeRemoteRef r $ (lit d) 
+        d' <- readRemoteRef r
+        v <- readRemoteRef r
+        writeRemoteRef r $ d' * (lit e) 
+        de' <- readRemoteRef r
+        writeRemoteRef r $ ab' + de' 
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval16 remote)
+
 main :: IO ()
 main = do
     conn <- openArduino False "/dev/cu.usbmodem1421"
@@ -322,4 +340,6 @@ main = do
     quickCheck (prop_gte conn refB)
     print "Arithemtic Tests:"
     quickCheck (prop_arith conn ref16)
+    print "Bind Tests:"
+    quickCheck (prop_bind conn ref16)
     closeArduino conn
