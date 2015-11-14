@@ -139,21 +139,18 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                         }
                     else
                         {
-                        val = false;
-                        for (int i=0;i<l1len;i++)
-                            {
-                            if (l2len < i)
-                                break;
-                            if (l1[2+i] < l2[2+i])
-                                {
-                                val = true;
-                                break;
-                                }
-                            else if (l1[2+i] > l2[2+i])
-                                break;
-                            }
-                            if (l2len > l1len)
-                                val = true;
+                        int i;
+                        for (i=0;
+                             i < l1len && i < l2len && l1[2+i] == l2[2+i];
+                             i++);
+                        if (i == l1len && i == l2len)
+                            val = false;
+                        else if (i == l1len)
+                            val = true;
+                        else if (i == l2len)
+                            val = false;
+                        else 
+                            val = l1[2+i] < l2[2+i];
                         }
                     if (alloc1)
                         free(l1);
