@@ -441,13 +441,13 @@ uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context)
                     val = e1 >> e8_1;
                     break;
                 case EXPR_SETB:
-                    if (e2 > 15)
+                    if (e8_1 > 15)
                         val = e1;
                     else
                         val = bitSet(e1, e8_1);
                     break;
                 case EXPR_CLRB:
-                    if (e2 > 15)
+                    if (e8_1 > 15)
                         val = e1;
                     else
                         val = bitClear(e1, e8_1);
@@ -592,13 +592,13 @@ uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context)
                     val = e1 >> e8_1;
                     break;
                 case EXPR_SETB:
-                    if (e2 > 31)
+                    if (e8_1 > 31)
                         val = e1;
                     else
                         val = bitSet(e1, e8_1);
                     break;
                 case EXPR_CLRB:
-                    if (e2 > 31)
+                    if (e8_1 > 31)
                         val = e1;
                     else
                         val = bitClear(e1, e8_1);
