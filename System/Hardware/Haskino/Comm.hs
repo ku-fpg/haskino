@@ -178,6 +178,7 @@ send conn commands =
       sendProcedure :: ArduinoConnection -> Procedure a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendProcedure c procedure k cmds = do
           sendToArduino c (B.append cmds (framePackage $ packageProcedure procedure 0))
+          -- ToDo:  Wait longer for delay procedures
           qr <- waitResponse c (Procedure procedure)
           send' c (k qr) B.empty
 

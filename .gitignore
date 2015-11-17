@@ -41,3 +41,5 @@ firmware/Arduino-Makefile
 # Firmware binaries
 firmware/HaskinoFirmware/build-*
 
+
+*.hi
