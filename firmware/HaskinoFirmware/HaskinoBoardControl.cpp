@@ -51,6 +51,7 @@ static bool handleSetPinMode(int size, const byte *msg, CONTEXT *context)
     {
     byte *expr = (byte *) &msg[1];
     byte pinNo = evalWord8Expr(&expr, context);
+
     pinMode(pinNo, *expr);
     return false;
     }
@@ -58,6 +59,8 @@ static bool handleSetPinMode(int size, const byte *msg, CONTEXT *context)
 static bool handleDelayMillis(int size, const byte *msg, CONTEXT *context)
     {
     byte *expr = (byte *) &msg[2];
+    byte bind = msg[1];
+
     uint32_t millis = evalWord32Expr(&expr, context);
 
     if (context->task && !isCodeBlock())
@@ -69,7 +72,7 @@ static bool handleDelayMillis(int size, const byte *msg, CONTEXT *context)
         delay(millis);
         if (!context->task && !isCodeBlock())
             {
-            sendReply(0, BC_RESP_DELAY, NULL, NULL,0);
+            sendReply(0, BC_RESP_DELAY, NULL, context, bind);
             }
         }
     return true;
@@ -78,11 +81,13 @@ static bool handleDelayMillis(int size, const byte *msg, CONTEXT *context)
 static bool handleDelayMicros(int size, const byte *msg, CONTEXT *context)
     {
     byte *expr = (byte *) &msg[2];
+    byte bind = msg[1];
+
     uint32_t micros = evalWord16Expr(&expr, context);
     delayMicroseconds(micros);
     if (!context->task && !isCodeBlock())
         {
-        sendReply(0, BC_RESP_DELAY, NULL, NULL,0);
+        sendReply(0, BC_RESP_DELAY, NULL, context, bind);
         }
     return false;
     }
