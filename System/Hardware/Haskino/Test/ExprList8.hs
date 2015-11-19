@@ -71,6 +71,8 @@ prop_elem c r (NonEmpty xs) =
                 return v
             assert (local == (fromIntegral $ litEval8 remote))
 
+-- ToDo: generate prop_elem_out_of_bounds
+
 prop_ifb :: ArduinoConnection -> RemoteRef [Word8] -> Bool -> Word8 -> Word8 -> 
             [Word8] -> [Word8] -> Property
 prop_ifb c r b x y xs ys = monadicIO $ do

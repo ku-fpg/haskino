@@ -144,12 +144,10 @@ packageCommand (IfThenElse e cb1 cb2) ix ib =
     (pc2, ix'', _) = packageCodeBlock cb2 ix' ib
     thenSize = word16ToBytes $ fromIntegral (B.length pc1)
 
--- ToDo:  Create locally scoped remote refs by passing ID offsets 
--- through pack calls and incrementing them whan packing newRemoteRef calls.
--- The package code block takes the monad code block to package, and
--- an integer with the current remote reference index, and returns a tuple
--- of the packaged block, final remote reference index, and number of
--- remote binds in the block.
+-- The package code block takes the monad code block to package, an
+-- an integer with the current remote reference index, an integer with the
+-- current remote bind index, and returns a tuple of the packaged block,
+-- final remote reference index, and final remote bind index.
 packageCodeBlock :: Arduino a -> Int -> Int -> (B.ByteString, Int, Int)
 packageCodeBlock commands ix ib =
       packageCodeBlock' commands ix ib B.empty
@@ -403,7 +401,6 @@ unpackageResponse (cmdWord:args)
   = Unimplemented Nothing (cmdWord : args)
 
 -- This is how we match responses with queries
--- ToDo: Fix I2CReadE and query task expr versions.
 parseQueryResult :: Arduino a -> Response -> Maybe a
 parseQueryResult (Procedure QueryFirmware) (Firmware v) = Just v
 parseQueryResult (Procedure QueryFirmwareE) (Firmware v) = Just (lit v)
