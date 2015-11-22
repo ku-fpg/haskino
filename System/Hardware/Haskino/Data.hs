@@ -188,6 +188,7 @@ data Command =
      | WhileRemoteRef32 (RemoteRef Word32) (Expr Word32 -> Expr Bool) (Expr Word32 -> Expr Word32) (Arduino ())
      | WhileRemoteRefL8 (RemoteRef [Word8]) (Expr [Word8] -> Expr Bool) (Expr [Word8] -> Expr [Word8]) (Arduino ())
      | LoopE (Arduino ())
+     | ForInE (Expr [Word8]) (Expr Word8 -> Arduino ()) 
      | IfThenElse (Expr Bool) (Arduino ()) (Arduino ())
      -- ToDo: add one wire and encoder procedures, readd stepper and servo
 
@@ -266,6 +267,9 @@ bootTaskE tid = Command $ BootTaskE tid
 
 loopE :: Arduino () -> Arduino()
 loopE ps = Command $ LoopE ps
+
+forInE :: Expr [Word8] -> (Expr Word8 -> Arduino ()) -> Arduino ()
+forInE ws f = Command $ ForInE ws f
 
 ifThenElse :: Expr Bool -> Arduino () -> Arduino() -> Arduino()
 ifThenElse be tps eps = Command $ IfThenElse be tps eps
@@ -554,6 +558,7 @@ data FirmwareCmd = BC_CMD_SYSTEM_RESET
                  | BC_CMD_LOOP
                  | BC_CMD_WHILE
                  | BC_CMD_IF_THEN_ELSE
+                 | BC_CMD_FORIN
                  | BS_CMD_REQUEST_VERSION
                  | BS_CMD_REQUEST_TYPE
                  | BS_CMD_REQUEST_MICROS
@@ -589,6 +594,7 @@ firmwareCmdVal BC_CMD_DELAY_MICROS      = 0x13
 firmwareCmdVal BC_CMD_WHILE             = 0x14
 firmwareCmdVal BC_CMD_IF_THEN_ELSE      = 0x15
 firmwareCmdVal BC_CMD_LOOP              = 0x16
+firmwareCmdVal BC_CMD_FORIN             = 0x17
 firmwareCmdVal BS_CMD_REQUEST_VERSION   = 0x20
 firmwareCmdVal BS_CMD_REQUEST_TYPE      = 0x21
 firmwareCmdVal BS_CMD_REQUEST_MILLIS    = 0x22

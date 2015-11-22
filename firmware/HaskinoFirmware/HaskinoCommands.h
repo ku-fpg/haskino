@@ -19,6 +19,7 @@
 #define BC_CMD_WHILE            (BC_CMD_TYPE | 0x4)
 #define BC_CMD_IF_THEN_ELSE     (BC_CMD_TYPE | 0x5)
 #define BC_CMD_LOOP             (BC_CMD_TYPE | 0x6)
+#define BC_CMD_FORIN            (BC_CMD_TYPE | 0x7)
 
 // Board Control responses
 #define BC_RESP_DELAY           (BC_CMD_TYPE | 0x8)

@@ -17,6 +17,7 @@ static bool handleDelayMicros(int size, const byte *msg, CONTEXT *context);
 static bool handleLoop(int size, const byte *msg, CONTEXT *context);
 static bool handleWhile(int size, const byte *msg, CONTEXT *context);
 static bool handleIfThenElse(int size, const byte *msg, CONTEXT *context);
+static bool handleForIn(int size, const byte *msg, CONTEXT *context);
 
 bool parseBoardControlMessage(int size, const byte *msg, CONTEXT *context)
     {
@@ -42,6 +43,9 @@ bool parseBoardControlMessage(int size, const byte *msg, CONTEXT *context)
             break;
         case BC_CMD_IF_THEN_ELSE:
             return handleIfThenElse(size, msg, context);
+            break;
+        case BC_CMD_FORIN:
+            return handleForIn(size, msg, context);
             break;
         }
     return false;
@@ -107,6 +111,29 @@ static bool handleLoop(int size, const byte *msg, CONTEXT *context)
         {
         runCodeBlock(loopSize, codeBlock, context);
         }
+
+    return false;
+    }
+
+static bool handleForIn(int size, const byte *msg, CONTEXT *context)
+    {
+    byte *expr = (byte *) &msg[1];
+    bool alloc;
+    byte *listPtr = evalList8Expr(&expr, context, &alloc);
+    byte listSize = listPtr[1];
+    byte bindIndex = expr[1];
+    byte *codeBlock = expr + 2;
+    int forSize = size - (codeBlock - msg);
+
+    context->bind[bindIndex * BIND_SPACING] = EXPR(EXPR_WORD8, EXPR_LIT);
+    for (int i=0;i<listSize;i++)
+        {
+        context->bind[bindIndex * BIND_SPACING + 1] = listPtr[i+2];
+        runCodeBlock(forSize, codeBlock, context);
+        }
+
+    if (alloc) 
+        free(listPtr);
 
     return false;
     }

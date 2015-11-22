@@ -136,6 +136,10 @@ packageCommand (LoopE cb) ix ib =
     (buildCommand BC_CMD_LOOP (B.unpack pc), ix')
   where
     (pc, ix', _) = packageCodeBlock cb ix ib
+packageCommand (ForInE ws f) ix ib =
+    (buildCommand BC_CMD_FORIN ((packageExpr ws) ++ (packageExpr (RemBind8 ib)) ++ (B.unpack pc)), ix')
+  where
+    (pc, ix', _) = packageCodeBlock (f (RemBind8 ib)) ix (ib+1)
 packageCommand (IfThenElse e cb1 cb2) ix ib =
     (buildCommand BC_CMD_IF_THEN_ELSE (thenSize ++ pe ++ (B.unpack pc1) ++ (B.unpack pc2)), ix'')
   where
