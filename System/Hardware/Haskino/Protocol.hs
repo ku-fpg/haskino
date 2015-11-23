@@ -51,6 +51,8 @@ packageCommand (SetPinModeE p m) ix _ =
     (buildCommand BC_CMD_SET_PIN_MODE (packageExpr p ++ [fromIntegral $ fromEnum m]), ix)
 packageCommand (DigitalWriteE p b) ix _ =
     (buildCommand DIG_CMD_WRITE_PIN (packageExpr p ++ packageExpr b), ix)
+packageCommand (DigitalPortWriteE p b m) ix _ =
+    (buildCommand DIG_CMD_WRITE_PORT (packageExpr p ++ packageExpr b ++ packageExpr m), ix)
 packageCommand (AnalogWriteE p w) ix _ =
     (buildCommand ALG_CMD_WRITE_PIN (packageExpr p ++ packageExpr w), ix)
 packageCommand (ToneE p f (Just d)) ix _ =
@@ -190,6 +192,8 @@ packageCodeBlock commands ix ib =
       packProcedure (DelayMicrosE ms) ix ib k cmds = packageCodeBlock' (k ()) ix ib (B.append cmds (lenPackage (packageProcedure (DelayMicrosE ms) ib)))
       packProcedure (DigitalRead p) ix ib k cmds = packageCodeBlock' (k False) ix ib (B.append cmds (lenPackage (packageProcedure (DigitalRead p) ib)))
       packProcedure (DigitalReadE p) ib ix k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (DigitalReadE p) ib)))
+      packProcedure (DigitalPortRead p m) ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure (DigitalPortRead p m) ib)))
+      packProcedure (DigitalPortReadE p m) ib ix k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (DigitalPortReadE p m) ib)))
       packProcedure (AnalogRead p) ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure (AnalogRead p) ib)))
       packProcedure (AnalogReadE p) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (AnalogReadE p) ib)))
       packProcedure (I2CRead p n) ix ib k cmds = packageCodeBlock' (k []) ix ib (B.append cmds (lenPackage (packageProcedure (I2CRead p n) ib)))
@@ -229,6 +233,8 @@ packageProcedure Millis ib           = buildCommand BS_CMD_REQUEST_MILLIS [fromI
 packageProcedure MillisE ib          = buildCommand BS_CMD_REQUEST_MILLIS [fromIntegral ib]
 packageProcedure (DigitalRead p) ib  = buildCommand DIG_CMD_READ_PIN ((fromIntegral ib) : (packageExpr $ lit p))
 packageProcedure (DigitalReadE pe) ib = buildCommand DIG_CMD_READ_PIN ((fromIntegral ib) : (packageExpr pe))
+packageProcedure (DigitalPortRead p m) ib  = buildCommand DIG_CMD_READ_PORT ((fromIntegral ib) : ((packageExpr $ lit p) ++ (packageExpr $ lit m)))
+packageProcedure (DigitalPortReadE pe me) ib = buildCommand DIG_CMD_READ_PORT ((fromIntegral ib) : ((packageExpr pe) ++ (packageExpr me)))
 packageProcedure (AnalogRead p) ib   = buildCommand ALG_CMD_READ_PIN ((fromIntegral ib) : (packageExpr $ lit p))
 packageProcedure (AnalogReadE pe) ib = buildCommand ALG_CMD_READ_PIN ((fromIntegral ib) : (packageExpr pe))
 packageProcedure (I2CRead sa cnt) ib = buildCommand I2C_CMD_READ ((fromIntegral ib) : ((packageExpr $ lit sa) ++ (packageExpr $ lit cnt)))
@@ -377,6 +383,7 @@ unpackageResponse (cmdWord:args)
       (BS_RESP_MILLIS, [l,m0,m1,m2,m3]) -> MillisReply (bytesToWord32 (m0,m1,m2,m3))
       (BS_RESP_STRING, rest)            -> StringMessage (getString rest)
       (DIG_RESP_READ_PIN, [l,b])        -> DigitalReply b
+      (DIG_RESP_READ_PORT, [l,b])       -> DigitalPortReply b
       (ALG_RESP_READ_PIN, [l,bl,bh])    -> AnalogReply (bytesToWord16 (bl,bh))
       (I2C_RESP_READ, _:_:xs)           -> I2CReply xs
       (SCHED_RESP_QUERY_ALL, _:_:ts)    -> QueryAllTasksReply ts
@@ -419,6 +426,8 @@ parseQueryResult (Procedure (DelayMillis m)) DelayResp = Just ()
 parseQueryResult (Procedure (DelayMillisE m)) DelayResp = Just ()
 parseQueryResult (Procedure (DigitalRead p)) (DigitalReply d) = Just (if d == 0 then False else True)
 parseQueryResult (Procedure (DigitalReadE p)) (DigitalReply d) = Just (if d == 0 then lit False else lit True)
+parseQueryResult (Procedure (DigitalPortRead p m)) (DigitalPortReply d) = Just d
+parseQueryResult (Procedure (DigitalPortReadE p m)) (DigitalPortReply d) = Just (lit d)
 parseQueryResult (Procedure (AnalogRead p)) (AnalogReply a) = Just a
 parseQueryResult (Procedure (AnalogReadE p)) (AnalogReply a) = Just (lit a)
 parseQueryResult (Procedure (I2CRead saq cnt)) (I2CReply ds) = Just ds

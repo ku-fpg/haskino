@@ -159,8 +159,7 @@ data Command =
        SystemReset                              -- ^ Send system reset
      | SetPinModeE PinE PinMode                 -- ^ Set the mode on a pin
 --  ToDo: PinMode expression?
---     | DigitalPortWrite Port Word8            -- ^ Set the values on a port digitally
---     | DigitalPortWriteE Port (Expr Word8)
+     | DigitalPortWriteE PinE (Expr Word8) (Expr Word8)
      | DigitalWriteE PinE (Expr Bool)              
      | AnalogWriteE PinE (Expr Word16)
      | ToneE PinE (Expr Word16) (Maybe (Expr Word32))       -- ^ Play a tone on a pin
@@ -201,17 +200,17 @@ setPinMode p pm = Command $ SetPinModeE (lit p) pm
 setPinModeE :: PinE -> PinMode -> Arduino ()
 setPinModeE p pm = Command $ SetPinModeE p pm
 
--- digitalPortWrite :: Port -> Word8 -> Arduino ()
--- digitalPortWrite p w = Command $ DigitalPortWrite p w
-
--- digitalPortWriteE :: Port -> (Expr Word8) -> Arduino ()
--- digitalPortWriteE p w = Command $ DigitalPortWriteE p w
-
 digitalWrite :: Pin -> Bool -> Arduino ()
 digitalWrite p b = Command $ DigitalWriteE (lit p) (lit b)
 
 digitalWriteE :: PinE -> Expr Bool -> Arduino ()
 digitalWriteE p b = Command $ DigitalWriteE p b
+
+digitalPortWrite :: Pin -> Word8 -> Word8 -> Arduino ()
+digitalPortWrite p b m = Command $ DigitalPortWriteE (lit p) (lit b) (lit m)
+
+digitalPortWriteE :: PinE -> Expr Word8 -> Expr Word8 -> Arduino ()
+digitalPortWriteE p b m = Command $ DigitalPortWriteE p b m
 
 analogWrite :: Pin -> Word16 -> Arduino ()
 analogWrite p w = Command $ AnalogWriteE (lit p) (lit w)
@@ -396,10 +395,10 @@ data Procedure :: * -> * where
      DelayMicros    :: TimeMicros -> Procedure ()
      DelayMillisE   :: TimeMillisE -> Procedure ()
      DelayMicrosE   :: TimeMicrosE -> Procedure ()
---     DigitalPortRead  :: Port -> Procedure Word8          -- ^ Read the values on a port digitally
---     DigitalPortReadE :: Port -> Procedure (Expr Word8)
      DigitalRead    :: Pin -> Procedure Bool            -- ^ Read the avlue ona pin digitally
      DigitalReadE   :: PinE -> Procedure (Expr Bool)         -- ^ Read the avlue ona pin digitally
+     DigitalPortRead  :: Pin -> Word8 -> Procedure Word8          -- ^ Read the values on a port digitally
+     DigitalPortReadE :: PinE -> Expr Word8 -> Procedure (Expr Word8)
      AnalogRead     :: Pin -> Procedure Word16          -- ^ Read the analog value on a pin
      AnalogReadE    :: PinE -> Procedure (Expr Word16)          
      I2CRead :: SlaveAddress -> Word8 -> Procedure [Word8]
@@ -463,6 +462,12 @@ digitalRead p = Procedure $ DigitalRead p
 
 digitalReadE :: PinE -> Arduino (Expr Bool)
 digitalReadE p = Procedure $ DigitalReadE p
+
+digitalPortRead :: Pin -> Word8 -> Arduino Word8
+digitalPortRead p m = Procedure $ DigitalPortRead p m
+
+digitalPortReadE :: PinE -> Expr Word8 -> Arduino (Expr Word8)
+digitalPortReadE p m = Procedure $ DigitalPortReadE p m
 
 analogRead :: Pin -> Arduino Word16
 analogRead p = Procedure $ AnalogRead p
@@ -532,6 +537,7 @@ data Response = DelayResp
               | MicrosReply Word32                   -- ^ Elapsed Microseconds
               | MillisReply Word32                   -- ^ Elapsed Milliseconds
               | DigitalReply Word8                   -- ^ Status of a pin
+              | DigitalPortReply Word8               -- ^ Status of a port
               | AnalogReply Word16                   -- ^ Status of an analog pin
               | StringMessage  String                -- ^ String message from Firmware
               | I2CReply [Word8]                     -- ^ Response to a I2C Read
@@ -565,6 +571,8 @@ data FirmwareCmd = BC_CMD_SYSTEM_RESET
                  | BS_CMD_REQUEST_MILLIS
                  | DIG_CMD_READ_PIN
                  | DIG_CMD_WRITE_PIN
+                 | DIG_CMD_READ_PORT
+                 | DIG_CMD_WRITE_PORT
                  | ALG_CMD_READ_PIN
                  | ALG_CMD_WRITE_PIN
                  | ALG_CMD_TONE_PIN
@@ -601,6 +609,8 @@ firmwareCmdVal BS_CMD_REQUEST_MILLIS    = 0x22
 firmwareCmdVal BS_CMD_REQUEST_MICROS    = 0x23
 firmwareCmdVal DIG_CMD_READ_PIN         = 0x30
 firmwareCmdVal DIG_CMD_WRITE_PIN        = 0x31
+firmwareCmdVal DIG_CMD_READ_PORT        = 0x32
+firmwareCmdVal DIG_CMD_WRITE_PORT       = 0x33
 firmwareCmdVal ALG_CMD_READ_PIN         = 0x40
 firmwareCmdVal ALG_CMD_WRITE_PIN        = 0x41
 firmwareCmdVal ALG_CMD_TONE_PIN         = 0x42
@@ -644,6 +654,7 @@ data FirmwareReply =  BC_RESP_DELAY
                    |  BS_RESP_MILLIS
                    |  BS_RESP_STRING
                    |  DIG_RESP_READ_PIN
+                   |  DIG_RESP_READ_PORT
                    |  ALG_RESP_READ_PIN
                    |  I2C_RESP_READ
                    |  SCHED_RESP_QUERY
@@ -660,6 +671,7 @@ getFirmwareReply 0x2A = Right BS_RESP_MICROS
 getFirmwareReply 0x2B = Right BS_RESP_MILLIS
 getFirmwareReply 0x2C = Right BS_RESP_STRING
 getFirmwareReply 0x38 = Right DIG_RESP_READ_PIN
+getFirmwareReply 0x39 = Right DIG_RESP_READ_PORT
 getFirmwareReply 0x48 = Right ALG_RESP_READ_PIN
 getFirmwareReply 0x58 = Right I2C_RESP_READ
 getFirmwareReply 0xA8 = Right SCHED_RESP_QUERY

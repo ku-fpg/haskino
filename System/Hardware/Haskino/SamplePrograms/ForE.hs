@@ -20,7 +20,7 @@ forE :: IO ()
 forE = withArduino False "/dev/cu.usbmodem1421" $ do
            let l = lit [1,2,3,4]
            r <- newRemoteRef 0
-           forInE l $ (\x -> modifyRemoteRef r (\a -> a + x))
+           forInE l (\x -> modifyRemoteRef r (\a -> a + x))
            s <- readRemoteRef r
            liftIO $ print s
            return ()
