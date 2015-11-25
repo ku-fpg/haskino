@@ -44,7 +44,7 @@ bool readRefBool(int refIndex)
         return *((bool *) haskinoRefs[refIndex].ref);
     else
         {
-        sendStringf("readRefBool: Invalid ref index %d", refIndex);
+        sendStringf("rRB: %d", refIndex);
         return false;
         }
     }
@@ -55,7 +55,7 @@ uint8_t readRefWord8(int refIndex)
         return *((uint8_t *) haskinoRefs[refIndex].ref);
     else
         {
-        sendStringf("readRefWord8: Invalid ref index %d", refIndex);
+        sendStringf("rRW8: %d", refIndex);
         return false;
         }
     }
@@ -66,7 +66,7 @@ uint16_t readRefWord16(int refIndex)
         return *((uint16_t *) haskinoRefs[refIndex].ref);
     else
         {
-        sendStringf("readRefWord16: Invalid ref index %d", refIndex);
+        sendStringf("rRW16: %d", refIndex);
         return false;
         }
     }
@@ -77,7 +77,7 @@ uint32_t readRefWord32(int refIndex)
         return *((uint32_t *) haskinoRefs[refIndex].ref);
     else
         {
-        sendStringf("readRefWord32: Invalid ref index %d", refIndex);
+        sendStringf("rRW32: %d", refIndex);
         return false;
         }
     }
@@ -88,7 +88,7 @@ uint8_t *readRefList8(int refIndex)
         return (uint8_t *) haskinoRefs[refIndex].ref;
     else
         {
-        sendStringf("readRefList8: Invalid ref index %d", refIndex);
+        sendStringf("rRL8: %d", refIndex);
         return false;
         }
     }

@@ -238,7 +238,7 @@ static bool handleQueryAll(int size, const byte *msg, CONTEXT *context)
 
     if (!localMem)
         {
-        sendStringf("handleQueryAll - malloc error");
+        sendStringf("hQA: M");
         return false;
         }
 

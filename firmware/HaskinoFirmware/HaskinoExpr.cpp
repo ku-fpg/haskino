@@ -158,7 +158,7 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                         free(l2);
                     break;
                 default:
-                    sendStringf("evalBoolExpr Unknown ExType %d", exprType);
+                    sendStringf("eBE: T %d", exprType);
                 }
             break;
         case EXPR_TSTB:
@@ -193,7 +193,7 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                 }
             break;
         default:
-            sendStringf("evalBoolExpr Unknown ExOp %d", exprOp);
+            sendStringf("eBE: O %d", exprOp);
         }
         return val;
     }
@@ -357,7 +357,7 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
                 free(listMem);
             break;
         default:
-            sendStringf("evalWord8Expr Unknown ExOp %d", exprOp);
+            sendStringf("eW8E: O %d", exprOp);
         }
         return val;
     }
@@ -502,7 +502,7 @@ uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context)
                 }
             break;
         default:
-            sendStringf("evalWord16Expr Unknown ExOp %d", exprOp);
+            sendStringf("eW16E: O %d", exprOp);
         }
         return val;
     }
@@ -635,7 +635,7 @@ uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context)
             else if (exprType == EXPR_WORD16)
                 val = evalWord16Expr(ppExpr, context);
             else
-                sendStringf("evalWord32Expr Unknown ExType %d", exprType);
+                sendStringf("eW32E: T %d", exprType);
             break;
         case EXPR_IF:
             memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
@@ -654,7 +654,7 @@ uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context)
                 }
             break;
         default:
-            sendStringf("evalWord32Expr Unknown ExOp %d", exprOp);
+            sendStringf("eW32E: O %d", exprOp);
         }
         return val;
     }
@@ -726,7 +726,7 @@ byte sizeList8Expr(byte **ppExpr, CONTEXT *context)
             size = 1 + sizeList8Expr(ppExpr, context);
             break;
         default:
-            sendStringf("sizeList8Expr Unknown ExOp %d", exprOp);
+            sendStringf("sL8E: O %d", exprOp);
         }
         return size;
     }
@@ -783,7 +783,7 @@ int evalList8SubExpr(byte **ppExpr, CONTEXT *context, byte *listMem, byte index)
             size = evalList8SubExpr(ppExpr, context, listMem, index + 1) + 1;
             break;
         default:
-            sendStringf("evalList8SubExpr Unknown ExOp %d", exprOp);
+            sendStringf("eL8SE: O %d", exprOp);
         }
     return size;
     }
