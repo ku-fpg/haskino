@@ -25,7 +25,7 @@ import Test.QuickCheck hiding ((.&.))
 import Test.QuickCheck.Monadic
 
 litEval8 :: Expr Word8 -> Word8
-litEval8 (Lit8 w) = w
+litEval8 (LitW8 w) = w
 
 litEvalB :: Expr Bool -> Bool
 litEvalB (LitB w) = w
@@ -295,46 +295,46 @@ prop_bind c r a b d e = monadicIO $ do
 main :: IO ()
 main = do
     conn <- openArduino False "/dev/cu.usbmodem1421"
-    ref8 <- send conn $ newRemoteRef 0
+    refW8 <- send conn $ newRemoteRef 0
     refB <- send conn $ newRemoteRef (lit False)
     print "Negation Tests:"
-    quickCheck (prop_neg conn ref8)
+    quickCheck (prop_neg conn refW8)
     print "Signum Tests:"
-    quickCheck (prop_sign conn ref8)
+    quickCheck (prop_sign conn refW8)
     print "Addition Tests:"
-    quickCheck (prop_add conn ref8)
+    quickCheck (prop_add conn refW8)
     print "Subtraction Tests:"
-    quickCheck (prop_sub conn ref8)
+    quickCheck (prop_sub conn refW8)
     print "Multiplcation Tests:"
-    quickCheck (prop_mult conn ref8)
+    quickCheck (prop_mult conn refW8)
     print "Division Tests:"
-    quickCheck (prop_div conn ref8)
+    quickCheck (prop_div conn refW8)
     print "Remainder Tests:"
-    quickCheck (prop_rem conn ref8)
+    quickCheck (prop_rem conn refW8)
     print "Complement Tests:"
-    quickCheck (prop_comp conn ref8)
+    quickCheck (prop_comp conn refW8)
     print "Bitwise And Tests:"
-    quickCheck (prop_and conn ref8)
+    quickCheck (prop_and conn refW8)
     print "Bitwise Or Tests:"
-    quickCheck (prop_or conn ref8)
+    quickCheck (prop_or conn refW8)
     print "Bitwise Xor Tests:"
-    quickCheck (prop_xor conn ref8)
+    quickCheck (prop_xor conn refW8)
     print "Shift Left Tests:"
-    quickCheck (prop_shiftL conn ref8)
+    quickCheck (prop_shiftL conn refW8)
     print "Shift Right Tests:"
-    quickCheck (prop_shiftR conn ref8)
+    quickCheck (prop_shiftR conn refW8)
     print "Set Bit Tests:"
-    quickCheck (prop_setBit conn ref8)
+    quickCheck (prop_setBit conn refW8)
     print "Clear Bit Tests:"
-    quickCheck (prop_clearBit conn ref8)
+    quickCheck (prop_clearBit conn refW8)
     print "Test Bit Tests:"
     quickCheck (prop_testBit conn refB)
     print "From Word32 Tests:"
-    quickCheck (prop_from32 conn ref8)
+    quickCheck (prop_from32 conn refW8)
     print "From Word16 Tests:"
-    quickCheck (prop_from16 conn ref8)
+    quickCheck (prop_from16 conn refW8)
     print "ifB Tests:"
-    quickCheck (prop_ifb conn ref8)
+    quickCheck (prop_ifb conn refW8)
     print "Equal Tests:"
     quickCheck (prop_eq conn refB)
     print "Not Equal Tests:"
@@ -348,7 +348,7 @@ main = do
     print "Greater Than Equal Tests:"
     quickCheck (prop_gte conn refB)
     print "Arithemtic Tests:"
-    quickCheck (prop_arith conn ref8)
+    quickCheck (prop_arith conn refW8)
     print "Bind Tests:"
-    quickCheck (prop_bind conn ref8)
+    quickCheck (prop_bind conn refW8)
     closeArduino conn

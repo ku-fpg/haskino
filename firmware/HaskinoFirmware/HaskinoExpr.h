@@ -7,11 +7,14 @@
 
 #define EXPR_TYPE_MASK 0xE0
 #define EXPR_TYPE_SHFT 5
-#define EXPR_BOOL   0x01
-#define EXPR_WORD8  0x02
-#define EXPR_WORD16 0x03
-#define EXPR_WORD32 0x04
-#define EXPR_LIST8  0x05
+#define EXPR_BOOL   0x00
+#define EXPR_WORD8  0x01
+#define EXPR_WORD16 0x02
+#define EXPR_WORD32 0x03
+#define EXPR_LIST8  0x04
+#define EXPR_INT8   0x05
+#define EXPR_INT16  0x06
+#define EXPR_INT32  0x07
 
 #define EXPR_OP_MASK 0x1F
 #define EXPR_LIT  0x00
@@ -51,6 +54,9 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context);
 uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context);
 uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context);
 uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc);
+int8_t evalInt8Expr(byte **ppExpr, CONTEXT *context);
+int16_t evalInt16Expr(byte **ppExpr, CONTEXT *context);
+int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context);
 void putBindListPtr(CONTEXT *context, byte bind, byte *newPtr);
 
 #endif /* HaskinoExprH */

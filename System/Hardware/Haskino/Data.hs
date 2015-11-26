@@ -639,11 +639,11 @@ data RefType = REF_BOOL
 
 -- | Compute the numeric value of a reference type
 refTypeCmdVal :: RefType -> Word8
-refTypeCmdVal REF_BOOL                  = 0x01
-refTypeCmdVal REF_WORD8                 = 0x02
-refTypeCmdVal REF_WORD16                = 0x03
-refTypeCmdVal REF_WORD32                = 0x04
-refTypeCmdVal REF_LIST8                 = 0x05
+refTypeCmdVal REF_BOOL                  = 0x00
+refTypeCmdVal REF_WORD8                 = 0x01
+refTypeCmdVal REF_WORD16                = 0x02
+refTypeCmdVal REF_WORD32                = 0x03
+refTypeCmdVal REF_LIST8                 = 0x04
 
 -- | Firmware replies, see: 
 -- | https://github.com/ku-fpg/haskino/wiki/Haskino-Firmware-Protocol-Definition

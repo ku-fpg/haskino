@@ -28,7 +28,7 @@ litEvalL :: Expr [Word8] -> [Word8]
 litEvalL (LitList8 l) = l
 
 litEval8 :: Expr Word8 -> Word8
-litEval8 (Lit8 w) = w
+litEval8 (LitW8 w) = w
 
 litEvalB :: Expr Bool -> Bool
 litEvalB (LitB b) = b
@@ -141,16 +141,16 @@ main :: IO ()
 main = do
     conn <- openArduino False "/dev/cu.usbmodem1421"
     refL <- send conn $ newRemoteRef (lit [])
-    ref8 <- send conn $ newRemoteRef (lit 0)
+    refW8 <- send conn $ newRemoteRef (lit 0)
     refB <- send conn $ newRemoteRef (lit False)
     print "Cons Tests:"
     quickCheck (prop_cons conn refL)
     print "Apppend Tests:"
     quickCheck (prop_app conn refL)
     print "Length Tests:"
-    quickCheck (prop_len conn ref8)
+    quickCheck (prop_len conn refW8)
     print "Element Tests:"
-    quickCheck (prop_len conn ref8)
+    quickCheck (prop_len conn refW8)
     print "ifB Tests:"
     quickCheck (prop_ifb conn refL)
     print "Equal Tests:"
