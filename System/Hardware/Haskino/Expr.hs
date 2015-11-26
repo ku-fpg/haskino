@@ -14,6 +14,7 @@
 module System.Hardware.Haskino.Expr where
 
 import qualified Data.Bits as DB
+import       Data.Int (Int8, Int16, Int32)
 import       Data.Word (Word8, Word16, Word32)
 import       Data.Boolean as B
 import       Data.Boolean.Numbers as BN
@@ -24,6 +25,9 @@ data RemoteRef a where
     RemoteRefW8  :: Int -> RemoteRef Word8
     RemoteRefW16 :: Int -> RemoteRef Word16
     RemoteRefW32 :: Int -> RemoteRef Word32
+    RemoteRefI8  :: Int -> RemoteRef Int8
+    RemoteRefI16 :: Int -> RemoteRef Int16
+    RemoteRefI32 :: Int -> RemoteRef Int32
     RemoteRefL8  :: Int -> RemoteRef [Word8]
 
 deriving instance Show a => Show (RemoteRef a)
@@ -33,92 +37,164 @@ data Expr a where
   LitW8        :: Word8 -> Expr Word8
   LitW16       :: Word16 -> Expr Word16
   LitW32       :: Word32 -> Expr Word32
+  LitI8        :: Int8 -> Expr Int8
+  LitI16       :: Int16 -> Expr Int16
+  LitI32       :: Int32 -> Expr Int32
   LitList8     :: [Word8] -> Expr [Word8]
   RefB         :: Int -> Expr Bool
   RefW8        :: Int -> Expr Word8
   RefW16       :: Int -> Expr Word16
   RefW32       :: Int -> Expr Word32
+  RefI8        :: Int -> Expr Int8
+  RefI16       :: Int -> Expr Int16
+  RefI32       :: Int -> Expr Int32
   RefList8     :: Int -> Expr [Word8]
   RemBindB     :: Int -> Expr Bool
   RemBindW8    :: Int -> Expr Word8
   RemBindW16   :: Int -> Expr Word16
   RemBindW32   :: Int -> Expr Word32
+  RemBindI8    :: Int -> Expr Int8
+  RemBindI16   :: Int -> Expr Int16
+  RemBindI32   :: Int -> Expr Int32
   RemBindList8 :: Int -> Expr [Word8]
   FromIntW8    :: Expr Word32 -> Expr Word8
   FromIntW16   :: Expr Word32 -> Expr Word16
+  FromIntI8    :: Expr Word32 -> Expr Int8
+  FromIntI16   :: Expr Word32 -> Expr Int16
+  FromIntI32   :: Expr Word32 -> Expr Int32
   ToIntW8      :: Expr Word8  -> Expr Word32
   ToIntW16     :: Expr Word16 -> Expr Word32
+  ToIntI8      :: Expr Int8  -> Expr Word32
+  ToIntI16     :: Expr Int16 -> Expr Word32
+  ToIntI32     :: Expr Int32 -> Expr Word32
   NotB         :: Expr Bool -> Expr Bool
-  AndB        :: Expr Bool -> Expr Bool -> Expr Bool
-  OrB         :: Expr Bool -> Expr Bool -> Expr Bool
-  EqB         :: Expr Bool -> Expr Bool -> Expr Bool
-  LessB       :: Expr Bool -> Expr Bool -> Expr Bool
-  IfB         :: Expr Bool  -> Expr Bool -> Expr Bool -> Expr Bool
-  NegW8       :: Expr Word8 -> Expr Word8
-  SignW8      :: Expr Word8 -> Expr Word8
-  AddW8       :: Expr Word8 -> Expr Word8 -> Expr Word8
-  SubW8       :: Expr Word8 -> Expr Word8 -> Expr Word8
-  MultW8      :: Expr Word8 -> Expr Word8 -> Expr Word8
-  DivW8       :: Expr Word8 -> Expr Word8 -> Expr Word8
-  RemW8       :: Expr Word8 -> Expr Word8 -> Expr Word8
-  AndW8       :: Expr Word8 -> Expr Word8 -> Expr Word8
-  OrW8        :: Expr Word8 -> Expr Word8 -> Expr Word8
-  XorW8       :: Expr Word8 -> Expr Word8 -> Expr Word8
-  CompW8      :: Expr Word8 -> Expr Word8
-  ShfLW8      :: Expr Word8 -> Expr Word8 -> Expr Word8
-  ShfRW8      :: Expr Word8 -> Expr Word8 -> Expr Word8
-  EqW8        :: Expr Word8 -> Expr Word8 -> Expr Bool
-  LessW8      :: Expr Word8 -> Expr Word8 -> Expr Bool
-  IfW8        :: Expr Bool  -> Expr Word8 -> Expr Word8 -> Expr Word8
-  TestBW8     :: Expr Word8 -> Expr Word8 -> Expr Bool
-  SetBW8      :: Expr Word8 -> Expr Word8 -> Expr Word8
-  ClrBW8      :: Expr Word8 -> Expr Word8 -> Expr Word8
-  NegW16      :: Expr Word16 -> Expr Word16
-  SignW16     :: Expr Word16 -> Expr Word16
-  AddW16      :: Expr Word16 -> Expr Word16 -> Expr Word16
-  SubW16      :: Expr Word16 -> Expr Word16 -> Expr Word16
-  MultW16     :: Expr Word16 -> Expr Word16 -> Expr Word16
-  DivW16      :: Expr Word16 -> Expr Word16 -> Expr Word16
-  RemW16      :: Expr Word16 -> Expr Word16 -> Expr Word16
-  AndW16      :: Expr Word16 -> Expr Word16 -> Expr Word16
-  OrW16       :: Expr Word16 -> Expr Word16 -> Expr Word16
-  XorW16      :: Expr Word16 -> Expr Word16 -> Expr Word16
-  CompW16     :: Expr Word16 -> Expr Word16
-  ShfLW16     :: Expr Word16 -> Expr Word8 -> Expr Word16
-  ShfRW16     :: Expr Word16 -> Expr Word8 -> Expr Word16
-  EqW16       :: Expr Word16 -> Expr Word16 -> Expr Bool
-  LessW16     :: Expr Word16 -> Expr Word16 -> Expr Bool
-  IfW16       :: Expr Bool   -> Expr Word16 -> Expr Word16 -> Expr Word16
-  TestBW16    :: Expr Word16  -> Expr Word8 -> Expr Bool
-  SetBW16     :: Expr Word16 -> Expr Word8 -> Expr Word16
-  ClrBW16     :: Expr Word16 -> Expr Word8 -> Expr Word16
-  NegW32      :: Expr Word32 -> Expr Word32
-  SignW32     :: Expr Word32 -> Expr Word32
-  AddW32      :: Expr Word32 -> Expr Word32 -> Expr Word32
-  SubW32      :: Expr Word32 -> Expr Word32 -> Expr Word32
-  MultW32     :: Expr Word32 -> Expr Word32 -> Expr Word32
-  DivW32      :: Expr Word32 -> Expr Word32 -> Expr Word32
-  RemW32      :: Expr Word32 -> Expr Word32 -> Expr Word32
-  AndW32      :: Expr Word32 -> Expr Word32 -> Expr Word32
-  OrW32       :: Expr Word32 -> Expr Word32 -> Expr Word32
-  XorW32      :: Expr Word32 -> Expr Word32 -> Expr Word32
-  CompW32     :: Expr Word32 -> Expr Word32
-  ShfLW32     :: Expr Word32 -> Expr Word8 -> Expr Word32
-  ShfRW32     :: Expr Word32 -> Expr Word8 -> Expr Word32
-  EqW32       :: Expr Word32 -> Expr Word32 -> Expr Bool
-  LessW32     :: Expr Word32 -> Expr Word32 -> Expr Bool
-  IfW32       :: Expr Bool   -> Expr Word32 -> Expr Word32 -> Expr Word32
-  TestBW32    :: Expr Word32 -> Expr Word8 -> Expr Bool
-  SetBW32     :: Expr Word32 -> Expr Word8 -> Expr Word32
-  ClrBW32     :: Expr Word32 -> Expr Word8 -> Expr Word32
-  ElemList8   :: Expr [Word8] -> Expr Word8   -> Expr Word8
-  LenList8    :: Expr [Word8] -> Expr Word8
-  ConsList8   :: Expr Word8   -> Expr [Word8] -> Expr [Word8]
-  ApndList8   :: Expr [Word8] -> Expr [Word8] -> Expr [Word8]
-  PackList8   :: [Expr Word8] -> Expr [Word8]
-  EqL8        :: Expr [Word8] -> Expr [Word8] -> Expr Bool
-  LessL8      :: Expr [Word8] -> Expr [Word8] -> Expr Bool
-  IfL8        :: Expr Bool  -> Expr [Word8] -> Expr [Word8] -> Expr [Word8]
+  AndB         :: Expr Bool -> Expr Bool -> Expr Bool
+  OrB          :: Expr Bool -> Expr Bool -> Expr Bool
+  EqB          :: Expr Bool -> Expr Bool -> Expr Bool
+  LessB        :: Expr Bool -> Expr Bool -> Expr Bool
+  IfB          :: Expr Bool  -> Expr Bool -> Expr Bool -> Expr Bool
+  NegW8        :: Expr Word8 -> Expr Word8
+  SignW8       :: Expr Word8 -> Expr Word8
+  AddW8        :: Expr Word8 -> Expr Word8 -> Expr Word8
+  SubW8        :: Expr Word8 -> Expr Word8 -> Expr Word8
+  MultW8       :: Expr Word8 -> Expr Word8 -> Expr Word8
+  DivW8        :: Expr Word8 -> Expr Word8 -> Expr Word8
+  RemW8        :: Expr Word8 -> Expr Word8 -> Expr Word8
+  AndW8        :: Expr Word8 -> Expr Word8 -> Expr Word8
+  OrW8         :: Expr Word8 -> Expr Word8 -> Expr Word8
+  XorW8        :: Expr Word8 -> Expr Word8 -> Expr Word8
+  CompW8       :: Expr Word8 -> Expr Word8
+  ShfLW8       :: Expr Word8 -> Expr Word8 -> Expr Word8
+  ShfRW8       :: Expr Word8 -> Expr Word8 -> Expr Word8
+  EqW8         :: Expr Word8 -> Expr Word8 -> Expr Bool
+  LessW8       :: Expr Word8 -> Expr Word8 -> Expr Bool
+  IfW8         :: Expr Bool  -> Expr Word8 -> Expr Word8 -> Expr Word8
+  TestBW8      :: Expr Word8 -> Expr Word8 -> Expr Bool
+  SetBW8       :: Expr Word8 -> Expr Word8 -> Expr Word8
+  ClrBW8       :: Expr Word8 -> Expr Word8 -> Expr Word8
+  NegW16       :: Expr Word16 -> Expr Word16
+  SignW16      :: Expr Word16 -> Expr Word16
+  AddW16       :: Expr Word16 -> Expr Word16 -> Expr Word16
+  SubW16       :: Expr Word16 -> Expr Word16 -> Expr Word16
+  MultW16      :: Expr Word16 -> Expr Word16 -> Expr Word16
+  DivW16       :: Expr Word16 -> Expr Word16 -> Expr Word16
+  RemW16       :: Expr Word16 -> Expr Word16 -> Expr Word16
+  AndW16       :: Expr Word16 -> Expr Word16 -> Expr Word16
+  OrW16        :: Expr Word16 -> Expr Word16 -> Expr Word16
+  XorW16       :: Expr Word16 -> Expr Word16 -> Expr Word16
+  CompW16      :: Expr Word16 -> Expr Word16
+  ShfLW16      :: Expr Word16 -> Expr Word8 -> Expr Word16
+  ShfRW16      :: Expr Word16 -> Expr Word8 -> Expr Word16
+  EqW16        :: Expr Word16 -> Expr Word16 -> Expr Bool
+  LessW16      :: Expr Word16 -> Expr Word16 -> Expr Bool
+  IfW16        :: Expr Bool   -> Expr Word16 -> Expr Word16 -> Expr Word16
+  TestBW16     :: Expr Word16  -> Expr Word8 -> Expr Bool
+  SetBW16      :: Expr Word16 -> Expr Word8 -> Expr Word16
+  ClrBW16      :: Expr Word16 -> Expr Word8 -> Expr Word16
+  NegW32       :: Expr Word32 -> Expr Word32
+  SignW32      :: Expr Word32 -> Expr Word32
+  AddW32       :: Expr Word32 -> Expr Word32 -> Expr Word32
+  SubW32       :: Expr Word32 -> Expr Word32 -> Expr Word32
+  MultW32      :: Expr Word32 -> Expr Word32 -> Expr Word32
+  DivW32       :: Expr Word32 -> Expr Word32 -> Expr Word32
+  RemW32       :: Expr Word32 -> Expr Word32 -> Expr Word32
+  AndW32       :: Expr Word32 -> Expr Word32 -> Expr Word32
+  OrW32        :: Expr Word32 -> Expr Word32 -> Expr Word32
+  XorW32       :: Expr Word32 -> Expr Word32 -> Expr Word32
+  CompW32      :: Expr Word32 -> Expr Word32
+  ShfLW32      :: Expr Word32 -> Expr Word8 -> Expr Word32
+  ShfRW32      :: Expr Word32 -> Expr Word8 -> Expr Word32
+  EqW32        :: Expr Word32 -> Expr Word32 -> Expr Bool
+  LessW32      :: Expr Word32 -> Expr Word32 -> Expr Bool
+  IfW32        :: Expr Bool   -> Expr Word32 -> Expr Word32 -> Expr Word32
+  TestBW32     :: Expr Word32 -> Expr Word8 -> Expr Bool
+  SetBW32      :: Expr Word32 -> Expr Word8 -> Expr Word32
+  ClrBW32      :: Expr Word32 -> Expr Word8 -> Expr Word32
+  NegI8        :: Expr Int8 -> Expr Int8
+  SignI8       :: Expr Int8 -> Expr Int8
+  AddI8        :: Expr Int8 -> Expr Int8 -> Expr Int8
+  SubI8        :: Expr Int8 -> Expr Int8 -> Expr Int8
+  MultI8       :: Expr Int8 -> Expr Int8 -> Expr Int8
+  DivI8        :: Expr Int8 -> Expr Int8 -> Expr Int8
+  RemI8        :: Expr Int8 -> Expr Int8 -> Expr Int8
+  AndI8        :: Expr Int8 -> Expr Int8 -> Expr Int8
+  OrI8         :: Expr Int8 -> Expr Int8 -> Expr Int8
+  XorI8        :: Expr Int8 -> Expr Int8 -> Expr Int8
+  CompI8       :: Expr Int8 -> Expr Int8
+  ShfLI8       :: Expr Int8 -> Expr Int8 -> Expr Int8
+  ShfRI8       :: Expr Int8 -> Expr Int8 -> Expr Int8
+  EqI8         :: Expr Int8 -> Expr Int8 -> Expr Bool
+  LessI8       :: Expr Int8 -> Expr Int8 -> Expr Bool
+  IfI8         :: Expr Bool -> Expr Int8 -> Expr Int8 -> Expr Int8
+  TestBI8      :: Expr Int8 -> Expr Int8 -> Expr Bool
+  SetBI8       :: Expr Int8 -> Expr Int8 -> Expr Int8
+  ClrBI8       :: Expr Int8 -> Expr Int8 -> Expr Int8
+  NegI16       :: Expr Int16 -> Expr Int16
+  SignI16      :: Expr Int16 -> Expr Int16
+  AddI16       :: Expr Int16 -> Expr Int16 -> Expr Int16
+  SubI16       :: Expr Int16 -> Expr Int16 -> Expr Int16
+  MultI16      :: Expr Int16 -> Expr Int16 -> Expr Int16
+  DivI16       :: Expr Int16 -> Expr Int16 -> Expr Int16
+  RemI16       :: Expr Int16 -> Expr Int16 -> Expr Int16
+  AndI16       :: Expr Int16 -> Expr Int16 -> Expr Int16
+  OrI16        :: Expr Int16 -> Expr Int16 -> Expr Int16
+  XorI16       :: Expr Int16 -> Expr Int16 -> Expr Int16
+  CompI16      :: Expr Int16 -> Expr Int16
+  ShfLI16      :: Expr Int16 -> Expr Word8 -> Expr Int16
+  ShfRI16      :: Expr Int16 -> Expr Word8 -> Expr Int16
+  EqI16        :: Expr Int16 -> Expr Int16 -> Expr Bool
+  LessI16      :: Expr Int16 -> Expr Int16 -> Expr Bool
+  IfI16        :: Expr Bool   -> Expr Int16 -> Expr Int16 -> Expr Int16
+  TestBI16     :: Expr Int16  -> Expr Word8 -> Expr Bool
+  SetBI16      :: Expr Int16 -> Expr Word8 -> Expr Int16
+  ClrBI16      :: Expr Int16 -> Expr Word8 -> Expr Int16
+  NegI32       :: Expr Int32 -> Expr Int32
+  SignI32      :: Expr Int32 -> Expr Int32
+  AddI32       :: Expr Int32 -> Expr Int32 -> Expr Int32
+  SubI32       :: Expr Int32 -> Expr Int32 -> Expr Int32
+  MultI32      :: Expr Int32 -> Expr Int32 -> Expr Int32
+  DivI32       :: Expr Int32 -> Expr Int32 -> Expr Int32
+  RemI32       :: Expr Int32 -> Expr Int32 -> Expr Int32
+  AndI32       :: Expr Int32 -> Expr Int32 -> Expr Int32
+  OrI32        :: Expr Int32 -> Expr Int32 -> Expr Int32
+  XorI32       :: Expr Int32 -> Expr Int32 -> Expr Int32
+  CompI32      :: Expr Int32 -> Expr Int32
+  ShfLI32      :: Expr Int32 -> Expr Word8 -> Expr Int32
+  ShfRI32      :: Expr Int32 -> Expr Word8 -> Expr Int32
+  EqI32        :: Expr Int32 -> Expr Int32 -> Expr Bool
+  LessI32      :: Expr Int32 -> Expr Int32 -> Expr Bool
+  IfI32        :: Expr Bool   -> Expr Int32 -> Expr Int32 -> Expr Int32
+  TestBI32     :: Expr Int32 -> Expr Word8 -> Expr Bool
+  SetBI32      :: Expr Int32 -> Expr Word8 -> Expr Int32
+  ClrBI32      :: Expr Int32 -> Expr Word8 -> Expr Int32
+  ElemList8    :: Expr [Word8] -> Expr Word8   -> Expr Word8
+  LenList8     :: Expr [Word8] -> Expr Word8
+  ConsList8    :: Expr Word8   -> Expr [Word8] -> Expr [Word8]
+  ApndList8    :: Expr [Word8] -> Expr [Word8] -> Expr [Word8]
+  PackList8    :: [Expr Word8] -> Expr [Word8]
+  EqL8         :: Expr [Word8] -> Expr [Word8] -> Expr Bool
+  LessL8       :: Expr [Word8] -> Expr [Word8] -> Expr Bool
+  IfL8         :: Expr Bool  -> Expr [Word8] -> Expr [Word8] -> Expr [Word8]
 
 deriving instance Show a => Show (Expr a)
 
@@ -137,6 +213,18 @@ instance ExprB Word16 where
 instance ExprB Word32 where
     lit = LitW32
     remBind = RemBindW32
+
+instance ExprB Int8 where
+    lit = LitI8
+    remBind = RemBindI8
+
+instance ExprB Int16 where
+    lit = LitI16
+    remBind = RemBindI16
+
+instance ExprB Int32 where
+    lit = LitI32
+    remBind = RemBindI32
 
 instance ExprB Bool where
     lit = LitB
@@ -301,6 +389,144 @@ instance BB.BitsB (Expr Word32) where
   setBit = SetBW32
   clearBit = ClrBW32
   testBit = TestBW32 
+
+instance Num (Expr Int8) where
+  (+) x y = AddI8 x y
+  (-) x y = SubI8 x y
+  (*) x y = MultI8 x y
+  negate x = NegI8 x
+  abs x  = x * signum x
+  signum x = SignI8 x
+  fromInteger x = LitI8 $ fromInteger x
+
+type instance BooleanOf (Expr Int8) = Expr Bool
+
+instance B.EqB (Expr Int8) where
+  (==*) = EqI8
+
+instance B.OrdB (Expr Int8) where
+  (<*) = LessI8
+
+instance B.IfB (Expr Int8) where
+  ifB = IfI8
+
+instance BN.NumB (Expr Int8) where
+  type IntegerOf (Expr Int8) = Expr Word32
+  fromIntegerB e = FromIntI8 e
+
+instance BN.IntegralB (Expr Int8) where
+  div = DivI8
+  rem = RemI8
+  quot = DivI8
+  mod = RemI8
+  toIntegerB e = ToIntI8 e
+
+instance BB.BitsB (Expr Int8) where
+  type IntOf (Expr Int8) = Expr Int8
+  (.&.) = AndI8
+  (.|.) = OrI8
+  xor = XorI8
+  complement = CompI8
+  shiftL = ShfLI8
+  shiftR = ShfRI8
+  isSigned = (\_ -> lit False)
+  bitSize = (\_ -> lit 8)
+  bit = \i -> 1 `shiftL` i
+  setBit = SetBI8
+  clearBit = ClrBI8
+  testBit = TestBI8 
+
+instance  Num (Expr Int16) where
+  (+) x y = AddI16 x y
+  (-) x y = SubI16 x y
+  (*) x y = MultI16 x y
+  negate x = NegI16 x
+  abs x  = x * signum x
+  signum x = SignI16 x
+  fromInteger x = LitI16 $ fromInteger x
+
+type instance BooleanOf (Expr Int16) = Expr Bool
+
+instance B.EqB (Expr Int16) where
+  (==*) = EqI16
+
+instance B.OrdB (Expr Int16) where
+  (<*) = LessI16
+
+instance B.IfB (Expr Int16) where
+  ifB = IfI16
+
+instance BN.NumB (Expr Int16) where
+  type IntegerOf (Expr Int16) = (Expr Word32)
+  fromIntegerB e = FromIntI16 e
+
+instance BN.IntegralB (Expr Int16) where
+  div = DivI16
+  rem = RemI16
+  quot = DivI16
+  mod = RemI16
+  toIntegerB e = ToIntI16 e
+
+instance BB.BitsB (Expr Int16) where
+  type IntOf (Expr Int16) = Expr Word8
+  (.&.) = AndI16
+  (.|.) = OrI16
+  xor = XorI16
+  complement = CompI16
+  shiftL = ShfLI16
+  shiftR = ShfRI16
+  isSigned = (\_ -> lit False)
+  bitSize = (\_ -> lit 16)
+  bit = \i -> 1 `shiftL` i
+  setBit = SetBI16
+  clearBit = ClrBI16
+  testBit = TestBI16
+
+instance  Num (Expr Int32) where
+  (+) x y = AddI32 x y
+  (-) x y = SubI32 x y
+  (*) x y = MultI32 x y
+  negate x = NegI32 x
+  abs x  = x * signum x
+  signum x = SignI32 x
+  fromInteger x = LitI32 $ fromInteger x
+
+type instance BooleanOf (Expr Int32) = Expr Bool
+
+instance B.EqB (Expr Int32) where
+  (==*) = EqI32
+
+instance B.OrdB (Expr Int32) where
+  (<*) = LessI32
+
+instance B.IfB (Expr Int32) where
+  ifB = IfI32
+
+instance BN.NumB (Expr Int32) where
+  type IntegerOf (Expr Int32) = (Expr Word32)
+  fromIntegerB e = FromIntI32 e
+
+instance BN.IntegralB (Expr Int32) where
+  div = DivI32
+  rem = RemI32
+  quot = DivI32
+  mod = RemI32
+  toIntegerB e = ToIntI32 e
+
+instance BB.BitsB (Expr Int32) where
+  type IntOf (Expr Int32) = Expr Word8
+  (.&.) = AndI32
+  (.|.) = OrI32
+  xor = XorI32
+  complement = CompI32
+  shiftL = ShfLI32
+  shiftR = ShfRI32
+  isSigned = (\_ -> lit False)
+  bitSize = (\_ -> lit 32)
+  bit = \i -> 1 `shiftL` i
+  setBit = SetBI32
+  clearBit = ClrBI32
+  testBit = TestBI32 
 
 type instance BooleanOf (Expr [Word8]) = Expr Bool
 

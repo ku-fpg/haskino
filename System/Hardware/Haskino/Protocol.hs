@@ -90,22 +90,34 @@ packageCommand (CreateTaskE tid m) ix _ =
                                                                           (B.unpack tds'))
 packageCommand (WriteRemoteRefB (RemoteRefB i) e) ix _ =
     (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_BOOL, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e), ix)
-packageCommand (WriteRemoteRef8 (RemoteRefW8 i) e) ix _ =
+packageCommand (WriteRemoteRefW8 (RemoteRefW8 i) e) ix _ =
     (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD8, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e), ix)
-packageCommand (WriteRemoteRef16 (RemoteRefW16 i) e) ix _ =
+packageCommand (WriteRemoteRefW16 (RemoteRefW16 i) e) ix _ =
     (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD16, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e), ix)
-packageCommand (WriteRemoteRef32 (RemoteRefW32 i) e) ix _ =
+packageCommand (WriteRemoteRefW32 (RemoteRefW32 i) e) ix _ =
     (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD32, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e), ix)
+packageCommand (WriteRemoteRefI8 (RemoteRefI8 i) e) ix _ =
+    (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_INT8, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e), ix)
+packageCommand (WriteRemoteRefI16 (RemoteRefI16 i) e) ix _ =
+    (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_INT16, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e), ix)
+packageCommand (WriteRemoteRefI32 (RemoteRefI32 i) e) ix _ =
+    (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_INT32, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e), ix)
 packageCommand (WriteRemoteRefL8 (RemoteRefL8 i) e) ix _ =
     (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_LIST8, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e), ix)
 packageCommand (ModifyRemoteRefB (RemoteRefB i) f) ix _ =
     (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_BOOL, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefB i))), ix)
-packageCommand (ModifyRemoteRef8 (RemoteRefW8 i) f) ix _ =
+packageCommand (ModifyRemoteRefW8 (RemoteRefW8 i) f) ix _ =
     (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD8, exprCmdVal EXPR_WORD8 EXPR_LIT,fromIntegral i] ++ packageExpr (f (RefW8 i))), ix)
-packageCommand (ModifyRemoteRef16 (RemoteRefW16 i) f) ix _ =
+packageCommand (ModifyRemoteRefW16 (RemoteRefW16 i) f) ix _ =
     (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD16, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefW16 i))), ix)
-packageCommand (ModifyRemoteRef32 (RemoteRefW32 i) f) ix _ =
+packageCommand (ModifyRemoteRefW32 (RemoteRefW32 i) f) ix _ =
     (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_WORD32, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefW32 i))), ix)
+packageCommand (ModifyRemoteRefI8 (RemoteRefI8 i) f) ix _ =
+    (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_INT8, exprCmdVal EXPR_WORD8 EXPR_LIT,fromIntegral i] ++ packageExpr (f (RefI8 i))), ix)
+packageCommand (ModifyRemoteRefI16 (RemoteRefI16 i) f) ix _ =
+    (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_INT16, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefI16 i))), ix)
+packageCommand (ModifyRemoteRefI32 (RemoteRefI32 i) f) ix _ =
+    (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_INT32, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefI32 i))), ix)
 packageCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) ix _ =
     (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_LIST8, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefList8 i))), ix)
 -- ToDo: Do we need to check maximum frame size on conditionals?
@@ -114,21 +126,36 @@ packageCommand (WhileRemoteRefB (RemoteRefB i) bf uf cb) ix ib =
   where
     (pc, ix', _) = packageCodeBlock cb ix ib
     ufe = packageExpr (uf (RefB i))
-packageCommand (WhileRemoteRef8 (RemoteRefW8 i) bf uf cb) ix ib =
+packageCommand (WhileRemoteRefW8 (RemoteRefW8 i) bf uf cb) ix ib =
     (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (RefW8 i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
   where
     (pc, ix', _) = packageCodeBlock cb ix ib
     ufe = packageExpr (uf (RefW8 i))
-packageCommand (WhileRemoteRef16 (RemoteRefW16 i) bf uf cb) ix ib =
+packageCommand (WhileRemoteRefW16 (RemoteRefW16 i) bf uf cb) ix ib =
     (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (RefW16 i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
   where
     (pc, ix', _) = packageCodeBlock cb ix ib
     ufe = packageExpr (uf (RefW16 i))
-packageCommand (WhileRemoteRef32 (RemoteRefW32 i) bf uf cb) ix ib =
+packageCommand (WhileRemoteRefW32 (RemoteRefW32 i) bf uf cb) ix ib =
     (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (RefW32 i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
   where
     (pc, ix', _) = packageCodeBlock cb ix ib
     ufe = packageExpr (uf (RefW32 i))
+packageCommand (WhileRemoteRefI8 (RemoteRefI8 i) bf uf cb) ix ib =
+    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (RefI8 i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
+  where
+    (pc, ix', _) = packageCodeBlock cb ix ib
+    ufe = packageExpr (uf (RefI8 i))
+packageCommand (WhileRemoteRefI16 (RemoteRefI16 i) bf uf cb) ix ib =
+    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (RefI16 i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
+  where
+    (pc, ix', _) = packageCodeBlock cb ix ib
+    ufe = packageExpr (uf (RefI16 i))
+packageCommand (WhileRemoteRefI32 (RemoteRefI32 i) bf uf cb) ix ib =
+    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (RefI32 i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
+  where
+    (pc, ix', _) = packageCodeBlock cb ix ib
+    ufe = packageExpr (uf (RefI32 i))
 packageCommand (WhileRemoteRefL8 (RemoteRefL8 i) bf uf cb) ix ib =
     (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (RefList8 i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
   where
@@ -203,16 +230,22 @@ packageCodeBlock commands ix ib =
       packProcedure (QueryTask t) ix ib k cmds = packageCodeBlock' (k Nothing) ix ib (B.append cmds (lenPackage (packageProcedure (QueryTask t) ib)))
       packProcedure (QueryTaskE t) ix ib k cmds = packageCodeBlock' (k Nothing) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (QueryTaskE t) ib)))
       packProcedure (ReadRemoteRefB (RemoteRefB i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefB (RemoteRefB i)) ib)))
-      packProcedure (ReadRemoteRef8 (RemoteRefW8 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRef8 (RemoteRefW8 i)) ib)))
-      packProcedure (ReadRemoteRef16 (RemoteRefW16 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRef16 (RemoteRefW16 i)) ib)))
-      packProcedure (ReadRemoteRef32 (RemoteRefW32 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRef32 (RemoteRefW32 i)) ib)))
+      packProcedure (ReadRemoteRefW8 (RemoteRefW8 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefW8 (RemoteRefW8 i)) ib)))
+      packProcedure (ReadRemoteRefW16 (RemoteRefW16 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefW16 (RemoteRefW16 i)) ib)))
+      packProcedure (ReadRemoteRefW32 (RemoteRefW32 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefW32 (RemoteRefW32 i)) ib)))
+      packProcedure (ReadRemoteRefI8 (RemoteRefI8 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefI8 (RemoteRefI8 i)) ib)))
+      packProcedure (ReadRemoteRefI16 (RemoteRefI16 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefI16 (RemoteRefI16 i)) ib)))
+      packProcedure (ReadRemoteRefI32 (RemoteRefI32 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefI32 (RemoteRefI32 i)) ib)))
       packProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) ib)))
 
       packRemoteBinding :: RemoteBinding a -> Int -> Int -> (a -> Arduino b) -> B.ByteString -> (B.ByteString, Int, Int)
       packRemoteBinding (NewRemoteRefB e) ix ib k cmds = packageCodeBlock' (k (RemoteRefB ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefB e) ix ib)))
-      packRemoteBinding (NewRemoteRef8 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefW8 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRef8 e) ix ib)))
-      packRemoteBinding (NewRemoteRef16 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefW16 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRef16 e) ix ib)))
-      packRemoteBinding (NewRemoteRef32 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefW32 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRef32 e) ix ib)))
+      packRemoteBinding (NewRemoteRefW8 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefW8 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefW8 e) ix ib)))
+      packRemoteBinding (NewRemoteRefW16 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefW16 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefW16 e) ix ib)))
+      packRemoteBinding (NewRemoteRefW32 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefW32 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefW32 e) ix ib)))
+      packRemoteBinding (NewRemoteRefI8 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefI8 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefI8 e) ix ib)))
+      packRemoteBinding (NewRemoteRefI16 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefI16 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefI16 e) ix ib)))
+      packRemoteBinding (NewRemoteRefI32 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefI32 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefI32 e) ix ib)))
       packRemoteBinding (NewRemoteRefL8 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefL8 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefL8 e) ix ib)))
 
       packageCodeBlock' :: Arduino a -> Int -> Int -> B.ByteString -> (B.ByteString, Int, Int)
@@ -248,16 +281,22 @@ packageProcedure (DelayMillisE ms) ib = buildCommand BC_CMD_DELAY_MILLIS ((fromI
 packageProcedure (DelayMicros ms) ib  = buildCommand BC_CMD_DELAY_MICROS ((fromIntegral ib) : (packageExpr $ lit ms))
 packageProcedure (DelayMicrosE ms) ib = buildCommand BC_CMD_DELAY_MICROS ((fromIntegral ib) : (packageExpr ms))
 packageProcedure (ReadRemoteRefB (RemoteRefB i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_BOOL, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
-packageProcedure (ReadRemoteRef8 (RemoteRefW8 i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_WORD8, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
-packageProcedure (ReadRemoteRef16 (RemoteRefW16 i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_WORD16, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
-packageProcedure (ReadRemoteRef32 (RemoteRefW32 i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_WORD32, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
+packageProcedure (ReadRemoteRefW8 (RemoteRefW8 i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_WORD8, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
+packageProcedure (ReadRemoteRefW16 (RemoteRefW16 i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_WORD16, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
+packageProcedure (ReadRemoteRefW32 (RemoteRefW32 i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_WORD32, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
+packageProcedure (ReadRemoteRefI8 (RemoteRefI8 i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_INT8, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
+packageProcedure (ReadRemoteRefI16 (RemoteRefI16 i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_INT16, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
+packageProcedure (ReadRemoteRefI32 (RemoteRefI32 i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_INT32, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
 packageProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_LIST8, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
 
 packageRemoteBinding :: RemoteBinding a -> Int -> Int -> B.ByteString
 packageRemoteBinding (NewRemoteRefB e)  ix ib = buildCommand REF_CMD_NEW ([refTypeCmdVal REF_BOOL, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
-packageRemoteBinding (NewRemoteRef8 e)  ix ib = buildCommand REF_CMD_NEW ([refTypeCmdVal REF_WORD8, fromIntegral ib, fromIntegral ix] ++(packageExpr e))
-packageRemoteBinding (NewRemoteRef16 e) ix ib = buildCommand REF_CMD_NEW ([refTypeCmdVal REF_WORD16, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
-packageRemoteBinding (NewRemoteRef32 e) ix ib = buildCommand REF_CMD_NEW ([refTypeCmdVal REF_WORD32, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
+packageRemoteBinding (NewRemoteRefW8 e)  ix ib = buildCommand REF_CMD_NEW ([refTypeCmdVal REF_WORD8, fromIntegral ib, fromIntegral ix] ++(packageExpr e))
+packageRemoteBinding (NewRemoteRefW16 e) ix ib = buildCommand REF_CMD_NEW ([refTypeCmdVal REF_WORD16, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
+packageRemoteBinding (NewRemoteRefW32 e) ix ib = buildCommand REF_CMD_NEW ([refTypeCmdVal REF_WORD32, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
+packageRemoteBinding (NewRemoteRefI8 e)  ix ib = buildCommand REF_CMD_NEW ([refTypeCmdVal REF_INT8, fromIntegral ib, fromIntegral ix] ++(packageExpr e))
+packageRemoteBinding (NewRemoteRefI16 e) ix ib = buildCommand REF_CMD_NEW ([refTypeCmdVal REF_INT16, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
+packageRemoteBinding (NewRemoteRefI32 e) ix ib = buildCommand REF_CMD_NEW ([refTypeCmdVal REF_INT32, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
 packageRemoteBinding (NewRemoteRefL8 e) ix ib = buildCommand REF_CMD_NEW ([refTypeCmdVal REF_LIST8, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
 
 packageSubExpr :: Word8 -> Expr a -> [Word8]
@@ -287,13 +326,19 @@ packageExpr (AndB e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_BOOL EXPR_AND) e1 
 packageExpr (OrB e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_BOOL EXPR_OR) e1 e2 
 packageExpr (EqB e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_BOOL EXPR_EQ) e1 e2 
 packageExpr (LessB e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_BOOL EXPR_LESS) e1 e2 
-packageExpr (EqW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_EQ) e1 e2 
 packageExpr (IfB e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_BOOL EXPR_IF) e1 e2 e3
+packageExpr (EqW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_EQ) e1 e2 
 packageExpr (LessW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_LESS) e1 e2 
 packageExpr (EqW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_EQ) e1 e2 
 packageExpr (LessW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_LESS) e1 e2 
 packageExpr (EqW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_EQ) e1 e2 
 packageExpr (LessW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_LESS) e1 e2 
+packageExpr (EqI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_EQ) e1 e2 
+packageExpr (LessI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_LESS) e1 e2 
+packageExpr (EqI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_EQ) e1 e2 
+packageExpr (LessI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_LESS) e1 e2 
+packageExpr (EqI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_EQ) e1 e2 
+packageExpr (LessI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_LESS) e1 e2 
 packageExpr (EqL8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_LIST8 EXPR_EQ) e1 e2 
 packageExpr (LessL8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_LIST8 EXPR_LESS) e1 e2 
 packageExpr (LitW8 w) = [exprCmdVal EXPR_WORD8 EXPR_LIT, w]
@@ -360,6 +405,70 @@ packageExpr (IfW32 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_WORD32 EXPR_IF
 packageExpr (TestBW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_TSTB) e1 e2 
 packageExpr (SetBW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_SETB) e1 e2 
 packageExpr (ClrBW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_CLRB) e1 e2 
+packageExpr (LitI8 w) = [exprCmdVal EXPR_INT8 EXPR_LIT, fromIntegral w]
+packageExpr (RefI8 n) = packageRef n (exprCmdVal EXPR_BOOL EXPR_REF)
+packageExpr (RemBindI8 b) = [exprCmdVal EXPR_INT8 EXPR_BIND, fromIntegral b]
+packageExpr (FromIntI8 e) = packageSubExpr (exprCmdVal EXPR_INT8 EXPR_FINT) e
+packageExpr (ToIntI8 e) = packageSubExpr (exprCmdVal EXPR_INT8 EXPR_TINT) e
+packageExpr (NegI8 e) = packageSubExpr (exprCmdVal EXPR_INT8 EXPR_NEG) e
+packageExpr (SignI8 e) = packageSubExpr (exprCmdVal EXPR_INT8 EXPR_SIGN) e
+packageExpr (AddI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_ADD) e1 e2 
+packageExpr (SubI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_SUB) e1 e2 
+packageExpr (MultI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_MULT) e1 e2 
+packageExpr (DivI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_DIV) e1 e2 
+packageExpr (RemI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_REM) e1 e2 
+packageExpr (AndI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_AND) e1 e2 
+packageExpr (OrI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_OR) e1 e2 
+packageExpr (XorI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_XOR) e1 e2 
+packageExpr (CompI8 e) = packageSubExpr (exprCmdVal EXPR_INT8 EXPR_COMP) e 
+packageExpr (ShfLI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_SHFL) e1 e2 
+packageExpr (ShfRI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_SHFR) e1 e2 
+packageExpr (IfI8 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_INT8 EXPR_IF) e1 e2 e3
+packageExpr (TestBI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_TSTB) e1 e2 
+packageExpr (SetBI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_SETB) e1 e2 
+packageExpr (ClrBI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_CLRB) e1 e2 
+packageExpr (LitI16 w) = (exprCmdVal EXPR_INT16 EXPR_LIT) : word16ToBytes (fromIntegral w)
+packageExpr (RefI16 n) = packageRef n (exprCmdVal EXPR_BOOL EXPR_REF)
+packageExpr (RemBindI16 b) = [exprCmdVal EXPR_INT16 EXPR_BIND, fromIntegral b]
+packageExpr (FromIntI16 e) = packageSubExpr (exprCmdVal EXPR_INT16 EXPR_FINT) e
+packageExpr (ToIntI16 e) = packageSubExpr (exprCmdVal EXPR_INT16 EXPR_TINT) e
+packageExpr (NegI16 e) = packageSubExpr (exprCmdVal EXPR_INT16 EXPR_NEG) e
+packageExpr (SignI16 e) = packageSubExpr (exprCmdVal EXPR_INT16 EXPR_SIGN) e
+packageExpr (AddI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_ADD) e1 e2 
+packageExpr (SubI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_SUB) e1 e2 
+packageExpr (MultI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_MULT) e1 e2 
+packageExpr (DivI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_DIV) e1 e2 
+packageExpr (RemI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_REM) e1 e2 
+packageExpr (AndI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_AND) e1 e2 
+packageExpr (OrI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_OR) e1 e2 
+packageExpr (XorI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_XOR) e1 e2 
+packageExpr (CompI16 e) = packageSubExpr (exprCmdVal EXPR_INT16 EXPR_COMP) e 
+packageExpr (ShfLI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_SHFL) e1 e2 
+packageExpr (ShfRI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_SHFR) e1 e2 
+packageExpr (IfI16 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_INT16 EXPR_IF) e1 e2 e3
+packageExpr (TestBI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_TSTB) e1 e2 
+packageExpr (SetBI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_SETB) e1 e2 
+packageExpr (ClrBI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_CLRB) e1 e2 
+packageExpr (LitI32 w) = (exprCmdVal EXPR_INT32 EXPR_LIT) : word32ToBytes (fromIntegral w)
+packageExpr (RefI32 n) = packageRef n (exprCmdVal EXPR_BOOL EXPR_REF)
+packageExpr (RemBindI32 b) = [exprCmdVal EXPR_INT32 EXPR_BIND, fromIntegral b]
+packageExpr (NegI32 e) = packageSubExpr (exprCmdVal EXPR_INT32 EXPR_NEG) e
+packageExpr (SignI32 e) = packageSubExpr (exprCmdVal EXPR_INT32 EXPR_SIGN) e
+packageExpr (AddI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_ADD) e1 e2 
+packageExpr (SubI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_SUB) e1 e2 
+packageExpr (MultI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_MULT) e1 e2 
+packageExpr (DivI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_DIV) e1 e2 
+packageExpr (RemI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_REM) e1 e2 
+packageExpr (AndI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_AND) e1 e2 
+packageExpr (OrI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_OR) e1 e2 
+packageExpr (XorI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_XOR) e1 e2 
+packageExpr (CompI32 e) = packageSubExpr (exprCmdVal EXPR_INT32 EXPR_COMP) e
+packageExpr (ShfLI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_SHFL) e1 e2 
+packageExpr (ShfRI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_SHFR) e1 e2 
+packageExpr (IfI32 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_INT32 EXPR_IF) e1 e2 e3
+packageExpr (TestBI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_TSTB) e1 e2 
+packageExpr (SetBI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_SETB) e1 e2 
+packageExpr (ClrBI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_CLRB) e1 e2 
 packageExpr (LitList8 ws) = [exprCmdVal EXPR_LIST8 EXPR_LIT, fromIntegral $ length ws] ++ ws
 packageExpr (RefList8 n) = packageRef n (exprCmdVal EXPR_LIST8 EXPR_REF)
 packageExpr (RemBindList8 b) = [exprCmdVal EXPR_LIST8 EXPR_BIND, fromIntegral b]
@@ -398,11 +507,17 @@ unpackageResponse (cmdWord:args)
       (REF_RESP_READ , [l,b]) | l == exprCmdVal EXPR_BOOL EXPR_LIT
                                       -> ReadRefBReply (if b == 0 then False else True)
       (REF_RESP_READ , [l,b]) | l == exprCmdVal EXPR_WORD8 EXPR_LIT
-                                      -> ReadRef8Reply b
+                                      -> ReadRefW8Reply b
       (REF_RESP_READ , [l,b1,b2]) | l == exprCmdVal EXPR_WORD16 EXPR_LIT
-                                      -> ReadRef16Reply (bytesToWord16 (b1, b2))
+                                      -> ReadRefW16Reply (bytesToWord16 (b1, b2))
       (REF_RESP_READ , [l,b1,b2,b3,b4]) | l == exprCmdVal EXPR_WORD32 EXPR_LIT
-                                      -> ReadRef32Reply (bytesToWord32 (b1, b2, b3, b4))
+                                      -> ReadRefW32Reply (bytesToWord32 (b1, b2, b3, b4))
+      (REF_RESP_READ , [l,b]) | l == exprCmdVal EXPR_INT8 EXPR_LIT
+                                      -> ReadRefI8Reply $ fromIntegral b
+      (REF_RESP_READ , [l,b1,b2]) | l == exprCmdVal EXPR_INT16 EXPR_LIT
+                                      -> ReadRefI16Reply $ fromIntegral (bytesToWord16 (b1, b2))
+      (REF_RESP_READ , [l,b1,b2,b3,b4]) | l == exprCmdVal EXPR_INT32 EXPR_LIT
+                                      -> ReadRefI32Reply $ fromIntegral (bytesToWord32 (b1, b2, b3, b4))
       (REF_RESP_READ , l:_:bs) | l == exprCmdVal EXPR_LIST8 EXPR_LIT
                                       -> ReadRefL8Reply bs
       (REF_RESP_NEW , [l,w])          -> NewReply w
@@ -437,13 +552,19 @@ parseQueryResult (Procedure QueryAllTasksE) (QueryAllTasksReply ts) = Just (lit 
 parseQueryResult (Procedure (QueryTask tid)) (QueryTaskReply tr) = Just tr
 parseQueryResult (Procedure (QueryTaskE tid)) (QueryTaskReply tr) = Just tr
 parseQueryResult (RemoteBinding (NewRemoteRefB _)) (NewReply r) = Just $ RemoteRefB $ fromIntegral r
-parseQueryResult (RemoteBinding (NewRemoteRef8 _)) (NewReply r) = Just $ RemoteRefW8 $ fromIntegral r
-parseQueryResult (RemoteBinding (NewRemoteRef16 _)) (NewReply r) = Just $ RemoteRefW16 $ fromIntegral r
-parseQueryResult (RemoteBinding (NewRemoteRef32 _)) (NewReply r) = Just $ RemoteRefW32 $ fromIntegral r
+parseQueryResult (RemoteBinding (NewRemoteRefW8 _)) (NewReply r) = Just $ RemoteRefW8 $ fromIntegral r
+parseQueryResult (RemoteBinding (NewRemoteRefW16 _)) (NewReply r) = Just $ RemoteRefW16 $ fromIntegral r
+parseQueryResult (RemoteBinding (NewRemoteRefW32 _)) (NewReply r) = Just $ RemoteRefW32 $ fromIntegral r
+parseQueryResult (RemoteBinding (NewRemoteRefI8 _)) (NewReply r) = Just $ RemoteRefI8 $ fromIntegral r
+parseQueryResult (RemoteBinding (NewRemoteRefI16 _)) (NewReply r) = Just $ RemoteRefI16 $ fromIntegral r
+parseQueryResult (RemoteBinding (NewRemoteRefI32 _)) (NewReply r) = Just $ RemoteRefI32 $ fromIntegral r
 parseQueryResult (RemoteBinding (NewRemoteRefL8 _)) (NewReply r) = Just $ RemoteRefL8 $ fromIntegral r
 parseQueryResult (Procedure (ReadRemoteRefB _)) (ReadRefBReply r) = Just $ lit r
-parseQueryResult (Procedure (ReadRemoteRef8 _)) (ReadRef8Reply r) = Just $ lit r
-parseQueryResult (Procedure (ReadRemoteRef16 _)) (ReadRef16Reply r) = Just $ lit r
-parseQueryResult (Procedure (ReadRemoteRef32 _)) (ReadRef32Reply r) = Just $ lit r
+parseQueryResult (Procedure (ReadRemoteRefW8 _)) (ReadRefW8Reply r) = Just $ lit r
+parseQueryResult (Procedure (ReadRemoteRefW16 _)) (ReadRefW16Reply r) = Just $ lit r
+parseQueryResult (Procedure (ReadRemoteRefW32 _)) (ReadRefW32Reply r) = Just $ lit r
+parseQueryResult (Procedure (ReadRemoteRefI8 _)) (ReadRefI8Reply r) = Just $ lit r
+parseQueryResult (Procedure (ReadRemoteRefI16 _)) (ReadRefI16Reply r) = Just $ lit r
+parseQueryResult (Procedure (ReadRemoteRefI32 _)) (ReadRefI32Reply r) = Just $ lit r
 parseQueryResult (Procedure (ReadRemoteRefL8 _)) (ReadRefL8Reply r) = Just $ lit r
 parseQueryResult q r = Nothing
