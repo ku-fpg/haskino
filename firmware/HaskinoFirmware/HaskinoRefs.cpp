@@ -356,6 +356,15 @@ static bool handleWriteRef(int type, int size, const byte *msg, CONTEXT *context
         case EXPR_WORD32:
             storeWord32Ref(expr, context, refIndex);
             break;
+        case EXPR_INT8:
+            storeInt8Ref(expr, context, refIndex);
+            break;
+        case EXPR_INT16:
+            storeInt16Ref(expr, context, refIndex);
+            break;
+        case EXPR_INT32:
+            storeInt32Ref(expr, context, refIndex);
+            break;
         case EXPR_LIST8:
             storeList8Ref(expr, context, refIndex);
             break;
