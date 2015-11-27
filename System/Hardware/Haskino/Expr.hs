@@ -141,14 +141,14 @@ data Expr a where
   OrI8         :: Expr Int8 -> Expr Int8 -> Expr Int8
   XorI8        :: Expr Int8 -> Expr Int8 -> Expr Int8
   CompI8       :: Expr Int8 -> Expr Int8
-  ShfLI8       :: Expr Int8 -> Expr Int8 -> Expr Int8
-  ShfRI8       :: Expr Int8 -> Expr Int8 -> Expr Int8
+  ShfLI8       :: Expr Int8 -> Expr Word8 -> Expr Int8
+  ShfRI8       :: Expr Int8 -> Expr Word8 -> Expr Int8
   EqI8         :: Expr Int8 -> Expr Int8 -> Expr Bool
   LessI8       :: Expr Int8 -> Expr Int8 -> Expr Bool
   IfI8         :: Expr Bool -> Expr Int8 -> Expr Int8 -> Expr Int8
-  TestBI8      :: Expr Int8 -> Expr Int8 -> Expr Bool
-  SetBI8       :: Expr Int8 -> Expr Int8 -> Expr Int8
-  ClrBI8       :: Expr Int8 -> Expr Int8 -> Expr Int8
+  TestBI8      :: Expr Int8 -> Expr Word8 -> Expr Bool
+  SetBI8       :: Expr Int8 -> Expr Word8 -> Expr Int8
+  ClrBI8       :: Expr Int8 -> Expr Word8 -> Expr Int8
   NegI16       :: Expr Int16 -> Expr Int16
   SignI16      :: Expr Int16 -> Expr Int16
   AddI16       :: Expr Int16 -> Expr Int16 -> Expr Int16
@@ -422,7 +422,7 @@ instance BN.IntegralB (Expr Int8) where
   toIntegerB e = ToIntI8 e
 
 instance BB.BitsB (Expr Int8) where
-  type IntOf (Expr Int8) = Expr Int8
+  type IntOf (Expr Int8) = Expr Word8
   (.&.) = AndI8
   (.|.) = OrI8
   xor = XorI8
