@@ -19,6 +19,7 @@ import System.Hardware.Haskino
 import Data.Boolean
 import Data.Boolean.Numbers
 import Data.Boolean.Bits
+import Data.Int
 import Data.Word
 import qualified Data.Bits as DB
 import Test.QuickCheck hiding ((.&.))

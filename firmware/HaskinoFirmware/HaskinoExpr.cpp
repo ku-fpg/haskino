@@ -199,7 +199,7 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                     if (e8_2 > 7)
                         val = false;
                     else
-                        val = (e8_1 & (1 << e8_2)) != 0;
+                        val = (e8_1 & ((uint8_t) 1 << e8_2)) != 0;
                     break;
                 case EXPR_WORD16:
                     e16_1 = evalWord16Expr(ppExpr, context);
@@ -207,7 +207,7 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                     if (e8_2 > 15)
                         val = false;
                     else
-                        val = (e16_1 & (1 << e8_2)) != 0;
+                        val = (e16_1 & ((uint16_t) 1 << e8_2)) != 0;
                     break;
                 case EXPR_WORD32:
                     e32_1 = evalWord32Expr(ppExpr, context);
@@ -215,7 +215,7 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                     if (e8_2 > 31)
                         val = false;
                     else
-                        val = (e32_1 & (1 << e8_2)) != 0;
+                        val = (e32_1 & ((uint32_t) 1 << e8_2)) != 0;
                     break;
                 case EXPR_INT8:
                     ei8_1 = evalInt8Expr(ppExpr, context);
@@ -223,7 +223,7 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                     if (e8_2 > 7)
                         val = false;
                     else
-                        val = (ei8_1 & (1 << e8_2)) != 0;
+                        val = (ei8_1 & ((uint8_t) 1 << e8_2)) != 0;
                     break;
                 case EXPR_INT16:
                     ei16_1 = evalInt16Expr(ppExpr, context);
@@ -231,7 +231,7 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                     if (e8_2 > 15)
                         val = false;
                     else
-                        val = (ei16_1 & (1 << e8_2)) != 0;
+                        val = (ei16_1 & ((uint16_t) 1 << e8_2)) != 0;
                     break;
                 case EXPR_INT32:
                     ei32_1 = evalInt32Expr(ppExpr, context);
@@ -239,7 +239,7 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                     if (e8_2 > 31)
                         val = false;
                     else
-                        val = (ei32_1 & (1 << e8_2)) != 0;
+                        val = (ei32_1 & ((uint32_t) 1 << e8_2)) != 0;
                     break;
                 }
             break;
