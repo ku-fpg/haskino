@@ -175,17 +175,6 @@ prop_testBit c r x y = monadicIO $ do
         return v
     assert (local == litEvalB remote)
 
-{-
-prop_bit :: ArduinoConnection -> RemoteRef Word8 -> Int8 -> Word8 -> Property
-prop_bit c r x y = monadicIO $ do
-    let local = DB.bit (fromIntegral x)
-    remote <- run $ send c $ do
-        writeRemoteRef r $ bit (lit x)
-        v <- readRemoteRef r
-        return v
-    assert (local == litEval8 remote)
--}
-
 prop_from32 :: ArduinoConnection -> RemoteRef Int8 -> Word32 -> Property
 prop_from32 c r x = monadicIO $ do
     let local = fromIntegral x
