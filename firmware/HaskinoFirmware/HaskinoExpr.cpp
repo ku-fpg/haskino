@@ -505,7 +505,9 @@ int8_t evalInt8Expr(byte **ppExpr, CONTEXT *context)
                     val = e1 * e2;
                     break;
                 case EXPR_DIV:
-                    val = e1 / e2;
+                    val = (e1 < 0 && e2 > 0) ? 
+                                (e1 - e2 + 1) / e2 : 
+                                (e1 > 0 && e2 < 0) ? (e1 - e2 - 1) / e2 : e1 / e2;
                     break;
                 case EXPR_REM:
                     val = e1 % e2;
@@ -802,7 +804,9 @@ int16_t evalInt16Expr(byte **ppExpr, CONTEXT *context)
                     val = e1 * e2;
                     break;
                 case EXPR_DIV:
-                    val = e1 / e2;
+                    val = (e1 < 0 && e2 > 0) ? 
+                                (e1 - e2 + 1) / e2 : 
+                                (e1 > 0 && e2 < 0) ? (e1 - e2 - 1) / e2 : e1 / e2;
                     break;
                 case EXPR_REM:
                     val = e1 % e2;
@@ -1112,7 +1116,9 @@ int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context)
                     val = e1 * e2;
                     break;
                 case EXPR_DIV:
-                    val = e1 / e2;
+                    val = (e1 < 0 && e2 > 0) ? 
+                                (e1 - e2 + 1) / e2 : 
+                                (e1 > 0 && e2 < 0) ? (e1 - e2 - 1) / e2 : e1 / e2;
                     break;
                 case EXPR_REM:
                     val = e1 % e2;
