@@ -11,10 +11,10 @@
 #define EXPR_WORD8  0x01
 #define EXPR_WORD16 0x02
 #define EXPR_WORD32 0x03
-#define EXPR_LIST8  0x04
-#define EXPR_INT8   0x05
-#define EXPR_INT16  0x06
-#define EXPR_INT32  0x07
+#define EXPR_INT8   0x04
+#define EXPR_INT16  0x05
+#define EXPR_INT32  0x06
+#define EXPR_LIST8  0x07
 
 #define EXPR_OP_MASK 0x1F
 #define EXPR_LIT  0x00

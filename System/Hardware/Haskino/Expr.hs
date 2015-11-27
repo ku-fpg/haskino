@@ -605,10 +605,10 @@ exprTypeVal EXPR_BOOL   = 0x00
 exprTypeVal EXPR_WORD8  = 0x01
 exprTypeVal EXPR_WORD16 = 0x02
 exprTypeVal EXPR_WORD32 = 0x03
-exprTypeVal EXPR_LIST8  = 0x04
-exprTypeVal EXPR_INT8   = 0x05
-exprTypeVal EXPR_INT16  = 0x06
-exprTypeVal EXPR_INT32  = 0x07
+exprTypeVal EXPR_INT8   = 0x04
+exprTypeVal EXPR_INT16  = 0x05
+exprTypeVal EXPR_INT32  = 0x06
+exprTypeVal EXPR_LIST8  = 0x07
 
 exprOpVal :: ExprOp -> Word8
 exprOpVal EXPR_LIT  = 0x00

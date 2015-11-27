@@ -731,10 +731,10 @@ refTypeCmdVal REF_BOOL                  = 0x00
 refTypeCmdVal REF_WORD8                 = 0x01
 refTypeCmdVal REF_WORD16                = 0x02
 refTypeCmdVal REF_WORD32                = 0x03
-refTypeCmdVal REF_LIST8                 = 0x04
-refTypeCmdVal REF_INT8                  = 0x05
-refTypeCmdVal REF_INT16                 = 0x06
-refTypeCmdVal REF_INT32                 = 0x07
+refTypeCmdVal REF_INT8                  = 0x04
+refTypeCmdVal REF_INT16                 = 0x05
+refTypeCmdVal REF_INT32                 = 0x06
+refTypeCmdVal REF_LIST8                 = 0x07
 
 -- | Firmware replies, see: 
 -- | https://github.com/ku-fpg/haskino/wiki/Haskino-Firmware-Protocol-Definition
