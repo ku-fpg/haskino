@@ -418,7 +418,7 @@ int8_t evalInt8Expr(byte **ppExpr, CONTEXT *context)
     byte *pExpr = *ppExpr;
     byte exprOp = *pExpr & EXPR_OP_MASK;
     int8_t val = 0;
-    int8_t e1,e2;
+    int8_t e1,e2,e3;
     uint8_t e8_1;
     bool conditional;
     uint16_t thenSize, elseSize;
@@ -505,9 +505,11 @@ int8_t evalInt8Expr(byte **ppExpr, CONTEXT *context)
                     val = e1 * e2;
                     break;
                 case EXPR_DIV:
-                    val = (e1 < 0 && e2 > 0) ? 
-                                (e1 - e2 + 1) / e2 : 
-                                (e1 > 0 && e2 < 0) ? (e1 - e2 - 1) / e2 : e1 / e2;
+                    e3 = e1 % e2;
+                    if ((e3 != 0) && ((e3 < 0) != (e2 < 0)))
+                        val = e1 / e2 - 1;
+                    else
+                        val = e1 / e2;
                     break;
                 case EXPR_REM:
                     val = e1 % e2;
@@ -721,7 +723,7 @@ int16_t evalInt16Expr(byte **ppExpr, CONTEXT *context)
     byte *pExpr = *ppExpr;
     byte exprOp = *pExpr & EXPR_OP_MASK;
     int16_t val = 0;
-    int16_t e1,e2;
+    int16_t e1,e2,e3;
     uint8_t e8_1;
     bool conditional;
     uint16_t thenSize, elseSize;
@@ -804,9 +806,11 @@ int16_t evalInt16Expr(byte **ppExpr, CONTEXT *context)
                     val = e1 * e2;
                     break;
                 case EXPR_DIV:
-                    val = (e1 < 0 && e2 > 0) ? 
-                                (e1 - e2 + 1) / e2 : 
-                                (e1 > 0 && e2 < 0) ? (e1 - e2 - 1) / e2 : e1 / e2;
+                    e3 = e1 % e2;
+                    if ((e3 != 0) && ((e3 < 0) != (e2 < 0)))
+                        val = e1 / e2 - 1;
+                    else
+                        val = e1 / e2;
                     break;
                 case EXPR_REM:
                     val = e1 % e2;
@@ -1033,7 +1037,7 @@ int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context)
     byte *pExpr = *ppExpr;
     byte exprOp = *pExpr & EXPR_OP_MASK;
     int32_t val = 0;
-    int32_t e1,e2;
+    int32_t e1,e2,e3;
     uint8_t e8_1;
     bool conditional;
     uint16_t thenSize, elseSize;
@@ -1116,9 +1120,11 @@ int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context)
                     val = e1 * e2;
                     break;
                 case EXPR_DIV:
-                    val = (e1 < 0 && e2 > 0) ? 
-                                (e1 - e2 + 1) / e2 : 
-                                (e1 > 0 && e2 < 0) ? (e1 - e2 - 1) / e2 : e1 / e2;
+                    e3 = e1 % e2;
+                    if ((e3 != 0) && ((e3 < 0) != (e2 < 0)))
+                        val = e1 / e2 - 1;
+                    else
+                        val = e1 / e2;
                     break;
                 case EXPR_REM:
                     val = e1 % e2;
