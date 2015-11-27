@@ -175,8 +175,8 @@ prop_testBit c r x y = monadicIO $ do
         return v
     assert (local == litEvalB remote)
 
-prop_from32 :: ArduinoConnection -> RemoteRef Int8 -> Word32 -> Property
-prop_from32 c r x = monadicIO $ do
+prop_from8 :: ArduinoConnection -> RemoteRef Int8 -> Word8 -> Property
+prop_from8 c r x = monadicIO $ do
     let local = fromIntegral x
     remote <- run $ send c $ do
         writeRemoteRef r $ fromIntegralB (lit x)
@@ -186,6 +186,33 @@ prop_from32 c r x = monadicIO $ do
 
 prop_from16 :: ArduinoConnection -> RemoteRef Int8 -> Word16 -> Property
 prop_from16 c r x = monadicIO $ do
+    let local = fromIntegral x
+    remote <- run $ send c $ do
+        writeRemoteRef r $ fromIntegralB (lit x)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval8 remote)
+
+prop_from32 :: ArduinoConnection -> RemoteRef Int8 -> Word32 -> Property
+prop_from32 c r x = monadicIO $ do
+    let local = fromIntegral x
+    remote <- run $ send c $ do
+        writeRemoteRef r $ fromIntegralB (lit x)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval8 remote)
+
+prop_fromI16 :: ArduinoConnection -> RemoteRef Int8 -> Int16 -> Property
+prop_fromI16 c r x = monadicIO $ do
+    let local = fromIntegral x
+    remote <- run $ send c $ do
+        writeRemoteRef r $ fromIntegralB (lit x)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval8 remote)
+
+prop_fromI32 :: ArduinoConnection -> RemoteRef Int8 -> Int32 -> Property
+prop_fromI32 c r x = monadicIO $ do
     let local = fromIntegral x
     remote <- run $ send c $ do
         writeRemoteRef r $ fromIntegralB (lit x)
@@ -321,10 +348,16 @@ main = do
     quickCheck (prop_clearBit conn refI8)
     print "Test Bit Tests:"
     quickCheck (prop_testBit conn refB)
-    print "From Word32 Tests:"
-    quickCheck (prop_from32 conn refI8)
+    print "From Word8 Tests:"
+    quickCheck (prop_from8 conn refI8)
     print "From Word16 Tests:"
     quickCheck (prop_from16 conn refI8)
+    print "From Word32 Tests:"
+    quickCheck (prop_from32 conn refI8)
+    print "From Int16 Tests:"
+    quickCheck (prop_fromI16 conn refI8)
+    print "From Int32 Tests:"
+    quickCheck (prop_fromI32 conn refI8)
     print "ifB Tests:"
     quickCheck (prop_ifb conn refI8)
     print "Equal Tests:"

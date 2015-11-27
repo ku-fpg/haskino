@@ -19,6 +19,7 @@ import System.Hardware.Haskino
 import Data.Boolean
 import Data.Boolean.Numbers
 import Data.Boolean.Bits
+import Data.Int
 import Data.Word
 import qualified Data.Bits as DB
 import Test.QuickCheck hiding ((.&.))
@@ -174,8 +175,8 @@ prop_testBit c r x y = monadicIO $ do
         return v
     assert (local == litEvalB remote)
 
-prop_to8 :: ArduinoConnection -> RemoteRef Word32 -> Word8 -> Property
-prop_to8 c r x = monadicIO $ do
+prop_from8 :: ArduinoConnection -> RemoteRef Word32 -> Word8 -> Property
+prop_from8 c r x = monadicIO $ do
     let local = fromIntegral x
     remote <- run $ send c $ do
         writeRemoteRef r $ fromIntegralB (lit x)
@@ -183,8 +184,35 @@ prop_to8 c r x = monadicIO $ do
         return v
     assert (local == litEval32 remote)
 
-prop_to16 :: ArduinoConnection -> RemoteRef Word32 -> Word16 -> Property
-prop_to16 c r x = monadicIO $ do
+prop_from16 :: ArduinoConnection -> RemoteRef Word32 -> Word16 -> Property
+prop_from16 c r x = monadicIO $ do
+    let local = fromIntegral x
+    remote <- run $ send c $ do
+        writeRemoteRef r $ fromIntegralB (lit x)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval32 remote)
+
+prop_fromI8 :: ArduinoConnection -> RemoteRef Word32 -> Int8 -> Property
+prop_fromI8 c r x = monadicIO $ do
+    let local = fromIntegral x
+    remote <- run $ send c $ do
+        writeRemoteRef r $ fromIntegralB (lit x)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval32 remote)
+
+prop_fromI16 :: ArduinoConnection -> RemoteRef Word32 -> Int16 -> Property
+prop_fromI16 c r x = monadicIO $ do
+    let local = fromIntegral x
+    remote <- run $ send c $ do
+        writeRemoteRef r $ fromIntegralB (lit x)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval32 remote)
+
+prop_fromI32 :: ArduinoConnection -> RemoteRef Word32 -> Int32 -> Property
+prop_fromI32 c r x = monadicIO $ do
     let local = fromIntegral x
     remote <- run $ send c $ do
         writeRemoteRef r $ fromIntegralB (lit x)
@@ -320,10 +348,16 @@ main = do
     quickCheck (prop_clearBit conn refW32)
     print "Test Bit Tests:"
     quickCheck (prop_testBit conn refB)
-    print "To Word8 Tests:"
-    quickCheck (prop_to8 conn refW32)
-    print "To Word16 Tests:"
-    quickCheck (prop_to16 conn refW32)
+    print "From Word8 Tests:"
+    quickCheck (prop_from8 conn refW32)
+    print "From Word16 Tests:"
+    quickCheck (prop_from16 conn refW32)
+    print "From Int8 Tests:"
+    quickCheck (prop_fromI8 conn refW32)
+    print "From Int16 Tests:"
+    quickCheck (prop_fromI16 conn refW32)
+    print "From Int32 Tests:"
+    quickCheck (prop_fromI32 conn refW32)
     print "ifB Tests:"
     quickCheck (prop_ifb conn refW32)
     print "Equal Tests:"
