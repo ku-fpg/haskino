@@ -563,41 +563,48 @@ data ExprType = EXPR_BOOL
               | EXPR_WORD8
               | EXPR_WORD16
               | EXPR_WORD32
-              | EXPR_LIST8
               | EXPR_INT8
               | EXPR_INT16
               | EXPR_INT32
+              | EXPR_EXT
 
 data ExprOp = EXPR_LIT
             | EXPR_REF
             | EXPR_BIND
+            | EXPR_EQ
+            | EXPR_LESS
+            | EXPR_IF
             | EXPR_FINT
-            | EXPR_TINT
-            | EXPR_NOT
-            | EXPR_AND
-            | EXPR_OR
-            | EXPR_XOR
             | EXPR_NEG
             | EXPR_SIGN
             | EXPR_ADD
             | EXPR_SUB
             | EXPR_MULT
             | EXPR_DIV
+            | EXPR_NOT
+            | EXPR_AND
+            | EXPR_OR
+            | EXPR_TINT
+            | EXPR_XOR
             | EXPR_REM
             | EXPR_COMP
             | EXPR_SHFL
             | EXPR_SHFR
-            | EXPR_EQ
-            | EXPR_LESS
-            | EXPR_IF
             | EXPR_TSTB
             | EXPR_SETB
             | EXPR_CLRB
-            | EXPR_ELEM
-            | EXPR_LEN
-            | EXPR_CONS
-            | EXPR_APND
-            | EXPR_PACK
+
+data ExprListOp = EXPRL_LIT
+            | EXPRL_REF
+            | EXPRL_BIND
+            | EXPRL_EQ
+            | EXPRL_LESS
+            | EXPRL_IF
+            | EXPRL_ELEM
+            | EXPRL_LEN
+            | EXPRL_CONS
+            | EXPRL_APND
+            | EXPRL_PACK
 
 -- | Compute the numeric value of a command
 exprTypeVal :: ExprType -> Word8
@@ -608,7 +615,14 @@ exprTypeVal EXPR_WORD32 = 0x03
 exprTypeVal EXPR_INT8   = 0x04
 exprTypeVal EXPR_INT16  = 0x05
 exprTypeVal EXPR_INT32  = 0x06
-exprTypeVal EXPR_LIST8  = 0x07
+exprTypeVal EXPR_EXT    = 0x07
+
+data ExprExtType = EXPR_LIST8
+            | EXPR_FLOAT
+
+exprExtTypeVal :: ExprExtType -> Word8
+exprExtTypeVal EXPR_LIST8 = exprTypeVal EXPR_EXT `DB.shiftL` 5 DB..|. 0
+exprExtTypeVal EXPR_FLOAT = exprTypeVal EXPR_EXT `DB.shiftL` 5 DB..|. 1
 
 exprOpVal :: ExprOp -> Word8
 exprOpVal EXPR_LIT  = 0x00
@@ -624,10 +638,10 @@ exprOpVal EXPR_ADD  = 0x09
 exprOpVal EXPR_SUB  = 0x0A
 exprOpVal EXPR_MULT = 0x0B
 exprOpVal EXPR_DIV  = 0x0C
-exprOpVal EXPR_TINT = 0x0D
-exprOpVal EXPR_NOT  = 0x0E
-exprOpVal EXPR_AND  = 0x0F
-exprOpVal EXPR_OR   = 0x10
+exprOpVal EXPR_NOT  = 0x0D
+exprOpVal EXPR_AND  = 0x0E
+exprOpVal EXPR_OR   = 0x0F
+exprOpVal EXPR_TINT = 0x10
 exprOpVal EXPR_XOR  = 0x11
 exprOpVal EXPR_REM  = 0x12
 exprOpVal EXPR_COMP = 0x13
@@ -636,11 +650,22 @@ exprOpVal EXPR_SHFR = 0x15
 exprOpVal EXPR_TSTB = 0x16
 exprOpVal EXPR_SETB = 0x17
 exprOpVal EXPR_CLRB = 0x18
-exprOpVal EXPR_ELEM = 0x19
-exprOpVal EXPR_LEN  = 0x1A
-exprOpVal EXPR_CONS = 0x1B
-exprOpVal EXPR_APND = 0x1C
-exprOpVal EXPR_PACK = 0x1D
+
+exprListOpVal :: ExprListOp -> Word8
+exprListOpVal EXPRL_LIT  = exprOpVal EXPR_LIT
+exprListOpVal EXPRL_REF  = exprOpVal EXPR_REF
+exprListOpVal EXPRL_BIND = exprOpVal EXPR_BIND
+exprListOpVal EXPRL_EQ   = exprOpVal EXPR_EQ
+exprListOpVal EXPRL_LESS = exprOpVal EXPR_LESS
+exprListOpVal EXPRL_IF   = exprOpVal EXPR_IF
+exprListOpVal EXPRL_ELEM = 0x06
+exprListOpVal EXPRL_LEN  = 0x07
+exprListOpVal EXPRL_CONS = 0x08
+exprListOpVal EXPRL_APND = 0x09
+exprListOpVal EXPRL_PACK = 0x10
 
 exprCmdVal :: ExprType -> ExprOp -> Word8
 exprCmdVal t o = exprTypeVal t `DB.shiftL` 5 DB..|. exprOpVal o
+
+exprLCmdVal :: ExprListOp -> Word8
+exprLCmdVal o = exprExtTypeVal EXPR_LIST8 DB..|. exprListOpVal o

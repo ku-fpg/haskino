@@ -266,7 +266,7 @@ static bool handleNewRef(int type, int size, const byte *msg, CONTEXT *context)
                 storeWord32Ref(expr, context, refIndex);
                 break;
             case REF_LIST8:
-                newReply[0] = EXPR(EXPR_LIST8, EXPR_LIT);
+                newReply[0] = EXPR_L(EXPR_LIT);
                 storeList8Ref(expr, context, refIndex);
                 break;
             case REF_INT8:

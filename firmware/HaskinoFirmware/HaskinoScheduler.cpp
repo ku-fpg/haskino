@@ -242,7 +242,7 @@ static bool handleQueryAll(int size, const byte *msg, CONTEXT *context)
         return false;
         }
 
-    localMem[0] = EXPR(EXPR_LIST8, EXPR_LIT);
+    localMem[0] = EXPR_L(EXPR_LIT);
 
     while(task != NULL && i < taskCount)
         {

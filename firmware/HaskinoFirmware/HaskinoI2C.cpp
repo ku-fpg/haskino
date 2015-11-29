@@ -58,7 +58,7 @@ static bool handleRead(int size, const byte *msg, CONTEXT *context)
     localMem = (byte *) malloc(byteAvail+2);
     local = &localMem[2];
 
-    localMem[0] = EXPR(EXPR_LIST8, EXPR_LIT);
+    localMem[0] = EXPR_L(EXPR_LIT);
     localMem[1] = byteAvail;
 
     for (int i = 0; i < byteAvail; i++)

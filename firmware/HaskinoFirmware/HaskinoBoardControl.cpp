@@ -157,17 +157,26 @@ static bool handleWhile(int size, const byte *msg, CONTEXT *context)
         expr = updateExpr;
         switch (exprType)
             {
-            case EXPR_BOOL:
+            case REF_BOOL:
                 storeBoolRef(expr, context, refIndex);
                 break;
-            case EXPR_WORD8:
+            case REF_WORD8:
                 storeWord8Ref(expr, context, refIndex);
                 break;
-            case EXPR_WORD16:
+            case REF_WORD16:
                 storeWord16Ref(expr, context, refIndex);
                 break;
-            case EXPR_WORD32:
+            case REF_WORD32:
                 storeWord32Ref(expr, context, refIndex);
+                break;
+            case REF_INT8:
+                storeInt8Ref(expr, context, refIndex);
+                break;
+            case REF_INT16:
+                storeInt16Ref(expr, context, refIndex);
+                break;
+            case REF_INT32:
+                storeInt32Ref(expr, context, refIndex);
                 break;
             case EXPR_LIST8:
                 storeList8Ref(expr, context, refIndex);

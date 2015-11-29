@@ -8,6 +8,7 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
     {
     byte *pExpr = *ppExpr;
     byte exprOp = *pExpr & EXPR_OP_MASK;
+    byte exprType = *pExpr >> EXPR_TYPE_SHFT;
     bool val = false;
     int refNum;
     bool conditional;
@@ -21,238 +22,288 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
     int32_t ei32_1,ei32_2;
     uint8_t *l1, *l2;
     bool alloc1, alloc2;
-    byte exprType;
+    byte exprExtType;
     byte bind;
     byte *bindPtr;
 
-    switch (exprOp)
+    switch (exprType)
         {
-        case EXPR_BIND:
-            bind = pExpr[1];
-            if (!context->bind)
+        case EXPR_BOOL:
+            switch (exprOp)
                 {
-                val = false;
-                }
-            else
-                {
-                bindPtr = &context->bind[bind * BIND_SPACING];
-                val = evalBoolExpr(&bindPtr, context);
-                }
-            *ppExpr += 2; // Use Cmd and Bind Index bytes
-            break;
-        case EXPR_LIT:
-            val = pExpr[1] == 0 ? false : true;
-            *ppExpr += 2; // Use Cmd and Value bytes
-            break;
-        case EXPR_REF:
-            refNum = pExpr[1];
-            val = readRefBool(refNum);
-            *ppExpr += 2; // Use Cmd and Ref bytes
-            break;
-        case EXPR_NOT:
-            *ppExpr += 1; // Use command byte
-            val = !evalBoolExpr(ppExpr, context);
-            break;
-        case EXPR_AND:
-        case EXPR_OR:
-            bool val1, val2;
-            *ppExpr += 1; // Use command byte
-            val1 = evalBoolExpr(ppExpr, context);
-            val2 = evalBoolExpr(ppExpr, context);
-            if (exprOp == EXPR_AND)
-                val = val1 && val2;
-            else 
-                val = val1 || val2; 
-            break;
-        case EXPR_IF:
-            memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
-            memcpy((byte *) &elseSize, &pExpr[3], sizeof(uint16_t));
-            *ppExpr += 1 + 2*sizeof(uint16_t); // Use Cmd and Value bytes
-            conditional = evalBoolExpr(ppExpr, context);
-            if (conditional)
-                {
-                val = evalBoolExpr(ppExpr, context);
-                *ppExpr += elseSize;
-                }
-            else
-                {
-                *ppExpr += thenSize;
-                val = evalBoolExpr(ppExpr, context);
-                }
-            break;
-        case EXPR_EQ:
-        case EXPR_LESS:
-            exprType = *pExpr >> EXPR_TYPE_SHFT;
-            *ppExpr += 1; // Use command byte
-            switch (exprType)
-                {
-                case EXPR_BOOL:
+                case EXPR_BIND:
+                    bind = pExpr[1];
+                    if (!context->bind)
+                        {
+                        val = false;
+                        }
+                    else
+                        {
+                        bindPtr = &context->bind[bind * BIND_SPACING];
+                        val = evalBoolExpr(&bindPtr, context);
+                        }
+                    *ppExpr += 2; // Use Cmd and Bind Index bytes
+                    break;
+                case EXPR_LIT:
+                    val = pExpr[1] == 0 ? false : true;
+                    *ppExpr += 2; // Use Cmd and Value bytes
+                    break;
+                case EXPR_REF:
+                    refNum = pExpr[1];
+                    val = readRefBool(refNum);
+                    *ppExpr += 2; // Use Cmd and Ref bytes
+                    break;
+                case EXPR_NOT:
+                    *ppExpr += 1; // Use command byte
+                    val = !evalBoolExpr(ppExpr, context);
+                    break;
+                case EXPR_AND:
+                case EXPR_OR:
+                    bool val1, val2;
+                    *ppExpr += 1; // Use command byte
+                    val1 = evalBoolExpr(ppExpr, context);
+                    val2 = evalBoolExpr(ppExpr, context);
+                    if (exprOp == EXPR_AND)
+                        val = val1 && val2;
+                    else 
+                        val = val1 || val2; 
+                    break;
+                case EXPR_IF:
+                    memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
+                    memcpy((byte *) &elseSize, &pExpr[3], sizeof(uint16_t));
+                    *ppExpr += 1 + 2*sizeof(uint16_t); // Use Cmd and Value bytes
+                    conditional = evalBoolExpr(ppExpr, context);
+                    if (conditional)
+                        {
+                        val = evalBoolExpr(ppExpr, context);
+                        *ppExpr += elseSize;
+                        }
+                    else
+                        {
+                        *ppExpr += thenSize;
+                        val = evalBoolExpr(ppExpr, context);
+                        }
+                    break;
+                case EXPR_EQ:
+                case EXPR_LESS:
+                    *ppExpr += 1; // Use command byte
                     eB_1 = evalBoolExpr(ppExpr, context);
                     eB_2 = evalBoolExpr(ppExpr, context);
                     if (exprOp == EXPR_EQ)
                         val = (eB_1 == eB_2);
                     else 
-                        val = (eB_1 < eB_2); 
+                        val = (eB_1 < eB_2);
+                    break; 
+                default:
+                    goto error;
                     break;
-                case EXPR_WORD8:
-                    e8_1 = evalWord8Expr(ppExpr, context);
-                    e8_2 = evalWord8Expr(ppExpr, context);
-                    if (exprOp == EXPR_EQ)
-                        val = (e8_1 == e8_2);
+                }
+            break;
+        case EXPR_WORD8:
+            *ppExpr += 1; // Use command byte
+            if (exprOp == EXPR_EQ || exprOp == EXPR_LESS)
+                {
+                e8_1 = evalWord8Expr(ppExpr, context);
+                e8_2 = evalWord8Expr(ppExpr, context);
+                if (exprOp == EXPR_EQ)
+                    val = (e8_1 == e8_2);
+                else 
+                    val = (e8_1 < e8_2); 
+                }
+            else if (exprOp == EXPR_TSTB)
+                {
+                e8_1 = evalWord8Expr(ppExpr, context);
+                e8_2 = evalWord8Expr(ppExpr, context);
+                if (e8_2 > 7)
+                    val = false;
+                else
+                    val = (e8_1 & ((uint8_t) 1 << e8_2)) != 0;
+                }
+            else
+                goto error;
+            break;
+        case EXPR_WORD16:
+            *ppExpr += 1; // Use command byte
+            if (exprOp == EXPR_EQ || exprOp == EXPR_LESS)
+                {
+                e16_1 = evalWord16Expr(ppExpr, context);
+                e16_2 = evalWord16Expr(ppExpr, context);
+                if (exprOp == EXPR_EQ)
+                    val = (e16_1 == e16_2);
+                else 
+                    val = (e16_1 < e16_2); 
+                }
+            else if (exprOp == EXPR_TSTB)
+                {
+                e16_1 = evalWord16Expr(ppExpr, context);
+                e8_2 = evalWord8Expr(ppExpr, context);
+                if (e8_2 > 15)
+                    val = false;
+                else
+                    val = (e16_1 & ((uint16_t) 1 << e8_2)) != 0;
+                }
+            else
+                goto error;
+            break;
+        case EXPR_WORD32:
+            *ppExpr += 1; // Use command byte
+            if (exprOp == EXPR_EQ || exprOp == EXPR_LESS)
+                {
+                e32_1 = evalWord32Expr(ppExpr, context);
+                e32_2 = evalWord32Expr(ppExpr, context);
+                if (exprOp == EXPR_EQ)
+                    val = (e32_1 == e32_2);
+                else 
+                    val = (e32_1 < e32_2); 
+                }
+            else if (exprOp == EXPR_TSTB)
+                {
+                e32_1 = evalWord32Expr(ppExpr, context);
+                e8_2 = evalWord8Expr(ppExpr, context);
+                if (e8_2 > 31)
+                    val = false;
+                else
+                    val = (e32_1 & ((uint32_t) 1 << e8_2)) != 0;
+                }
+            else
+                goto error;
+            break;
+        case EXPR_INT8:
+            *ppExpr += 1; // Use command byte
+            if (exprOp == EXPR_EQ || exprOp == EXPR_LESS)
+                {
+                ei8_1 = evalInt8Expr(ppExpr, context);
+                ei8_2 = evalInt8Expr(ppExpr, context);
+                if (exprOp == EXPR_EQ)
+                    val = (ei8_1 == ei8_2);
+                else 
+                    val = (ei8_1 < ei8_2); 
+                }
+            else if (exprOp == EXPR_TSTB)
+                {
+                ei8_1 = evalInt8Expr(ppExpr, context);
+                e8_2 = evalWord8Expr(ppExpr, context);
+                if (e8_2 > 7)
+                    val = false;
+                else
+                    val = (ei8_1 & ((uint8_t) 1 << e8_2)) != 0;
+                }
+            else
+                goto error;
+            break;
+        case EXPR_INT16:
+            *ppExpr += 1; // Use command byte
+            if (exprOp == EXPR_EQ || exprOp == EXPR_LESS)
+                {
+                ei16_1 = evalInt16Expr(ppExpr, context);
+                ei16_2 = evalInt16Expr(ppExpr, context);
+                if (exprOp == EXPR_EQ)
+                    val = (ei16_1 == ei16_2);
+                else 
+                    val = (ei16_1 < ei16_2); 
+                }
+            else if (exprOp == EXPR_TSTB)
+                {
+                ei16_1 = evalInt16Expr(ppExpr, context);
+                e8_2 = evalWord8Expr(ppExpr, context);
+                if (e8_2 > 15)
+                    val = false;
+                else
+                    val = (ei16_1 & ((uint16_t) 1 << e8_2)) != 0;
+                }
+            else
+                goto error;
+            break;
+        case EXPR_INT32:
+            *ppExpr += 1; // Use command byte
+            if (exprOp == EXPR_EQ || exprOp == EXPR_LESS)
+                {
+                ei32_1 = evalInt32Expr(ppExpr, context);
+                ei32_2 = evalInt32Expr(ppExpr, context);
+                if (exprOp == EXPR_EQ)
+                    val = (ei32_1 == ei32_2);
+                else 
+                    val = (ei32_1 < ei32_2); 
+                }
+            else if (exprOp == EXPR_TSTB)
+                {
+                ei32_1 = evalInt32Expr(ppExpr, context);
+                e8_2 = evalWord8Expr(ppExpr, context);
+                if (e8_2 > 31)
+                    val = false;
+                else
+                    val = (ei32_1 & ((uint32_t) 1 << e8_2)) != 0;
+                }
+            else
+                goto error;
+            break;
+        case EXPR_EXT:
+            *ppExpr += 1; // Use command byte
+            exprExtType = *pExpr >> EXPR_EXT_TYPE_SHFT;
+            exprOp = *pExpr & EXPR_EXT_OP_MASK;
+            if (exprExtType == EXPR_LIST8)
+                {
+                l1 = evalList8Expr(ppExpr, context, &alloc1);
+                l2 = evalList8Expr(ppExpr, context, &alloc2);
+                l1len = l1[1];
+                l2len = l2[1];
+                if (exprOp == EXPR_EQ)
+                    {
+                    if (l1len != l2len)
+                        val = false;
                     else 
-                        val = (e8_1 < e8_2); 
-                    break;
-                case EXPR_WORD16:
-                    e16_1 = evalWord16Expr(ppExpr, context);
-                    e16_2 = evalWord16Expr(ppExpr, context);
-                    if (exprOp == EXPR_EQ)
-                        val = (e16_1 == e16_2);
-                    else 
-                        val = (e16_1 < e16_2); 
-                    break;
-                case EXPR_WORD32:
-                    e32_1 = evalWord32Expr(ppExpr, context);
-                    e32_2 = evalWord32Expr(ppExpr, context);
-                    if (exprOp == EXPR_EQ)
-                        val = (e32_1 == e32_2);
-                    else 
-                        val = (e32_1 < e32_2); 
-                    break;
-                case EXPR_INT8:
-                    ei8_1 = evalInt8Expr(ppExpr, context);
-                    ei8_2 = evalInt8Expr(ppExpr, context);
-                    if (exprOp == EXPR_EQ)
-                        val = (ei8_1 == ei8_2);
-                    else 
-                        val = (ei8_1 < ei8_2); 
-                    break;
-                case EXPR_INT16:
-                    ei16_1 = evalInt16Expr(ppExpr, context);
-                    ei16_2 = evalInt16Expr(ppExpr, context);
-                    if (exprOp == EXPR_EQ)
-                        val = (ei16_1 == ei16_2);
-                    else 
-                        val = (ei16_1 < ei16_2); 
-                    break;
-                case EXPR_INT32:
-                    ei32_1 = evalInt32Expr(ppExpr, context);
-                    ei32_2 = evalInt32Expr(ppExpr, context);
-                    if (exprOp == EXPR_EQ)
-                        val = (ei32_1 == ei32_2);
-                    else 
-                        val = (ei32_1 < ei32_2); 
-                    break;
-                case EXPR_LIST8:
-                    l1 = evalList8Expr(ppExpr, context, &alloc1);
-                    l2 = evalList8Expr(ppExpr, context, &alloc2);
-                    l1len = l1[1];
-                    l2len = l2[1];
-                    if (exprOp == EXPR_EQ)
                         {
-                        if (l1len != l2len)
-                            val = false;
-                        else 
+                        val = true;
+                        for (int i=0;i<l1len;i++)
                             {
-                            val = true;
-                            for (int i=0;i<l1len;i++)
+                            if (l1[2+i] != l2[2+i])
                                 {
-                                if (l1[2+i] != l2[2+i])
-                                    {
-                                    val = false;
-                                    break;
-                                    }
+                                val = false;
+                                break;
                                 }
                             }
                         }
-                    else
-                        {
-                        int i;
-                        for (i=0;
-                             i < l1len && i < l2len && l1[2+i] == l2[2+i];
-                             i++);
-                        if (i == l1len && i == l2len)
-                            val = false;
-                        else if (i == l1len)
-                            val = true;
-                        else if (i == l2len)
-                            val = false;
-                        else 
-                            val = l1[2+i] < l2[2+i];
-                        }
-                    if (alloc1)
-                        free(l1);
-                    if (alloc2)
-                        free(l2);
-                    break;
-                default:
-                    sendStringf("eBE:T%d", exprType);
+                    }
+                else
+                    {
+                    int i;
+                    for (i=0;
+                         i < l1len && i < l2len && l1[2+i] == l2[2+i];
+                         i++);
+                    if (i == l1len && i == l2len)
+                        val = false;
+                    else if (i == l1len)
+                        val = true;
+                    else if (i == l2len)
+                        val = false;
+                    else 
+                        val = l1[2+i] < l2[2+i];
+                    }
+                if (alloc1)
+                    free(l1);
+                if (alloc2)
+                    free(l2);
                 }
-            break;
-        case EXPR_TSTB:
-            exprType = *pExpr >> EXPR_TYPE_SHFT;
-            *ppExpr += 1; // Use command byte
-            switch (exprType)
+            else
                 {
-                case EXPR_WORD8:
-                    e8_1 = evalWord8Expr(ppExpr, context);
-                    e8_2 = evalWord8Expr(ppExpr, context);
-                    if (e8_2 > 7)
-                        val = false;
-                    else
-                        val = (e8_1 & ((uint8_t) 1 << e8_2)) != 0;
-                    break;
-                case EXPR_WORD16:
-                    e16_1 = evalWord16Expr(ppExpr, context);
-                    e8_2 = evalWord8Expr(ppExpr, context);
-                    if (e8_2 > 15)
-                        val = false;
-                    else
-                        val = (e16_1 & ((uint16_t) 1 << e8_2)) != 0;
-                    break;
-                case EXPR_WORD32:
-                    e32_1 = evalWord32Expr(ppExpr, context);
-                    e8_2 = evalWord8Expr(ppExpr, context);
-                    if (e8_2 > 31)
-                        val = false;
-                    else
-                        val = (e32_1 & ((uint32_t) 1 << e8_2)) != 0;
-                    break;
-                case EXPR_INT8:
-                    ei8_1 = evalInt8Expr(ppExpr, context);
-                    e8_2 = evalWord8Expr(ppExpr, context);
-                    if (e8_2 > 7)
-                        val = false;
-                    else
-                        val = (ei8_1 & ((uint8_t) 1 << e8_2)) != 0;
-                    break;
-                case EXPR_INT16:
-                    ei16_1 = evalInt16Expr(ppExpr, context);
-                    e8_2 = evalWord8Expr(ppExpr, context);
-                    if (e8_2 > 15)
-                        val = false;
-                    else
-                        val = (ei16_1 & ((uint16_t) 1 << e8_2)) != 0;
-                    break;
-                case EXPR_INT32:
-                    ei32_1 = evalInt32Expr(ppExpr, context);
-                    e8_2 = evalWord8Expr(ppExpr, context);
-                    if (e8_2 > 31)
-                        val = false;
-                    else
-                        val = (ei32_1 & ((uint32_t) 1 << e8_2)) != 0;
-                    break;
+                // ToDo: Float
                 }
             break;
         default:
-            sendStringf("eBE:O%d", exprOp);
+            goto error;
+            break;
         }
-        return val;
+    return val;
+error:
+    sendStringf("eBE:%d,%d", exprType, exprOp);
+    return val;
     }
 
 uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context) 
     {
     byte *pExpr = *ppExpr;
     byte exprOp = *pExpr & EXPR_OP_MASK;
+    byte exprType = *pExpr >> EXPR_TYPE_SHFT;
     uint8_t val = 0;
     uint8_t e1,e2;
     bool conditional;
@@ -264,153 +315,177 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
     byte bind;
     byte *bindPtr;
 
-    switch (exprOp)
+    switch (exprType)
         {
-        case EXPR_BIND:
-            bind = pExpr[1];
-            if (!context->bind)
-                {
-                val = 0;
-                }
-            else
-                {
-                bindPtr = &context->bind[bind * BIND_SPACING];
-                val = evalWord8Expr(&bindPtr, context);
-                }
-            *ppExpr += 2; // Use Cmd and Bind Index bytes
-            break;
-        case EXPR_LIT:
-            val = pExpr[1];
-            *ppExpr += 1 + sizeof(uint8_t); // Use Cmd and Value bytes
-            break;
-        case EXPR_REF:
-            refNum = pExpr[1];
-            val = readRefWord8(refNum);
-             *ppExpr += 2; // Use Cmd and Ref bytes
-            break;
-        case EXPR_NEG:
-        case EXPR_SIGN:
-        case EXPR_COMP:
-            *ppExpr += 1; // Use command byte
-            e1 = evalWord8Expr(ppExpr, context);
+        case EXPR_WORD8:
             switch (exprOp)
                 {
+                case EXPR_BIND:
+                    bind = pExpr[1];
+                    if (!context->bind)
+                        {
+                        val = 0;
+                        }
+                    else
+                        {
+                        bindPtr = &context->bind[bind * BIND_SPACING];
+                        val = evalWord8Expr(&bindPtr, context);
+                        }
+                    *ppExpr += 2; // Use Cmd and Bind Index bytes
+                    break;
+                case EXPR_LIT:
+                    val = pExpr[1];
+                    *ppExpr += 1 + sizeof(uint8_t); // Use Cmd and Value bytes
+                    break;
+                case EXPR_REF:
+                    refNum = pExpr[1];
+                    val = readRefWord8(refNum);
+                     *ppExpr += 2; // Use Cmd and Ref bytes
+                    break;
                 case EXPR_NEG:
-                    val = -e1;
-                    break;
                 case EXPR_SIGN:
-                    val = e1 == 0 ? 0 : 1;
-                    break;
                 case EXPR_COMP:
-                    val = ~e1;
+                    *ppExpr += 1; // Use command byte
+                    e1 = evalWord8Expr(ppExpr, context);
+                    switch (exprOp)
+                        {
+                        case EXPR_NEG:
+                            val = -e1;
+                            break;
+                        case EXPR_SIGN:
+                            val = e1 == 0 ? 0 : 1;
+                            break;
+                        case EXPR_COMP:
+                            val = ~e1;
+                            break;
+                        }
                     break;
-                }
-            break;
-        case EXPR_AND:
-        case EXPR_OR:
-        case EXPR_XOR:
-        case EXPR_ADD:
-        case EXPR_SUB:
-        case EXPR_MULT:
-        case EXPR_DIV:
-        case EXPR_REM:
-        case EXPR_SHFL:
-        case EXPR_SHFR:
-        case EXPR_SETB:
-        case EXPR_CLRB:
-            *ppExpr += 1; // Use command byte
-            e1 = evalWord8Expr(ppExpr, context);
-            e2 = evalWord8Expr(ppExpr, context);
-            switch(exprOp)
-                {
                 case EXPR_AND:
-                    val = e1 & e2;
-                    break;
                 case EXPR_OR:
-                    val = e1 | e2;
-                    break;
                 case EXPR_XOR:
-                    val = e1 ^ e2;
-                    break;
                 case EXPR_ADD:
-                    val = e1 + e2;
-                    break;
                 case EXPR_SUB:
-                    val = e1 - e2;
-                    break;
                 case EXPR_MULT:
-                    val = e1 * e2;
-                    break;
                 case EXPR_DIV:
-                    val = e1 / e2;
-                    break;
                 case EXPR_REM:
-                    val = e1 % e2;
-                    break;
                 case EXPR_SHFL:
-                    if (e2 > 8) e2 = 8;
-                    val = e1 << e2;
-                    break;
                 case EXPR_SHFR:
-                    if (e2 > 8) e2 = 8;
-                    val = e1 >> e2;
-                    break;
                 case EXPR_SETB:
-                    if (e2 > 7)
-                        val = e1;
-                    else
-                        val = bitSet(e1, e2);
-                    break;
                 case EXPR_CLRB:
-                    if (e2 > 7)
-                        val = e1;
-                    else
-                        val = bitClear(e1, e2);
+                    *ppExpr += 1; // Use command byte
+                    e1 = evalWord8Expr(ppExpr, context);
+                    e2 = evalWord8Expr(ppExpr, context);
+                    switch(exprOp)
+                        {
+                        case EXPR_AND:
+                            val = e1 & e2;
+                            break;
+                        case EXPR_OR:
+                            val = e1 | e2;
+                            break;
+                        case EXPR_XOR:
+                            val = e1 ^ e2;
+                            break;
+                        case EXPR_ADD:
+                            val = e1 + e2;
+                            break;
+                        case EXPR_SUB:
+                            val = e1 - e2;
+                            break;
+                        case EXPR_MULT:
+                            val = e1 * e2;
+                            break;
+                        case EXPR_DIV:
+                            val = e1 / e2;
+                            break;
+                        case EXPR_REM:
+                            val = e1 % e2;
+                            break;
+                        case EXPR_SHFL:
+                            if (e2 > 8) e2 = 8;
+                            val = e1 << e2;
+                            break;
+                        case EXPR_SHFR:
+                            if (e2 > 8) e2 = 8;
+                            val = e1 >> e2;
+                            break;
+                        case EXPR_SETB:
+                            if (e2 > 7)
+                                val = e1;
+                            else
+                                val = bitSet(e1, e2);
+                            break;
+                        case EXPR_CLRB:
+                            if (e2 > 7)
+                                val = e1;
+                            else
+                                val = bitClear(e1, e2);
+                            break;
+                        }
                     break;
+                case EXPR_IF:
+                    memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
+                    memcpy((byte *) &elseSize, &pExpr[3], sizeof(uint16_t));
+                    *ppExpr += 1 + 2*sizeof(uint16_t); // Use Cmd and Value bytes
+                    conditional = evalBoolExpr(ppExpr, context);
+                    if (conditional)
+                        {
+                        val = evalWord8Expr(ppExpr, context);
+                        *ppExpr += elseSize;
+                        }
+                    else
+                        {
+                        *ppExpr += thenSize;
+                        val = evalWord8Expr(ppExpr, context);
+                        }
+                    break;
+                default:
+                    goto error;
                 }
             break;
-        case EXPR_FINT:
-            *ppExpr += 1; // Use command byte
-            val = evalWord32Expr(ppExpr, context);
-            break;
-        case EXPR_IF:
-            memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
-            memcpy((byte *) &elseSize, &pExpr[3], sizeof(uint16_t));
-            *ppExpr += 1 + 2*sizeof(uint16_t); // Use Cmd and Value bytes
-            conditional = evalBoolExpr(ppExpr, context);
-            if (conditional)
+        case EXPR_WORD32:
+            switch (exprOp)
                 {
-                val = evalWord8Expr(ppExpr, context);
-                *ppExpr += elseSize;
+                case EXPR_FINT:
+                    *ppExpr += 1; // Use command byte
+                    val = evalWord32Expr(ppExpr, context);
+                    break;
+                default:
+                    goto error;
                 }
-            else
+            break;
+        case EXPR_EXT:
+            switch (exprOp)
                 {
-                *ppExpr += thenSize;
-                val = evalWord8Expr(ppExpr, context);
+                case EXPR_LEN:
+                    *ppExpr += 1; // Use command byte
+                    listMem = evalList8Expr(ppExpr, context, &alloc);
+                    val = listMem[1];
+                    if (alloc)
+                        free(listMem);
+                    break;
+                case EXPR_ELEM:
+                    *ppExpr += 1; // Use command byte
+                    listMem = evalList8Expr(ppExpr, context, &alloc);
+                    index = evalWord8Expr(ppExpr, context);
+                    if (index < listMem[1])
+                        val = listMem[2+index];
+                    else // ToDo: handle out of bound index
+                        val = 0;
+                    if (alloc)
+                        free(listMem);
+                    break;
+                default:
+                    goto error;
                 }
-            break;
-        case EXPR_LEN:
-            *ppExpr += 1; // Use command byte
-            listMem = evalList8Expr(ppExpr, context, &alloc);
-            val = listMem[1];
-            if (alloc)
-                free(listMem);
-            break;
-        case EXPR_ELEM:
-            *ppExpr += 1; // Use command byte
-            listMem = evalList8Expr(ppExpr, context, &alloc);
-            index = evalWord8Expr(ppExpr, context);
-            if (index < listMem[1])
-                val = listMem[2+index];
-            else // ToDo: handle out of bound index
-                val = 0;
-            if (alloc)
-                free(listMem);
             break;
         default:
-            sendStringf("eW8E:O%d", exprOp);
+            goto error;
         }
-        return val;
+    return val;
+error:
+    sendStringf("eW8E:%d,%d", exprType, exprOp);
+    return val;
     }
 
 int8_t evalInt8Expr(byte **ppExpr, CONTEXT *context) 
@@ -1201,14 +1276,14 @@ void putBindListPtr(CONTEXT *context, byte bind, byte *newPtr)
             free(listPtr);
         else
             memcpy(&bindPtr[1], &newPtr, sizeof(byte *));
-        bindPtr[0] = EXPR(EXPR_LIST8, EXPR_PTR);
+        bindPtr[0] = EXPR_L(EXPR_PTR);
         }
     }
 
 byte sizeList8Expr(byte **ppExpr, CONTEXT *context)
     {
     byte *pExpr = *ppExpr;
-    byte exprOp = *pExpr & EXPR_OP_MASK;
+    byte exprOp = *pExpr & EXPR_EXT_OP_MASK;
     byte bind, refNum;
     byte *bindPtr, *refPtr;
     byte size = 0;
@@ -1263,7 +1338,7 @@ byte sizeList8Expr(byte **ppExpr, CONTEXT *context)
 int evalList8SubExpr(byte **ppExpr, CONTEXT *context, byte *listMem, byte index)
     {
     byte *pExpr = *ppExpr;
-    byte exprOp = *pExpr & EXPR_OP_MASK;
+    byte exprOp = *pExpr & EXPR_EXT_OP_MASK;
     byte bind, refNum;
     int size;
     byte *bindPtr, *refPtr;
@@ -1320,7 +1395,7 @@ int evalList8SubExpr(byte **ppExpr, CONTEXT *context, byte *listMem, byte index)
 uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc)
     {
     byte *pExpr = *ppExpr;
-    byte exprOp = *pExpr & EXPR_OP_MASK;
+    byte exprOp = *pExpr & EXPR_EXT_OP_MASK;
     byte *ppSizeExpr, *listMem, *bindPtr;
     byte size, bind, refNum;
 
@@ -1340,7 +1415,7 @@ uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc)
             {
             *alloc = true;
             listMem = (byte *) malloc(2);
-            listMem[0] = EXPR(EXPR_LIST8, EXPR_LIT);
+            listMem[0] = EXPR_L(EXPR_LIT);
             listMem[1] = 0;
             }
         else
@@ -1385,7 +1460,7 @@ uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc)
         size = sizeList8Expr(&ppSizeExpr, context); 
         
         listMem = (byte *) malloc(size+2);
-        listMem[0] = EXPR(EXPR_LIST8, EXPR_LIT);
+        listMem[0] = EXPR_L(EXPR_LIT);
         listMem[1] = size;
         evalList8SubExpr(ppExpr, context, listMem, 2);
         }

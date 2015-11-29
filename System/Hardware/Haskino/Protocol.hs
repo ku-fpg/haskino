@@ -339,8 +339,8 @@ packageExpr (EqI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_EQ) e1
 packageExpr (LessI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_LESS) e1 e2 
 packageExpr (EqI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_EQ) e1 e2 
 packageExpr (LessI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_LESS) e1 e2 
-packageExpr (EqL8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_LIST8 EXPR_EQ) e1 e2 
-packageExpr (LessL8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_LIST8 EXPR_LESS) e1 e2 
+packageExpr (EqL8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_EQ) e1 e2 
+packageExpr (LessL8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_LESS) e1 e2 
 packageExpr (LitW8 w) = [exprCmdVal EXPR_WORD8 EXPR_LIT, w]
 packageExpr (RefW8 n) = packageRef n (exprCmdVal EXPR_BOOL EXPR_REF)
 packageExpr (RemBindW8 b) = [exprCmdVal EXPR_WORD8 EXPR_BIND, fromIntegral b]
@@ -471,15 +471,15 @@ packageExpr (IfI32 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_INT32 EXPR_IF)
 packageExpr (TestBI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_TSTB) e1 e2 
 packageExpr (SetBI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_SETB) e1 e2 
 packageExpr (ClrBI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_CLRB) e1 e2 
-packageExpr (LitList8 ws) = [exprCmdVal EXPR_LIST8 EXPR_LIT, fromIntegral $ length ws] ++ ws
-packageExpr (RefList8 n) = packageRef n (exprCmdVal EXPR_LIST8 EXPR_REF)
-packageExpr (RemBindList8 b) = [exprCmdVal EXPR_LIST8 EXPR_BIND, fromIntegral b]
-packageExpr (IfL8 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_LIST8 EXPR_IF) e1 e2 e3
-packageExpr (ElemList8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_ELEM) e1 e2 
-packageExpr (LenList8 e) = packageSubExpr (exprCmdVal EXPR_WORD8 EXPR_LEN) e
-packageExpr (ConsList8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_LIST8 EXPR_CONS) e1 e2 
-packageExpr (ApndList8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_LIST8 EXPR_APND) e1 e2
-packageExpr (PackList8 es) = [exprCmdVal EXPR_LIST8 EXPR_PACK, fromIntegral $ length es] ++ (foldl (++) [] (map packageExpr es))
+packageExpr (LitList8 ws) = [exprLCmdVal EXPRL_LIT, fromIntegral $ length ws] ++ ws
+packageExpr (RefList8 n) = packageRef n (exprLCmdVal EXPRL_REF)
+packageExpr (RemBindList8 b) = [exprLCmdVal EXPRL_BIND, fromIntegral b]
+packageExpr (IfL8 e1 e2 e3) = packageIfBSubExpr (exprLCmdVal EXPRL_IF) e1 e2 e3
+packageExpr (ElemList8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_ELEM) e1 e2 
+packageExpr (LenList8 e) = packageSubExpr (exprLCmdVal EXPRL_LEN) e
+packageExpr (ConsList8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_CONS) e1 e2 
+packageExpr (ApndList8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_APND) e1 e2
+packageExpr (PackList8 es) = [exprLCmdVal EXPRL_PACK, fromIntegral $ length es] ++ (foldl (++) [] (map packageExpr es))
 
 -- | Unpackage a Haskino Firmware response
 unpackageResponse :: [Word8] -> Response
@@ -520,7 +520,7 @@ unpackageResponse (cmdWord:args)
                                       -> ReadRefI16Reply $ fromIntegral (bytesToWord16 (b1, b2))
       (REF_RESP_READ , [l,b1,b2,b3,b4]) | l == exprCmdVal EXPR_INT32 EXPR_LIT
                                       -> ReadRefI32Reply $ fromIntegral (bytesToWord32 (b1, b2, b3, b4))
-      (REF_RESP_READ , l:_:bs) | l == exprCmdVal EXPR_LIST8 EXPR_LIT
+      (REF_RESP_READ , l:_:bs) | l == exprLCmdVal EXPRL_LIT
                                       -> ReadRefL8Reply bs
       (REF_RESP_NEW , [l,w])          -> NewReply w
       (REF_RESP_NEW , [])             -> FailedNewRef
