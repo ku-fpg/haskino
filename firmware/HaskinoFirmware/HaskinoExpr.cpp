@@ -368,6 +368,8 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
                 case EXPR_MULT:
                 case EXPR_DIV:
                 case EXPR_REM:
+                case EXPR_QUOT:
+                case EXPR_MOD:
                 case EXPR_SHFL:
                 case EXPR_SHFR:
                 case EXPR_SETB:
@@ -396,9 +398,11 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
                             val = e1 * e2;
                             break;
                         case EXPR_DIV:
+                        case EXPR_QUOT:
                             val = e1 / e2;
                             break;
                         case EXPR_REM:
+                        case EXPR_MOD:
                             val = e1 % e2;
                             break;
                         case EXPR_SHFL:
@@ -556,6 +560,8 @@ int8_t evalInt8Expr(byte **ppExpr, CONTEXT *context)
         case EXPR_MULT:
         case EXPR_DIV:
         case EXPR_REM:
+        case EXPR_QUOT:
+        case EXPR_MOD:
             *ppExpr += 1; // Use command byte
             e1 = evalInt8Expr(ppExpr, context);
             e2 = evalInt8Expr(ppExpr, context);
@@ -587,6 +593,12 @@ int8_t evalInt8Expr(byte **ppExpr, CONTEXT *context)
                         val = e1 / e2;
                     break;
                 case EXPR_REM:
+                    val = e1 % e2;
+                    break;
+                case EXPR_QUOT:
+                    val = e1 / e2;
+                    break;
+                case EXPR_MOD:
                     val = e1 % e2;
                     break;
                 }
@@ -705,6 +717,8 @@ uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context)
         case EXPR_MULT:
         case EXPR_DIV:
         case EXPR_REM:
+        case EXPR_QUOT:
+        case EXPR_MOD:
             *ppExpr += 1; // Use command byte
             e1 = evalWord16Expr(ppExpr, context);
             e2 = evalWord16Expr(ppExpr, context);
@@ -729,9 +743,11 @@ uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context)
                     val = e1 * e2;
                     break;
                 case EXPR_DIV:
+                case EXPR_QUOT:
                     val = e1 / e2;
                     break;
                 case EXPR_REM:
+                case EXPR_MOD:
                     val = e1 % e2;
                     break;
                 }
@@ -857,6 +873,8 @@ int16_t evalInt16Expr(byte **ppExpr, CONTEXT *context)
         case EXPR_MULT:
         case EXPR_DIV:
         case EXPR_REM:
+        case EXPR_QUOT:
+        case EXPR_MOD:
             *ppExpr += 1; // Use command byte
             e1 = evalInt16Expr(ppExpr, context);
             e2 = evalInt16Expr(ppExpr, context);
@@ -888,6 +906,12 @@ int16_t evalInt16Expr(byte **ppExpr, CONTEXT *context)
                         val = e1 / e2;
                     break;
                 case EXPR_REM:
+                    val = e1 % e2;
+                    break;
+                case EXPR_QUOT:
+                    val = e1 / e2;
+                    break;
+                case EXPR_MOD:
                     val = e1 % e2;
                     break;
                 }
@@ -1007,6 +1031,8 @@ uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context)
         case EXPR_MULT:
         case EXPR_DIV:
         case EXPR_REM:
+        case EXPR_QUOT:
+        case EXPR_MOD:
             *ppExpr += 1; // Use command byte
             e1 = evalWord32Expr(ppExpr, context);
             e2 = evalWord32Expr(ppExpr, context);
@@ -1031,9 +1057,11 @@ uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context)
                     val = e1 * e2;
                     break;
                 case EXPR_DIV:
+                case EXPR_QUOT:
                     val = e1 / e2;
                     break;
                 case EXPR_REM:
+                case EXPR_MOD:
                     val = e1 % e2;
                     break;
                 }
@@ -1171,6 +1199,8 @@ int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context)
         case EXPR_MULT:
         case EXPR_DIV:
         case EXPR_REM:
+        case EXPR_QUOT:
+        case EXPR_MOD:
             *ppExpr += 1; // Use command byte
             e1 = evalInt32Expr(ppExpr, context);
             e2 = evalInt32Expr(ppExpr, context);
@@ -1202,6 +1232,12 @@ int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context)
                         val = e1 / e2;
                     break;
                 case EXPR_REM:
+                    val = e1 % e2;
+                    break;
+                case EXPR_QUOT:
+                    val = e1 / e2;
+                    break;
+                case EXPR_MOD:
                     val = e1 % e2;
                     break;
                 }

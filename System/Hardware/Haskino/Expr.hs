@@ -80,6 +80,8 @@ data Expr a where
   MultW8       :: Expr Word8 -> Expr Word8 -> Expr Word8
   DivW8        :: Expr Word8 -> Expr Word8 -> Expr Word8
   RemW8        :: Expr Word8 -> Expr Word8 -> Expr Word8
+  QuotW8       :: Expr Word8 -> Expr Word8 -> Expr Word8
+  ModW8        :: Expr Word8 -> Expr Word8 -> Expr Word8
   AndW8        :: Expr Word8 -> Expr Word8 -> Expr Word8
   OrW8         :: Expr Word8 -> Expr Word8 -> Expr Word8
   XorW8        :: Expr Word8 -> Expr Word8 -> Expr Word8
@@ -99,6 +101,8 @@ data Expr a where
   MultW16      :: Expr Word16 -> Expr Word16 -> Expr Word16
   DivW16       :: Expr Word16 -> Expr Word16 -> Expr Word16
   RemW16       :: Expr Word16 -> Expr Word16 -> Expr Word16
+  QuotW16      :: Expr Word16 -> Expr Word16 -> Expr Word16
+  ModW16       :: Expr Word16 -> Expr Word16 -> Expr Word16
   AndW16       :: Expr Word16 -> Expr Word16 -> Expr Word16
   OrW16        :: Expr Word16 -> Expr Word16 -> Expr Word16
   XorW16       :: Expr Word16 -> Expr Word16 -> Expr Word16
@@ -118,6 +122,8 @@ data Expr a where
   MultW32      :: Expr Word32 -> Expr Word32 -> Expr Word32
   DivW32       :: Expr Word32 -> Expr Word32 -> Expr Word32
   RemW32       :: Expr Word32 -> Expr Word32 -> Expr Word32
+  QuotW32      :: Expr Word32 -> Expr Word32 -> Expr Word32
+  ModW32       :: Expr Word32 -> Expr Word32 -> Expr Word32
   AndW32       :: Expr Word32 -> Expr Word32 -> Expr Word32
   OrW32        :: Expr Word32 -> Expr Word32 -> Expr Word32
   XorW32       :: Expr Word32 -> Expr Word32 -> Expr Word32
@@ -137,6 +143,8 @@ data Expr a where
   MultI8       :: Expr Int8 -> Expr Int8 -> Expr Int8
   DivI8        :: Expr Int8 -> Expr Int8 -> Expr Int8
   RemI8        :: Expr Int8 -> Expr Int8 -> Expr Int8
+  QuotI8       :: Expr Int8 -> Expr Int8 -> Expr Int8
+  ModI8        :: Expr Int8 -> Expr Int8 -> Expr Int8
   AndI8        :: Expr Int8 -> Expr Int8 -> Expr Int8
   OrI8         :: Expr Int8 -> Expr Int8 -> Expr Int8
   XorI8        :: Expr Int8 -> Expr Int8 -> Expr Int8
@@ -156,6 +164,8 @@ data Expr a where
   MultI16      :: Expr Int16 -> Expr Int16 -> Expr Int16
   DivI16       :: Expr Int16 -> Expr Int16 -> Expr Int16
   RemI16       :: Expr Int16 -> Expr Int16 -> Expr Int16
+  QuotI16      :: Expr Int16 -> Expr Int16 -> Expr Int16
+  ModI16       :: Expr Int16 -> Expr Int16 -> Expr Int16
   AndI16       :: Expr Int16 -> Expr Int16 -> Expr Int16
   OrI16        :: Expr Int16 -> Expr Int16 -> Expr Int16
   XorI16       :: Expr Int16 -> Expr Int16 -> Expr Int16
@@ -175,6 +185,8 @@ data Expr a where
   MultI32      :: Expr Int32 -> Expr Int32 -> Expr Int32
   DivI32       :: Expr Int32 -> Expr Int32 -> Expr Int32
   RemI32       :: Expr Int32 -> Expr Int32 -> Expr Int32
+  QuotI32      :: Expr Int32 -> Expr Int32 -> Expr Int32
+  ModI32       :: Expr Int32 -> Expr Int32 -> Expr Int32
   AndI32       :: Expr Int32 -> Expr Int32 -> Expr Int32
   OrI32        :: Expr Int32 -> Expr Int32 -> Expr Int32
   XorI32       :: Expr Int32 -> Expr Int32 -> Expr Int32
@@ -279,8 +291,8 @@ instance BN.NumB (Expr Word8) where
 instance BN.IntegralB (Expr Word8) where
   div = DivW8
   rem = RemW8
-  quot = DivW8
-  mod = RemW8
+  quot = QuotW8
+  mod = ModW8
   toIntegerB e = ToIntW8 e
 
 instance BB.BitsB (Expr Word8) where
@@ -325,8 +337,8 @@ instance BN.NumB (Expr Word16) where
 instance BN.IntegralB (Expr Word16) where
   div = DivW16
   rem = RemW16
-  quot = DivW16
-  mod = RemW16
+  quot = QuotW16
+  mod = ModW16
   toIntegerB e = ToIntW16 e
 
 instance BB.BitsB (Expr Word16) where
@@ -371,8 +383,8 @@ instance BN.NumB (Expr Word32) where
 instance BN.IntegralB (Expr Word32) where
   div = DivW32
   rem = RemW32
-  quot = DivW32
-  mod = RemW32
+  quot = QuotW32
+  mod = ModW32
   toIntegerB e = e
 
 instance BB.BitsB (Expr Word32) where
@@ -417,8 +429,8 @@ instance BN.NumB (Expr Int8) where
 instance BN.IntegralB (Expr Int8) where
   div = DivI8
   rem = RemI8
-  quot = DivI8
-  mod = RemI8
+  quot = QuotI8
+  mod = ModI8
   toIntegerB e = ToIntI8 e
 
 instance BB.BitsB (Expr Int8) where
@@ -463,8 +475,8 @@ instance BN.NumB (Expr Int16) where
 instance BN.IntegralB (Expr Int16) where
   div = DivI16
   rem = RemI16
-  quot = DivI16
-  mod = RemI16
+  quot = QuotI16
+  mod = ModI16
   toIntegerB e = ToIntI16 e
 
 instance BB.BitsB (Expr Int16) where
@@ -509,8 +521,8 @@ instance BN.NumB (Expr Int32) where
 instance BN.IntegralB (Expr Int32) where
   div = DivI32
   rem = RemI32
-  quot = DivI32
-  mod = RemI32
+  quot = QuotI32
+  mod = ModI32
   toIntegerB e = ToIntI32 e
 
 instance BB.BitsB (Expr Int32) where
@@ -593,6 +605,8 @@ data ExprOp = EXPR_LIT
             | EXPR_TSTB
             | EXPR_SETB
             | EXPR_CLRB
+            | EXPR_QUOT
+            | EXPR_MOD
 
 data ExprListOp = EXPRL_LIT
             | EXPRL_REF
@@ -650,6 +664,8 @@ exprOpVal EXPR_SHFR = 0x15
 exprOpVal EXPR_TSTB = 0x16
 exprOpVal EXPR_SETB = 0x17
 exprOpVal EXPR_CLRB = 0x18
+exprOpVal EXPR_QUOT = 0x19
+exprOpVal EXPR_MOD  = 0x1A
 
 exprListOpVal :: ExprListOp -> Word8
 exprListOpVal EXPRL_LIT  = exprOpVal EXPR_LIT

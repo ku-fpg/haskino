@@ -53,6 +53,8 @@
 #define EXPR_TSTB 0x16
 #define EXPR_SETB 0x17
 #define EXPR_CLRB 0x18
+#define EXPR_QUOT 0x19
+#define EXPR_MOD  0x1A
 
 // List Expression Ops
 #define EXPR_ELEM 0x06

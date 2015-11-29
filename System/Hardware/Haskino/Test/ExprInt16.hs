@@ -10,7 +10,7 @@
 
 {-# LANGUAGE GADTs #-}
 
-module System.Hardware.Haskino.Test.ExprWord16 where
+module System.Hardware.Haskino.Test.ExprInt16 where
 
 import Prelude hiding 
   ( quotRem, divMod, quot, rem, div, mod, properFraction, fromInteger, toInteger )
@@ -90,6 +90,24 @@ prop_rem c r x (NonZero y) = monadicIO $ do
     let local = x `P.rem` y
     remote <- run $ send c $ do
         writeRemoteRef r $ (lit x) `rem` (lit y)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval16 remote)
+
+prop_quot :: ArduinoConnection -> RemoteRef Int16 -> Int16 -> NonZero Int16 -> Property
+prop_quot c r x (NonZero y) = monadicIO $ do
+    let local = x `P.quot` y
+    remote <- run $ send c $ do
+        writeRemoteRef r $ (lit x) `quot` (lit y)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval16 remote)
+
+prop_mod :: ArduinoConnection -> RemoteRef Int16 -> Int16 -> NonZero Int16 -> Property
+prop_mod c r x (NonZero y) = monadicIO $ do
+    let local = x `P.mod` y
+    remote <- run $ send c $ do
+        writeRemoteRef r $ (lit x) `mod` (lit y)
         v <- readRemoteRef r
         return v
     assert (local == litEval16 remote)
@@ -330,6 +348,10 @@ main = do
     quickCheck (prop_div conn refI16)
     print "Remainder Tests:"
     quickCheck (prop_rem conn refI16)
+    print "Quotient Tests:"
+    quickCheck (prop_quot conn refI16)
+    print "Modulo Tests:"
+    quickCheck (prop_mod conn refI16)
     print "Complement Tests:"
     quickCheck (prop_comp conn refI16)
     print "Bitwise And Tests:"

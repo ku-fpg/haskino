@@ -94,6 +94,24 @@ prop_rem c r x (NonZero y) = monadicIO $ do
         return v
     assert (local == litEval8 remote)
 
+prop_quot :: ArduinoConnection -> RemoteRef Word8 -> Word8 -> NonZero Word8 -> Property
+prop_quot c r x (NonZero y) = monadicIO $ do
+    let local = x `P.quot` y
+    remote <- run $ send c $ do
+        writeRemoteRef r $ (lit x) `quot` (lit y)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval8 remote)
+
+prop_mod :: ArduinoConnection -> RemoteRef Word8 -> Word8 -> NonZero Word8 -> Property
+prop_mod c r x (NonZero y) = monadicIO $ do
+    let local = x `P.mod` y
+    remote <- run $ send c $ do
+        writeRemoteRef r $ (lit x) `mod` (lit y)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval8 remote)
+
 prop_comp :: ArduinoConnection -> RemoteRef Word8 -> Word8 -> Property
 prop_comp c r x = monadicIO $ do
     let local = DB.complement x
@@ -339,6 +357,10 @@ main = do
     quickCheck (prop_div conn refW8)
     print "Remainder Tests:"
     quickCheck (prop_rem conn refW8)
+    print "Quotient Tests:"
+    quickCheck (prop_quot conn refW8)
+    print "Modulo Tests:"
+    quickCheck (prop_mod conn refW8)
     print "Complement Tests:"
     quickCheck (prop_comp conn refW8)
     print "Bitwise And Tests:"
