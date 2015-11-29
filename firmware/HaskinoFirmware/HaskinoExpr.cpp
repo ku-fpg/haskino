@@ -599,7 +599,10 @@ int8_t evalInt8Expr(byte **ppExpr, CONTEXT *context)
                     val = e1 / e2;
                     break;
                 case EXPR_MOD:
-                    val = e1 % e2;
+                    e3 = e1 % e2;
+                    if ((e3!=0) && ((e3<0) != (e2<0))) 
+                        e3 += e2;
+                    val = e3;
                     break;
                 }
             break;
@@ -912,7 +915,10 @@ int16_t evalInt16Expr(byte **ppExpr, CONTEXT *context)
                     val = e1 / e2;
                     break;
                 case EXPR_MOD:
-                    val = e1 % e2;
+                    e3 = e1 % e2;
+                    if ((e3!=0) && ((e3<0) != (e2<0))) 
+                        e3 += e2;
+                    val = e3;
                     break;
                 }
             break;
@@ -1238,7 +1244,10 @@ int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context)
                     val = e1 / e2;
                     break;
                 case EXPR_MOD:
-                    val = e1 % e2;
+                    e3 = e1 % e2;
+                    if ((e3!=0) && ((e3<0) != (e2<0))) 
+                        e3 += e2;
+                    val = e3;
                     break;
                 }
             break;
