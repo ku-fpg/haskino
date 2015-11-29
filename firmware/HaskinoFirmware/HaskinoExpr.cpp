@@ -427,6 +427,10 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
                             break;
                         }
                     break;
+                case EXPR_FINT:
+                    *ppExpr += 1; // Use command byte
+                    val = evalWord32Expr(ppExpr, context);
+                    break;
                 case EXPR_IF:
                     memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
                     memcpy((byte *) &elseSize, &pExpr[3], sizeof(uint16_t));
@@ -442,17 +446,6 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
                         *ppExpr += thenSize;
                         val = evalWord8Expr(ppExpr, context);
                         }
-                    break;
-                default:
-                    goto error;
-                }
-            break;
-        case EXPR_WORD32:
-            switch (exprOp)
-                {
-                case EXPR_FINT:
-                    *ppExpr += 1; // Use command byte
-                    val = evalWord32Expr(ppExpr, context);
                     break;
                 default:
                     goto error;
