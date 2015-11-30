@@ -238,6 +238,42 @@ prop_fromI16 c r x = monadicIO $ do
         return v
     assert (local == litEval32 remote)
 
+prop_fromFTrunc :: ArduinoConnection -> RemoteRef Int32 -> Float -> Property
+prop_fromFTrunc c r x = monadicIO $ do
+    let local = P.truncate x
+    remote <- run $ send c $ do
+        writeRemoteRef r $ Data.Boolean.Numbers.truncate (lit x)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval32 remote)
+
+prop_fromFRound :: ArduinoConnection -> RemoteRef Int32 -> Float -> Property
+prop_fromFRound c r x = monadicIO $ do
+    let local = P.round x
+    remote <- run $ send c $ do
+        writeRemoteRef r $ Data.Boolean.Numbers.round (lit x)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval32 remote)
+
+prop_fromFCeil :: ArduinoConnection -> RemoteRef Int32 -> Float -> Property
+prop_fromFCeil c r x = monadicIO $ do
+    let local = P.ceiling x
+    remote <- run $ send c $ do
+        writeRemoteRef r $ Data.Boolean.Numbers.ceiling (lit x)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval32 remote)
+
+prop_fromFFloor :: ArduinoConnection -> RemoteRef Int32 -> Float -> Property
+prop_fromFFloor c r x = monadicIO $ do
+    let local = P.floor x
+    remote <- run $ send c $ do
+        writeRemoteRef r $ Data.Boolean.Numbers.floor (lit x)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEval32 remote)
+
 prop_ifb :: ArduinoConnection -> RemoteRef Int32 -> Bool -> Int32 -> Int32 -> Property
 prop_ifb c r b x y = monadicIO $ do
     let local = if b then x + y else x - y
@@ -380,6 +416,14 @@ main = do
     quickCheck (prop_fromI8 conn refI32)
     print "From Int16 Tests:"
     quickCheck (prop_fromI16 conn refI32)
+    print "From Float Truncate Tests:"
+    quickCheck (prop_fromFTrunc conn refI32)
+    print "From Float Round Tests:"
+    quickCheck (prop_fromFRound conn refI32)
+    print "From Float Ceiling Tests:"
+    quickCheck (prop_fromFCeil conn refI32)
+    print "From Float Floor Tests:"
+    quickCheck (prop_fromFFloor conn refI32)
     print "ifB Tests:"
     quickCheck (prop_ifb conn refI32)
     print "Equal Tests:"

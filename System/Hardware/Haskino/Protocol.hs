@@ -327,6 +327,12 @@ packageIfBSubExpr ec e1 e2 e3 = ec : thenSize ++ elseSize ++ pcond ++ pthen ++ p
     thenSize = word16ToBytes $ fromIntegral $ length pthen
     elseSize = word16ToBytes $ fromIntegral $ length pelse
 
+packageMathExpr :: ExprFloatMathOp -> Expr a -> [Word8]
+packageMathExpr o e = (exprFMathCmdVals o) ++ (packageExpr e)
+
+packageTwoMathExpr :: ExprFloatMathOp -> Expr a -> Expr b -> [Word8]
+packageTwoMathExpr o e1 e2 = (exprFMathCmdVals o) ++ (packageExpr e1) ++ (packageExpr e2)
+
 packageRef :: Int -> Word8 -> [Word8]
 packageRef n ec = [ec, fromIntegral n]
 
@@ -518,6 +524,25 @@ packageExpr (SubFloat e1 e2) = packageTwoSubExpr (exprFCmdVal EXPRF_SUB) e1 e2
 packageExpr (MultFloat e1 e2) = packageTwoSubExpr (exprFCmdVal EXPRF_MULT) e1 e2 
 packageExpr (DivFloat e1 e2) = packageTwoSubExpr (exprFCmdVal EXPRF_DIV) e1 e2 
 packageExpr (IfFloat e1 e2 e3) = packageIfBSubExpr (exprFCmdVal EXPRF_IF) e1 e2 e3
+packageExpr (TruncFloat e) = packageMathExpr EXPRF_TRUNC e 
+packageExpr (FracFloat e) = packageMathExpr EXPRF_FRAC e 
+packageExpr (RoundFloat e) = packageMathExpr EXPRF_ROUND e 
+packageExpr (CeilFloat e) = packageMathExpr EXPRF_CEIL e 
+packageExpr (FloorFloat e) = packageMathExpr EXPRF_FLOOR e 
+packageExpr PiFloat = exprFMathCmdVals EXPRF_PI
+packageExpr (ExpFloat e) = packageMathExpr EXPRF_EXP e 
+packageExpr (LogFloat e) = packageMathExpr EXPRF_LOG e 
+packageExpr (SqrtFloat e) = packageMathExpr EXPRF_SQRT e 
+packageExpr (SinFloat e) = packageMathExpr EXPRF_SIN e 
+packageExpr (CosFloat e) = packageMathExpr EXPRF_COS e 
+packageExpr (TanFloat e) = packageMathExpr EXPRF_TAN e 
+packageExpr (AsinFloat e) = packageMathExpr EXPRF_ASIN e 
+packageExpr (AcosFloat e) = packageMathExpr EXPRF_ACOS e 
+packageExpr (AtanFloat e) = packageMathExpr EXPRF_ATAN e 
+packageExpr (Atan2Float e1 e2) = packageTwoMathExpr EXPRF_ATAN2 e1 e2 
+packageExpr (PowerFloat e1 e2) = packageTwoMathExpr EXPRF_POWER e1 e2 
+packageExpr (IsNaNFloat e) = packageMathExpr EXPRF_ISNAN e 
+packageExpr (IsInfFloat e) = packageMathExpr EXPRF_ISINF e 
 
 -- | Unpackage a Haskino Firmware response
 unpackageResponse :: [Word8] -> Response

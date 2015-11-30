@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <Wire.h>
+#include <math.h>
 #include "HaskinoComm.h"
 #include "HaskinoCommands.h"
 #include "HaskinoBoardStatus.h"

@@ -64,6 +64,30 @@
 #define EXPR_PACK 0x0A
 #define EXPR_PTR  0x0F
 
+// Float Expression Ops
+#define EXPR_MATH 0x0D
+
+// Float Math Expression Ops
+#define EXPRF_TRUNC 0x00
+#define EXPRF_FRAC  0x01
+#define EXPRF_ROUND 0x02
+#define EXPRF_CEIL  0x03
+#define EXPRF_FLOOR 0x04
+#define EXPRF_PI    0x05
+#define EXPRF_EXP   0x06
+#define EXPRF_LOG   0x07
+#define EXPRF_SQRT  0x08
+#define EXPRF_SIN   0x09
+#define EXPRF_COS   0x0A
+#define EXPRF_TAN   0x0B
+#define EXPRF_ASIN  0x0C
+#define EXPRF_ACOS  0x0D
+#define EXPRF_ATAN  0x0E
+#define EXPRF_ATAN2 0x0F
+#define EXPRF_POWER 0x10
+#define EXPRF_ISNAN 0x11
+#define EXPRF_ISINF 0x12
+
 bool evalBoolExpr(byte **ppExpr, CONTEXT *context);
 uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context);
 uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context);

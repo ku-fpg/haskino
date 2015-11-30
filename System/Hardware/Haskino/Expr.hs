@@ -213,6 +213,25 @@ data Expr a where
   EqFloat      :: Expr Float -> Expr Float -> Expr Bool
   LessFloat    :: Expr Float -> Expr Float -> Expr Bool
   IfFloat      :: Expr Bool  -> Expr Float -> Expr Float -> Expr Float
+  TruncFloat   :: Expr Float -> Expr Int32
+  FracFloat    :: Expr Float -> Expr Float
+  RoundFloat   :: Expr Float -> Expr Int32
+  CeilFloat    :: Expr Float -> Expr Int32
+  FloorFloat   :: Expr Float -> Expr Int32
+  PiFloat      :: Expr Float
+  ExpFloat     :: Expr Float -> Expr Float
+  LogFloat     :: Expr Float -> Expr Float
+  SqrtFloat    :: Expr Float -> Expr Float
+  SinFloat     :: Expr Float -> Expr Float
+  CosFloat     :: Expr Float -> Expr Float
+  TanFloat     :: Expr Float -> Expr Float
+  AsinFloat    :: Expr Float -> Expr Float
+  AcosFloat    :: Expr Float -> Expr Float
+  AtanFloat    :: Expr Float -> Expr Float
+  Atan2Float   :: Expr Float -> Expr Float -> Expr Float
+  PowerFloat   :: Expr Float -> Expr Float -> Expr Float
+  IsNaNFloat   :: Expr Float -> Expr Bool
+  IsInfFloat   :: Expr Float -> Expr Bool
   ElemList8    :: Expr [Word8] -> Expr Word8   -> Expr Word8
   LenList8     :: Expr [Word8] -> Expr Word8
   ConsList8    :: Expr Word8   -> Expr [Word8] -> Expr [Word8]
@@ -583,8 +602,42 @@ instance Fractional (Expr Float) where
   fromRational x = LitFloat $ fromRational x
 
 instance BN.NumB (Expr Float) where
-  type IntegerOf (Expr Float) = (Expr Int32)
+  type IntegerOf (Expr Float) = Expr Int32
   fromIntegerB e = FromIntFloat e
+
+instance Floating (Expr Float) where
+  pi          = PiFloat
+  exp x       = ExpFloat x
+  log x       = LogFloat x
+  sqrt x      = SqrtFloat x
+  sin x       = SinFloat x
+  cos x       = CosFloat x
+  tan x       = TanFloat x
+  asin x      = AsinFloat x
+  acos x      = AcosFloat x
+  atan x      = AtanFloat x
+  sinh x      = (ExpFloat x - ExpFloat (-x))/2.0
+  cosh x      = (ExpFloat x + ExpFloat (-x))/2.0
+  tanh x      = (ExpFloat x - ExpFloat (-x)) / (ExpFloat x + ExpFloat (-x))
+  (**) x y    = PowerFloat x y
+  logBase x y = LogFloat y / LogFloat x
+  asinh x     = LogFloat (x + SqrtFloat (1.0+x*x))
+  acosh x     = LogFloat (x + (x+1.0) * SqrtFloat ((x-1.0)/(x+1.0)))
+  atanh x     = 0.5 * LogFloat ((1.0+x) / (1.0-x))
+
+instance BN.RealFracB (Expr Float) where
+  properFraction f = (fromIntegralB $ TruncFloat f, FracFloat f)
+  truncate f = fromIntegralB $ TruncFloat f
+  round f = fromIntegralB $ RoundFloat f
+  ceiling f = fromIntegralB $ CeilFloat f
+  floor f = fromIntegralB $ FloorFloat f 
+
+instance RealFloatB (Expr Float) where
+  isNaN = IsNaNFloat
+  isInfinite = IsInfFloat
+  isNegativeZero f = BN.isInfinite f &&* f <* 0
+  isIEEE _ = true -- AFAIK
+  atan2 x y = Atan2Float x y
 
 type instance BooleanOf (Expr [Word8]) = Expr Bool
 
@@ -679,6 +732,27 @@ data ExprFloatOp = EXPRF_LIT
             | EXPRF_SUB
             | EXPRF_MULT
             | EXPRF_DIV
+            | EXPRF_MATH
+
+data ExprFloatMathOp = EXPRF_TRUNC 
+            | EXPRF_FRAC
+            | EXPRF_ROUND
+            | EXPRF_CEIL
+            | EXPRF_FLOOR
+            | EXPRF_PI
+            | EXPRF_EXP
+            | EXPRF_LOG
+            | EXPRF_SQRT
+            | EXPRF_SIN 
+            | EXPRF_COS
+            | EXPRF_TAN
+            | EXPRF_ASIN
+            | EXPRF_ACOS
+            | EXPRF_ATAN
+            | EXPRF_ATAN2
+            | EXPRF_POWER
+            | EXPRF_ISNAN
+            | EXPRF_ISINF
 
 -- | Compute the numeric value of a command
 exprTypeVal :: ExprType -> Word8
@@ -754,6 +828,28 @@ exprFloatOpVal EXPRF_ADD  = exprOpVal EXPR_ADD
 exprFloatOpVal EXPRF_SUB  = exprOpVal EXPR_SUB
 exprFloatOpVal EXPRF_MULT = exprOpVal EXPR_MULT
 exprFloatOpVal EXPRF_DIV  = exprOpVal EXPR_DIV
+exprFloatOpVal EXPRF_MATH = 0x0D
+
+exprFloatMathOpVal :: ExprFloatMathOp -> Word8
+exprFloatMathOpVal EXPRF_TRUNC  = 0x00
+exprFloatMathOpVal EXPRF_FRAC   = 0x01
+exprFloatMathOpVal EXPRF_ROUND  = 0x02
+exprFloatMathOpVal EXPRF_CEIL   = 0x03
+exprFloatMathOpVal EXPRF_FLOOR  = 0x04
+exprFloatMathOpVal EXPRF_PI     = 0x05
+exprFloatMathOpVal EXPRF_EXP    = 0x06
+exprFloatMathOpVal EXPRF_LOG    = 0x07
+exprFloatMathOpVal EXPRF_SQRT   = 0x08
+exprFloatMathOpVal EXPRF_SIN    = 0x09
+exprFloatMathOpVal EXPRF_COS    = 0x0A
+exprFloatMathOpVal EXPRF_TAN    = 0x0B
+exprFloatMathOpVal EXPRF_ASIN   = 0x0C
+exprFloatMathOpVal EXPRF_ACOS   = 0x0D
+exprFloatMathOpVal EXPRF_ATAN   = 0x0E
+exprFloatMathOpVal EXPRF_ATAN2  = 0x0F
+exprFloatMathOpVal EXPRF_POWER  = 0x10
+exprFloatMathOpVal EXPRF_ISNAN  = 0x11
+exprFloatMathOpVal EXPRF_ISINF  = 0x12
 
 exprCmdVal :: ExprType -> ExprOp -> Word8
 exprCmdVal t o = exprTypeVal t `DB.shiftL` 5 DB..|. exprOpVal o
@@ -763,3 +859,7 @@ exprLCmdVal o = exprExtTypeVal EXPR_LIST8 DB..|. exprListOpVal o
 
 exprFCmdVal :: ExprFloatOp -> Word8
 exprFCmdVal o = exprExtTypeVal EXPR_FLOAT DB..|. exprFloatOpVal o
+
+exprFMathCmdVals :: ExprFloatMathOp -> [Word8]
+exprFMathCmdVals o = [exprFCmdVal EXPRF_MATH, exprFloatMathOpVal o]
+
