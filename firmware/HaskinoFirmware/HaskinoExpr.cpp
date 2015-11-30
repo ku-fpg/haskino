@@ -440,7 +440,7 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
                     break;
                 case EXPR_FINT:
                     *ppExpr += 1; // Use command byte
-                    val = evalWord32Expr(ppExpr, context);
+                    val = evalInt32Expr(ppExpr, context);
                     break;
                 case EXPR_IF:
                     memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
@@ -643,7 +643,7 @@ int8_t evalInt8Expr(byte **ppExpr, CONTEXT *context)
             break;
         case EXPR_FINT:
             *ppExpr += 1; // Use command byte
-            val = evalWord32Expr(ppExpr, context);
+            val = evalInt32Expr(ppExpr, context);
             break;
         case EXPR_IF:
             memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
@@ -792,7 +792,7 @@ uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context)
             break;
         case EXPR_FINT:
             *ppExpr += 1; // Use command byte
-            val = evalWord32Expr(ppExpr, context);
+            val = evalInt32Expr(ppExpr, context);
             break;
         case EXPR_IF:
             memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
@@ -959,7 +959,7 @@ int16_t evalInt16Expr(byte **ppExpr, CONTEXT *context)
             break;
         case EXPR_FINT:
             *ppExpr += 1; // Use command byte
-            val = evalWord32Expr(ppExpr, context);
+            val = evalInt32Expr(ppExpr, context);
             break;
         case EXPR_IF:
             memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
@@ -992,7 +992,6 @@ uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context)
     uint8_t e8_1;
     bool conditional;
     uint16_t thenSize, elseSize;
-    byte exprType;
     int refNum;
     byte bind;
     byte *bindPtr;
@@ -1107,21 +1106,9 @@ uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context)
                     break;
                 }
             break;
-        case EXPR_TINT:
-            exprType = *pExpr >> EXPR_TYPE_SHFT;
+        case EXPR_FINT:
             *ppExpr += 1; // Use command byte
-            if (exprType == EXPR_WORD8)            
-                val = evalWord8Expr(ppExpr, context);
-            else if (exprType == EXPR_WORD16)
-                val = evalWord16Expr(ppExpr, context);
-            else if (exprType == EXPR_INT8)            
-                val = evalInt8Expr(ppExpr, context);
-            else if (exprType == EXPR_INT16)
-                val = evalInt16Expr(ppExpr, context);
-            else if (exprType == EXPR_INT32)
-                val = evalInt32Expr(ppExpr, context);
-            else
-                sendStringf("eW32E:T%d", exprType);
+            val = evalInt32Expr(ppExpr, context);
             break;
         case EXPR_IF:
             memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
@@ -1154,6 +1141,7 @@ int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context)
     uint8_t e8_1;
     bool conditional;
     uint16_t thenSize, elseSize;
+    byte exprType;
     int refNum;
     byte bind;
     byte *bindPtr;
@@ -1286,9 +1274,21 @@ int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context)
                     break;
                 }
             break;
-        case EXPR_FINT:
+        case EXPR_TINT:
+            exprType = *pExpr >> EXPR_TYPE_SHFT;
             *ppExpr += 1; // Use command byte
-            val = evalWord32Expr(ppExpr, context);
+            if (exprType == EXPR_WORD8)            
+                val = evalWord8Expr(ppExpr, context);
+            else if (exprType == EXPR_WORD16)
+                val = evalWord16Expr(ppExpr, context);
+            else if (exprType == EXPR_WORD32)
+                val = evalWord32Expr(ppExpr, context);
+            else if (exprType == EXPR_INT8)            
+                val = evalInt8Expr(ppExpr, context);
+            else if (exprType == EXPR_INT16)
+                val = evalInt16Expr(ppExpr, context);
+            else
+                sendStringf("eI32E:T%d", exprType);
             break;
         case EXPR_IF:
             memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
@@ -1389,7 +1389,7 @@ float evalFloatExpr(byte **ppExpr, CONTEXT *context)
             break;
         case EXPR_FINT:
             *ppExpr += 1; // Use command byte
-            val = evalWord32Expr(ppExpr, context);
+            val = evalInt32Expr(ppExpr, context);
             break;
         case EXPR_IF:
             memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));

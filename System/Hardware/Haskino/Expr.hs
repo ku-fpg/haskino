@@ -61,17 +61,17 @@ data Expr a where
   RemBindI32   :: Int -> Expr Int32
   RemBindList8 :: Int -> Expr [Word8]
   RemBindFloat :: Int -> Expr Float
-  FromIntW8    :: Expr Word32 -> Expr Word8
-  FromIntW16   :: Expr Word32 -> Expr Word16
-  FromIntI8    :: Expr Word32 -> Expr Int8
-  FromIntI16   :: Expr Word32 -> Expr Int16
-  FromIntI32   :: Expr Word32 -> Expr Int32
-  FromIntFloat :: Expr Word32 -> Expr Float
-  ToIntW8      :: Expr Word8  -> Expr Word32
-  ToIntW16     :: Expr Word16 -> Expr Word32
-  ToIntI8      :: Expr Int8  -> Expr Word32
-  ToIntI16     :: Expr Int16 -> Expr Word32
-  ToIntI32     :: Expr Int32 -> Expr Word32
+  FromIntW8    :: Expr Int32 -> Expr Word8
+  FromIntW16   :: Expr Int32 -> Expr Word16
+  FromIntW32   :: Expr Int32 -> Expr Word32
+  FromIntI8    :: Expr Int32 -> Expr Int8
+  FromIntI16   :: Expr Int32 -> Expr Int16
+  FromIntFloat :: Expr Int32 -> Expr Float
+  ToIntW8      :: Expr Word8  -> Expr Int32
+  ToIntW16     :: Expr Word16 -> Expr Int32
+  ToIntW32     :: Expr Word32 -> Expr Int32
+  ToIntI8      :: Expr Int8  -> Expr Int32
+  ToIntI16     :: Expr Int16 -> Expr Int32
   NotB         :: Expr Bool -> Expr Bool
   AndB         :: Expr Bool -> Expr Bool -> Expr Bool
   OrB          :: Expr Bool -> Expr Bool -> Expr Bool
@@ -303,7 +303,7 @@ instance B.IfB (Expr Word8) where
   ifB = IfW8
 
 instance BN.NumB (Expr Word8) where
-  type IntegerOf (Expr Word8) = Expr Word32
+  type IntegerOf (Expr Word8) = (Expr Int32)
   fromIntegerB e = FromIntW8 e
 
 instance BN.IntegralB (Expr Word8) where
@@ -349,7 +349,7 @@ instance B.IfB (Expr Word16) where
   ifB = IfW16
 
 instance BN.NumB (Expr Word16) where
-  type IntegerOf (Expr Word16) = (Expr Word32)
+  type IntegerOf (Expr Word16) = (Expr Int32)
   fromIntegerB e = FromIntW16 e
 
 instance BN.IntegralB (Expr Word16) where
@@ -395,15 +395,15 @@ instance B.IfB (Expr Word32) where
   ifB = IfW32
 
 instance BN.NumB (Expr Word32) where
-  type IntegerOf (Expr Word32) = (Expr Word32)
-  fromIntegerB e = e
+  type IntegerOf (Expr Word32) = (Expr Int32)
+  fromIntegerB e = FromIntW32 e
 
 instance BN.IntegralB (Expr Word32) where
   div = DivW32
   rem = RemW32
   quot = QuotW32
   mod = ModW32
-  toIntegerB e = e
+  toIntegerB e = ToIntW32 e
 
 instance BB.BitsB (Expr Word32) where
   type IntOf (Expr Word32) = Expr Word8
@@ -441,7 +441,7 @@ instance B.IfB (Expr Int8) where
   ifB = IfI8
 
 instance BN.NumB (Expr Int8) where
-  type IntegerOf (Expr Int8) = Expr Word32
+  type IntegerOf (Expr Int8) = (Expr Int32)
   fromIntegerB e = FromIntI8 e
 
 instance BN.IntegralB (Expr Int8) where
@@ -487,7 +487,7 @@ instance B.IfB (Expr Int16) where
   ifB = IfI16
 
 instance BN.NumB (Expr Int16) where
-  type IntegerOf (Expr Int16) = (Expr Word32)
+  type IntegerOf (Expr Int16) = (Expr Int32)
   fromIntegerB e = FromIntI16 e
 
 instance BN.IntegralB (Expr Int16) where
@@ -533,15 +533,15 @@ instance B.IfB (Expr Int32) where
   ifB = IfI32
 
 instance BN.NumB (Expr Int32) where
-  type IntegerOf (Expr Int32) = (Expr Word32)
-  fromIntegerB e = FromIntI32 e
+  type IntegerOf (Expr Int32) = (Expr Int32)
+  fromIntegerB e = e
 
 instance BN.IntegralB (Expr Int32) where
   div = DivI32
   rem = RemI32
   quot = QuotI32
   mod = ModI32
-  toIntegerB e = ToIntI32 e
+  toIntegerB e = e
 
 instance BB.BitsB (Expr Int32) where
   type IntOf (Expr Int32) = Expr Word8
@@ -583,7 +583,7 @@ instance Fractional (Expr Float) where
   fromRational x = LitFloat $ fromRational x
 
 instance BN.NumB (Expr Float) where
-  type IntegerOf (Expr Float) = (Expr Word32)
+  type IntegerOf (Expr Float) = (Expr Int32)
   fromIntegerB e = FromIntFloat e
 
 type instance BooleanOf (Expr [Word8]) = Expr Bool
