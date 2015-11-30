@@ -287,16 +287,14 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                 }
             else
                 {
-sendStringf("Expr Op = %d",exprOp);
                 if (exprOp == EXPR_EQ || exprOp == EXPR_LESS)
                     {
                     ef_1 = evalFloatExpr(ppExpr, context);
                     ef_2 = evalFloatExpr(ppExpr, context);
                     if (exprOp == EXPR_EQ)
-                        val = (ei32_1 == ei32_2);
+                        val = (ef_1 == ef_2);
                     else 
-                        val = (ei32_1 < ei32_2); 
-sendStringf("ef_1: %f ef_2: %f val:%d",ef_1,ef_2,val);
+                        val = (ef_1 < ef_2); 
                     }
                 else
                     goto error;

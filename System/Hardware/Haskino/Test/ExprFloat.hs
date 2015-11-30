@@ -84,52 +84,51 @@ prop_div c r x (NonZero y) = monadicIO $ do
         v <- readRemoteRef r
         return v
     assert (local == litEvalFloat remote)
-{-
-prop_from8 :: ArduinoConnection -> RemoteRef Int32 -> Word8 -> Property
+
+prop_from8 :: ArduinoConnection -> RemoteRef Float -> Word8 -> Property
 prop_from8 c r x = monadicIO $ do
     let local = fromIntegral x
     remote <- run $ send c $ do
         writeRemoteRef r $ fromIntegralB (lit x)
         v <- readRemoteRef r
         return v
-    assert (local == litEval32 remote)
+    assert (local == litEvalFloat remote)
 
-prop_from16 :: ArduinoConnection -> RemoteRef Int32 -> Word16 -> Property
+prop_from16 :: ArduinoConnection -> RemoteRef Float -> Word16 -> Property
 prop_from16 c r x = monadicIO $ do
     let local = fromIntegral x
     remote <- run $ send c $ do
         writeRemoteRef r $ fromIntegralB (lit x)
         v <- readRemoteRef r
         return v
-    assert (local == litEval32 remote)
+    assert (local == litEvalFloat remote)
 
-prop_from32 :: ArduinoConnection -> RemoteRef Int32 -> Word32 -> Property
+prop_from32 :: ArduinoConnection -> RemoteRef Float -> Word32 -> Property
 prop_from32 c r x = monadicIO $ do
     let local = fromIntegral x
     remote <- run $ send c $ do
         writeRemoteRef r $ fromIntegralB (lit x)
         v <- readRemoteRef r
         return v
-    assert (local == litEval32 remote)
+    assert (local == litEvalFloat remote)
 
-prop_fromI8 :: ArduinoConnection -> RemoteRef Int32 -> Int8 -> Property
+prop_fromI8 :: ArduinoConnection -> RemoteRef Float -> Int8 -> Property
 prop_fromI8 c r x = monadicIO $ do
     let local = fromIntegral x
     remote <- run $ send c $ do
         writeRemoteRef r $ fromIntegralB (lit x)
         v <- readRemoteRef r
         return v
-    assert (local == litEval32 remote)
+    assert (local == litEvalFloat remote)
 
-prop_fromI16 :: ArduinoConnection -> RemoteRef Int32 -> Int16 -> Property
+prop_fromI16 :: ArduinoConnection -> RemoteRef Float -> Int16 -> Property
 prop_fromI16 c r x = monadicIO $ do
     let local = fromIntegral x
     remote <- run $ send c $ do
         writeRemoteRef r $ fromIntegralB (lit x)
         v <- readRemoteRef r
         return v
-    assert (local == litEval32 remote)
--}
+    assert (local == litEvalFloat remote)
 
 prop_ifb :: ArduinoConnection -> RemoteRef Float -> Bool -> Float -> Float -> Property
 prop_ifb c r b x y = monadicIO $ do
@@ -224,10 +223,9 @@ prop_bind c r a b d e = monadicIO $ do
 
 main :: IO ()
 main = do
-    conn <- openArduino True "/dev/cu.usbmodem1421"
---    refF <- send conn $ newRemoteRef 0.0
+    conn <- openArduino False "/dev/cu.usbmodem1421"
+    refF <- send conn $ newRemoteRef 0.0
     refB  <- send conn $ newRemoteRef (lit False)
-{-
     print "Negation Tests:"
     quickCheck (prop_neg conn refF)
     print "Signum Tests:"
@@ -252,10 +250,8 @@ main = do
     quickCheck (prop_fromI16 conn refF)
     print "ifB Tests:"
     quickCheck (prop_ifb conn refF)
--}
     print "Equal Tests:"
     quickCheck (prop_eq conn refB)
-{-
     print "Not Equal Tests:"
     quickCheck (prop_neq conn refB)
     print "Less Than Tests:"
@@ -270,5 +266,4 @@ main = do
     quickCheck (prop_arith conn refF)
     print "Bind Tests:"
     quickCheck (prop_bind conn refF)
--}
     closeArduino conn
