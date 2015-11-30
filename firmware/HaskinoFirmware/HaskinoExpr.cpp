@@ -20,6 +20,7 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
     int8_t ei8_1,ei8_2;
     int16_t ei16_1,ei16_2;
     int32_t ei32_1,ei32_2;
+    float ef_1,ef_2;
     uint8_t *l1, *l2;
     bool alloc1, alloc2;
     byte exprExtType;
@@ -238,9 +239,9 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                 goto error;
             break;
         case EXPR_EXT:
-            *ppExpr += 1; // Use command byte
             exprExtType = *pExpr >> EXPR_EXT_TYPE_SHFT;
             exprOp = *pExpr & EXPR_EXT_OP_MASK;
+            *ppExpr += 1; // Use command byte
             if (exprExtType == EXPR_LIST8)
                 {
                 l1 = evalList8Expr(ppExpr, context, &alloc1);
@@ -286,7 +287,19 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                 }
             else
                 {
-                // ToDo: Float
+sendStringf("Expr Op = %d",exprOp);
+                if (exprOp == EXPR_EQ || exprOp == EXPR_LESS)
+                    {
+                    ef_1 = evalFloatExpr(ppExpr, context);
+                    ef_2 = evalFloatExpr(ppExpr, context);
+                    if (exprOp == EXPR_EQ)
+                        val = (ei32_1 == ei32_2);
+                    else 
+                        val = (ei32_1 < ei32_2); 
+sendStringf("ef_1: %f ef_2: %f val:%d",ef_1,ef_2,val);
+                    }
+                else
+                    goto error;
                 }
             break;
         default:
@@ -1301,6 +1314,107 @@ int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context)
         return val;
     }
 
+float evalFloatExpr(byte **ppExpr, CONTEXT *context) 
+    {
+    byte *pExpr = *ppExpr;
+    byte exprOp = *pExpr & EXPR_EXT_OP_MASK;
+    float val = 0.0;
+    float e1,e2;
+    bool conditional;
+    uint16_t thenSize, elseSize;
+    int refNum;
+    byte bind;
+    byte *bindPtr;
+
+    switch (exprOp)
+        {
+        case EXPR_BIND:
+            bind = pExpr[1];
+            if (!context->bind)
+                {
+                val = 0.0;
+                }
+            else
+                {
+                bindPtr = &context->bind[bind * BIND_SPACING];
+                val = evalFloatExpr(&bindPtr, context);
+                }
+            *ppExpr += 2; // Use Cmd and Bind Index bytes
+            break;
+        case EXPR_LIT:
+            memcpy((byte *) &val, &pExpr[1], sizeof(float));
+            *ppExpr += 1 + sizeof(float); // Use Cmd and Value bytes
+            break;
+        case EXPR_REF:
+            refNum = pExpr[1];
+            val = readRefFloat(refNum);
+            *ppExpr += 2; // Use Cmd and Ref bytes
+            break;
+        case EXPR_NEG:
+        case EXPR_SIGN:
+            *ppExpr += 1; // Use command byte
+            e1 = evalFloatExpr(ppExpr, context);
+            if (exprOp == EXPR_NEG)
+                val = -e1;
+            else
+                {
+                if (e1 < 0)
+                    val = -1.0;
+                else if (e1 == 0)
+                    val = 0.0;
+                else
+                    val = 1.0;
+                }
+            break;
+        case EXPR_ADD:
+        case EXPR_SUB:
+        case EXPR_MULT:
+        case EXPR_DIV:
+            *ppExpr += 1; // Use command byte
+            e1 = evalFloatExpr(ppExpr, context);
+            e2 = evalFloatExpr(ppExpr, context);
+            switch(exprOp)
+                {
+                case EXPR_ADD:
+                    val = e1 + e2;
+                    break;
+                case EXPR_SUB:
+                    val = e1 - e2;
+                    break;
+                case EXPR_MULT:
+                    val = e1 * e2;
+                    break;
+                case EXPR_DIV:
+                    val = e1 / e2;
+                    break;
+                }
+            break;
+        case EXPR_FINT:
+            *ppExpr += 1; // Use command byte
+            val = evalWord32Expr(ppExpr, context);
+            break;
+        case EXPR_IF:
+            memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
+            memcpy((byte *) &elseSize, &pExpr[3], sizeof(uint16_t));
+            *ppExpr += 1 + 2*sizeof(uint16_t); // Use Cmd and Value bytes
+            conditional = evalBoolExpr(ppExpr, context);
+            if (conditional)
+                {
+                val = evalFloatExpr(ppExpr, context);
+                *ppExpr += elseSize;
+                }
+            else
+                {
+                *ppExpr += thenSize;
+                val = evalFloatExpr(ppExpr, context);
+                }
+            break;
+        default:
+            sendStringf("eFE:O%d", exprOp);
+        }
+        return val;
+    }
+
 void putBindListPtr(CONTEXT *context, byte bind, byte *newPtr)
     {
     byte *bindPtr;
@@ -1378,7 +1492,7 @@ int evalList8SubExpr(byte **ppExpr, CONTEXT *context, byte *listMem, byte index)
     byte *pExpr = *ppExpr;
     byte exprOp = *pExpr & EXPR_EXT_OP_MASK;
     byte bind, refNum;
-    int size;
+    int size = 0;
     byte *bindPtr, *refPtr;
 
     switch (exprOp)

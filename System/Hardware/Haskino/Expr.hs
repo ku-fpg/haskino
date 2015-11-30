@@ -29,6 +29,7 @@ data RemoteRef a where
     RemoteRefI16 :: Int -> RemoteRef Int16
     RemoteRefI32 :: Int -> RemoteRef Int32
     RemoteRefL8  :: Int -> RemoteRef [Word8]
+    RemoteRefFloat :: Int -> RemoteRef Float
 
 deriving instance Show a => Show (RemoteRef a)
 
@@ -41,6 +42,7 @@ data Expr a where
   LitI16       :: Int16 -> Expr Int16
   LitI32       :: Int32 -> Expr Int32
   LitList8     :: [Word8] -> Expr [Word8]
+  LitFloat     :: Float -> Expr Float
   RefB         :: Int -> Expr Bool
   RefW8        :: Int -> Expr Word8
   RefW16       :: Int -> Expr Word16
@@ -49,6 +51,7 @@ data Expr a where
   RefI16       :: Int -> Expr Int16
   RefI32       :: Int -> Expr Int32
   RefList8     :: Int -> Expr [Word8]
+  RefFloat     :: Int -> Expr Float
   RemBindB     :: Int -> Expr Bool
   RemBindW8    :: Int -> Expr Word8
   RemBindW16   :: Int -> Expr Word16
@@ -57,11 +60,13 @@ data Expr a where
   RemBindI16   :: Int -> Expr Int16
   RemBindI32   :: Int -> Expr Int32
   RemBindList8 :: Int -> Expr [Word8]
+  RemBindFloat :: Int -> Expr Float
   FromIntW8    :: Expr Word32 -> Expr Word8
   FromIntW16   :: Expr Word32 -> Expr Word16
   FromIntI8    :: Expr Word32 -> Expr Int8
   FromIntI16   :: Expr Word32 -> Expr Int16
   FromIntI32   :: Expr Word32 -> Expr Int32
+  FromIntFloat :: Expr Word32 -> Expr Float
   ToIntW8      :: Expr Word8  -> Expr Word32
   ToIntW16     :: Expr Word16 -> Expr Word32
   ToIntI8      :: Expr Int8  -> Expr Word32
@@ -199,6 +204,15 @@ data Expr a where
   TestBI32     :: Expr Int32 -> Expr Word8 -> Expr Bool
   SetBI32      :: Expr Int32 -> Expr Word8 -> Expr Int32
   ClrBI32      :: Expr Int32 -> Expr Word8 -> Expr Int32
+  NegFloat     :: Expr Float -> Expr Float
+  SignFloat    :: Expr Float -> Expr Float
+  AddFloat     :: Expr Float -> Expr Float -> Expr Float
+  SubFloat     :: Expr Float -> Expr Float -> Expr Float
+  MultFloat    :: Expr Float -> Expr Float -> Expr Float
+  DivFloat     :: Expr Float -> Expr Float -> Expr Float
+  EqFloat      :: Expr Float -> Expr Float -> Expr Bool
+  LessFloat    :: Expr Float -> Expr Float -> Expr Bool
+  IfFloat      :: Expr Bool  -> Expr Float -> Expr Float -> Expr Float
   ElemList8    :: Expr [Word8] -> Expr Word8   -> Expr Word8
   LenList8     :: Expr [Word8] -> Expr Word8
   ConsList8    :: Expr Word8   -> Expr [Word8] -> Expr [Word8]
@@ -245,6 +259,10 @@ instance ExprB Bool where
 instance ExprB [Word8] where
     lit = LitList8
     remBind = RemBindList8
+
+instance ExprB Float where
+    lit = LitFloat
+    remBind = RemBindFloat
 
 instance B.Boolean (Expr Bool) where
   true  = LitB True
@@ -540,6 +558,34 @@ instance BB.BitsB (Expr Int32) where
   clearBit = ClrBI32
   testBit = TestBI32 
 
+type instance BooleanOf (Expr Float) = Expr Bool
+
+instance B.EqB (Expr Float) where
+  (==*) = EqFloat
+
+instance B.OrdB (Expr Float) where
+  (<*) = LessFloat
+
+instance B.IfB (Expr Float) where
+  ifB = IfFloat
+
+instance Num (Expr Float) where
+  (+) x y = AddFloat x y
+  (-) x y = SubFloat x y
+  (*) x y = MultFloat x y
+  negate x = NegFloat x
+  abs x  = x * signum x
+  signum x = SignFloat x
+  fromInteger x = LitFloat $ fromInteger x
+
+instance Fractional (Expr Float) where
+  (/) x y = DivFloat x y
+  fromRational x = LitFloat $ fromRational x
+
+instance BN.NumB (Expr Float) where
+  type IntegerOf (Expr Float) = (Expr Word32)
+  fromIntegerB e = FromIntFloat e
+
 type instance BooleanOf (Expr [Word8]) = Expr Bool
 
 instance B.EqB (Expr [Word8]) where
@@ -620,6 +666,20 @@ data ExprListOp = EXPRL_LIT
             | EXPRL_APND
             | EXPRL_PACK
 
+data ExprFloatOp = EXPRF_LIT
+            | EXPRF_REF
+            | EXPRF_BIND
+            | EXPRF_EQ
+            | EXPRF_LESS
+            | EXPRF_IF
+            | EXPRF_FINT
+            | EXPRF_NEG
+            | EXPRF_SIGN
+            | EXPRF_ADD
+            | EXPRF_SUB
+            | EXPRF_MULT
+            | EXPRF_DIV
+
 -- | Compute the numeric value of a command
 exprTypeVal :: ExprType -> Word8
 exprTypeVal EXPR_BOOL   = 0x00
@@ -635,8 +695,8 @@ data ExprExtType = EXPR_LIST8
             | EXPR_FLOAT
 
 exprExtTypeVal :: ExprExtType -> Word8
-exprExtTypeVal EXPR_LIST8 = exprTypeVal EXPR_EXT `DB.shiftL` 5 DB..|. 0
-exprExtTypeVal EXPR_FLOAT = exprTypeVal EXPR_EXT `DB.shiftL` 5 DB..|. 1
+exprExtTypeVal EXPR_LIST8 = exprTypeVal EXPR_EXT `DB.shiftL` 5 DB..|. 0 `DB.shiftL` 4
+exprExtTypeVal EXPR_FLOAT = exprTypeVal EXPR_EXT `DB.shiftL` 5 DB..|. 1 `DB.shiftL` 4
 
 exprOpVal :: ExprOp -> Word8
 exprOpVal EXPR_LIT  = 0x00
@@ -680,8 +740,26 @@ exprListOpVal EXPRL_CONS = 0x08
 exprListOpVal EXPRL_APND = 0x09
 exprListOpVal EXPRL_PACK = 0x10
 
+exprFloatOpVal :: ExprFloatOp -> Word8
+exprFloatOpVal EXPRF_LIT  = exprOpVal EXPR_LIT
+exprFloatOpVal EXPRF_REF  = exprOpVal EXPR_REF
+exprFloatOpVal EXPRF_BIND = exprOpVal EXPR_BIND
+exprFloatOpVal EXPRF_EQ   = exprOpVal EXPR_EQ
+exprFloatOpVal EXPRF_LESS = exprOpVal EXPR_LESS
+exprFloatOpVal EXPRF_IF   = exprOpVal EXPR_IF
+exprFloatOpVal EXPRF_FINT = exprOpVal EXPR_FINT
+exprFloatOpVal EXPRF_NEG  = exprOpVal EXPR_NEG
+exprFloatOpVal EXPRF_SIGN = exprOpVal EXPR_SIGN
+exprFloatOpVal EXPRF_ADD  = exprOpVal EXPR_ADD
+exprFloatOpVal EXPRF_SUB  = exprOpVal EXPR_SUB
+exprFloatOpVal EXPRF_MULT = exprOpVal EXPR_MULT
+exprFloatOpVal EXPRF_DIV  = exprOpVal EXPR_DIV
+
 exprCmdVal :: ExprType -> ExprOp -> Word8
 exprCmdVal t o = exprTypeVal t `DB.shiftL` 5 DB..|. exprOpVal o
 
 exprLCmdVal :: ExprListOp -> Word8
 exprLCmdVal o = exprExtTypeVal EXPR_LIST8 DB..|. exprListOpVal o
+
+exprFCmdVal :: ExprFloatOp -> Word8
+exprFCmdVal o = exprExtTypeVal EXPR_FLOAT DB..|. exprFloatOpVal o

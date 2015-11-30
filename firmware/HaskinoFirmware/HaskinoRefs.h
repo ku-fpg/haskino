@@ -11,6 +11,7 @@
 #define REF_INT16  0x05
 #define REF_INT32  0x06
 #define REF_LIST8  0x07
+#define REF_FLOAT  0x08
 
 bool parseRefMessage(int size, const byte *msg, CONTEXT *context);
 bool readRefBool(int refIndex);
@@ -21,6 +22,7 @@ uint8_t *readRefList8(int refIndex);
 int8_t readRefInt8(int refIndex);
 int16_t readRefInt16(int refIndex);
 int32_t readRefInt32(int refIndex);
+float readRefFloat(int refIndex);
 void storeBoolRef(byte *expr, CONTEXT *context, byte refIndex);
 void storeWord8Ref(byte *expr, CONTEXT *context, byte refIndex);
 void storeWord16Ref(byte *expr, CONTEXT *context, byte refIndex);
@@ -29,5 +31,6 @@ void storeList8Ref(byte *expr, CONTEXT *context, byte refIndex);
 void storeInt8Ref(byte *expr, CONTEXT *context, byte refIndex);
 void storeInt16Ref(byte *expr, CONTEXT *context, byte refIndex);
 void storeInt32Ref(byte *expr, CONTEXT *context, byte refIndex);
+void storeFloatRef(byte *expr, CONTEXT *context, byte refIndex);
 
 #endif /* HaskinoRefsH */

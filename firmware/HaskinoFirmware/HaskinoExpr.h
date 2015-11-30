@@ -72,6 +72,7 @@ uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc);
 int8_t evalInt8Expr(byte **ppExpr, CONTEXT *context);
 int16_t evalInt16Expr(byte **ppExpr, CONTEXT *context);
 int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context);
+float evalFloatExpr(byte **ppExpr, CONTEXT *context);
 void putBindListPtr(CONTEXT *context, byte bind, byte *newPtr);
 
 #endif /* HaskinoExprH */

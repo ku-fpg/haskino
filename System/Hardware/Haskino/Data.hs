@@ -180,6 +180,7 @@ data Command =
      | WriteRemoteRefI16 (RemoteRef Int16) (Expr Int16)
      | WriteRemoteRefI32 (RemoteRef Int32) (Expr Int32)
      | WriteRemoteRefL8 (RemoteRef [Word8]) (Expr [Word8])
+     | WriteRemoteRefFloat (RemoteRef Float) (Expr Float)
      | ModifyRemoteRefB (RemoteRef Bool) (Expr Bool -> Expr Bool)
      | ModifyRemoteRefW8 (RemoteRef Word8) (Expr Word8 -> Expr Word8)
      | ModifyRemoteRefW16 (RemoteRef Word16) (Expr Word16 -> Expr Word16)
@@ -188,6 +189,7 @@ data Command =
      | ModifyRemoteRefI16 (RemoteRef Int16) (Expr Int16 -> Expr Int16)
      | ModifyRemoteRefI32 (RemoteRef Int32) (Expr Int32 -> Expr Int32)
      | ModifyRemoteRefL8 (RemoteRef [Word8]) (Expr [Word8] -> Expr [Word8])
+     | ModifyRemoteRefFloat (RemoteRef Float) (Expr Float -> Expr Float)
      | WhileRemoteRefB (RemoteRef Bool) (Expr Bool -> Expr Bool) (Expr Bool -> Expr Bool) (Arduino ())
      | WhileRemoteRefW8 (RemoteRef Word8) (Expr Word8 -> Expr Bool) (Expr Word8 -> Expr Word8) (Arduino ())
      | WhileRemoteRefW16 (RemoteRef Word16) (Expr Word16 -> Expr Bool) (Expr Word16 -> Expr Word16) (Arduino ())
@@ -195,6 +197,7 @@ data Command =
      | WhileRemoteRefI8 (RemoteRef Int8) (Expr Int8 -> Expr Bool) (Expr Int8 -> Expr Int8) (Arduino ())
      | WhileRemoteRefI16 (RemoteRef Int16) (Expr Int16 -> Expr Bool) (Expr Int16 -> Expr Int16) (Arduino ())
      | WhileRemoteRefI32 (RemoteRef Int32) (Expr Int32 -> Expr Bool) (Expr Int32 -> Expr Int32) (Arduino ())
+     | WhileRemoteRefFloat (RemoteRef Float) (Expr Float -> Expr Bool) (Expr Float -> Expr Float) (Arduino ())
      | WhileRemoteRefL8 (RemoteRef [Word8]) (Expr [Word8] -> Expr Bool) (Expr [Word8] -> Expr [Word8]) (Arduino ())
      | LoopE (Arduino ())
      | ForInE (Expr [Word8]) (Expr Word8 -> Arduino ()) 
@@ -307,6 +310,9 @@ writeRemoteRefI32 r e = Command $ WriteRemoteRefI32 r e
 writeRemoteRefL8 :: RemoteRef [Word8] -> Expr [Word8] -> Arduino ()
 writeRemoteRefL8 r e = Command $ WriteRemoteRefL8 r e
 
+writeRemoteRefFloat :: RemoteRef Float -> Expr Float -> Arduino ()
+writeRemoteRefFloat r e = Command $ WriteRemoteRefFloat r e
+
 modifyRemoteRefB :: RemoteRef Bool -> (Expr Bool -> Expr Bool) -> Arduino ()
 modifyRemoteRefB r f = Command $ ModifyRemoteRefB r f
 
@@ -331,6 +337,9 @@ modifyRemoteRefI32 r f = Command $ ModifyRemoteRefI32 r f
 modifyRemoteRefL8 :: RemoteRef [Word8] -> (Expr [Word8] -> Expr [Word8]) -> Arduino ()
 modifyRemoteRefL8 r f = Command $ ModifyRemoteRefL8 r f
 
+modifyRemoteRefFloat :: RemoteRef Float -> (Expr Float -> Expr Float) -> Arduino ()
+modifyRemoteRefFloat r f = Command $ ModifyRemoteRefFloat r f
+
 whileRemoteRefB :: RemoteRef Bool -> (Expr Bool -> Expr Bool) -> (Expr Bool -> Expr Bool) -> Arduino () -> Arduino ()
 whileRemoteRefB r bf uf cb  = Command $ WhileRemoteRefB r bf uf cb
 
@@ -354,6 +363,9 @@ whileRemoteRefI32 r bf uf cb = Command $ WhileRemoteRefI32 r bf uf cb
 
 whileRemoteRefL8 :: RemoteRef [Word8] -> (Expr [Word8] -> Expr Bool) -> (Expr [Word8] -> Expr [Word8]) -> Arduino () -> Arduino ()
 whileRemoteRefL8 r bf uf cb = Command $ WhileRemoteRefL8 r bf uf cb
+
+whileRemoteRefFloat :: RemoteRef Float -> (Expr Float -> Expr Bool) -> (Expr Float -> Expr Float) -> Arduino () -> Arduino ()
+whileRemoteRefFloat r bf uf cb = Command $ WhileRemoteRefFloat r bf uf cb
 
 -- ToDo: Readd servo and stepper functions
 
@@ -422,6 +434,13 @@ instance RemoteReference [Word8] where
     modifyRemoteRef = modifyRemoteRefL8
     while = whileRemoteRefL8
 
+instance RemoteReference Float where
+    newRemoteRef = newRemoteRefFloat
+    readRemoteRef = readRemoteRefFloat
+    writeRemoteRef = writeRemoteRefFloat
+    modifyRemoteRef = modifyRemoteRefFloat
+    while = whileRemoteRefFloat
+
 data Control =
       Loop (Arduino ())
 
@@ -474,6 +493,7 @@ data Procedure :: * -> * where
      ReadRemoteRefI16 :: RemoteRef Int16 -> Procedure (Expr Int16)
      ReadRemoteRefI32 :: RemoteRef Int32 -> Procedure (Expr Int32)
      ReadRemoteRefL8 :: RemoteRef [Word8] -> Procedure (Expr [Word8])
+     ReadRemoteRefFloat :: RemoteRef Float -> Procedure (Expr Float)
 
 deriving instance Show a => Show (Procedure a)
 
@@ -578,6 +598,9 @@ readRemoteRefI32 n = Procedure $ ReadRemoteRefI32 n
 readRemoteRefL8 :: RemoteRef [Word8] -> Arduino (Expr [Word8])
 readRemoteRefL8 n = Procedure $ ReadRemoteRefL8 n
 
+readRemoteRefFloat :: RemoteRef Float -> Arduino (Expr Float)
+readRemoteRefFloat n = Procedure $ ReadRemoteRefFloat n
+
 data RemoteBinding :: * -> * where
      NewRemoteRefB    :: Expr Bool   -> RemoteBinding (RemoteRef Bool)
      NewRemoteRefW8   :: Expr Word8  -> RemoteBinding (RemoteRef Word8)
@@ -587,6 +610,7 @@ data RemoteBinding :: * -> * where
      NewRemoteRefI16  :: Expr Int16 -> RemoteBinding (RemoteRef Int16)
      NewRemoteRefI32  :: Expr Int32 -> RemoteBinding (RemoteRef Int32)
      NewRemoteRefL8   :: Expr [Word8] -> RemoteBinding (RemoteRef [Word8])
+     NewRemoteRefFloat :: Expr Float -> RemoteBinding (RemoteRef Float)
 
 newRemoteRefB :: Expr Bool -> Arduino (RemoteRef Bool)
 newRemoteRefB n = RemoteBinding $ NewRemoteRefB n
@@ -612,6 +636,9 @@ newRemoteRefI32 n = RemoteBinding $ NewRemoteRefI32 n
 newRemoteRefL8 :: Expr [Word8] -> Arduino (RemoteRef [Word8])
 newRemoteRefL8 n = RemoteBinding $ NewRemoteRefL8 n
 
+newRemoteRefFloat :: Expr Float -> Arduino (RemoteRef Float)
+newRemoteRefFloat n = RemoteBinding $ NewRemoteRefFloat n
+
 -- | A response, as returned from the Arduino
 data Response = DelayResp
               | Firmware Word16                      -- ^ Firmware version (maj/min)
@@ -634,6 +661,7 @@ data Response = DelayResp
               | ReadRefI16Reply Int16
               | ReadRefI32Reply Int32
               | ReadRefL8Reply [Word8]
+              | ReadRefFloatReply Float
               | FailedNewRef
               | Unimplemented (Maybe String) [Word8] -- ^ Represents messages currently unsupported
               | EmptyFrame
@@ -723,6 +751,7 @@ data RefType = REF_BOOL
              | REF_INT16
              | REF_INT32
              | REF_LIST8
+             | REF_FLOAT
             deriving Show
 
 -- | Compute the numeric value of a reference type
@@ -735,6 +764,7 @@ refTypeCmdVal REF_INT8                  = 0x04
 refTypeCmdVal REF_INT16                 = 0x05
 refTypeCmdVal REF_INT32                 = 0x06
 refTypeCmdVal REF_LIST8                 = 0x07
+refTypeCmdVal REF_FLOAT                 = 0x08
 
 -- | Firmware replies, see: 
 -- | https://github.com/ku-fpg/haskino/wiki/Haskino-Firmware-Protocol-Definition

@@ -16,6 +16,8 @@ import Data.Char          (isAlphaNum, isAscii, isSpace, chr)
 import Data.IORef         (newIORef, readIORef, writeIORef)
 import Data.List          (intercalate)
 import Data.Word          (Word8, Word16, Word32)
+import Data.Serialize     (runPut, runGet)
+import Data.Serialize.IEEE754 (putFloat32le, getFloat32le)
 import Data.Time          (getCurrentTime, utctDayTime)
 import Numeric            (showHex, showIntAtBase)
 
@@ -79,3 +81,19 @@ word16ToBytes i = map fromIntegral [ i .&. 0xFF, (i `shiftR`  8) .&. 0xFF ]
 -- | Note: Little endian format, which is Arduino native
 bytesToWord16 :: (Word8, Word8) -> Word16
 bytesToWord16 (a, b) = fromIntegral a .|. fromIntegral b `shiftL` 8 
+
+-- | Convert a float to it's bytes, as would be required by Arduino comms
+-- | Note: Little endian format, which is Arduino native
+floatToBytes :: Float -> [Word8]
+floatToBytes f = B.unpack $ runPut $ putFloat32le f
+
+-- | Inverse conversion for floatToBytes
+-- | Note: Little endian format, which is Arduino native
+bytesToFloat :: (Word8, Word8, Word8, Word8) -> Float
+bytesToFloat (a,b,c,d) = case e of
+        Left  _ -> 0.0
+        Right f -> f
+    where
+        bString = B.pack [a,b,c,d]
+        e = runGet getFloat32le bString
+

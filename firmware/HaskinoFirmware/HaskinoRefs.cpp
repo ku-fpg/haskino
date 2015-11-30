@@ -126,6 +126,17 @@ uint8_t *readRefList8(int refIndex)
         }
     }
 
+float readRefFloat(int refIndex)
+    {
+    if (haskinoRefs[refIndex].ref != NULL)
+        return *((float *) haskinoRefs[refIndex].ref);
+    else
+        {
+        sendStringf("rRF: %d", refIndex);
+        return false;
+        }
+    }
+
 static int typeToSize(int type)
     {
     switch(type)
@@ -139,6 +150,7 @@ static int typeToSize(int type)
             return 1;
         case REF_WORD32:
         case REF_INT32:
+        case REF_FLOAT:
         default:
             return 4;
         }
@@ -191,6 +203,13 @@ void storeInt32Ref(byte *expr, CONTEXT *context, byte refIndex)
     int32_t i32Val = evalInt32Expr(&expr, context);
 
     *((int32_t *) haskinoRefs[refIndex].ref) = i32Val;
+    }
+
+void storeFloatRef(byte *expr, CONTEXT *context, byte refIndex)
+    {
+    float fVal = evalFloatExpr(&expr, context);
+
+    *((float *) haskinoRefs[refIndex].ref) = fVal;
     }
 
 void storeList8Ref(byte *expr, CONTEXT *context, byte refIndex)
@@ -281,6 +300,10 @@ static bool handleNewRef(int type, int size, const byte *msg, CONTEXT *context)
                 newReply[0] = EXPR(EXPR_INT32, EXPR_LIT);
                 storeInt32Ref(expr, context, refIndex);
                 break;
+            case REF_FLOAT:
+                newReply[0] = EXPR_F(EXPR_LIT);
+                storeFloatRef(expr, context, refIndex);
+                break;
             }
         newReply[1] = refIndex;
         sendReply(sizeof(byte)+1, REF_RESP_NEW, newReply, context, bind);
@@ -338,6 +361,11 @@ static bool handleReadRef(int type, int size, const byte *msg, CONTEXT *context)
             lVal = (byte *) haskinoRefs[refIndex].ref;
             sendReply(lVal[1]+2, REF_RESP_READ, lVal, context, bind);
             break;
+        case REF_FLOAT:
+            readReply[0] = EXPR_F(EXPR_LIT);
+            memcpy(&readReply[1], (byte *) haskinoRefs[refIndex].ref, sizeof(float));
+            sendReply(sizeof(float)+1, REF_RESP_READ, readReply, context, bind);
+            break;
         }
     return false;
     }
@@ -374,6 +402,9 @@ static bool handleWriteRef(int type, int size, const byte *msg, CONTEXT *context
             break;
         case REF_LIST8:
             storeList8Ref(expr, context, refIndex);
+            break;
+        case REF_FLOAT:
+            storeFloatRef(expr, context, refIndex);
             break;
         }
     return false;
