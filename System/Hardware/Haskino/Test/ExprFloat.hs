@@ -130,6 +130,15 @@ prop_fromI16 c r x = monadicIO $ do
         return v
     assert (local == litEvalFloat remote)
 
+prop_fromI32 :: ArduinoConnection -> RemoteRef Float -> Int32 -> Property
+prop_fromI32 c r x = monadicIO $ do
+    let local = fromIntegral x
+    remote <- run $ send c $ do
+        writeRemoteRef r $ fromIntegralB (lit x)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEvalFloat remote)
+
 prop_ifb :: ArduinoConnection -> RemoteRef Float -> Bool -> Float -> Float -> Property
 prop_ifb c r b x y = monadicIO $ do
     let local = if b then x + y else x - y
@@ -248,6 +257,8 @@ main = do
     quickCheck (prop_fromI8 conn refF)
     print "From Int16 Tests:"
     quickCheck (prop_fromI16 conn refF)
+    print "From Int32 Tests:"
+    quickCheck (prop_fromI32 conn refF)
     print "ifB Tests:"
     quickCheck (prop_ifb conn refF)
     print "Equal Tests:"
