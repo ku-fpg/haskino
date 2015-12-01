@@ -31,6 +31,18 @@ litEvalFloat (LitFloat f) = f
 litEvalB :: Expr Bool -> Bool
 litEvalB (LitB w) = w
 
+errMargin :: Float
+errMargin = 1e-4
+
+-- Test for quality in 3 cases:
+-- 1. NaN == NaN
+-- 2. Infinity == Infinity
+-- 3. f1 and f2 are within errMargin of each other
+testEq :: Float -> Float -> Bool
+testEq f1 f2 = (P.isNaN f1 && P.isNaN f2) ||
+               (f1 == f2) || 
+               (abs((f1 - f2) / (f1 + errMargin)) < errMargin)
+
 prop_neg :: ArduinoConnection -> RemoteRef Float -> Float -> Property
 prop_neg c r x = monadicIO $ do
     let local = negate x
@@ -83,7 +95,8 @@ prop_div c r x y = monadicIO $ do
         writeRemoteRef r $ (lit x) / (lit y)
         v <- readRemoteRef r
         return v
-    assert ((P.isNaN local && P.isNaN (litEvalFloat remote)) || local == litEvalFloat remote)
+    assert ((P.isNaN local && P.isNaN (litEvalFloat remote)) || 
+            local == litEvalFloat remote)
 
 prop_exp :: ArduinoConnection -> RemoteRef Float -> Float -> Property
 prop_exp c r x = monadicIO $ do
@@ -92,7 +105,7 @@ prop_exp c r x = monadicIO $ do
         writeRemoteRef r $ exp (lit x)
         v <- readRemoteRef r
         return v
-    assert (abs(local - litEvalFloat remote) / (local + 1e-6) < 1e-2)
+    assert (testEq local (litEvalFloat remote))
 
 prop_log :: ArduinoConnection -> RemoteRef Float -> Float -> Property
 prop_log c r x = monadicIO $ do
@@ -101,7 +114,7 @@ prop_log c r x = monadicIO $ do
         writeRemoteRef r $ log (lit x)
         v <- readRemoteRef r
         return v
-    assert (abs(local - litEvalFloat remote) < 1e-6)
+    assert (testEq local (litEvalFloat remote))
 
 prop_sqrt :: ArduinoConnection -> RemoteRef Float -> Float -> Property
 prop_sqrt c r x = monadicIO $ do
@@ -110,7 +123,7 @@ prop_sqrt c r x = monadicIO $ do
         writeRemoteRef r $ sqrt (lit x)
         v <- readRemoteRef r
         return v
-    assert ((P.isNaN local && P.isNaN (litEvalFloat remote)) || abs(local - litEvalFloat remote) < 1e-6)
+    assert (testEq local (litEvalFloat remote))
 
 prop_sin :: ArduinoConnection -> RemoteRef Float -> Float -> Property
 prop_sin c r x = monadicIO $ do
@@ -119,7 +132,7 @@ prop_sin c r x = monadicIO $ do
         writeRemoteRef r $ sin (lit x)
         v <- readRemoteRef r
         return v
-    assert (abs(local - litEvalFloat remote) < 1e-6)
+    assert (testEq local (litEvalFloat remote))
 
 prop_cos :: ArduinoConnection -> RemoteRef Float -> Float -> Property
 prop_cos c r x = monadicIO $ do
@@ -128,7 +141,7 @@ prop_cos c r x = monadicIO $ do
         writeRemoteRef r $ cos (lit x)
         v <- readRemoteRef r
         return v
-    assert (abs(local - litEvalFloat remote) < 1e-6)
+    assert (testEq local (litEvalFloat remote))
 
 prop_tan :: ArduinoConnection -> RemoteRef Float -> Float -> Property
 prop_tan c r x = monadicIO $ do
@@ -137,7 +150,7 @@ prop_tan c r x = monadicIO $ do
         writeRemoteRef r $ tan (lit x)
         v <- readRemoteRef r
         return v
-    assert ((P.isNaN local && P.isNaN (litEvalFloat remote)) || abs(local - litEvalFloat remote) < 1e-6)
+    assert (testEq local (litEvalFloat remote))
 
 prop_sinh :: ArduinoConnection -> RemoteRef Float -> Float -> Property
 prop_sinh c r x = monadicIO $ do
@@ -146,7 +159,7 @@ prop_sinh c r x = monadicIO $ do
         writeRemoteRef r $ sinh (lit x)
         v <- readRemoteRef r
         return v
-    assert (abs(local - litEvalFloat remote) < 1e-6)
+    assert (testEq local (litEvalFloat remote))
 
 prop_cosh :: ArduinoConnection -> RemoteRef Float -> Float -> Property
 prop_cosh c r x = monadicIO $ do
@@ -155,7 +168,7 @@ prop_cosh c r x = monadicIO $ do
         writeRemoteRef r $ cosh (lit x)
         v <- readRemoteRef r
         return v
-    assert (abs(local - litEvalFloat remote) < 1e-6)
+    assert (testEq local (litEvalFloat remote))
 
 prop_tanh :: ArduinoConnection -> RemoteRef Float -> Float -> Property
 prop_tanh c r x = monadicIO $ do
@@ -173,8 +186,7 @@ prop_arcsin c r x = monadicIO $ do
         writeRemoteRef r $ asin (lit x)
         v <- readRemoteRef r
         return v
-    assert ((P.isNaN local && P.isNaN (litEvalFloat remote)) || abs(local - litEvalFloat remote) < 1e-6)
-
+    assert (testEq local (litEvalFloat remote))
 
 prop_arccos :: ArduinoConnection -> RemoteRef Float -> Float -> Property
 prop_arccos c r x = monadicIO $ do
@@ -183,7 +195,7 @@ prop_arccos c r x = monadicIO $ do
         writeRemoteRef r $ acos (lit x)
         v <- readRemoteRef r
         return v
-    assert ((P.isNaN local && P.isNaN (litEvalFloat remote)) || abs(local - litEvalFloat remote) < 1e-6)
+    assert (testEq local (litEvalFloat remote))
 
 prop_arctan :: ArduinoConnection -> RemoteRef Float -> Float -> Property
 prop_arctan c r x = monadicIO $ do
@@ -192,7 +204,7 @@ prop_arctan c r x = monadicIO $ do
         writeRemoteRef r $ atan (lit x)
         v <- readRemoteRef r
         return v
-    assert ((P.isNaN local && P.isNaN (litEvalFloat remote)) || abs(local - litEvalFloat remote) < 1e-6)
+    assert (testEq local (litEvalFloat remote))
 
 prop_arcsinh :: ArduinoConnection -> RemoteRef Float -> Float -> Property
 prop_arcsinh c r x = monadicIO $ do
@@ -201,8 +213,7 @@ prop_arcsinh c r x = monadicIO $ do
         writeRemoteRef r $ asinh (lit x)
         v <- readRemoteRef r
         return v
-    assert ((P.isNaN local && P.isNaN (litEvalFloat remote)) || abs(local - litEvalFloat remote) < 1e-6)
-
+    assert (testEq local (litEvalFloat remote))
 
 prop_arccosh :: ArduinoConnection -> RemoteRef Float -> Float -> Property
 prop_arccosh c r x = monadicIO $ do
@@ -211,16 +222,16 @@ prop_arccosh c r x = monadicIO $ do
         writeRemoteRef r $ acosh (lit x)
         v <- readRemoteRef r
         return v
-    assert ((P.isNaN local && P.isNaN (litEvalFloat remote)) || abs(local - litEvalFloat remote) < 1e-6)
+    assert (testEq local (litEvalFloat remote))
 
 prop_arctanh :: ArduinoConnection -> RemoteRef Float -> Float -> Property
 prop_arctanh c r x = monadicIO $ do
-    let local = atan x
+    let local = atanh x
     remote <- run $ send c $ do
         writeRemoteRef r $ atanh (lit x)
         v <- readRemoteRef r
         return v
-    assert ((P.isNaN local && P.isNaN (litEvalFloat remote)) || abs(local - litEvalFloat remote) < 1e-6)
+    assert (testEq local (litEvalFloat remote))
 
 prop_arctan2 :: ArduinoConnection -> RemoteRef Float -> Float -> Float -> Property
 prop_arctan2 c r x y = monadicIO $ do
@@ -229,7 +240,7 @@ prop_arctan2 c r x y = monadicIO $ do
         writeRemoteRef r $ Data.Boolean.Numbers.atan2 (lit x) (lit y)
         v <- readRemoteRef r
         return v
-    assert ((P.isNaN local && P.isNaN (litEvalFloat remote)) || abs(local - litEvalFloat remote) < 1e-6)
+    assert (testEq local (litEvalFloat remote))
 
 prop_power :: ArduinoConnection -> RemoteRef Float -> Float -> Float -> Property
 prop_power c r x y = monadicIO $ do
@@ -238,7 +249,7 @@ prop_power c r x y = monadicIO $ do
         writeRemoteRef r $ (lit x) ** (lit y)
         v <- readRemoteRef r
         return v
-    assert ((P.isNaN local && P.isNaN (litEvalFloat remote)) || abs(local - litEvalFloat remote) < 1e-6)
+    assert (testEq local (litEvalFloat remote))
 
 prop_logBase :: ArduinoConnection -> RemoteRef Float -> Float -> Float -> Property
 prop_logBase c r x y = monadicIO $ do
@@ -247,7 +258,7 @@ prop_logBase c r x y = monadicIO $ do
         writeRemoteRef r $ logBase (lit x) (lit y)
         v <- readRemoteRef r
         return v
-    assert ((P.isNaN local && P.isNaN (litEvalFloat remote)) || abs(local - litEvalFloat remote) < 1e-6)
+    assert (testEq local (litEvalFloat remote))
 
 prop_from8 :: ArduinoConnection -> RemoteRef Float -> Word8 -> Property
 prop_from8 c r x = monadicIO $ do
