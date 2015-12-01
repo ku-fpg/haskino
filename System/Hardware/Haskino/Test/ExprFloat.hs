@@ -148,6 +148,24 @@ prop_sinh c r x = monadicIO $ do
         return v
     assert (abs(local - litEvalFloat remote) < 1e-6)
 
+prop_cosh :: ArduinoConnection -> RemoteRef Float -> Float -> Property
+prop_cosh c r x = monadicIO $ do
+    let local = cosh x
+    remote <- run $ send c $ do
+        writeRemoteRef r $ cosh (lit x)
+        v <- readRemoteRef r
+        return v
+    assert (abs(local - litEvalFloat remote) < 1e-6)
+
+prop_tanh :: ArduinoConnection -> RemoteRef Float -> Float -> Property
+prop_tanh c r x = monadicIO $ do
+    let local = tanh x
+    remote <- run $ send c $ do
+        writeRemoteRef r $ tanh (lit x)
+        v <- readRemoteRef r
+        return v
+    assert (abs(local - litEvalFloat remote) < 1e-6)
+
 prop_arcsin :: ArduinoConnection -> RemoteRef Float -> Float -> Property
 prop_arcsin c r x = monadicIO $ do
     let local = asin x
@@ -407,6 +425,10 @@ main = do
     quickCheck (prop_tan conn refF)
     print "Sinh Tests:"
     quickCheck (prop_sinh conn refF)
+    print "Cosh Tests:"
+    quickCheck (prop_cosh conn refF)
+    print "Tanh Tests:"
+    quickCheck (prop_tanh conn refF)
     print "Arcsin Tests:"
     quickCheck (prop_arcsin conn refF)
     print "Arccos Tests:"

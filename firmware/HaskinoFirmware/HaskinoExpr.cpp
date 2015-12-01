@@ -1515,6 +1515,9 @@ float evalFloatExpr(byte **ppExpr, CONTEXT *context)
                 case EXPRF_ASIN:
                 case EXPRF_ACOS:
                 case EXPRF_ATAN:
+                case EXPRF_SINH:
+                case EXPRF_COSH:
+                case EXPRF_TANH:
                     e1 = evalFloatExpr(ppExpr, context);
                     switch(exprMathOp)
                         {
@@ -1547,6 +1550,15 @@ float evalFloatExpr(byte **ppExpr, CONTEXT *context)
                             break;
                         case EXPRF_ATAN:
                             val = atan(e1);
+                            break;
+                        case EXPRF_SINH:
+                            val = sinh(e1);
+                            break;
+                        case EXPRF_COSH:
+                            val = cosh(e1);
+                            break;
+                        case EXPRF_TANH:
+                            val = tanh(e1);
                             break;
                         }
                     break;

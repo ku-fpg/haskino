@@ -229,6 +229,9 @@ data Expr a where
   AcosFloat    :: Expr Float -> Expr Float
   AtanFloat    :: Expr Float -> Expr Float
   Atan2Float   :: Expr Float -> Expr Float -> Expr Float
+  SinhFloat    :: Expr Float -> Expr Float
+  CoshFloat    :: Expr Float -> Expr Float
+  TanhFloat    :: Expr Float -> Expr Float
   PowerFloat   :: Expr Float -> Expr Float -> Expr Float
   IsNaNFloat   :: Expr Float -> Expr Bool
   IsInfFloat   :: Expr Float -> Expr Bool
@@ -616,9 +619,9 @@ instance Floating (Expr Float) where
   asin x      = AsinFloat x
   acos x      = AcosFloat x
   atan x      = AtanFloat x
-  sinh x      = (ExpFloat x - ExpFloat (-x))/2.0
-  cosh x      = (ExpFloat x + ExpFloat (-x))/2.0
-  tanh x      = (ExpFloat x - ExpFloat (-x)) / (ExpFloat x + ExpFloat (-x))
+  sinh x      = SinhFloat x
+  cosh x      = CoshFloat x
+  tanh x      = TanhFloat x
   (**) x y    = PowerFloat x y
   logBase x y = LogFloat y / LogFloat x
   asinh x     = LogFloat (x + SqrtFloat (1.0+x*x))
@@ -750,6 +753,9 @@ data ExprFloatMathOp = EXPRF_TRUNC
             | EXPRF_ACOS
             | EXPRF_ATAN
             | EXPRF_ATAN2
+            | EXPRF_SINH 
+            | EXPRF_COSH
+            | EXPRF_TANH
             | EXPRF_POWER
             | EXPRF_ISNAN
             | EXPRF_ISINF
@@ -847,9 +853,12 @@ exprFloatMathOpVal EXPRF_ASIN   = 0x0C
 exprFloatMathOpVal EXPRF_ACOS   = 0x0D
 exprFloatMathOpVal EXPRF_ATAN   = 0x0E
 exprFloatMathOpVal EXPRF_ATAN2  = 0x0F
-exprFloatMathOpVal EXPRF_POWER  = 0x10
-exprFloatMathOpVal EXPRF_ISNAN  = 0x11
-exprFloatMathOpVal EXPRF_ISINF  = 0x12
+exprFloatMathOpVal EXPRF_SINH   = 0x10
+exprFloatMathOpVal EXPRF_COSH   = 0x11
+exprFloatMathOpVal EXPRF_TANH   = 0x12
+exprFloatMathOpVal EXPRF_POWER  = 0x13
+exprFloatMathOpVal EXPRF_ISNAN  = 0x14
+exprFloatMathOpVal EXPRF_ISINF  = 0x15
 
 exprCmdVal :: ExprType -> ExprOp -> Word8
 exprCmdVal t o = exprTypeVal t `DB.shiftL` 5 DB..|. exprOpVal o

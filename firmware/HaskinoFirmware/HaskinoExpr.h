@@ -84,9 +84,12 @@
 #define EXPRF_ACOS  0x0D
 #define EXPRF_ATAN  0x0E
 #define EXPRF_ATAN2 0x0F
-#define EXPRF_POWER 0x10
-#define EXPRF_ISNAN 0x11
-#define EXPRF_ISINF 0x12
+#define EXPRF_SINH  0x10
+#define EXPRF_COSH  0x11
+#define EXPRF_TANH  0x12
+#define EXPRF_POWER 0x13
+#define EXPRF_ISNAN 0x14
+#define EXPRF_ISINF 0x15
 
 bool evalBoolExpr(byte **ppExpr, CONTEXT *context);
 uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context);
