@@ -19,6 +19,7 @@ import       Data.Word (Word8, Word16, Word32)
 import       Data.Boolean as B
 import       Data.Boolean.Numbers as BN
 import       Data.Boolean.Bits as BB
+import       System.Hardware.Haskino.Utils
 
 data RemoteRef a where
     RemoteRefB   :: Int -> RemoteRef Bool
@@ -43,6 +44,14 @@ data Expr a where
   LitI32       :: Int32 -> Expr Int32
   LitList8     :: [Word8] -> Expr [Word8]
   LitFloat     :: Float -> Expr Float
+  ShowB        :: Expr Bool -> Expr [Word8]
+  ShowW8       :: Expr Word8 -> Expr [Word8]
+  ShowW16      :: Expr Word16 -> Expr [Word8]
+  ShowW32      :: Expr Word32 -> Expr [Word8]
+  ShowI8       :: Expr Int8 -> Expr [Word8]
+  ShowI16      :: Expr Int16 -> Expr [Word8]
+  ShowI32      :: Expr Int32 -> Expr [Word8]
+  ShowFloat    :: Expr Float -> Expr [Word8]
   RefB         :: Int -> Expr Bool
   RefW8        :: Int -> Expr Word8
   RefW16       :: Int -> Expr Word16
@@ -249,42 +258,55 @@ deriving instance Show a => Show (Expr a)
 class ExprB a where
     lit     :: a -> Expr a
     remBind :: Int -> Expr a
+    showB   :: Expr a -> Expr [Word8]
 
 instance ExprB Word8 where
     lit = LitW8
     remBind = RemBindW8
+    showB = ShowW8  
 
 instance ExprB Word16 where
     lit = LitW16
     remBind = RemBindW16
+    showB = ShowW16  
 
 instance ExprB Word32 where
     lit = LitW32
     remBind = RemBindW32
+    showB = ShowW32  
 
 instance ExprB Int8 where
     lit = LitI8
     remBind = RemBindI8
+    showB = ShowI8  
 
 instance ExprB Int16 where
     lit = LitI16
     remBind = RemBindI16
+    showB = ShowI16  
 
 instance ExprB Int32 where
     lit = LitI32
     remBind = RemBindI32
+    showB = ShowI32  
 
 instance ExprB Bool where
     lit = LitB
     remBind = RemBindB
+    showB = ShowB  
 
 instance ExprB [Word8] where
     lit = LitList8
     remBind = RemBindList8
+    showB = id
+
+litString :: String -> Expr [Word8]
+litString s = LitList8 $ stringToBytes s
 
 instance ExprB Float where
     lit = LitFloat
     remBind = RemBindFloat
+    showB = ShowFloat 
 
 instance B.Boolean (Expr Bool) where
   true  = LitB True
@@ -709,6 +731,7 @@ data ExprOp = EXPR_LIT
             | EXPR_CLRB
             | EXPR_QUOT
             | EXPR_MOD
+            | EXPR_SHOW
 
 data ExprListOp = EXPRL_LIT
             | EXPRL_REF
@@ -735,6 +758,7 @@ data ExprFloatOp = EXPRF_LIT
             | EXPRF_SUB
             | EXPRF_MULT
             | EXPRF_DIV
+            | EXPRF_SHOW
             | EXPRF_MATH
 
 data ExprFloatMathOp = EXPRF_TRUNC 
@@ -806,6 +830,7 @@ exprOpVal EXPR_SETB = 0x17
 exprOpVal EXPR_CLRB = 0x18
 exprOpVal EXPR_QUOT = 0x19
 exprOpVal EXPR_MOD  = 0x1A
+exprOpVal EXPR_SHOW = 0x1B
 
 exprListOpVal :: ExprListOp -> Word8
 exprListOpVal EXPRL_LIT  = exprOpVal EXPR_LIT
@@ -834,7 +859,8 @@ exprFloatOpVal EXPRF_ADD  = exprOpVal EXPR_ADD
 exprFloatOpVal EXPRF_SUB  = exprOpVal EXPR_SUB
 exprFloatOpVal EXPRF_MULT = exprOpVal EXPR_MULT
 exprFloatOpVal EXPRF_DIV  = exprOpVal EXPR_DIV
-exprFloatOpVal EXPRF_MATH = 0x0D
+exprFloatOpVal EXPRF_SHOW = 0x0D
+exprFloatOpVal EXPRF_MATH = 0x0E
 
 exprFloatMathOpVal :: ExprFloatMathOp -> Word8
 exprFloatMathOpVal EXPRF_TRUNC  = 0x00

@@ -297,7 +297,7 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                     else 
                         val = (ef_1 < ef_2); 
                     }
-                else if (exprOp == EXPR_MATH)
+                else if (exprOp == EXPRF_MATH)
                     {
                     pExpr = *ppExpr;
                     exprMathOp = *pExpr;
@@ -1360,7 +1360,7 @@ int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context)
             *ppExpr += 1; // Use command byte
             if (exprExtType == EXPR_FLOAT)
                 {
-                if (exprOp == EXPR_MATH)
+                if (exprOp == EXPRF_MATH)
                     {
                     pExpr = *ppExpr;
                     exprMathOp = *pExpr;
@@ -1495,7 +1495,7 @@ float evalFloatExpr(byte **ppExpr, CONTEXT *context)
                 val = evalFloatExpr(ppExpr, context);
                 }
             break;
-        case EXPR_MATH:
+        case EXPRF_MATH:
             *ppExpr += 1; // Use command byte
             pExpr = *ppExpr;
             exprMathOp = *pExpr;
@@ -1623,7 +1623,7 @@ byte sizeList8Expr(byte **ppExpr, CONTEXT *context)
             *ppExpr += 2; // Use Cmd and Bind bytes
             break;
         case EXPR_PTR:
-            memcpy(bindPtr, &pExpr[1], 4);
+            memcpy(&bindPtr, &pExpr[1], 4);
             size = sizeList8Expr(&bindPtr, context);
         case EXPR_REF:
             refNum = pExpr[1];
@@ -1678,7 +1678,7 @@ int evalList8SubExpr(byte **ppExpr, CONTEXT *context, byte *listMem, byte index)
             *ppExpr += 2; // Use Cmd and Bind bytes
             break;
         case EXPR_PTR:
-            memcpy(bindPtr, &pExpr[1], 4);
+            memcpy(&bindPtr, &pExpr[1], 4);
             size = evalList8SubExpr(&bindPtr, context, listMem, index);
         case EXPR_REF:
             refNum = pExpr[1];
@@ -1718,74 +1718,129 @@ int evalList8SubExpr(byte **ppExpr, CONTEXT *context, byte *listMem, byte index)
 uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc)
     {
     byte *pExpr = *ppExpr;
-    byte exprOp = *pExpr & EXPR_EXT_OP_MASK;
+    byte exprType = *pExpr >> EXPR_TYPE_SHFT;
+    byte exprOp = *pExpr & EXPR_OP_MASK;
     byte *ppSizeExpr, *listMem, *bindPtr;
     byte size, bind, refNum;
 
-    // If it is a literal, just return a pointer to the list
-    if (exprOp == EXPR_LIT)
+    if (exprType == EXPR_EXT)
         {
-        *alloc = false;
-        listMem = pExpr;
-        *ppExpr += 2 + listMem[1]; // Use command byte, length byte, and list
-        }
-    // Same case with a binding
-    else if (exprOp == EXPR_BIND)
-        {
-        bind = pExpr[1];
-        // If not context or bind space, allocate an empty list
-        if (!context || !context->bind)
-            {
-            *alloc = true;
-            listMem = (byte *) malloc(2);
-            listMem[0] = EXPR_L(EXPR_LIT);
-            listMem[1] = 0;
-            }
-        else
+        exprOp = *pExpr & EXPR_EXT_OP_MASK;
+        // If it is a literal, just return a pointer to the list
+        if (exprOp == EXPR_LIT)
             {
             *alloc = false;
-            bindPtr = &context->bind[bind * BIND_SPACING];
-            memcpy(&listMem, &bindPtr[1], sizeof(byte *));
+            listMem = pExpr;
+            *ppExpr += 2 + listMem[1]; // Use command byte, length byte, and list
             }
-        *ppExpr += 2; // Use command byte, byte byte
-        }
-    else if (exprOp == EXPR_REF)
-        {
-        *alloc = false;
-        refNum = pExpr[1];
-        listMem = readRefList8(refNum);
-        *ppExpr += 2; // Use command byte, byte byte
-        }
-    else if (exprOp == EXPR_IF)
-        {
-        uint16_t thenSize, elseSize;
-        bool conditional;
-
-        memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
-        memcpy((byte *) &elseSize, &pExpr[3], sizeof(uint16_t));
-        *ppExpr += 1 + 2*sizeof(uint16_t); // Use Cmd and Value bytes
-        conditional = evalBoolExpr(ppExpr, context);
-        if (conditional)
+        // Same case with a binding
+        else if (exprOp == EXPR_BIND)
             {
-            listMem = evalList8Expr(ppExpr, context, alloc);
-            *ppExpr += elseSize;
+            bind = pExpr[1];
+            // If not context or bind space, allocate an empty list
+            if (!context || !context->bind)
+                {
+                *alloc = true;
+                listMem = (byte *) malloc(2);
+                listMem[0] = EXPR_L(EXPR_LIT);
+                listMem[1] = 0;
+                }
+            else
+                {
+                *alloc = false;
+                bindPtr = &context->bind[bind * BIND_SPACING];
+                memcpy(&listMem, &bindPtr[1], sizeof(byte *));
+                }
+            *ppExpr += 2; // Use command byte, byte byte
+            }
+        else if (exprOp == EXPR_REF)
+            {
+            *alloc = false;
+            refNum = pExpr[1];
+            listMem = readRefList8(refNum);
+            *ppExpr += 2; // Use command byte, byte byte
+            }
+        else if (exprOp == EXPR_IF)
+            {
+            uint16_t thenSize, elseSize;
+            bool conditional;
+
+            memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
+            memcpy((byte *) &elseSize, &pExpr[3], sizeof(uint16_t));
+            *ppExpr += 1 + 2*sizeof(uint16_t); // Use Cmd and Value bytes
+            conditional = evalBoolExpr(ppExpr, context);
+            if (conditional)
+                {
+                listMem = evalList8Expr(ppExpr, context, alloc);
+                *ppExpr += elseSize;
+                }
+            else
+                {
+                *ppExpr += thenSize;
+                listMem = evalList8Expr(ppExpr, context, alloc);
+                }
             }
         else
             {
-            *ppExpr += thenSize;
-            listMem = evalList8Expr(ppExpr, context, alloc);
+            *alloc = true;
+            ppSizeExpr = *ppExpr;
+            size = sizeList8Expr(&ppSizeExpr, context); 
+            
+            listMem = (byte *) malloc(size+2);
+            listMem[0] = EXPR_L(EXPR_LIT);
+            listMem[1] = size;
+            evalList8SubExpr(ppExpr, context, listMem, 2);
             }
         }
-    else
+    else if (exprOp == EXPR_SHOW)
         {
-        *alloc = true;
-        ppSizeExpr = *ppExpr;
-        size = sizeList8Expr(&ppSizeExpr, context); 
-        
-        listMem = (byte *) malloc(size+2);
+        uint8_t e8;
+        uint16_t e16;
+        uint32_t e32;
+        int8_t ei8;
+        int16_t ei16;
+        int32_t ei32;
+
+        byte exprType = *pExpr >> EXPR_TYPE_SHFT;
+        *ppExpr += 1; // Use Cmd byte
+        switch (exprType)
+            {
+            case EXPR_WORD8:
+                e8 = evalWord8Expr(ppExpr, context);
+                listMem = (byte *) malloc(2+3+1);
+                sprintf((char *) &listMem[2],"%u",e8);
+                break;
+            case EXPR_WORD16:
+                e16 = evalWord16Expr(ppExpr, context);
+                listMem = (byte *) malloc(2+5+1);
+                sprintf((char *) &listMem[2],"%u",e16);
+                break;
+            case EXPR_WORD32:
+                e32 = evalWord32Expr(ppExpr, context);
+                listMem = (byte *) malloc(2+10+1);
+                sprintf((char *) &listMem[2],"%lu",e32);
+                break;
+            case EXPR_INT8:
+                ei8 = evalInt8Expr(ppExpr, context);
+                listMem = (byte *) malloc(2+4+1);
+                sprintf((char *) &listMem[2],"%d",ei8);
+                break;
+            case EXPR_INT16:
+                ei16 = evalInt16Expr(ppExpr, context);
+                listMem = (byte *) malloc(2+6+1);
+                sprintf((char *) &listMem[2],"%d",ei16);
+                break;
+            case EXPR_INT32:
+                ei32 = evalInt32Expr(ppExpr, context);
+                listMem = (byte *) malloc(2+11+1);
+                sprintf((char *) &listMem[2],"%ld",ei32);
+                break;
+            default:
+                break;
+            }
         listMem[0] = EXPR_L(EXPR_LIT);
-        listMem[1] = size;
-        evalList8SubExpr(ppExpr, context, listMem, 2);
+        listMem[1] = strlen((char *) &listMem[2]);
+        *alloc = true;
         }
 
     return listMem;

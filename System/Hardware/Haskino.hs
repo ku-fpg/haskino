@@ -47,11 +47,12 @@ module System.Hardware.Haskino (
   , loop, while, ifThenElse, loopE, forInE
   -- ** Expressions
   , Expr(..), RemoteRef, lit, newRemoteRef, readRemoteRef, writeRemoteRef
-  , modifyRemoteRef, (++*), (*:), (!!*), len, pack
+  , modifyRemoteRef, (++*), (*:), (!!*), len, pack, litString, showB
  )
  where
 
 import System.Hardware.Haskino.Data
 import System.Hardware.Haskino.Comm
 import System.Hardware.Haskino.Expr
+import System.Hardware.Haskino.Utils
 import Data.Boolean

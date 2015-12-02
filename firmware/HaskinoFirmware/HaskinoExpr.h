@@ -55,6 +55,7 @@
 #define EXPR_CLRB 0x18
 #define EXPR_QUOT 0x19
 #define EXPR_MOD  0x1A
+#define EXPR_SHOW 0x1B
 
 // List Expression Ops
 #define EXPR_ELEM 0x06
@@ -65,7 +66,8 @@
 #define EXPR_PTR  0x0F
 
 // Float Expression Ops
-#define EXPR_MATH 0x0D
+#define EXPRF_SHOW 0x0D
+#define EXPRF_MATH 0x0E
 
 // Float Math Expression Ops
 #define EXPRF_TRUNC 0x00

@@ -19,6 +19,8 @@ import System.Hardware.Haskino
 import Data.Boolean
 import Data.Boolean.Numbers
 import Data.Boolean.Bits
+import Data.Char
+import Data.Int
 import Data.Word
 import qualified Data.Bits as DB
 import Test.QuickCheck hiding ((.&.))
@@ -32,6 +34,9 @@ litEval8 (LitW8 w) = w
 
 litEvalB :: Expr Bool -> Bool
 litEvalB (LitB b) = b
+
+stringToBytes :: String -> [Word8]
+stringToBytes s = map (\d -> fromIntegral $ ord d) s
 
 prop_cons :: ArduinoConnection -> RemoteRef [Word8] -> Word8  -> [Word8] -> Property
 prop_cons c r x xs = monadicIO $ do
@@ -137,6 +142,60 @@ prop_gte c r x y = monadicIO $ do
         return v
     assert (local == litEvalB remote)
 
+prop_showW8 :: ArduinoConnection -> RemoteRef [Word8] -> Word8 -> Property
+prop_showW8 c r x = monadicIO $ do
+    let local = stringToBytes $ show x
+    remote <- run $ send c $ do
+        writeRemoteRef r $ showB (lit x)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEvalL remote)
+
+prop_showW16 :: ArduinoConnection -> RemoteRef [Word8] -> Word16 -> Property
+prop_showW16 c r x = monadicIO $ do
+    let local = stringToBytes $ show x
+    remote <- run $ send c $ do
+        writeRemoteRef r $ showB (lit x)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEvalL remote)
+
+prop_showW32 :: ArduinoConnection -> RemoteRef [Word8] -> Word32 -> Property
+prop_showW32 c r x = monadicIO $ do
+    let local = stringToBytes $ show x
+    remote <- run $ send c $ do
+        writeRemoteRef r $ showB (lit x)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEvalL remote)
+
+prop_showI8 :: ArduinoConnection -> RemoteRef [Word8] -> Int8 -> Property
+prop_showI8 c r x = monadicIO $ do
+    let local = stringToBytes $ show x
+    remote <- run $ send c $ do
+        writeRemoteRef r $ showB (lit x)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEvalL remote)
+
+prop_showI16 :: ArduinoConnection -> RemoteRef [Word8] -> Int16 -> Property
+prop_showI16 c r x = monadicIO $ do
+    let local = stringToBytes $ show x
+    remote <- run $ send c $ do
+        writeRemoteRef r $ showB (lit x)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEvalL remote)
+
+prop_showI32 :: ArduinoConnection -> RemoteRef [Word8] -> Int32 -> Property
+prop_showI32 c r x = monadicIO $ do
+    let local = stringToBytes $ show x
+    remote <- run $ send c $ do
+        writeRemoteRef r $ showB (lit x)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEvalL remote)
+
 main :: IO ()
 main = do
     conn <- openArduino False "/dev/cu.usbmodem1421"
@@ -165,4 +224,16 @@ main = do
     quickCheck (prop_lte conn refB)
     print "Greater Than Equal Tests:"
     quickCheck (prop_gte conn refB)
+    print "Show Word8 Tests:"
+    quickCheck (prop_showW8 conn refL)
+    print "Show Word16 Tests:"
+    quickCheck (prop_showW16 conn refL)
+    print "Show Word32 Tests:"
+    quickCheck (prop_showW32 conn refL)
+    print "Show Int8 Tests:"
+    quickCheck (prop_showI8 conn refL)
+    print "Show Int16 Tests:"
+    quickCheck (prop_showI16 conn refL)
+    print "Show Int32 Tests:"
+    quickCheck (prop_showI32 conn refL)
     closeArduino conn

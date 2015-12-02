@@ -12,7 +12,7 @@
 module System.Hardware.Haskino.Utils where
 
 import Data.Bits          ((.|.), shiftL, (.&.), shiftR)
-import Data.Char          (isAlphaNum, isAscii, isSpace, chr)
+import Data.Char          (isAlphaNum, isAscii, isSpace, chr, ord)
 import Data.IORef         (newIORef, readIORef, writeIORef)
 import Data.List          (intercalate)
 import Data.Word          (Word8, Word16, Word32)
@@ -97,3 +97,5 @@ bytesToFloat (a,b,c,d) = case e of
         bString = B.pack [a,b,c,d]
         e = runGet getFloat32le bString
 
+stringToBytes :: String -> [Word8]
+stringToBytes s = map (\d -> fromIntegral $ ord d) s
