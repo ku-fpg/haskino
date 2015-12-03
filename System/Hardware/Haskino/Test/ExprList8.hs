@@ -209,6 +209,15 @@ prop_showFloat c r x = monadicIO $ do
         return v
     assert (local == (bytesToString $ litEvalL remote))
 
+prop_showBool :: ArduinoConnection -> RemoteRef [Word8] -> Bool -> Property
+prop_showBool c r x = monadicIO $ do
+    let local = stringToBytes $ show x
+    remote <- run $ send c $ do
+        writeRemoteRef r $ showE (lit x)
+        v <- readRemoteRef r
+        return v
+    assert (local == litEvalL remote)
+
 main :: IO ()
 main = do
     conn <- openArduino False "/dev/cu.usbmodem1421"
@@ -249,6 +258,8 @@ main = do
     quickCheck (prop_showI16 conn refL)
     print "Show Int32 Tests:"
     quickCheck (prop_showI32 conn refL)
+    print "Show Bool Tests:"
+    quickCheck (prop_showBool conn refL)
     print "Show Float Tests:"
     quickCheck (prop_showFloat conn refL)
     closeArduino conn
