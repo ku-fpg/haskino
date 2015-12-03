@@ -47,7 +47,7 @@ module System.Hardware.Haskino (
   , loop, while, ifThenElse, loopE, forInE
   -- ** Expressions
   , Expr(..), RemoteRef, lit, newRemoteRef, readRemoteRef, writeRemoteRef
-  , modifyRemoteRef, (++*), (*:), (!!*), len, pack, litString, showB
+  , modifyRemoteRef, (++*), (*:), (!!*), len, pack, litString, showE, showFFloatE
  )
  where
 

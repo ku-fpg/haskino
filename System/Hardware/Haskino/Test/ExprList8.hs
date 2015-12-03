@@ -22,6 +22,7 @@ import Data.Boolean.Bits
 import Data.Char
 import Data.Int
 import Data.Word
+import Numeric
 import qualified Data.Bits as DB
 import Test.QuickCheck hiding ((.&.))
 import Test.QuickCheck.Monadic
@@ -37,6 +38,9 @@ litEvalB (LitB b) = b
 
 stringToBytes :: String -> [Word8]
 stringToBytes s = map (\d -> fromIntegral $ ord d) s
+
+bytesToString :: [Word8] -> String
+bytesToString bs = map (\d -> chr $ fromIntegral d) bs
 
 prop_cons :: ArduinoConnection -> RemoteRef [Word8] -> Word8  -> [Word8] -> Property
 prop_cons c r x xs = monadicIO $ do
@@ -146,7 +150,7 @@ prop_showW8 :: ArduinoConnection -> RemoteRef [Word8] -> Word8 -> Property
 prop_showW8 c r x = monadicIO $ do
     let local = stringToBytes $ show x
     remote <- run $ send c $ do
-        writeRemoteRef r $ showB (lit x)
+        writeRemoteRef r $ showE (lit x)
         v <- readRemoteRef r
         return v
     assert (local == litEvalL remote)
@@ -155,7 +159,7 @@ prop_showW16 :: ArduinoConnection -> RemoteRef [Word8] -> Word16 -> Property
 prop_showW16 c r x = monadicIO $ do
     let local = stringToBytes $ show x
     remote <- run $ send c $ do
-        writeRemoteRef r $ showB (lit x)
+        writeRemoteRef r $ showE (lit x)
         v <- readRemoteRef r
         return v
     assert (local == litEvalL remote)
@@ -164,7 +168,7 @@ prop_showW32 :: ArduinoConnection -> RemoteRef [Word8] -> Word32 -> Property
 prop_showW32 c r x = monadicIO $ do
     let local = stringToBytes $ show x
     remote <- run $ send c $ do
-        writeRemoteRef r $ showB (lit x)
+        writeRemoteRef r $ showE (lit x)
         v <- readRemoteRef r
         return v
     assert (local == litEvalL remote)
@@ -173,7 +177,7 @@ prop_showI8 :: ArduinoConnection -> RemoteRef [Word8] -> Int8 -> Property
 prop_showI8 c r x = monadicIO $ do
     let local = stringToBytes $ show x
     remote <- run $ send c $ do
-        writeRemoteRef r $ showB (lit x)
+        writeRemoteRef r $ showE (lit x)
         v <- readRemoteRef r
         return v
     assert (local == litEvalL remote)
@@ -182,7 +186,7 @@ prop_showI16 :: ArduinoConnection -> RemoteRef [Word8] -> Int16 -> Property
 prop_showI16 c r x = monadicIO $ do
     let local = stringToBytes $ show x
     remote <- run $ send c $ do
-        writeRemoteRef r $ showB (lit x)
+        writeRemoteRef r $ showE (lit x)
         v <- readRemoteRef r
         return v
     assert (local == litEvalL remote)
@@ -191,10 +195,19 @@ prop_showI32 :: ArduinoConnection -> RemoteRef [Word8] -> Int32 -> Property
 prop_showI32 c r x = monadicIO $ do
     let local = stringToBytes $ show x
     remote <- run $ send c $ do
-        writeRemoteRef r $ showB (lit x)
+        writeRemoteRef r $ showE (lit x)
         v <- readRemoteRef r
         return v
     assert (local == litEvalL remote)
+
+prop_showFloat :: ArduinoConnection -> RemoteRef [Word8] -> Float -> Property
+prop_showFloat c r x = monadicIO $ do
+    let local = showFFloat (Just 2) x ""
+    remote <- run $ send c $ do
+        writeRemoteRef r $ showFFloatE (Just (lit 2)) (lit x)
+        v <- readRemoteRef r
+        return v
+    assert (local == (bytesToString $ litEvalL remote))
 
 main :: IO ()
 main = do
@@ -236,4 +249,6 @@ main = do
     quickCheck (prop_showI16 conn refL)
     print "Show Int32 Tests:"
     quickCheck (prop_showI32 conn refL)
+    print "Show Float Tests:"
+    quickCheck (prop_showFloat conn refL)
     closeArduino conn

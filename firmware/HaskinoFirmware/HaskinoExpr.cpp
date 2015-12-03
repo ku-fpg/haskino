@@ -1715,15 +1715,56 @@ int evalList8SubExpr(byte **ppExpr, CONTEXT *context, byte *listMem, byte index)
     return size;
     }
 
+void printFloat(char *ptr, float val, byte precision)
+    {
+ // prints val with number of decimal places determine by precision
+ // precision is a number from 0 to 6 indicating the desired decimial places
+ // example: lcdPrintDouble( 3.1415, 2); // prints 3.14 (two decimal places)
+
+    if(val < 0.0)
+        {
+        *ptr++ = '-';
+        val = -val;
+        }
+
+    ptr += sprintf(ptr,"%d",int(val));
+
+    if (precision > 6)
+        precision = 6;
+
+    if (precision > 0) 
+        {
+        *ptr++ = '.';
+        unsigned long frac;
+        unsigned long mult = 1;
+        byte padding = precision -1;
+        while(precision--)
+            mult *=10;
+
+        if (val >= 0)
+            frac = (val - int(val)) * mult;
+        else
+            frac = (int(val)- val ) * mult;
+
+        unsigned long frac1 = frac;
+        while( frac1 /= 10 )
+            padding--;
+        while(padding--)
+            *ptr++ = '0';
+        ptr += sprintf(ptr,"%lu",frac);
+        }
+    }
+
 uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc)
     {
     byte *pExpr = *ppExpr;
     byte exprType = *pExpr >> EXPR_TYPE_SHFT;
+    byte exprExtType = *pExpr >> EXPR_EXT_TYPE_SHFT;
     byte exprOp = *pExpr & EXPR_OP_MASK;
     byte *ppSizeExpr, *listMem, *bindPtr;
     byte size, bind, refNum;
 
-    if (exprType == EXPR_EXT)
+    if (exprType == EXPR_EXT && exprExtType == EXPR_LIST8)
         {
         exprOp = *pExpr & EXPR_EXT_OP_MASK;
         // If it is a literal, just return a pointer to the list
@@ -1792,8 +1833,27 @@ uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc)
             evalList8SubExpr(ppExpr, context, listMem, 2);
             }
         }
+    else if (exprType == EXPR_EXT && exprExtType == EXPR_FLOAT)
+        {
+        exprOp = *pExpr & EXPR_EXT_OP_MASK;
+        *ppExpr += 1; // Use Cmd byte
+        if (exprOp == EXPRF_SHOW)
+            {
+            float ef;
+            uint8_t e8;
+
+            ef = evalFloatExpr(ppExpr, context);
+            e8 = evalWord8Expr(ppExpr, context);
+            listMem = (byte *) malloc(2+11+1+e8+1);
+            printFloat((char *) &listMem[2],ef,e8);
+            listMem[0] = EXPR_L(EXPR_LIT);
+            listMem[1] = strlen((char *) &listMem[2]);
+            *alloc = true;
+            }
+        }
     else if (exprOp == EXPR_SHOW)
         {
+        bool eb;
         uint8_t e8;
         uint16_t e16;
         uint32_t e32;
@@ -1805,6 +1865,14 @@ uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc)
         *ppExpr += 1; // Use Cmd byte
         switch (exprType)
             {
+            case EXPR_BOOL:
+                eb = evalBoolExpr(ppExpr, context);
+                listMem = (byte *) malloc(2+5+1);
+                if (eb)
+                    sprintf((char *) &listMem[2],"%s","True");
+                else
+                    sprintf((char *) &listMem[2],"%s","False");
+                break;
             case EXPR_WORD8:
                 e8 = evalWord8Expr(ppExpr, context);
                 listMem = (byte *) malloc(2+3+1);
@@ -1845,3 +1913,4 @@ uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc)
 
     return listMem;
     }
+

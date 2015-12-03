@@ -51,7 +51,7 @@ data Expr a where
   ShowI8       :: Expr Int8 -> Expr [Word8]
   ShowI16      :: Expr Int16 -> Expr [Word8]
   ShowI32      :: Expr Int32 -> Expr [Word8]
-  ShowFloat    :: Expr Float -> Expr [Word8]
+  ShowFloat    :: Expr Float -> Expr Word8 -> Expr [Word8]
   RefB         :: Int -> Expr Bool
   RefW8        :: Int -> Expr Word8
   RefW16       :: Int -> Expr Word16
@@ -258,55 +258,59 @@ deriving instance Show a => Show (Expr a)
 class ExprB a where
     lit     :: a -> Expr a
     remBind :: Int -> Expr a
-    showB   :: Expr a -> Expr [Word8]
+    showE   :: Expr a -> Expr [Word8]
 
 instance ExprB Word8 where
     lit = LitW8
     remBind = RemBindW8
-    showB = ShowW8  
+    showE = ShowW8  
 
 instance ExprB Word16 where
     lit = LitW16
     remBind = RemBindW16
-    showB = ShowW16  
+    showE = ShowW16  
 
 instance ExprB Word32 where
     lit = LitW32
     remBind = RemBindW32
-    showB = ShowW32  
+    showE = ShowW32  
 
 instance ExprB Int8 where
     lit = LitI8
     remBind = RemBindI8
-    showB = ShowI8  
+    showE = ShowI8  
 
 instance ExprB Int16 where
     lit = LitI16
     remBind = RemBindI16
-    showB = ShowI16  
+    showE = ShowI16  
 
 instance ExprB Int32 where
     lit = LitI32
     remBind = RemBindI32
-    showB = ShowI32  
+    showE = ShowI32  
 
 instance ExprB Bool where
     lit = LitB
     remBind = RemBindB
-    showB = ShowB  
+    showE = ShowB  
 
 instance ExprB [Word8] where
     lit = LitList8
     remBind = RemBindList8
-    showB = id
-
-litString :: String -> Expr [Word8]
-litString s = LitList8 $ stringToBytes s
+    showE = id
 
 instance ExprB Float where
     lit = LitFloat
     remBind = RemBindFloat
-    showB = ShowFloat 
+    showE = showFFloatE Nothing
+
+litString :: String -> Expr [Word8]
+litString s = LitList8 $ stringToBytes s
+
+showFFloatE :: Maybe (Expr Word8) -> Expr Float -> Expr [Word8]
+showFFloatE Nothing ef = showFFloatE (Just 2) ef 
+showFFloatE (Just ep) ef = ShowFloat ef ep 
 
 instance B.Boolean (Expr Bool) where
   true  = LitB True
