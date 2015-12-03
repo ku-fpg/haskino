@@ -44,7 +44,9 @@ bool readRefBool(int refIndex)
         return *((bool *) haskinoRefs[refIndex].ref);
     else
         {
+#ifdef DEBUG
         sendStringf("rRB: %d", refIndex);
+#endif
         return false;
         }
     }
@@ -55,7 +57,9 @@ uint8_t readRefWord8(int refIndex)
         return *((uint8_t *) haskinoRefs[refIndex].ref);
     else
         {
+#ifdef DEBUG
         sendStringf("rRW8: %d", refIndex);
+#endif
         return false;
         }
     }
@@ -66,7 +70,9 @@ uint16_t readRefWord16(int refIndex)
         return *((uint16_t *) haskinoRefs[refIndex].ref);
     else
         {
+#ifdef DEBUG
         sendStringf("rRW16: %d", refIndex);
+#endif
         return false;
         }
     }
@@ -77,7 +83,9 @@ uint32_t readRefWord32(int refIndex)
         return *((uint32_t *) haskinoRefs[refIndex].ref);
     else
         {
+#ifdef DEBUG
         sendStringf("rRW32: %d", refIndex);
+#endif
         return false;
         }
     }
@@ -88,7 +96,9 @@ int8_t readRefInt8(int refIndex)
         return *((int8_t *) haskinoRefs[refIndex].ref);
     else
         {
+#ifdef DEBUG
         sendStringf("rRI8: %d", refIndex);
+#endif
         return false;
         }
     }
@@ -99,7 +109,9 @@ int16_t readRefInt16(int refIndex)
         return *((int16_t *) haskinoRefs[refIndex].ref);
     else
         {
+#ifdef DEBUG
         sendStringf("rRI16: %d", refIndex);
+#endif
         return false;
         }
     }
@@ -110,7 +122,9 @@ int32_t readRefInt32(int refIndex)
         return *((int32_t *) haskinoRefs[refIndex].ref);
     else
         {
+#ifdef DEBUG
         sendStringf("rRI32: %d", refIndex);
+#endif
         return false;
         }
     }
@@ -121,7 +135,9 @@ uint8_t *readRefList8(int refIndex)
         return (uint8_t *) haskinoRefs[refIndex].ref;
     else
         {
+#ifdef DEBUG
         sendStringf("rRL8: %d", refIndex);
+#endif
         return false;
         }
     }
@@ -132,7 +148,9 @@ float readRefFloat(int refIndex)
         return *((float *) haskinoRefs[refIndex].ref);
     else
         {
+#ifdef DEBUG
         sendStringf("rRF: %d", refIndex);
+#endif
         return false;
         }
     }

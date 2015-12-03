@@ -48,11 +48,15 @@ static bool handleRead(int size, const byte *msg, CONTEXT *context)
 
     if (byteCount < byteAvail) 
         {
+#ifdef DEBUG
         sendStringf("I2C: M");
+#endif
         } 
     else if (byteCount > byteAvail) 
         {
+#ifdef DEBUG
         sendStringf("I2C: F");
+#endif
         }
 
     localMem = (byte *) malloc(byteAvail+2);

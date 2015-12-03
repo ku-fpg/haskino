@@ -2,6 +2,7 @@
 #include "HaskinoAnalog.h"
 #include "HaskinoComm.h"
 #include "HaskinoCommands.h"
+#include "HaskinoConfig.h"
 #include "HaskinoExpr.h"
 
 static bool handleReadPin(int size, const byte *msg, CONTEXT *context);

@@ -238,7 +238,9 @@ static bool handleQueryAll(int size, const byte *msg, CONTEXT *context)
 
     if (!localMem)
         {
+#ifdef DEBUG
         sendStringf("hQA: M");
+#endif
         return false;
         }
 

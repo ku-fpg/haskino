@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "HaskinoComm.h"
+#include "HaskinoConfig.h"
 
 static bool codeBlock = false;
 

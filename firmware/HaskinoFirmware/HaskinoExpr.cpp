@@ -326,7 +326,9 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
         }
     return val;
 error:
+#ifdef DEBUG
     sendStringf("eBE:%d,%d", exprType, exprOp);
+#endif
     return val;
     }
 
@@ -512,7 +514,9 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
         }
     return val;
 error:
+#ifdef DEBUG
     sendStringf("eW8E:%d,%d", exprType, exprOp);
+#endif
     return val;
     }
 
@@ -682,7 +686,10 @@ int8_t evalInt8Expr(byte **ppExpr, CONTEXT *context)
                 }
             break;
         default:
+#ifdef DEBUG
             sendStringf("eI8E:O%d", exprOp);
+#endif
+            break;
         }
         return val;
     }
@@ -831,7 +838,10 @@ uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context)
                 }
             break;
         default:
+#ifdef DEBUG
             sendStringf("eW16E:O%d", exprOp);
+#endif
+            break;
         }
         return val;
     }
@@ -998,7 +1008,10 @@ int16_t evalInt16Expr(byte **ppExpr, CONTEXT *context)
                 }
             break;
         default:
+#ifdef DEBUG
             sendStringf("eI16E:O%d", exprOp);
+#endif
+            break;
         }
         return val;
     }
@@ -1147,7 +1160,10 @@ uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context)
                 }
             break;
         default:
+#ifdef DEBUG
             sendStringf("eW32E:O%d", exprOp);
+#endif
+            break;
         }
         return val;
     }
@@ -1395,7 +1411,9 @@ int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context)
         }
     return val;
 error:
+#ifdef DEBUG
     sendStringf("eI8E:%d,%d", exprType, exprOp);
+#endif
     return val;
     }
 
@@ -1577,11 +1595,17 @@ float evalFloatExpr(byte **ppExpr, CONTEXT *context)
                         }
                     break;
                 default:
+#ifdef DEBUG
                     sendStringf("eFE:MO%d", exprMathOp);
+#endif
+                    break;
                 }
             break;
         default:
+#ifdef DEBUG
             sendStringf("eFE:O%d", exprOp);
+#endif
+            break;
         }
         return val;
     }
@@ -1653,7 +1677,10 @@ byte sizeList8Expr(byte **ppExpr, CONTEXT *context)
             size = 1 + sizeList8Expr(ppExpr, context);
             break;
         default:
+#ifdef DEBUG
             sendStringf("sL8E:O%d", exprOp);
+#endif
+            break;
         }
         return size;
     }
@@ -1710,7 +1737,10 @@ int evalList8SubExpr(byte **ppExpr, CONTEXT *context, byte *listMem, byte index)
             size = evalList8SubExpr(ppExpr, context, listMem, index + 1) + 1;
             break;
         default:
+#ifdef DEBUG
             sendStringf("eL8SE:O%d", exprOp);
+#endif
+            break;
         }
     return size;
     }

@@ -2,6 +2,7 @@
 #include "HaskinoBoardStatus.h"
 #include "HaskinoComm.h"
 #include "HaskinoCommands.h"
+#include "HaskinoConfig.h"
 #include "HaskinoExpr.h"
 #include "HaskinoFirmware.h"
 
