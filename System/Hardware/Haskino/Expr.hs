@@ -664,7 +664,7 @@ instance BN.RealFracB (Expr Float) where
 instance RealFloatB (Expr Float) where
   isNaN = IsNaNFloat
   isInfinite = IsInfFloat
-  isNegativeZero f = BN.isInfinite f &&* f <* 0
+  isNegativeZero f = BN.isInfinite f &&* f B.<* 0
   isIEEE _ = true -- AFAIK
   atan2 x y = Atan2Float x y
 
