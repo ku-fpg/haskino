@@ -36,7 +36,7 @@ static bool handleReadPin(int size, const byte *msg, CONTEXT *context)
     byte pinNo = evalWord8Expr(&expr, context);
     byte digitalReply[2];
 
-    digitalReply[0] = EXPR(EXPR_WORD8, EXPR_LIT);
+    digitalReply[0] = EXPR(EXPR_BOOL, EXPR_LIT);
     digitalReply[1] = digitalRead(pinNo);
 
     sendReply(sizeof(digitalReply), DIG_RESP_READ_PIN, 
