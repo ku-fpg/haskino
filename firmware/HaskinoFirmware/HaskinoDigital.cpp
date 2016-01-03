@@ -86,8 +86,10 @@ static bool handleWritePort(int size, const byte *msg, CONTEXT *context)
 
     for (int i=0;i<8;i++)
         {
-        if (bits[i] & mask)
-            digitalWrite(pinNo+i, bits[i] & value);
+        if (bits[i] & mask) {
+            sendStringf("Write Val %d pin %d - %d",value,pinNo+i,(bits[i] & value) == bits[i]);
+            digitalWrite(pinNo+i, (bits[i] & value) == bits[i]);
+        }
         }
 
     return false;

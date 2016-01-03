@@ -97,6 +97,11 @@ data LCD = LCD {
                , lcdState          :: MVar LCDData  -- ^ State information    
                }
 
+data LCDE = LCDE {
+                  lcdControllerE   :: LCDControllerE -- ^ Actual controller
+                , lcdStateE        :: LCDDataE  -- ^ State information    
+                }
+
 -- | Hitachi LCD controller: See: <http://en.wikipedia.org/wiki/Hitachi_HD44780_LCD_controller>.
 -- We model only the 4-bit variant, with RS and EN lines only. (The most common Arduino usage.)
 -- The data sheet can be seen at: <http://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf>.
@@ -121,12 +126,37 @@ data LCDController =
                      }
                      deriving Show
 
+data LCDControllerE = 
+    Hitachi44780E {
+                       lcdRSE       :: PinE  -- ^ Hitachi pin @ 4@: Register-select
+                     , lcdENE       :: PinE  -- ^ Hitachi pin @ 6@: Enable
+                     , lcdD4E       :: PinE  -- ^ Hitachi pin @11@: Data line @4@
+                     , lcdBLE       :: Maybe PinE -- ^ Backlight control pin (if present)
+                     , lcdRowsE     :: Expr Word8 -- ^ Number of rows (typically 1 or 2, upto 4)
+                     , lcdColsE     :: Expr Word8 -- ^ Number of cols (typically 16 or 20, upto 40)
+                     , dotMode5x10E :: Expr Bool -- ^ Set to True if 5x10 dots are used
+                     }
+    | I2CHitachi44780E {
+                       addressE     :: Expr Word8 -- ^ I2C Slave Address of LCD
+                     , lcdRowsE     :: Expr Word8 -- ^ Number of rows (typically 1 or 2, upto 4)
+                     , lcdColsE     :: Expr Word8 -- ^ Number of cols (typically 16 or 20, upto 40)
+                     , dotMode5x10E :: Expr Bool -- ^ Set to True if 5x10 dots are used
+                     }
+                     deriving Show
+
 -- | State of the LCD, a mere 8-bit word for the Hitachi
 data LCDData = LCDData {
                   lcdDisplayMode    :: Word8         -- ^ Display mode (left/right/scrolling etc.)
                 , lcdDisplayControl :: Word8         -- ^ Display control (blink on/off, display on/off etc.)
                 , lcdGlyphCount     :: Word8         -- ^ Count of custom created glyphs (typically at most 8)
                 , lcdBacklightState :: Bool
+                }
+
+data LCDDataE = LCDDataE {
+                  lcdDisplayModeE    :: RemoteRef Word8         -- ^ Display mode (left/right/scrolling etc.)
+                , lcdDisplayControlE :: RemoteRef Word8         -- ^ Display control (blink on/off, display on/off etc.)
+                , lcdGlyphCountE     :: RemoteRef Word8         -- ^ Count of custom created glyphs (typically at most 8)
+                , lcdBacklightStateE :: RemoteRef Bool
                 }
 
 -- | State of the connection
