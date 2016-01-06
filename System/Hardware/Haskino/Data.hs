@@ -98,7 +98,7 @@ data LCD = LCD {
                }
 
 data LCDE = LCDE {
-                  lcdControllerE   :: LCDControllerE -- ^ Actual controller
+                  lcdControllerE   :: LCDController  -- ^ Actual controller
                 , lcdStateE        :: LCDDataE  -- ^ State information    
                 }
 
@@ -114,33 +114,15 @@ data LCDController =
                      , lcdD6       :: Pin  -- ^ Hitachi pin @13@: Data line @6@
                      , lcdD7       :: Pin  -- ^ Hitachi pin @14@: Data line @7@
                      , lcdBL       :: Maybe Pin -- ^ Backlight control pin (if present)
-                     , lcdRows     :: Int  -- ^ Number of rows (typically 1 or 2, upto 4)
-                     , lcdCols     :: Int  -- ^ Number of cols (typically 16 or 20, upto 40)
+                     , lcdRows     :: Word8  -- ^ Number of rows (typically 1 or 2, upto 4)
+                     , lcdCols     :: Word8  -- ^ Number of cols (typically 16 or 20, upto 40)
                      , dotMode5x10 :: Bool -- ^ Set to True if 5x10 dots are used
                      }
     | I2CHitachi44780 {
                        address     :: Word8 -- ^ I2C Slave Address of LCD
-                     , lcdRows     :: Int  -- ^ Number of rows (typically 1 or 2, upto 4)
-                     , lcdCols     :: Int  -- ^ Number of cols (typically 16 or 20, upto 40)
+                     , lcdRows     :: Word8  -- ^ Number of rows (typically 1 or 2, upto 4)
+                     , lcdCols     :: Word8  -- ^ Number of cols (typically 16 or 20, upto 40)
                      , dotMode5x10 :: Bool -- ^ Set to True if 5x10 dots are used
-                     }
-                     deriving Show
-
-data LCDControllerE = 
-    Hitachi44780E {
-                       lcdRSE       :: PinE  -- ^ Hitachi pin @ 4@: Register-select
-                     , lcdENE       :: PinE  -- ^ Hitachi pin @ 6@: Enable
-                     , lcdD4E       :: PinE  -- ^ Hitachi pin @11@: Data line @4@
-                     , lcdBLE       :: Maybe PinE -- ^ Backlight control pin (if present)
-                     , lcdRowsE     :: Expr Word8 -- ^ Number of rows (typically 1 or 2, upto 4)
-                     , lcdColsE     :: Expr Word8 -- ^ Number of cols (typically 16 or 20, upto 40)
-                     , dotMode5x10E :: Expr Bool -- ^ Set to True if 5x10 dots are used
-                     }
-    | I2CHitachi44780E {
-                       addressE     :: Expr Word8 -- ^ I2C Slave Address of LCD
-                     , lcdRowsE     :: Expr Word8 -- ^ Number of rows (typically 1 or 2, upto 4)
-                     , lcdColsE     :: Expr Word8 -- ^ Number of cols (typically 16 or 20, upto 40)
-                     , dotMode5x10E :: Expr Bool -- ^ Set to True if 5x10 dots are used
                      }
                      deriving Show
 
