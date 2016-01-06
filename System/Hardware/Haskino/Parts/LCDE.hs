@@ -20,28 +20,27 @@
 
 module System.Hardware.Haskino.Parts.LCDE(
   -- * LCD types and registration
-  LCDE, LCDController(..), lcdRegister
+  LCDE, LCDController(..), lcdRegisterE
   -- * Writing text on the LCD
-  , lcdClear, lcdWrite, lcdWriteChar
+  , lcdClearE, lcdWriteE, lcdWriteCharE
   -- * Moving the cursor
-  , lcdHome, lcdSetCursor
+  , lcdHomeE, lcdSetCursorE
   -- * Scrolling
-  , lcdAutoScrollOn, lcdAutoScrollOff
-  , lcdScrollDisplayLeft, lcdScrollDisplayRight
+  , lcdAutoScrollOnE, lcdAutoScrollOffE
+  , lcdScrollDisplayLeftE, lcdScrollDisplayRightE
   -- * Display properties
-  , lcdLeftToRight, lcdRightToLeft
-  , lcdBlinkOn, lcdBlinkOff
-  , lcdCursorOn, lcdCursorOff
-  , lcdDisplayOn, lcdDisplayOff
+  , lcdLeftToRightE, lcdRightToLeftE
+  , lcdBlinkOnE, lcdBlinkOffE
+  , lcdCursorOnE, lcdCursorOffE
+  , lcdDisplayOnE, lcdDisplayOffE
   -- * Accessing internal symbols,
   -- , LCDSymbol, lcdInternalSymbol, lcdWriteSymbol
   -- Creating custom symbols
   -- , lcdCreateSymbol
   -- * Misc helpers
-  , lcdFlash, lcdBacklightOn, lcdBacklightOff
+  , lcdFlashE, lcdBacklightOnE, lcdBacklightOffE
   )  where
 
-import Control.Concurrent  (modifyMVar, withMVar, newMVar, readMVar)
 import Control.Monad       (when)
 import Control.Monad.State (gets, liftIO)
 -- import Data.Bits           (testBit, (.|.), (.&.), setBit, clearBit, shiftL, bit, complement)
@@ -116,13 +115,13 @@ initLCD lcd = do
     delayMillisE 5
     sendCmd lcd c LCD_INITIALIZE_END
     sendCmd lcd c LCD_FUNCTIONSET
-    lcdCursorOff lcd
-    lcdBlinkOff lcd
-    lcdLeftToRight lcd
-    lcdAutoScrollOff lcd
-    lcdHome lcd
-    lcdClear lcd
-    lcdDisplayOn lcd
+    lcdCursorOffE lcd
+    lcdBlinkOffE lcd
+    lcdLeftToRightE lcd
+    lcdAutoScrollOffE lcd
+    lcdHomeE lcd
+    lcdClearE lcd
+    lcdDisplayOnE lcd
 
 -- | Initialize the LCD. Follows the data sheet <http://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf>,
 -- page 46; figure 24.
@@ -238,8 +237,8 @@ withLCD lcd what action = do
 --   * Set autoscrolling OFF (Use 'lcdAutoScrollOff' / 'lcdAutoScrollOn' to control.)
 --
 --   * Put the cursor into home position (Use 'lcdSetCursor' or 'lcdHome' to move around.)
-lcdRegister :: LCDController -> Arduino LCDE
-lcdRegister controller = do
+lcdRegisterE :: LCDController -> Arduino LCDE
+lcdRegisterE controller = do
     mode <- newRemoteRef 0
     control <- newRemoteRef 0
     count <- newRemoteRef 0
@@ -256,12 +255,12 @@ lcdRegister controller = do
     return c
 
 -- | Turn backlight on if there is one, otherwise do nothing
-lcdBacklightOn :: LCDE -> Arduino ()
-lcdBacklightOn lcd = lcdBacklight lcd true
+lcdBacklightOnE :: LCDE -> Arduino ()
+lcdBacklightOnE lcd = lcdBacklight lcd true
 
 -- | Turn backlight off if there is one, otherwise do nothing
-lcdBacklightOff :: LCDE -> Arduino ()
-lcdBacklightOff lcd = lcdBacklight lcd false
+lcdBacklightOffE :: LCDE -> Arduino ()
+lcdBacklightOffE lcd = lcdBacklight lcd false
 
 -- | Turn backlight on/off if there is one, otherwise do nothing
 lcdBacklight :: LCDE -> Expr Bool -> Arduino ()
@@ -284,23 +283,23 @@ lcdBacklight lcd on = do
 -}
 
 -- | Write a string on the LCD at the current cursor position
-lcdWrite :: LCDE -> Expr [Word8] -> Arduino ()
-lcdWrite lcd ws = withLCD lcd ("Writing " ++ show ws ++ " to LCD") $ \c -> writeWs c
+lcdWriteE :: LCDE -> Expr [Word8] -> Arduino ()
+lcdWriteE lcd ws = withLCD lcd ("Writing " ++ show ws ++ " to LCD") $ \c -> writeWs c
    where writeWs c = forInE ws (\w -> sendData lcd c w)
 
 -- | Write a string on the LCD at the current cursor position
-lcdWriteChar :: LCDE -> Expr Word8 -> Arduino ()
-lcdWriteChar lcd w = withLCD lcd ("Writing " ++ show w ++ " to LCD") $ \c -> sendData lcd c w
+lcdWriteCharE :: LCDE -> Expr Word8 -> Arduino ()
+lcdWriteCharE lcd w = withLCD lcd ("Writing " ++ show w ++ " to LCD") $ \c -> sendData lcd c w
 
 -- | Clear the LCD
-lcdClear :: LCDE -> Arduino ()
-lcdClear lcd = withLCD lcd "Sending clearLCD" $ \c ->
+lcdClearE :: LCDE -> Arduino ()
+lcdClearE lcd = withLCD lcd "Sending clearLCD" $ \c ->
                  do sendCmd lcd c LCD_CLEARDISPLAY
                     delayMillisE 2 -- give some time to make sure LCD is really cleared
 
 -- | Send the cursor to home position
-lcdHome :: LCDE -> Arduino ()
-lcdHome lcd = withLCD lcd "Sending the cursor home" $ \c ->
+lcdHomeE :: LCDE -> Arduino ()
+lcdHomeE lcd = withLCD lcd "Sending the cursor home" $ \c ->
                  do sendCmd lcd c LCD_RETURNHOME
                     delayMillisE 2
 
@@ -314,8 +313,8 @@ lcdHome lcd = withLCD lcd "Sending the cursor home" $ \c ->
 --
 --   * If the new location is out-of-bounds of your LCD, we will put it the cursor to the closest
 --     possible location on the LCD.
-lcdSetCursor :: LCDE -> Expr Word8 -> Expr Word8 -> Arduino ()
-lcdSetCursor lcd givenCol givenRow = withLCD lcd ("Sending the cursor to Row: " ++ show givenRow ++ " Col: " ++ show givenCol) set
+lcdSetCursorE :: LCDE -> Expr Word8 -> Expr Word8 -> Arduino ()
+lcdSetCursorE lcd givenCol givenRow = withLCD lcd ("Sending the cursor to Row: " ++ show givenRow ++ " Col: " ++ show givenCol) set
   where set c = sendCmd lcd c (LCD_SETDDRAMADDR offset)
               where align :: Expr Word8 -> Expr Word8 -> Expr Word8
                     align i m = ifB (i >=* m) (m-1) i
@@ -329,13 +328,13 @@ lcdSetCursor lcd givenCol givenRow = withLCD lcd ("Sending the cursor to Row: " 
 
 -- | Scroll the display to the left by 1 character. Project idea: Using a tilt sensor, scroll the contents of the display
 -- left/right depending on the tilt. 
-lcdScrollDisplayLeft :: LCDE -> Arduino ()
-lcdScrollDisplayLeft lcd = withLCD lcd "Scrolling display to the left by 1" $ \c -> sendCmd lcd c (LCD_CURSORSHIFT lcdMoveLeft)
+lcdScrollDisplayLeftE :: LCDE -> Arduino ()
+lcdScrollDisplayLeftE lcd = withLCD lcd "Scrolling display to the left by 1" $ \c -> sendCmd lcd c (LCD_CURSORSHIFT lcdMoveLeft)
   where lcdMoveLeft = 0x00
 
 -- | Scroll the display to the right by 1 character
-lcdScrollDisplayRight :: LCDE -> Arduino ()
-lcdScrollDisplayRight lcd = withLCD lcd "Scrolling display to the right by 1" $ \c -> sendCmd lcd c (LCD_CURSORSHIFT lcdMoveRight)
+lcdScrollDisplayRightE :: LCDE -> Arduino ()
+lcdScrollDisplayRightE lcd = withLCD lcd "Scrolling display to the right by 1" $ \c -> sendCmd lcd c (LCD_CURSORSHIFT lcdMoveRight)
   where lcdMoveRight = 0x04
 
 -- | Update the display control word
@@ -382,41 +381,41 @@ setMask :: Hitachi44780Mask -> Expr Word8 -> Expr Word8
 setMask m w = w `setBit` (maskBit m)
 
 -- | Do not blink the cursor
-lcdBlinkOff :: LCDE -> Arduino ()
-lcdBlinkOff = updateDisplayControl "Turning blinking off" (clearMask LCD_BLINKON)
+lcdBlinkOffE :: LCDE -> Arduino ()
+lcdBlinkOffE = updateDisplayControl "Turning blinking off" (clearMask LCD_BLINKON)
 
 -- | Blink the cursor
-lcdBlinkOn :: LCDE -> Arduino ()
-lcdBlinkOn = updateDisplayControl "Turning blinking on" (setMask LCD_BLINKON)
+lcdBlinkOnE :: LCDE -> Arduino ()
+lcdBlinkOnE = updateDisplayControl "Turning blinking on" (setMask LCD_BLINKON)
 
 -- | Hide the cursor. Note that a blinking cursor cannot be hidden, you must first
 -- turn off blinking.
-lcdCursorOff :: LCDE -> Arduino ()
-lcdCursorOff = updateDisplayControl "Not showing the cursor" (clearMask LCD_CURSORON)
+lcdCursorOffE :: LCDE -> Arduino ()
+lcdCursorOffE = updateDisplayControl "Not showing the cursor" (clearMask LCD_CURSORON)
 
 -- | Show the cursor
-lcdCursorOn :: LCDE -> Arduino ()
-lcdCursorOn = updateDisplayControl "Showing the cursor" (setMask LCD_CURSORON)
+lcdCursorOnE :: LCDE -> Arduino ()
+lcdCursorOnE = updateDisplayControl "Showing the cursor" (setMask LCD_CURSORON)
 
 -- | Turn the display off. Note that turning the display off does not mean you are
 -- powering it down. It simply means that the characters will not be shown until
 -- you turn it back on using 'lcdDisplayOn'. (Also, the contents will /not/ be
 -- forgotten when you call this function.) Therefore, this function is useful
 -- for temporarily hiding the display contents.
-lcdDisplayOff :: LCDE -> Arduino ()
-lcdDisplayOff = updateDisplayControl "Turning display off" (clearMask LCD_DISPLAYON)
+lcdDisplayOffE :: LCDE -> Arduino ()
+lcdDisplayOffE = updateDisplayControl "Turning display off" (clearMask LCD_DISPLAYON)
 
 -- | Turn the display on
-lcdDisplayOn :: LCDE -> Arduino ()
-lcdDisplayOn = updateDisplayControl "Turning display on" (setMask LCD_DISPLAYON)
+lcdDisplayOnE :: LCDE -> Arduino ()
+lcdDisplayOnE = updateDisplayControl "Turning display on" (setMask LCD_DISPLAYON)
 
 -- | Set writing direction: Left to Right
-lcdLeftToRight :: LCDE -> Arduino ()
-lcdLeftToRight = updateDisplayMode "Setting left-to-right entry mode" (setMask LCD_ENTRYLEFT)
+lcdLeftToRightE :: LCDE -> Arduino ()
+lcdLeftToRightE = updateDisplayMode "Setting left-to-right entry mode" (setMask LCD_ENTRYLEFT)
 
 -- | Set writing direction: Right to Left
-lcdRightToLeft :: LCDE -> Arduino ()
-lcdRightToLeft = updateDisplayMode "Setting right-to-left entry mode" (clearMask LCD_ENTRYLEFT)
+lcdRightToLeftE :: LCDE -> Arduino ()
+lcdRightToLeftE = updateDisplayMode "Setting right-to-left entry mode" (clearMask LCD_ENTRYLEFT)
 
 -- | Turn on auto-scrolling. In the context of the Hitachi44780 controller, this means that
 -- each time a letter is added, all the text is moved one space to the left. This can be
@@ -428,24 +427,23 @@ lcdRightToLeft = updateDisplayMode "Setting right-to-left entry mode" (clearMask
 -- Having said that, it is easy to program a scrolling string program: Simply write your string
 -- by calling 'lcdWrite', and then use the 'lcdScrollDisplayLeft' and 'lcdScrollDisplayRight' functions
 -- with appropriate delays to simulate the scrolling.
-lcdAutoScrollOn :: LCDE -> Arduino ()
-lcdAutoScrollOn = updateDisplayMode "Setting auto-scroll ON" (setMask LCD_ENTRYSHIFTINCREMENT)
+lcdAutoScrollOnE :: LCDE -> Arduino ()
+lcdAutoScrollOnE = updateDisplayMode "Setting auto-scroll ON" (setMask LCD_ENTRYSHIFTINCREMENT)
 
 -- | Turn off auto-scrolling. See the comments for 'lcdAutoScrollOn' for details. When turned
 -- off (which is the default), you will /not/ see the characters at the end of your strings that
 -- do not fit into the display.
-lcdAutoScrollOff :: LCDE -> Arduino ()
-lcdAutoScrollOff = updateDisplayMode "Setting auto-scroll OFF" (clearMask LCD_ENTRYSHIFTINCREMENT)
+lcdAutoScrollOffE :: LCDE -> Arduino ()
+lcdAutoScrollOffE = updateDisplayMode "Setting auto-scroll OFF" (clearMask LCD_ENTRYSHIFTINCREMENT)
 
 -- | Flash contents of the LCD screen
-lcdFlash :: LCDE
+lcdFlashE :: LCDE
          -> Int  -- ^ Flash count
          -> Expr Word32  -- ^ Delay amount (in milli-seconds)
          -> Arduino ()
-lcdFlash lcd n d = sequence_ $ concat $ replicate n [lcdDisplayOff lcd, delayMillisE d, lcdDisplayOn lcd, delayMillisE d]
+lcdFlashE lcd n d = sequence_ $ concat $ replicate n [lcdDisplayOffE lcd, delayMillisE d, lcdDisplayOnE lcd, delayMillisE d]
 
 {-
--- ToDo: Add symbols back in
 
 -- | An abstract symbol type for user created symbols
 newtype LCDSymbol = LCDSymbol Word8
@@ -472,8 +470,8 @@ newtype LCDSymbol = LCDSymbol Word8
 -- >   , "     "
 -- >   ]
 -- >
-lcdCreateSymbol :: LCD -> [String] -> Arduino LCDSymbol
-lcdCreateSymbol lcd glyph
+lcdCreateSymbolE :: LCDE -> [[Word8]] -> Arduino LCDSymbol
+lcdCreateSymbolE lcd glyph
   | length glyph /= 8 || any (/= 5) (map length glyph)
   = do die "Haskino: lcdCreateSymbol: Invalid glyph description: must be 8x5!" ("Received:" : glyph)
        return $ LCDSymbol 255
@@ -492,8 +490,8 @@ lcdCreateSymbol lcd glyph
        return $ LCDSymbol i
 
 -- | Display a user created symbol on the LCD. (See 'lcdCreateSymbol' for details.)
-lcdWriteSymbol :: LCD -> LCDSymbol -> Arduino ()
-lcdWriteSymbol lcd (LCDSymbol i) = withLCD lcd ("Writing custom symbol " ++ show i ++ " to LCD") $ \c -> sendData lcd c i
+lcdWriteSymbolE :: LCD -> LCDSymbol -> Arduino ()
+lcdWriteSymbolE lcd (LCDSymbol i) = withLCD lcd ("Writing custom symbol " ++ show i ++ " to LCD") $ \c -> sendData lcd c i
 
 -- | Access an internally stored symbol, one that is not available via its ASCII equivalent. See
 -- the Hitachi datasheet for possible values: <http://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf>, Table 4 on page 17.
@@ -507,7 +505,8 @@ lcdWriteSymbol lcd (LCDSymbol i) = withLCD lcd ("Writing custom symbol " ++ show
 --
 --   * So, right-arrow can be accessed by symbol code 'lcdInternalSymbol' @0x7E@, which will give us a 'LCDSymbol' value
 --   that can be passed to the 'lcdWriteSymbol' function. The code would look like this: @lcdWriteSymbol lcd (lcdInternalSymbol 0x7E)@.
-lcdInternalSymbol :: Word8 -> LCDSymbol
-lcdInternalSymbol = LCDSymbol
+lcdInternalSymbolE :: Word8 -> LCDSymbol
+lcdInternalSymbolE = LCDSymbol
 
 -}
+

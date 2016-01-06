@@ -36,20 +36,20 @@ hitachi = Hitachi44780 { lcdRS = 8
 -- second, write a 'B' to the display, delay a second, and repeat
 myTask :: LCDE -> Arduino ()
 myTask lcd = do
-    lcdHome lcd
-    lcdWrite lcd $ litString "Rock   " 
+    lcdHomeE lcd
+    lcdWriteE lcd $ litString "Rock   " 
     delayMillisE 1500   
-    lcdHome lcd
-    lcdWrite lcd $ litString "Chalk  " 
+    lcdHomeE lcd
+    lcdWriteE lcd $ litString "Chalk  " 
     delayMillisE 1500   
-    lcdHome lcd
-    lcdWrite lcd $ litString "Jayhawk" 
+    lcdHomeE lcd
+    lcdWriteE lcd $ litString "Jayhawk" 
     delayMillisE 1500   
 
 scheduledLCDE :: IO ()
 scheduledLCDE = withArduino True "/dev/cu.usbmodem1421" $ do
-        lcd <- lcdRegister hitachi
-        lcdBacklightOn lcd
+        lcd <- lcdRegisterE hitachi
+        lcdBacklightOnE lcd
         -- Create the task which writes to the LCD
         createTaskE 1 (myTask lcd)
         -- Schedule the task to start in 5 seconds
