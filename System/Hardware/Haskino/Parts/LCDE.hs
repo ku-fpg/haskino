@@ -20,9 +20,9 @@
 
 module System.Hardware.Haskino.Parts.LCDE(
   -- * LCD types and registration
-  LCDE, LCDControllerE(..), lcdRegister
+  LCDE, LCDController(..), lcdRegister
   -- * Writing text on the LCD
-  , lcdClear, lcdWrite
+  , lcdClear, lcdWrite, lcdWriteChar
   -- * Moving the cursor
   , lcdHome, lcdSetCursor
   -- * Scrolling
@@ -48,6 +48,7 @@ import Control.Monad.State (gets, liftIO)
 import Data.Char           (ord, isSpace)
 import Data.Maybe          (fromMaybe, isJust)
 import Data.Word           (Word8, Word32)
+import qualified Data.Bits as B
 import Data.Boolean
 import Data.Boolean.Bits
 
@@ -78,18 +79,20 @@ data Cmd = LCD_INITIALIZE
          | LCD_NOOP
 
 -- | Convert a command to a data-word
-getCmdVal :: LCDControllerE -> Cmd -> Expr Word8
+getCmdVal :: LCDController -> Cmd -> Expr Word8
 getCmdVal c cmd = get cmd
-  where multiLine :: Expr Word8
-        multiLine = ifB ((lcdRowsE c) >* 1) 0x08  0x00
-        dotMode :: Expr Word8
-        dotMode = ifB (dotMode5x10E c) 0x04 0x00
-        displayFunction = multiLine .|. dotMode
+  where multiLine -- bit 3
+          | (lcdRows c) > 1 = 0x08 :: Word8
+          | True        = 0x00 :: Word8
+        dotMode   -- bit 2
+          | (dotMode5x10 c) = 0x04 :: Word8
+          | True        = 0x00 :: Word8
+        displayFunction = multiLine B..|. dotMode
         get :: Cmd -> Expr Word8
         get LCD_NOOP               = 0x00
         get LCD_INITIALIZE         = 0x33
         get LCD_INITIALIZE_END     = 0x32
-        get LCD_FUNCTIONSET        = 0x20 .|. displayFunction
+        get LCD_FUNCTIONSET        = lit $ 0x20 B..|. displayFunction
         get (LCD_DISPLAYCONTROL w) = 0x08 .|. w
         get LCD_CLEARDISPLAY       = 0x01
         get (LCD_ENTRYMODESET w)   = 0x04 .|. w
@@ -105,8 +108,8 @@ initLCD lcd = do
     let c = lcdControllerE lcd
     debug "Starting the LCD initialization sequence"
     case c of 
-        Hitachi44780E{} -> initLCDDigital c
-        I2CHitachi44780E{} -> i2cConfig
+        Hitachi44780{} -> initLCDDigital c
+        I2CHitachi44780{} -> i2cConfig
     -- Wait for 50ms, data-sheet says at least 40ms for 2.7V version, so be safe
     delayMillisE 50
     sendCmd lcd c LCD_INITIALIZE
@@ -123,49 +126,50 @@ initLCD lcd = do
 
 -- | Initialize the LCD. Follows the data sheet <http://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf>,
 -- page 46; figure 24.
-initLCDDigital :: LCDControllerE -> Arduino ()
-initLCDDigital c@Hitachi44780E{lcdRSE, lcdENE, lcdD4E, lcdBLE} = do
-    if isJust lcdBLE then let Just p = lcdBLE in setPinModeE p OUTPUT else return ()
-    mapM_ (`setPinModeE` OUTPUT) [lcdRSE, lcdENE, lcdD4E]
+initLCDDigital :: LCDController -> Arduino ()
+initLCDDigital c@Hitachi44780{lcdRS, lcdEN, lcdD4, lcdBL} = do
+    if isJust lcdBL then let Just p = lcdBL in setPinModeE (lit p) OUTPUT else return ()
+    mapM_ (`setPinModeE` OUTPUT) [lit lcdRS, lit lcdEN, lit lcdD4, 
+                                  lit $ lcdD4 + 1, lit $ lcdD4 + 2, lit $ lcdD4 + 3]
 
 -- | Send a command to the LCD controller
-sendCmd :: LCDE -> LCDControllerE -> Cmd -> Arduino ()
-sendCmd lcd c = transmit (lit False) lcd c . getCmdVal c
+sendCmd :: LCDE -> LCDController -> Cmd -> Arduino ()
+sendCmd lcd c = transmit false lcd c . getCmdVal c
 
 -- | Send 4-bit data to the LCD controller
-sendData :: LCDE-> LCDControllerE -> Expr Word8 -> Arduino ()
+sendData :: LCDE-> LCDController -> Expr Word8 -> Arduino ()
 sendData lcd c n = do debug $ "Transmitting LCD data: " ++ show n
-                      transmit (lit True) lcd c n
+                      transmit true lcd c n
 
 -- | By controlling the enable-pin, indicate to the controller that
 -- the data is ready for it to process - Done with Digtial writes
-pulseEnableDig :: LCDControllerE -> Arduino ()
-pulseEnableDig Hitachi44780E{lcdENE} = do
+pulseEnableDig :: LCDController -> Arduino ()
+pulseEnableDig Hitachi44780{lcdEN} = do
   debug "Sending LCD pulseEnable"
-  digitalWriteE lcdENE false
+  digitalWriteE (lit lcdEN) false
   delayMillisE 1
-  digitalWriteE lcdENE true
+  digitalWriteE (lit lcdEN) true
   delayMillisE 1
-  digitalWriteE lcdENE false
+  digitalWriteE (lit lcdEN) false
   delayMillisE 1
 
 -- | Transmit data down to the LCD
-transmit :: Expr Bool -> LCDE -> LCDControllerE -> Expr Word8 -> Arduino ()
+transmit :: Expr Bool -> LCDE -> LCDController -> Expr Word8 -> Arduino ()
 transmit mode lcd c val = do
   case c of
-    Hitachi44780E{}    -> transmitDig mode c val
-    -- I2CHitachi44780E{} -> transmitI2C mode lcd c val
+    Hitachi44780{}    -> transmitDig mode c val
+    -- I2CHitachi44780{} -> transmitI2C mode lcd c val
 
 -- | Transmit data down to the LCD digital writes
-transmitDig :: Expr Bool -> LCDControllerE -> Expr Word8 -> Arduino ()
-transmitDig mode c@Hitachi44780E{lcdRSE, lcdENE, lcdD4E} val = do
-  digitalWriteE lcdRSE mode
-  digitalWriteE lcdENE false
+transmitDig :: Expr Bool -> LCDController -> Expr Word8 -> Arduino ()
+transmitDig mode c@Hitachi44780{lcdRS, lcdEN, lcdD4} val = do
+  digitalWriteE (lit lcdRS) mode
+  digitalWriteE (lit lcdEN) false
   -- Send down the first 4 bits
-  digitalPortWriteE lcdD4E (val .&. 0x0F) 0x0F
+  digitalPortWriteE (lit lcdD4) (val `shiftR` 4) 0x0F
   pulseEnableDig c
   -- Send down the remaining batch
-  digitalPortWriteE lcdD4E (val `shiftR` 4) 0x0F
+  digitalPortWriteE (lit lcdD4) (val .&. 0x0F) 0x0F
   pulseEnableDig c
 
 {-
@@ -180,8 +184,8 @@ lcdI2CBitsToVal LCD_I2C_ENABLE    = 4
 lcdI2CBitsToVal LCD_I2C_RS        = 1
 
 -- | Transmit data down to the I2CLCD using I2C writes
-transmitI2C :: Expr Bool -> LCDE -> LCDControllerE -> Expr Word8 -> Arduino ()
-transmitI2C mode lcd c@I2CHitachi44780E{address} val = do
+transmitI2C :: Expr Bool -> LCDE -> LCDController -> Expr Word8 -> Arduino ()
+transmitI2C mode lcd c@I2CHitachi44780{address} val = do
     lcdd <- liftIO $ readMVar (lcdState lcd)
     let bl = if lcdBacklightState lcdd 
                 then lcdI2CBitsToVal LCD_I2C_BACKLIGHT
@@ -198,8 +202,8 @@ transmitI2C mode lcd c@I2CHitachi44780E{address} val = do
 
 -- | By controlling the enable-pin, indicate to the controller that
 -- the data is ready for it to process - Done with I2C writes
-pulseEnableI2C :: LCDControllerE -> Word8 -> Arduino ()
-pulseEnableI2C c@I2CHitachi44780E{address} d = do
+pulseEnableI2C :: LCDController -> Word8 -> Arduino ()
+pulseEnableI2C c@I2CHitachi44780{address} d = do
     i2cWrite address [d .|. en]
     delayMillisE 1
     i2cWrite address [d .&. (complement en)]
@@ -209,7 +213,7 @@ pulseEnableI2C c@I2CHitachi44780E{address} d = do
 -}
 
 -- | Helper function to simplify library programming, not exposed to the user.
-withLCD :: LCDE -> String -> (LCDControllerE -> Arduino a) -> Arduino a
+withLCD :: LCDE -> String -> (LCDController -> Arduino a) -> Arduino a
 withLCD lcd what action = do
         let c = lcdControllerE lcd 
         debug what
@@ -234,7 +238,7 @@ withLCD lcd what action = do
 --   * Set autoscrolling OFF (Use 'lcdAutoScrollOff' / 'lcdAutoScrollOn' to control.)
 --
 --   * Put the cursor into home position (Use 'lcdSetCursor' or 'lcdHome' to move around.)
-lcdRegister :: LCDControllerE -> Arduino LCDE
+lcdRegister :: LCDController -> Arduino LCDE
 lcdRegister controller = do
     mode <- newRemoteRef 0
     control <- newRemoteRef 0
@@ -264,10 +268,10 @@ lcdBacklight :: LCDE -> Expr Bool -> Arduino ()
 lcdBacklight lcd on = do
    let lcdc = lcdControllerE lcd
    case lcdc of 
-      Hitachi44780E{} -> do
-        let bl = lcdBLE lcdc
+      Hitachi44780{} -> do
+        let bl = lcdBL lcdc
         if isJust bl 
-            then let Just p = bl in digitalWriteE p on
+            then let Just p = bl in digitalWriteE (lit p) on
             else return()
 {-
       I2CHitachi44780E{} -> do
@@ -283,6 +287,10 @@ lcdBacklight lcd on = do
 lcdWrite :: LCDE -> Expr [Word8] -> Arduino ()
 lcdWrite lcd ws = withLCD lcd ("Writing " ++ show ws ++ " to LCD") $ \c -> writeWs c
    where writeWs c = forInE ws (\w -> sendData lcd c w)
+
+-- | Write a string on the LCD at the current cursor position
+lcdWriteChar :: LCDE -> Expr Word8 -> Arduino ()
+lcdWriteChar lcd w = withLCD lcd ("Writing " ++ show w ++ " to LCD") $ \c -> sendData lcd c w
 
 -- | Clear the LCD
 lcdClear :: LCDE -> Arduino ()
@@ -311,8 +319,8 @@ lcdSetCursor lcd givenCol givenRow = withLCD lcd ("Sending the cursor to Row: " 
   where set c = sendCmd lcd c (LCD_SETDDRAMADDR offset)
               where align :: Expr Word8 -> Expr Word8 -> Expr Word8
                     align i m = ifB (i >=* m) (m-1) i
-                    col = align givenCol $ lcdColsE c
-                    row = align givenRow $ lcdRowsE c
+                    col = align givenCol $ lit $ lcdCols c
+                    row = align givenRow $ lit $ lcdRows c
                     -- The magic row-offsets come from various web sources
                     -- I don't follow the logic in these numbers, but it seems to work
                     offset = col + ifB (row ==* 0) 0
@@ -329,30 +337,6 @@ lcdScrollDisplayLeft lcd = withLCD lcd "Scrolling display to the left by 1" $ \c
 lcdScrollDisplayRight :: LCDE -> Arduino ()
 lcdScrollDisplayRight lcd = withLCD lcd "Scrolling display to the right by 1" $ \c -> sendCmd lcd c (LCD_CURSORSHIFT lcdMoveRight)
   where lcdMoveRight = 0x04
-
-{-
--- | Display characteristics helper, set the new control/mode and send
--- appropriate commands if anything changed
-updateDisplayData :: String -> (Expr Word8 -> Expr Word8, Expr Word8 -> Expr Word8) -> 
-                     LCDE -> Arduino ()
-updateDisplayData what (f, g) lcd = do
-   let c = lcdControllerE lcd
-   let lcds = lcdStateE lcd
-   modifyRemoteRef (lcdDisplayControlE lcds) f
-   modifyRemoteRef (lcdDisplayModeE lcds) g
-   oldC <- readRemoteRef 
-   (  LCDData {lcdDisplayControl = oldC, lcdDisplayMode = oldM}
-    , LCDData {lcdDisplayControl = newC, lcdDisplayMode = newM})
-        <- liftIO $ modifyMVar lcds $ \lcdst ->
-              do let lcdst' = lcdst { lcdDisplayControl = f (lcdDisplayControl lcdst)
-                                    , lcdDisplayMode    = g (lcdDisplayMode lcdst)
-                                    }
-                 return (lcdst', (lcdst, lcdst'))
-   when (oldC /= newC) $ do debug what
-                            sendCmd lcd c (LCD_DISPLAYCONTROL newC)
-   when (oldM /= newM) $ do debug what
-                            sendCmd lcd c (LCD_ENTRYMODESET   newM)
--}
 
 -- | Update the display control word
 updateDisplayControl :: String -> (Expr Word8 -> Expr Word8) -> LCDE -> Arduino ()
@@ -494,7 +478,7 @@ lcdCreateSymbol lcd glyph
   = do die "Haskino: lcdCreateSymbol: Invalid glyph description: must be 8x5!" ("Received:" : glyph)
        return $ LCDSymbol 255
   | True
-  = do let c = lcdControllerE lcd 
+  = do let c = lcdController lcd 
        let lcds = lcdState lcd
        i <- liftIO $ modifyMVar lcds $ \lcdst -> 
               do let lcdst' = lcdst { lcdGlyphCount = (lcdGlyphCount lcdst) + 1 }
