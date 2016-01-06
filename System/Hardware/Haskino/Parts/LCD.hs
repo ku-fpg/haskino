@@ -22,7 +22,7 @@ module System.Hardware.Haskino.Parts.LCD(
   -- * LCD types and registration
   LCD, LCDController(..), lcdRegister
   -- * Writing text on the LCD
-  , lcdClear, lcdWrite
+  , lcdClear, lcdWrite, lcdWriteChar
   -- * Moving the cursor
   , lcdHome, lcdSetCursor
   -- * Scrolling
@@ -44,7 +44,7 @@ module System.Hardware.Haskino.Parts.LCD(
 import Control.Concurrent  (modifyMVar, withMVar, newMVar, readMVar)
 import Control.Monad       (when)
 import Control.Monad.State (gets, liftIO)
-import Data.Bits           (testBit, (.|.), (.&.), setBit, clearBit, shiftL, bit, complement)
+import Data.Bits           (testBit, (.|.), (.&.), setBit, clearBit, shiftL, shiftR, bit, complement)
 import Data.Char           (ord, isSpace)
 import Data.Maybe          (fromMaybe, isJust)
 import Data.Word           (Word8)
@@ -159,20 +159,12 @@ transmitDig :: Bool -> LCDController -> Word8 -> Arduino ()
 transmitDig mode c@Hitachi44780{lcdRS, lcdEN, lcdD4, lcdD5, lcdD6, lcdD7} val = do
   digitalWrite lcdRS mode
   digitalWrite lcdEN False
-  let [b7, b6, b5, b4, b3, b2, b1, b0] = [val `testBit` i | i <- [7, 6 .. 0]]
   -- Send down the first 4 bits
-  digitalWrite lcdD4 b4
-  digitalWrite lcdD5 b5
-  digitalWrite lcdD6 b6
-  digitalWrite lcdD7 b7
+  digitalPortWrite lcdD4 (val `shiftR` 4) 0x0F
   pulseEnableDig c
   -- Send down the remaining batch
-  digitalWrite lcdD4 b0
-  digitalWrite lcdD5 b1
-  digitalWrite lcdD6 b2
-  digitalWrite lcdD7 b3
+  digitalPortWrite lcdD4 (val .&. 0x0F) 0x0F
   pulseEnableDig c
-
 
 data LCD_I2C_Bits =
   LCD_I2C_BACKLIGHT | 
@@ -283,6 +275,10 @@ lcdWrite :: LCD -> String -> Arduino ()
 lcdWrite lcd m = withLCD lcd ("Writing " ++ show m ++ " to LCD") $ \c -> mapM_ (sendData lcd c) m'
    where m' = map (\ch -> fromIntegral (ord ch) .&. 0xFF) m
 
+-- | Write a string on the LCD at the current cursor position
+lcdWriteChar :: LCD -> Word8 -> Arduino ()
+lcdWriteChar lcd w = withLCD lcd ("Writing " ++ show w ++ " to LCD") $ \c -> sendData lcd c w
+
 -- | Clear the LCD
 lcdClear :: LCD -> Arduino ()
 lcdClear lcd = withLCD lcd "Sending clearLCD" $ \c ->
@@ -305,10 +301,10 @@ lcdHome lcd = withLCD lcd "Sending the cursor home" $ \c ->
 --
 --   * If the new location is out-of-bounds of your LCD, we will put it the cursor to the closest
 --     possible location on the LCD.
-lcdSetCursor :: LCD -> (Int, Int) -> Arduino ()
+lcdSetCursor :: LCD -> (Word8, Word8) -> Arduino ()
 lcdSetCursor lcd (givenCol, givenRow) = withLCD lcd ("Sending the cursor to Row: " ++ show givenRow ++ " Col: " ++ show givenCol) set
   where set c = sendCmd lcd c (LCD_SETDDRAMADDR offset)
-              where align :: Int -> Int -> Word8
+              where align :: Word8 -> Word8 -> Word8
                     align i m
                       | i < 0  = 0
                       | i >= m = fromIntegral $ m-1
