@@ -34,9 +34,9 @@ module System.Hardware.Haskino.Parts.LCDE(
   , lcdCursorOnE, lcdCursorOffE
   , lcdDisplayOnE, lcdDisplayOffE
   -- * Accessing internal symbols,
-  -- , LCDSymbol, lcdInternalSymbol, lcdWriteSymbol
+  , LCDSymbolE, lcdInternalSymbolE, lcdWriteSymbolE
   -- Creating custom symbols
-  -- , lcdCreateSymbol
+  , lcdCreateSymbolE
   -- * Misc helpers
   , lcdFlashE, lcdBacklightOnE, lcdBacklightOffE
   )  where
@@ -443,10 +443,8 @@ lcdFlashE :: LCDE
          -> Arduino ()
 lcdFlashE lcd n d = sequence_ $ concat $ replicate n [lcdDisplayOffE lcd, delayMillisE d, lcdDisplayOnE lcd, delayMillisE d]
 
-{-
-
 -- | An abstract symbol type for user created symbols
-newtype LCDSymbol = LCDSymbol Word8
+newtype LCDSymbolE = LCDSymbolE (Expr Word8)
 
 -- | Create a custom symbol for later display. Note that controllers
 -- have limited capability for such symbols, typically storing no more
@@ -470,28 +468,30 @@ newtype LCDSymbol = LCDSymbol Word8
 -- >   , "     "
 -- >   ]
 -- >
-lcdCreateSymbolE :: LCDE -> [[Word8]] -> Arduino LCDSymbol
+lcdCreateSymE :: LCDE -> Expr [Word8] -> Arduino LCDSymbolE
+lcdCreateSymE lcd glyph =
+    do let c = lcdControllerE lcd 
+       let lcds = lcdStateE lcd
+       i <- readRemoteRef (lcdGlyphCountE lcds)
+       modifyRemoteRef (lcdGlyphCountE lcds) (\x -> x + 1)
+       sendCmd lcd c (LCD_SETCGRAMADDR i)
+       forInE glyph (\w -> sendData lcd c w)
+       return $ LCDSymbolE i
+
+lcdCreateSymbolE :: LCDE -> [String] -> Arduino LCDSymbolE
 lcdCreateSymbolE lcd glyph
   | length glyph /= 8 || any (/= 5) (map length glyph)
   = do die "Haskino: lcdCreateSymbol: Invalid glyph description: must be 8x5!" ("Received:" : glyph)
-       return $ LCDSymbol 255
+       return $ LCDSymbolE 255
   | True
-  = do let c = lcdController lcd 
-       let lcds = lcdState lcd
-       i <- liftIO $ modifyMVar lcds $ \lcdst -> 
-              do let lcdst' = lcdst { lcdGlyphCount = (lcdGlyphCount lcdst) + 1 }
-                 return (lcdst', lcdGlyphCount lcdst)
-       let create = do
-            sendCmd lcd c (LCD_SETCGRAMADDR i)
-            let cvt :: String -> Word8
-                cvt s = foldr (.|.) 0 [bit p | (ch, p) <- zip (reverse s) [0..], not (isSpace ch)]
-            mapM_ (sendData lcd c . cvt) glyph
-       create
-       return $ LCDSymbol i
+  = do let cvt :: String -> Expr Word8
+           cvt s = lit $ foldr (B..|.) 0 [B.bit p | (ch, p) <- zip (reverse s) [0..], not (isSpace ch)]
+       let rawGlyph = pack $ map cvt glyph
+       lcdCreateSymE lcd rawGlyph
 
 -- | Display a user created symbol on the LCD. (See 'lcdCreateSymbol' for details.)
-lcdWriteSymbolE :: LCD -> LCDSymbol -> Arduino ()
-lcdWriteSymbolE lcd (LCDSymbol i) = withLCD lcd ("Writing custom symbol " ++ show i ++ " to LCD") $ \c -> sendData lcd c i
+lcdWriteSymbolE :: LCDE -> LCDSymbolE -> Arduino ()
+lcdWriteSymbolE lcd (LCDSymbolE i) = lcdWriteCharE lcd i
 
 -- | Access an internally stored symbol, one that is not available via its ASCII equivalent. See
 -- the Hitachi datasheet for possible values: <http://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf>, Table 4 on page 17.
@@ -505,8 +505,5 @@ lcdWriteSymbolE lcd (LCDSymbol i) = withLCD lcd ("Writing custom symbol " ++ sho
 --
 --   * So, right-arrow can be accessed by symbol code 'lcdInternalSymbol' @0x7E@, which will give us a 'LCDSymbol' value
 --   that can be passed to the 'lcdWriteSymbol' function. The code would look like this: @lcdWriteSymbol lcd (lcdInternalSymbol 0x7E)@.
-lcdInternalSymbolE :: Word8 -> LCDSymbol
-lcdInternalSymbolE = LCDSymbol
-
--}
-
+lcdInternalSymbolE :: Expr Word8 -> LCDSymbolE
+lcdInternalSymbolE = LCDSymbolE
