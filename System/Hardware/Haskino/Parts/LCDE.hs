@@ -171,13 +171,12 @@ transmitDig mode c@Hitachi44780{lcdRS, lcdEN, lcdD4} val = do
   digitalPortWriteE (lit lcdD4) (val .&. 0x0F) 0x0F
   pulseEnableDig c
 
-{-
 data LCD_I2C_Bits =
   LCD_I2C_BACKLIGHT | 
   LCD_I2C_ENABLE |
   LCD_I2C_RS
 
-lcdI2CBitsToVal :: LCD_I2C_Bits -> Word8
+lcdI2CBitsToVal :: LCD_I2C_Bits -> Expr Word8
 lcdI2CBitsToVal LCD_I2C_BACKLIGHT = 8
 lcdI2CBitsToVal LCD_I2C_ENABLE    = 4
 lcdI2CBitsToVal LCD_I2C_RS        = 1
@@ -185,31 +184,29 @@ lcdI2CBitsToVal LCD_I2C_RS        = 1
 -- | Transmit data down to the I2CLCD using I2C writes
 transmitI2C :: Expr Bool -> LCDE -> LCDController -> Expr Word8 -> Arduino ()
 transmitI2C mode lcd c@I2CHitachi44780{address} val = do
-    lcdd <- liftIO $ readMVar (lcdState lcd)
-    let bl = if lcdBacklightState lcdd 
-                then lcdI2CBitsToVal LCD_I2C_BACKLIGHT
-                else 0
+    let lcds = lcdStateE lcd
+    bls <- readRemoteRef (lcdBacklightStateE lcds)
+    let bl = ifB bls (lcdI2CBitsToVal LCD_I2C_BACKLIGHT) 0 
         lors = lo .|. rs .|. bl
         hirs = hi .|. rs .|. bl
-    i2cWrite address [hirs]
+    i2cWriteE (lit address) $ pack [hirs]
     pulseEnableI2C c hirs
-    i2cWrite address [lors]
+    i2cWriteE (lit address) $ pack [lors]
     pulseEnableI2C c lors
-  where rs = if mode then lcdI2CBitsToVal LCD_I2C_RS else 0
+  where rs = ifB mode (lcdI2CBitsToVal LCD_I2C_RS) 0
         lo =  (val `shiftL` 4) .&. 0xF0    -- lower four bits
         hi =  val .&. 0xF0                 -- upper four bits
 
 -- | By controlling the enable-pin, indicate to the controller that
 -- the data is ready for it to process - Done with I2C writes
-pulseEnableI2C :: LCDController -> Word8 -> Arduino ()
+pulseEnableI2C :: LCDController -> Expr Word8 -> Arduino ()
 pulseEnableI2C c@I2CHitachi44780{address} d = do
-    i2cWrite address [d .|. en]
+    i2cWriteE (lit address) $ pack [d .|. en]
     delayMillisE 1
-    i2cWrite address [d .&. (complement en)]
+    i2cWriteE (lit address) $ pack [d .&. (complement en)]
     delayMillisE 1
   where
     en = lcdI2CBitsToVal LCD_I2C_ENABLE
--}
 
 -- | Helper function to simplify library programming, not exposed to the user.
 withLCD :: LCDE -> String -> (LCDController -> Arduino a) -> Arduino a
@@ -272,15 +269,11 @@ lcdBacklight lcd on = do
         if isJust bl 
             then let Just p = bl in digitalWriteE (lit p) on
             else return()
-{-
-      I2CHitachi44780E{} -> do
-        let lcds = lcdState lcd
-        liftIO $ modifyMVar lcds $ \lcdst -> do
-            let lcdst' =  lcdst { lcdBacklightState = on}
-            return (lcdst', lcdst')
+      I2CHitachi44780{} -> do
+        let lcds = lcdStateE lcd
+        writeRemoteRef (lcdBacklightStateE lcds) on
         -- Send a noop so backlight state line gets updated
         sendCmd lcd lcdc LCD_NOOP
--}
 
 -- | Write a string on the LCD at the current cursor position
 lcdWriteE :: LCDE -> Expr [Word8] -> Arduino ()
