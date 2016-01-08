@@ -306,8 +306,8 @@ lcdHomeE lcd = withLCD lcd "Sending the cursor home" $ \c ->
 --
 --   * If the new location is out-of-bounds of your LCD, we will put it the cursor to the closest
 --     possible location on the LCD.
-lcdSetCursorE :: LCDE -> Expr Word8 -> Expr Word8 -> Arduino ()
-lcdSetCursorE lcd givenCol givenRow = withLCD lcd ("Sending the cursor to Row: " ++ show givenRow ++ " Col: " ++ show givenCol) set
+lcdSetCursorE :: LCDE -> (Expr Word8, Expr Word8) -> Arduino ()
+lcdSetCursorE lcd (givenCol, givenRow) = withLCD lcd ("Sending the cursor to Row: " ++ show givenRow ++ " Col: " ++ show givenCol) set
   where set c = sendCmd lcd c (LCD_SETDDRAMADDR offset)
               where align :: Expr Word8 -> Expr Word8 -> Expr Word8
                     align i m = ifB (i >=* m) (m-1) i
