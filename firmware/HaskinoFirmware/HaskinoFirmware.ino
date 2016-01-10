@@ -20,7 +20,6 @@
 void setup()
 {
     Serial.begin(115200);
-    sendVersionReply(schedulerDefaultContext(), 0);
     schedulerBootTask();
 }
 

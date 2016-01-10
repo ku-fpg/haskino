@@ -45,7 +45,6 @@ import System.Hardware.Haskino.Data
 import System.Hardware.Haskino.Expr
 import System.Hardware.Haskino.Utils
 import System.Hardware.Haskino.Protocol
-
 -- | Open the connection to control the board:
 --
 --    * The file path argument should point to the device file that is
@@ -86,8 +85,15 @@ openArduino verbose fp = do
                            , listenerTid   = listenerTid
                            , refIndex      = refIndex
                         }
-          -- Step 1: Send a reset to get things going
+          -- Step 0: Delay for 3/4 second after opeing serial port to allow Mega
+          --    to funciton correctly, as opening the serial port while 
+          --    connected to a Mac or Linux machine with these boards causes
+          --    them to reset. (Bootloader needs 1/2 sec itself).
+          liftIO $ threadDelay (750 * 1000);
+          -- Step 1: Send a reset to get things going (Especially for non Mega)
           send initState systemReset
+          -- Delay after the reset for 3/4 second
+          liftIO $ threadDelay (750 * 1000);
           -- Step 2: Send query-firmware, and wait until we get a response
           ver <- send initState queryFirmware
           let maj = ver `shiftR` 8
