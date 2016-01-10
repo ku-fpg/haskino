@@ -157,7 +157,7 @@ transmit :: Expr Bool -> LCDE -> LCDController -> Expr Word8 -> Arduino ()
 transmit mode lcd c val = do
   case c of
     Hitachi44780{}    -> transmitDig mode c val
-    -- I2CHitachi44780{} -> transmitI2C mode lcd c val
+    I2CHitachi44780{} -> transmitI2C mode lcd c val
 
 -- | Transmit data down to the LCD digital writes
 transmitDig :: Expr Bool -> LCDController -> Expr Word8 -> Arduino ()
