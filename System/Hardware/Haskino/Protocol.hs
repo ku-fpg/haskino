@@ -201,7 +201,7 @@ packageCodeBlock commands ix ib =
       packBind (Bind m k1) ix ib k2 cmds = packBind m ix ib (\ r -> Bind (k1 r) k2) cmds
       packBind (Command cmd) ix ib k cmds =
           -- Instead of framing each command as is done with sending them
-          -- seperately, here a byte which contains the command length
+          -- seperately, here a sequence which contains the command length
           -- is prepended.
           packageCodeBlock' (k ()) ix' ib (B.append cmds (lenPackage pc))
         where 
@@ -267,7 +267,17 @@ packageCodeBlock commands ix ib =
       packageCodeBlock' cmd        ix ib cmds = packBind cmd ix ib Return cmds
 
       lenPackage :: B.ByteString -> B.ByteString
-      lenPackage package = B.cons (fromIntegral $ B.length package) package      
+      lenPackage package = B.append (lenEncode $ B.length package) package      
+
+      -- Length of the code block is encoded with a 1 or 3 byte sequence.
+      -- If the length is 0-254, the length is sent as a one byte value.
+      -- If the length is greater than 255, it is sent as a zero byte,
+      -- following by a 16 bit little endian length.
+      -- (Zero is not a valid length, as it would be an empty command)
+      lenEncode :: Int -> B.ByteString
+      lenEncode l = if l < 255
+                    then B.singleton $ fromIntegral l 
+                    else B.pack $ 0 : (word16ToBytes $ fromIntegral l)
 
 packageProcedure :: Procedure a -> Int -> B.ByteString
 packageProcedure QueryFirmware ib    = buildCommand BS_CMD_REQUEST_VERSION [fromIntegral ib]

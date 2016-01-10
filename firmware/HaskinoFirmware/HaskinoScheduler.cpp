@@ -273,6 +273,7 @@ static bool handleReset(int size, const byte *msg, CONTEXT *context)
         {
         deleteTask(firstTask);
         }
+    runningTask = NULL;
     // Clear any stored task in EEPROM
     EEPROM[ 0 ] = 0;
     EEPROM[ 1 ] = 0;
@@ -362,8 +363,20 @@ static bool executeTask(TASK *task)
     while (task->currPos < task->currLen)
         {
         byte *msg = &task->data[task->currPos];
-        byte cmdSize = msg[0];
-        byte *cmd = &msg[1];
+        uint16_t cmdSize;
+        byte *cmd;
+
+        if (msg[0] != 0xFF)
+            {
+            cmdSize = (uint16_t) msg[0];
+            cmd = &msg[1];
+            }
+        else
+            {
+            cmdSize = ((uint16_t) msg[2]) << 8 |
+                      ((uint16_t) msg[1]);
+            cmd = &msg[3];
+            }
 
         taskRescheduled = parseMessage(cmdSize, cmd, task->context);  
 
