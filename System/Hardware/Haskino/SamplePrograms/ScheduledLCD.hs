@@ -31,8 +31,9 @@ hitachi = Hitachi44780 { lcdRS = 8
                      , dotMode5x10 = False
                      }
 
--- Task which will execute on Arduino, write an 'A' to the display, delay a
--- second, write a 'B' to the display, delay a second, and repeat
+-- Task which will execute on Arduino, write an 'Rock' to the display, delay a
+-- second, write a 'Chalk' to the display, delay a second, write a 'Jayhawk'
+-- to the display and repeat
 myTask :: LCD -> Arduino ()
 myTask lcd = do
     lcdHome lcd
@@ -51,8 +52,8 @@ scheduledLCD = withArduino True "/dev/cu.usbmodem1421" $ do
         lcdBacklightOn lcd
         -- Create the task which writes to the LCD
         createTask 1 (myTask lcd)
-        -- Schedule the task to start in 5 seconds
-        scheduleTask 1 5000
+        -- Schedule the task to start in 1 seconds
+        scheduleTask 1 1000
         -- Query to confirm task creation
         task <- queryTask 1
         liftIO $ print task
