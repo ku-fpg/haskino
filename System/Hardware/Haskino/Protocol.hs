@@ -277,7 +277,7 @@ packageCodeBlock commands ix ib =
       lenEncode :: Int -> B.ByteString
       lenEncode l = if l < 255
                     then B.singleton $ fromIntegral l 
-                    else B.pack $ 0 : (word16ToBytes $ fromIntegral l)
+                    else B.pack $ 0xFF : (word16ToBytes $ fromIntegral l)
 
 packageProcedure :: Procedure a -> Int -> B.ByteString
 packageProcedure QueryFirmware ib    = buildCommand BS_CMD_REQUEST_VERSION [fromIntegral ib]
