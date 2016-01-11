@@ -17,6 +17,10 @@ module System.Hardware.Haskino.SamplePrograms.NumGuess where
 import System.Hardware.Haskino
 import System.Hardware.Haskino.Parts.LCDE
 
+import Prelude hiding ( (<*) )
+import Data.Boolean
+import Data.Word (Word16)
+
 -- | The OSepp LCD Shield is a 16x2 LCD using a Hitachi Controller
 -- Furthermore, it has backlight, and 5 buttons. The hook-up is
 -- quite straightforward, using our existing Hitachi44780 controller
@@ -27,15 +31,15 @@ import System.Hardware.Haskino.Parts.LCDE
 -- the SainSmart LCD Keypad Shield. More information on this shield can be found at:
 --     <http://www.sainsmart.com/sainsmart-1602-lcd-keypad-shield-for-arduino-duemilanove-uno-mega2560-mega1280.html>
 osepp :: LCDController
-osepp = Hitachi44780 { lcdRS = lit 8
-                     , lcdEN = lit 9
-                     , lcdD4 = lit 4
-                     , lcdD5 = lit 5
-                     , lcdD6 = lit 6
-                     , lcdD7 = lit 7
-                     , lcdBL   = Just lit 10
-                     , lcdRows = lit 2
-                     , lcdCols = lit 16
+osepp = Hitachi44780 { lcdRS = 8
+                     , lcdEN = 9
+                     , lcdD4 = 4
+                     , lcdD5 = 5
+                     , lcdD6 = 6
+                     , lcdD7 = 7
+                     , lcdBL   = Just 10
+                     , lcdRows = 2
+                     , lcdCols = 16
                      , dotMode5x10 = False
                      }
 
@@ -53,8 +57,8 @@ data Key = KeyRight
 --   * A function to control the back-light
 --
 --   * A function to read (if any) key-pressed
-initOSepp :: Arduino (LCD, Arduino (Maybe Key))
-initOSepp = do lcd <- lcdRegister osepp
+initOSepp :: Arduino (LCDE, Arduino (Maybe Key))
+initOSepp = do lcd <- lcdRegisterE osepp
                let button = 0
                setPinMode button INPUT
                -- Analog values obtained from OSEPP site, seems reliable
@@ -74,45 +78,45 @@ initOSepp = do lcd <- lcdRegister osepp
 
 -- | Number guessing game, as a simple LCD demo. User thinks of a number
 -- between @0@ and @1000@, and the Arduino guesses it.
-numGuess :: LCD -> Arduino (Maybe Key) -> Arduino ()
+numGuess :: LCDE -> Arduino (Maybe Key) -> Arduino ()
 numGuess lcd readKey = game
-  where home  = lcdHome      lcd
-        write = lcdWrite     lcd
-        clear = lcdClear     lcd
-        go    = lcdSetCursor lcd
+  where home  = lcdHomeE      lcd
+        write = lcdWriteE     lcd
+        clear = lcdClearE     lcd
+        go    = lcdSetCursorE lcd
         at (r, c) s = go (c, r) >> write s
         getKey = do mbK <- readKey
                     case mbK of
                       Nothing -> getKey
-                      Just k  -> do delayMillis 500 -- stabilize by waiting 0.5s
+                      Just k  -> do delayMillisE 500 -- stabilize by waiting 0.5s
                                     return k
         game = do clear
                   home
-                  lcdBacklightOn lcd
-                  at (0, 2) "Haskino!"
-                  at (1, 0) "# Guessing game"
+                  lcdBacklightOnE lcd
+                  at (0, 2) $ litString "Haskino!"
+                  at (1, 0) $ litString "# Guessing game"
                   delayMillis 2000
                   guess 1 0 1000
         newGame = getKey >> game
-        guess :: Int -> Int -> Int -> Arduino ()
+        guess :: Expr Word16 -> Expr Word16 -> Expr Word16 -> Arduino ()
         guess rnd l h
-          | h == l = do clear
-                        at (0, 0) $ "It must be: " ++ show h
-                        at (1, 0) $ "Guess no: " ++ show rnd
-                        newGame
-          | h < l = do clear
-                       at (0, 0) "You lied!"
-                       newGame
+          | h ==* l = do clear
+                         at (0, 0) $ (litString "It must be: ") ++* (showE h)
+                         at (1, 0) $ (litString "Guess no: ") ++* (showE rnd)
+                         newGame
+          | h <* l  = do clear
+                         at (0, 0) $ litString "You lied!"
+                         newGame
           | True  = do clear
                        let g = (l+h) `div` 2
-                       at (0, 0) $ "(" ++ show rnd ++ ") Is it " ++ show g ++ "?"
+                       at (0, 0) $ (litString "(") ++* (showE rnd) ++* (litString ") Is it ") ++* (showE g) ++* (litString "?")
                        k <- getKey
                        case k of
                          KeyUp     -> guess (rnd+1) (g+1) h
                          KeyDown   -> guess (rnd+1) l (g-1)
-                         KeySelect -> do at (1, 0) $ "Got it in " ++ show rnd ++ "!"
+                         KeySelect -> do at (1, 0) $ (litString "Got it in ") ++* (showE rnd) ++* (litString "!")
                                          newGame
-                         _         -> do at (1, 0) "Use up/down/select only.."
+                         _         -> do at (1, 0) $ litString "Use up/down/select only.."
                                          delayMillis 1000
                                          guess rnd l h
 
