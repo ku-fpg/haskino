@@ -67,7 +67,9 @@ static bool handleDelayMillis(int size, const byte *msg, CONTEXT *context)
 
     uint32_t millis = evalWord32Expr(&expr, context);
 
-    if (context->task)
+    /* Currently, task delays do not work inside of code blocks (while, loop,
+     * ifThenElse) */
+    if (context->task && !isCodeBlock())
         {
         delayRunningTask(millis);
         }
