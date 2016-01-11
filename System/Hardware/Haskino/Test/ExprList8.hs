@@ -13,7 +13,7 @@
 module System.Hardware.Haskino.Test.ExprList8 where
 
 import Prelude hiding 
-  ( quotRem, divMod, quot, rem, div, mod, properFraction, fromInteger, toInteger )
+  ( quotRem, divMod, quot, rem, div, mod, properFraction, fromInteger, toInteger, (<*) )
 import qualified Prelude as P
 import System.Hardware.Haskino
 import Data.Boolean
