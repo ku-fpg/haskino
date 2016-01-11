@@ -78,9 +78,11 @@ initOSepp = do lcd <- lcdRegisterE osepp
                    readButton = do val <- analogReadE button
                                    return $ valToKey val
                    getKey = do writeRemoteRef keyRef (keyValue KeyNone)
+                               -- wait for key press
                                while keyRef (\x -> x ==* (keyValue KeyNone)) id $ do
                                    readButton >>= writeRemoteRef keyRef
                                key <- readRemoteRef keyRef
+                               -- wait for key release
                                while keyRef (\x -> x ==* key) id $ do
                                    readButton >>= writeRemoteRef keyRef
                                delayMillisE 500
@@ -102,10 +104,9 @@ myTask = do
       loopE $ do
           key <- getKey
           ifThenElse (key ==* (keyValue KeyUp))
-              (modifyRemoteRef cref (\x -> x + 1))
-              (ifThenElse (key ==* (keyValue KeyDown))
-                  (modifyRemoteRef cref (\x -> x - 1))
-                  (return ()))
+              (modifyRemoteRef cref (\x -> x + 1)) (return ())
+          ifThenElse (key ==* (keyValue KeyDown))
+              (modifyRemoteRef cref (\x -> x - 1)) (return ())
           count <- readRemoteRef cref
           lcdClearE lcd
           lcdHomeE lcd
