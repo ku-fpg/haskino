@@ -50,14 +50,10 @@ data Key = KeyNone
          | KeyUp
          | KeyDown
          | KeySelect
+  deriving (Enum)
 
 keyValue :: Key -> Expr Word8
-keyValue KeyNone   = 0
-keyValue KeyRight  = 1
-keyValue KeyLeft   = 2
-keyValue KeyUp     = 3
-keyValue KeyDown   = 4
-keyValue KeySelect = 5
+keyValue k = fromIntegral $ fromEnum k
 
 -- | Initialize the shield. This is essentially simply registering the
 -- lcd with the Haskino library. In addition, we return two values to
