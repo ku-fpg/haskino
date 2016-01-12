@@ -121,4 +121,9 @@ lcdCounterE = withArduino True "/dev/cu.usbmodem1421" $ do
       task <- queryTask 1
       liftIO $ print task
 
+lcdCounterEProg :: IO ()
+lcdCounterEProg = withArduino True "/dev/cu.usbmodem1421" $ do
+      createTaskE 1 myTask
+      -- Program the task
+      bootTaskE 1
 

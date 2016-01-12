@@ -35,27 +35,34 @@ hitachi = Hitachi44780 { lcdRS = 8
 -- Task which will execute on Arduino, write an 'Rock' to the display, delay a
 -- second, write a 'Chalk' to the display, delay a second, write a 'Jayhawk'
 -- to the display and repeat
-myTask :: LCDE -> Arduino ()
-myTask lcd = do
-    lcdHomeE lcd
-    lcdWriteE lcd $ litString "Rock   " 
-    delayMillisE 1500   
-    lcdHomeE lcd
-    lcdWriteE lcd $ litString "Chalk  " 
-    delayMillisE 1500   
-    lcdHomeE lcd
-    lcdWriteE lcd $ litString "Jayhawk" 
-    delayMillisE 1500   
+myTask :: Arduino ()
+myTask = do
+    lcd <- lcdRegisterE hitachi
+    lcdBacklightOnE lcd
+    loop $ do
+        lcdHomeE lcd
+        lcdWriteE lcd $ litString "Rock   " 
+        delayMillisE 1500   
+        lcdHomeE lcd
+        lcdWriteE lcd $ litString "Chalk  " 
+        delayMillisE 1500   
+        lcdHomeE lcd
+        lcdWriteE lcd $ litString "Jayhawk" 
+        delayMillisE 1500   
 
 scheduledLCDE :: IO ()
 scheduledLCDE = withArduino True "/dev/cu.usbmodem1421" $ do
-        lcd <- lcdRegisterE hitachi
-        lcdBacklightOnE lcd
-        -- Create the task which writes to the LCD
-        createTaskE 1 (myTask lcd)
-        -- Schedule the task to start in 1 second
-        scheduleTaskE 1 1000
-        -- Query to confirm task creation
-        task <- queryTask 1
-        liftIO $ print task
+    -- Create the task which writes to the LCD
+    myTask
+    -- Schedule the task to start in 1 second
+    scheduleTaskE 1 1000
+    -- Query to confirm task creation
+    task <- queryTask 1
+    liftIO $ print task
+        
+scheduledLCDEProg :: IO ()
+scheduledLCDEProg = withArduino True "/dev/cu.usbmodem1421" $ do
+    createTaskE 1 myTask
+    -- Program the task
+    bootTaskE 1
         
