@@ -255,7 +255,7 @@ static bool handleQueryAll(int size, const byte *msg, CONTEXT *context)
 
     localMem[1] = i;
 
-    if (isCodeBlock() || context->task)
+    if (context->codeBlock || context->task)
         {
         putBindListPtr(context, bind, localMem);
         }

@@ -7,7 +7,9 @@ static bool codeBlock = false;
 void runCodeBlock(int blockSize, const byte * block, CONTEXT *context)
     {
     int currPos = 0;
-    codeBlock = true;
+    bool oldCodeBlock = context->codeBlock;
+
+    context->codeBlock = true;
 
     while (currPos < blockSize)
         {
@@ -31,11 +33,5 @@ void runCodeBlock(int blockSize, const byte * block, CONTEXT *context)
 
         currPos += cmdSize + 1;
         }
-    codeBlock = false;
+    context->codeBlock = oldCodeBlock;
     }
-
-bool isCodeBlock()
-    {
-    return codeBlock;
-    }
-

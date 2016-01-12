@@ -22,6 +22,7 @@ typedef struct context_t
     TASK               *task;
     uint16_t            bindSize;
     byte               *bind;
+    bool                codeBlock;
     } CONTEXT;
 
 bool parseSchedulerMessage(int size, const byte *msg, CONTEXT *context);

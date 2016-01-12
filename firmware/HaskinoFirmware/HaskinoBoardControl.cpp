@@ -67,24 +67,18 @@ static bool handleDelayMillis(int size, const byte *msg, CONTEXT *context)
 
     uint32_t millis = evalWord32Expr(&expr, context);
 
-    /* Currently, task delays do not work inside of code blocks (while, loop,
-     * ifThenElse).  */
-#if 0
-    if (context->task && !isCodeBlock() )
+    if (context->task && !context->codeBlock )
         {
         delayRunningTask(millis);
         }
     else 
         {
-#endif
         delay(millis);
-        if (!context->task && !isCodeBlock())
+        if (!context->task && !context->codeBlock)
             {
             sendReply(0, BC_RESP_DELAY, NULL, context, bind);
             }
-#if 0
         }
-#endif
     return true;
     }
 
@@ -95,7 +89,7 @@ static bool handleDelayMicros(int size, const byte *msg, CONTEXT *context)
 
     uint32_t micros = evalWord16Expr(&expr, context);
     delayMicroseconds(micros);
-    if (!context->task && !isCodeBlock())
+    if (!context->task && !context->codeBlock)
         {
         sendReply(0, BC_RESP_DELAY, NULL, context, bind);
         }

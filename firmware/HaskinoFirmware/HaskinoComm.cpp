@@ -144,7 +144,7 @@ void sendReply(int count, byte replyType, const byte *reply,
     const byte *nextChar = reply;
     int i;
 
-    if ((isCodeBlock() && (replyType != BS_RESP_STRING))|| context->task)
+    if ((context->codeBlock && (replyType != BS_RESP_STRING))|| context->task)
         {
         memcpy(&context->bind[bind * BIND_SPACING], reply, count);
         }
