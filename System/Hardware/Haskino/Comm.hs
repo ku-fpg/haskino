@@ -193,9 +193,16 @@ send conn commands =
           let pc = packageProcedure procedure 0
           checkPackageLength c pc
           sendToArduino c (B.append cmds (framePackage pc))
-          -- ToDo:  Wait longer for delay procedures
-          qr <- waitResponse c (Procedure procedure)
+          qr <- waitResponse c (procDelay procedure) (Procedure procedure)
           send' c (k qr) B.empty
+        where
+          procDelay :: Procedure a -> Int
+          procDelay proc = 
+            case proc of
+              DelayMillis d           -> millisToMicros (fromIntegral d) + secsToMicros 2
+              DelayMillisE (LitW32 d) -> millisToMicros (fromIntegral d) + secsToMicros 2
+              BootTaskE _             -> secsToMicros 30
+              _                       -> secsToMicros 5
 
       sendRemoteBinding :: ArduinoConnection -> RemoteBinding a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendRemoteBinding c b k cmds = do
@@ -204,7 +211,7 @@ send conn commands =
           checkPackageLength c prb
           putMVar (refIndex c) (ix+1)
           sendToArduino c (B.append cmds (framePackage prb))
-          qr <- waitResponse c (RemoteBinding b)
+          qr <- waitResponse c (secsToMicros 5) (RemoteBinding b)
           send' c (k qr) B.empty
 
       checkPackageLength :: ArduinoConnection -> B.ByteString -> IO ()
@@ -215,10 +222,10 @@ send conn commands =
                                              "which exceeds frame limits is used outside of a task"]
                                else return ()
 
-      waitResponse :: ArduinoConnection -> Arduino a -> IO a
-      waitResponse c procedure = do
+      waitResponse :: ArduinoConnection -> Int -> Arduino a -> IO a
+      waitResponse c t procedure = do
         message c $ "Waiting for response"
-        resp <- liftIO $ timeout 10000000 $ readChan $ deviceChannel c
+        resp <- liftIO $ timeout t $ readChan $ deviceChannel c
         case resp of 
             Nothing -> runDie c "Haskino:ERROR: Response Timeout" 
                              [ "Make sure your Arduino is running Haskino Firmware"]
@@ -230,8 +237,14 @@ send conn commands =
                     -- Ignore responses that do not match expected response
                     -- and wait for the next response.
                     Nothing -> do message c $ "Unmatched response" ++ show r
-                                  waitResponse c procedure
+                                  waitResponse c t procedure
                     Just qr -> return qr
+
+      millisToMicros :: Int -> Int
+      millisToMicros m = m * 1000
+
+      secsToMicros :: Int -> Int
+      secsToMicros s = s * 1000000
 
       send' :: ArduinoConnection -> Arduino a -> B.ByteString -> IO a
       send' c (Bind m k)            cmds = sendBind c m k cmds
