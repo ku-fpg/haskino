@@ -12,8 +12,20 @@ void runCodeBlock(int blockSize, const byte * block, CONTEXT *context)
     while (currPos < blockSize)
         {
         const byte *msg = &block[currPos];
-        byte cmdSize = msg[0];
-        const byte *cmd = &msg[1];
+        byte cmdSize;
+        const byte *cmd;
+
+        if (msg[0] != 0xFF)
+            {
+            cmdSize = msg[0];
+            cmd = &msg[1];
+            }
+        else
+            {
+            cmdSize = ((uint16_t) msg[2]) << 8 |
+                      ((uint16_t) msg[1]);
+            cmd = &msg[3];
+            }
 
         parseMessage(cmdSize, cmd, context);  
 

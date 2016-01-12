@@ -371,7 +371,7 @@ static bool executeTask(TASK *task)
 
         if (msg[0] != 0xFF)
             {
-            cmdSize = (uint16_t) msg[0];
+            cmdSize = msg[0];
             cmd = &msg[1];
             }
         else
