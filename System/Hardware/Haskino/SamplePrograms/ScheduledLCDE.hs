@@ -39,7 +39,7 @@ myTask :: Arduino ()
 myTask = do
     lcd <- lcdRegisterE hitachi
     lcdBacklightOnE lcd
-    loop $ do
+    loopE $ do
         lcdHomeE lcd
         lcdWriteE lcd $ litString "Rock   " 
         delayMillisE 1500   
@@ -53,7 +53,7 @@ myTask = do
 scheduledLCDE :: IO ()
 scheduledLCDE = withArduino True "/dev/cu.usbmodem1421" $ do
     -- Create the task which writes to the LCD
-    myTask
+    createTaskE 1 myTask
     -- Schedule the task to start in 1 second
     scheduleTaskE 1 1000
     -- Query to confirm task creation
