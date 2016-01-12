@@ -124,6 +124,12 @@ cleanUpArduino tid = do mbltid <- tryTakeMVar tid
                             Just t -> killThread t
                             _      -> return ()
 
+-- | Bailing out: print the given string on stdout and die
+runDie :: ArduinoConnection -> String -> [String] -> IO a
+runDie c m ms = do 
+    let f = bailOut c
+    f m ms
+
 withArduino :: Bool       -- ^ If 'True', debugging info will be printed
             -> FilePath   -- ^ Path to the USB port
             -> Arduino () -- ^ The Haskell controller program to run
@@ -150,6 +156,7 @@ send conn commands =
           send' c (k ()) (B.append cmds pc)
       sendBind c (Command cmd) k cmds = do
           pc <- packageCommandIndex c cmd 
+          checkPackageLength c pc
           send' c (k ()) (B.append cmds (framePackage pc))
       sendBind c (Control ctrl)  k cmds = sendControl c ctrl k cmds
       sendBind c (Local local)   k cmds = sendLocal c local k cmds
@@ -183,7 +190,9 @@ send conn commands =
 
       sendProcedure :: ArduinoConnection -> Procedure a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendProcedure c procedure k cmds = do
-          sendToArduino c (B.append cmds (framePackage $ packageProcedure procedure 0))
+          let pc = packageProcedure procedure 0
+          checkPackageLength c pc
+          sendToArduino c (B.append cmds (framePackage pc))
           -- ToDo:  Wait longer for delay procedures
           qr <- waitResponse c (Procedure procedure)
           send' c (k qr) B.empty
@@ -192,10 +201,19 @@ send conn commands =
       sendRemoteBinding c b k cmds = do
           ix <- takeMVar (refIndex c)
           let prb = packageRemoteBinding b ix 0
+          checkPackageLength c prb
           putMVar (refIndex c) (ix+1)
           sendToArduino c (B.append cmds (framePackage prb))
           qr <- waitResponse c (RemoteBinding b)
           send' c (k qr) B.empty
+
+      checkPackageLength :: ArduinoConnection -> B.ByteString -> IO ()
+      checkPackageLength c p = if B.length p > (maxFirmwareSize - 2)
+                               then runDie c ("Protocol Frame Too Large (" ++ (show $ B.length p) ++ " bytes)")
+                                            ["Frame in Error starts with " ++ (show $ firmwareValCmd $ B.head p),
+                                             "Common error is a control structure (while, ifThenElse, loopE)",
+                                             "which exceeds frame limits is used outside of a task"]
+                               else return ()
 
       waitResponse :: ArduinoConnection -> Arduino a -> IO a
       waitResponse c procedure = do

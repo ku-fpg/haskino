@@ -70,12 +70,6 @@ instance MonadIO Arduino where
 type Pin  = Word8
 type PinE = Expr Word8
 
--- | Bailing out: print the given string on stdout and die
-runDie :: ArduinoConnection -> String -> [String] -> IO a
-runDie c m ms = do 
-    let f = bailOut c
-    f m ms
-
 -- Given a pin number, this function determines which port it belongs to
 pinNoPortNo :: Pin -> Word8
 pinNoPortNo n = n `quot` 8
@@ -755,6 +749,43 @@ firmwareCmdVal SCHED_CMD_BOOT_TASK      = 0xA7
 firmwareCmdVal REF_CMD_NEW              = 0xB0
 firmwareCmdVal REF_CMD_READ             = 0xB1
 firmwareCmdVal REF_CMD_WRITE            = 0xB2
+
+-- | Compute the numeric value of a command
+firmwareValCmd :: Word8 -> FirmwareCmd
+firmwareValCmd 0x10 = BC_CMD_SYSTEM_RESET    
+firmwareValCmd 0x11 = BC_CMD_SET_PIN_MODE    
+firmwareValCmd 0x12 = BC_CMD_DELAY_MILLIS    
+firmwareValCmd 0x13 = BC_CMD_DELAY_MICROS    
+firmwareValCmd 0x14 = BC_CMD_WHILE           
+firmwareValCmd 0x15 = BC_CMD_IF_THEN_ELSE    
+firmwareValCmd 0x16 = BC_CMD_LOOP            
+firmwareValCmd 0x17 = BC_CMD_FORIN           
+firmwareValCmd 0x20 = BS_CMD_REQUEST_VERSION 
+firmwareValCmd 0x21 = BS_CMD_REQUEST_TYPE    
+firmwareValCmd 0x22 = BS_CMD_REQUEST_MILLIS  
+firmwareValCmd 0x23 = BS_CMD_REQUEST_MICROS  
+firmwareValCmd 0x30 = DIG_CMD_READ_PIN       
+firmwareValCmd 0x31 = DIG_CMD_WRITE_PIN      
+firmwareValCmd 0x32 = DIG_CMD_READ_PORT      
+firmwareValCmd 0x33 = DIG_CMD_WRITE_PORT     
+firmwareValCmd 0x40 = ALG_CMD_READ_PIN       
+firmwareValCmd 0x41 = ALG_CMD_WRITE_PIN      
+firmwareValCmd 0x42 = ALG_CMD_TONE_PIN       
+firmwareValCmd 0x43 = ALG_CMD_NOTONE_PIN     
+firmwareValCmd 0x50 = I2C_CMD_CONFIG         
+firmwareValCmd 0x51 = I2C_CMD_READ           
+firmwareValCmd 0x52 = I2C_CMD_WRITE          
+firmwareValCmd 0xA0 = SCHED_CMD_CREATE_TASK  
+firmwareValCmd 0xA1 = SCHED_CMD_DELETE_TASK  
+firmwareValCmd 0xA2 = SCHED_CMD_ADD_TO_TASK  
+firmwareValCmd 0xA3 = SCHED_CMD_SCHED_TASK   
+firmwareValCmd 0xA4 = SCHED_CMD_QUERY        
+firmwareValCmd 0xA5 = SCHED_CMD_QUERY_ALL    
+firmwareValCmd 0xA6 = SCHED_CMD_RESET        
+firmwareValCmd 0xA7 = SCHED_CMD_BOOT_TASK    
+firmwareValCmd 0xB0 = REF_CMD_NEW            
+firmwareValCmd 0xB1 = REF_CMD_READ           
+firmwareValCmd 0xB2 = REF_CMD_WRITE          
 
 data RefType = REF_BOOL
              | REF_WORD8

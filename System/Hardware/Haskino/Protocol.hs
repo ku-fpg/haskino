@@ -124,7 +124,6 @@ packageCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) ix _ =
     (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_LIST8, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefList8 i))), ix)
 packageCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) ix _ =
     (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_FLOAT, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefFloat i))), ix)
--- ToDo: Do we need to check maximum frame size on conditionals?
 packageCommand (WhileRemoteRefB (RemoteRefB i) bf uf cb) ix ib =
     (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (RefB i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
   where
