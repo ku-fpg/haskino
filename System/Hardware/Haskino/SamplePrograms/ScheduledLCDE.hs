@@ -39,15 +39,16 @@ myTask :: Arduino ()
 myTask = do
     lcd <- lcdRegisterE hitachi
     lcdBacklightOnE lcd
-    lcdHomeE lcd
-    lcdWriteE lcd $ litString "Rock   " 
-    delayMillisE 1500   
-    lcdHomeE lcd
-    lcdWriteE lcd $ litString "Chalk  " 
-    delayMillisE 1500   
-    lcdHomeE lcd
-    lcdWriteE lcd $ litString "Jayhawk" 
-    delayMillisE 1500   
+    loopE $ do
+        lcdHomeE lcd
+        lcdWriteE lcd $ litString "Rock   " 
+        delayMillisE 1500   
+        lcdHomeE lcd
+        lcdWriteE lcd $ litString "Chalk  " 
+        delayMillisE 1500   
+        lcdHomeE lcd
+        lcdWriteE lcd $ litString "Jayhawk" 
+        delayMillisE 1500   
 
 scheduledLCDE :: IO ()
 scheduledLCDE = withArduino True "/dev/cu.usbmodem1421" $ do
