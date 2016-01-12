@@ -7,7 +7,7 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Internal representation of the Haskino Fimrware protocol.
+-- Internal representation of the Haskino Firmware protocol.
 -------------------------------------------------------------------------------
 {-# LANGUAGE GADTs #-}
 
@@ -583,6 +583,7 @@ unpackageResponse (cmdWord:args)
       (DIG_RESP_READ_PORT, [l,b])       -> DigitalPortReply b
       (ALG_RESP_READ_PIN, [l,bl,bh])    -> AnalogReply (bytesToWord16 (bl,bh))
       (I2C_RESP_READ, _:_:xs)           -> I2CReply xs
+      (SCHED_RESP_BOOT, [])             -> BootTaskResp
       (SCHED_RESP_QUERY_ALL, _:_:ts)    -> QueryAllTasksReply ts
       (SCHED_RESP_QUERY, ts) | length ts == 0 -> 
           QueryTaskReply Nothing
