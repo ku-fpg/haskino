@@ -200,7 +200,7 @@ send conn commands =
       waitResponse :: ArduinoConnection -> Arduino a -> IO a
       waitResponse c procedure = do
         message c $ "Waiting for response"
-        resp <- liftIO $ timeout 5000000 $ readChan $ deviceChannel c
+        resp <- liftIO $ timeout 10000000 $ readChan $ deviceChannel c
         case resp of 
             Nothing -> runDie c "Haskino:ERROR: Response Timeout" 
                              [ "Make sure your Arduino is running Haskino Firmware"]

@@ -97,6 +97,7 @@
 // Scheduler responses
 #define SCHED_RESP_QUERY        (SCHED_CMD_TYPE | 0x8)
 #define SCHED_RESP_QUERY_ALL    (SCHED_CMD_TYPE | 0x9)
+#define SCHED_RESP_BOOT_TASK    (SCHED_CMD_TYPE | 0xA)
 
 // Reference commands
 #define REF_CMD_TYPE            0xB0

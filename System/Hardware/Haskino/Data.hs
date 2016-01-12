@@ -182,7 +182,6 @@ data Command =
      | CreateTaskE TaskIDE (Arduino ())
      | DeleteTaskE TaskIDE
      | ScheduleTaskE TaskIDE TimeMillisE
-     | BootTaskE TaskIDE
      | ScheduleReset
      | WriteRemoteRefB (RemoteRef Bool) (Expr Bool)
      | WriteRemoteRefW8 (RemoteRef Word8) (Expr Word8)
@@ -285,9 +284,6 @@ scheduleTaskE tid tt = Command $ ScheduleTaskE tid tt
 
 scheduleReset :: Arduino ()
 scheduleReset = Command ScheduleReset
-
-bootTaskE :: TaskIDE -> Arduino ()
-bootTaskE tid = Command $ BootTaskE tid
 
 loopE :: Arduino () -> Arduino()
 loopE ps = Command $ LoopE ps
@@ -496,6 +492,7 @@ data Procedure :: * -> * where
      QueryAllTasksE :: Procedure (Expr [TaskID])
      QueryTask  :: TaskID -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
      QueryTaskE :: TaskIDE -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
+     BootTaskE :: TaskIDE -> Procedure ()
      -- Todo: add one wire queries, readd pulse?
      ReadRemoteRefB  :: RemoteRef Bool   -> Procedure (Expr Bool)
      ReadRemoteRefW8  :: RemoteRef Word8  -> Procedure (Expr Word8)
@@ -586,6 +583,9 @@ queryTask tid = Procedure $ QueryTask tid
 queryTaskE :: TaskIDE -> Arduino (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
 queryTaskE tid = Procedure $ QueryTaskE tid
 
+bootTaskE :: TaskIDE -> Arduino ()
+bootTaskE tid = Procedure $ BootTaskE tid
+
 readRemoteRefB :: RemoteRef Bool -> Arduino (Expr Bool)
 readRemoteRefB n = Procedure $ ReadRemoteRefB n
 
@@ -664,6 +664,7 @@ data Response = DelayResp
               | I2CReply [Word8]                     -- ^ Response to a I2C Read
               | QueryAllTasksReply [Word8]           -- ^ Response to Query All Tasks
               | QueryTaskReply (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
+              | BootTaskResp
               | NewReply Word8
               | ReadRefBReply Bool
               | ReadRefW8Reply Word8
@@ -792,6 +793,7 @@ data FirmwareReply =  BC_RESP_DELAY
                    |  I2C_RESP_READ
                    |  SCHED_RESP_QUERY
                    |  SCHED_RESP_QUERY_ALL
+                   |  SCHED_RESP_BOOT
                    |  REF_RESP_NEW
                    |  REF_RESP_READ
                 deriving Show
@@ -809,6 +811,7 @@ getFirmwareReply 0x48 = Right ALG_RESP_READ_PIN
 getFirmwareReply 0x58 = Right I2C_RESP_READ
 getFirmwareReply 0xA8 = Right SCHED_RESP_QUERY
 getFirmwareReply 0xA9 = Right SCHED_RESP_QUERY_ALL
+getFirmwareReply 0xAA = Right SCHED_RESP_BOOT
 getFirmwareReply 0xB8 = Right REF_RESP_NEW
 getFirmwareReply 0xB9 = Right REF_RESP_READ
 getFirmwareReply n    = Left n

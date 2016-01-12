@@ -285,7 +285,8 @@ static bool handleReset(int size, const byte *msg, CONTEXT *context)
 static bool handleBootTask(int size, const byte *msg, CONTEXT *context)
     {
     TASK *task;
-    byte *expr = (byte *) &msg[1];
+    byte bind = msg[1];
+    byte *expr = (byte *) &msg[2];
     byte id = evalWord8Expr(&expr, context);
 
     if ((task = findTask(id)) != NULL)
@@ -305,6 +306,8 @@ static bool handleBootTask(int size, const byte *msg, CONTEXT *context)
             {
             EEPROM[ index ] = task->data[i];
             }
+
+        sendReply(0, SCHED_RESP_BOOT_TASK, NULL, context, bind);
         }
     return false;
     }
