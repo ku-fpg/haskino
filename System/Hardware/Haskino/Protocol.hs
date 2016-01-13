@@ -237,7 +237,7 @@ packageCodeBlock commands ix ib =
       packProcedure QueryAllTasksE ix ib k cmds = packageCodeBlock' (k (lit [])) ix (ib+1) (B.append cmds (lenPackage (packageProcedure QueryAllTasksE ib)))
       packProcedure (QueryTask t) ix ib k cmds = packageCodeBlock' (k Nothing) ix ib (B.append cmds (lenPackage (packageProcedure (QueryTask t) ib)))
       packProcedure (QueryTaskE t) ix ib k cmds = packageCodeBlock' (k Nothing) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (QueryTaskE t) ib)))
-      packProcedure (BootTaskE tid) ix ib k cmds = packageCodeBlock' (k ()) ix ib (B.append cmds (lenPackage (packageProcedure (BootTaskE tid) ib)))
+      packProcedure (BootTaskE tid) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (BootTaskE tid) ib)))
       packProcedure (ReadRemoteRefB (RemoteRefB i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefB (RemoteRefB i)) ib)))
       packProcedure (ReadRemoteRefW8 (RemoteRefW8 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefW8 (RemoteRefW8 i)) ib)))
       packProcedure (ReadRemoteRefW16 (RemoteRefW16 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefW16 (RemoteRefW16 i)) ib)))
@@ -582,7 +582,7 @@ unpackageResponse (cmdWord:args)
       (DIG_RESP_READ_PORT, [l,b])       -> DigitalPortReply b
       (ALG_RESP_READ_PIN, [l,bl,bh])    -> AnalogReply (bytesToWord16 (bl,bh))
       (I2C_RESP_READ, _:_:xs)           -> I2CReply xs
-      (SCHED_RESP_BOOT, [])             -> BootTaskResp
+      (SCHED_RESP_BOOT, [l,b])          -> BootTaskResp b
       (SCHED_RESP_QUERY_ALL, _:_:ts)    -> QueryAllTasksReply ts
       (SCHED_RESP_QUERY, ts) | length ts == 0 -> 
           QueryTaskReply Nothing
@@ -641,7 +641,7 @@ parseQueryResult (Procedure QueryAllTasks) (QueryAllTasksReply ts) = Just ts
 parseQueryResult (Procedure QueryAllTasksE) (QueryAllTasksReply ts) = Just (lit ts)
 parseQueryResult (Procedure (QueryTask tid)) (QueryTaskReply tr) = Just tr
 parseQueryResult (Procedure (QueryTaskE tid)) (QueryTaskReply tr) = Just tr
-parseQueryResult (Procedure (BootTaskE tid)) BootTaskResp = Just ()
+parseQueryResult (Procedure (BootTaskE tid)) (BootTaskResp b) = Just (if b == 0 then lit False else lit True)
 parseQueryResult (RemoteBinding (NewRemoteRefB _)) (NewReply r) = Just $ RemoteRefB $ fromIntegral r
 parseQueryResult (RemoteBinding (NewRemoteRefW8 _)) (NewReply r) = Just $ RemoteRefW8 $ fromIntegral r
 parseQueryResult (RemoteBinding (NewRemoteRefW16 _)) (NewReply r) = Just $ RemoteRefW16 $ fromIntegral r

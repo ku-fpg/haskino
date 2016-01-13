@@ -275,10 +275,13 @@ static bool handleReset(int size, const byte *msg, CONTEXT *context)
         }
     runningTask = NULL;
     // Clear any stored task in EEPROM
-    EEPROM[ 0 ] = 0;
-    EEPROM[ 1 ] = 0;
-    EEPROM[ 2 ] = 0;
-    EEPROM[ 3 ] = 0;
+    if (EEPROM[ 0 ] == 'H')
+        {
+        EEPROM[ 0 ] = 0;
+        EEPROM[ 1 ] = 0;
+        EEPROM[ 2 ] = 0;
+        EEPROM[ 3 ] = 0;
+        }
     return false;
     }
 
@@ -288,6 +291,8 @@ static bool handleBootTask(int size, const byte *msg, CONTEXT *context)
     byte bind = msg[1];
     byte *expr = (byte *) &msg[2];
     byte id = evalWord8Expr(&expr, context);
+    byte bootReply[2];
+    byte status = 0;
 
     if ((task = findTask(id)) != NULL)
         {
@@ -302,13 +307,26 @@ static bool handleBootTask(int size, const byte *msg, CONTEXT *context)
         EEPROM[ 6 ] = task->context->bindSize & 0xFF;
         EEPROM[ 7 ] = task->context->bindSize >> 8;
 
-        for (int i=0;i<task->currLen;i++,index++)
+        for (unsigned int i=0;i<task->currLen;i++,index++)
             {
             EEPROM[ index ] = task->data[i];
             }
 
-        sendReply(0, SCHED_RESP_BOOT_TASK, NULL, context, bind);
+        index = BOOT_TASK_INDEX_START;
+        status = 1;
+        for (unsigned int i=0;i<task->currLen;i++,index++)
+            {
+            if (EEPROM[ index ] != task->data[i])
+                status = 0;
+            }
         }
+
+    bootReply[0] = EXPR(EXPR_BOOL, EXPR_LIT);
+    bootReply[1] = status;
+
+    sendReply(sizeof(bootReply), SCHED_RESP_BOOT_TASK, 
+              bootReply, context, bind);
+
     return false;
     }
 
@@ -324,7 +342,7 @@ void schedulerBootTask()
 
         createById(BOOT_TASK_ID, taskSize, bindSize);
         task = findTask(BOOT_TASK_ID);
-        for (int i=0;i<taskSize;i++,index++)
+        for (unsigned int i=0;i<taskSize;i++,index++)
             {
             task->data[i] = EEPROM[ index ];
             }

@@ -486,7 +486,7 @@ data Procedure :: * -> * where
      QueryAllTasksE :: Procedure (Expr [TaskID])
      QueryTask  :: TaskID -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
      QueryTaskE :: TaskIDE -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
-     BootTaskE :: TaskIDE -> Procedure ()
+     BootTaskE :: TaskIDE -> Procedure (Expr Bool)
      -- Todo: add one wire queries, readd pulse?
      ReadRemoteRefB  :: RemoteRef Bool   -> Procedure (Expr Bool)
      ReadRemoteRefW8  :: RemoteRef Word8  -> Procedure (Expr Word8)
@@ -577,7 +577,7 @@ queryTask tid = Procedure $ QueryTask tid
 queryTaskE :: TaskIDE -> Arduino (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
 queryTaskE tid = Procedure $ QueryTaskE tid
 
-bootTaskE :: TaskIDE -> Arduino ()
+bootTaskE :: TaskIDE -> Arduino (Expr Bool)
 bootTaskE tid = Procedure $ BootTaskE tid
 
 readRemoteRefB :: RemoteRef Bool -> Arduino (Expr Bool)
@@ -658,7 +658,7 @@ data Response = DelayResp
               | I2CReply [Word8]                     -- ^ Response to a I2C Read
               | QueryAllTasksReply [Word8]           -- ^ Response to Query All Tasks
               | QueryTaskReply (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
-              | BootTaskResp
+              | BootTaskResp Word8
               | NewReply Word8
               | ReadRefBReply Bool
               | ReadRefW8Reply Word8
