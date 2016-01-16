@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.Blink
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Shallow.Blink
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -10,7 +10,7 @@
 -- The /hello world/ of the arduino world, blinking the led.
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.Blink where
+module System.Hardware.Haskino.SamplePrograms.Shallow.Blink where
 
 import Control.Monad (forever)
 

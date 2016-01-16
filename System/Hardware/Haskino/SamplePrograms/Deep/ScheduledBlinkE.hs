@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.ScheduledBlinkE
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Deep.ScheduledBlinkE
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
@@ -10,7 +10,7 @@
 -- blinks the LED on and off without host intervention.
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.ScheduledBlinkE where
+module System.Hardware.Haskino.SamplePrograms.Deep.ScheduledBlinkE where
 
 import Control.Concurrent   (threadDelay)
 import Control.Monad.Trans (liftIO)

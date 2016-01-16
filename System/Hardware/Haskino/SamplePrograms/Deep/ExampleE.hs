@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.ExampleE
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Deep.ExampleE
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
@@ -9,7 +9,7 @@
 -- Based on our initial simple example
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.ExampleE where
+module System.Hardware.Haskino.SamplePrograms.Deep.ExampleE where
 
 import Control.Concurrent   (threadDelay)
 import Control.Monad.Trans (liftIO)

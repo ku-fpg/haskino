@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.LCDCounterE
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Deep.LCDCounterE
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
@@ -9,7 +9,7 @@
 -- Simple LCD counter application
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.LCDCounterE where
+module System.Hardware.Haskino.SamplePrograms.Deep.LCDCounterE where
 
 import System.Hardware.Haskino
 import System.Hardware.Haskino.Expr

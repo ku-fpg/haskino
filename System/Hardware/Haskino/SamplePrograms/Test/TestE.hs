@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.TestE
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Test.TestE
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
@@ -8,7 +8,7 @@
 --
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.TestE where
+module System.Hardware.Haskino.SamplePrograms.Test.TestE where
 
 import System.Hardware.Haskino
 import Control.Monad.Trans (liftIO)

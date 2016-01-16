@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.ScheduledExampleE
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Deep.ScheduledExampleE
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
@@ -9,7 +9,7 @@
 -- Based on our initial simple example
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.ScheduledExampleE where
+module System.Hardware.Haskino.SamplePrograms.Deep.ScheduledExampleE where
 
 import System.Hardware.Haskino
 import Data.Boolean

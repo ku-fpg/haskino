@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.ClearProg
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Test.ClearProg
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
@@ -9,7 +9,7 @@
 -- Based on our initial simple example
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.ClearProg where
+module System.Hardware.Haskino.SamplePrograms.Test.ClearProg where
 
 import System.Hardware.Haskino
 

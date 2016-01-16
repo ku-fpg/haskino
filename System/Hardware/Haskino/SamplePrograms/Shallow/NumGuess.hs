@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.NumGuess
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Shallow.NumGuess
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -12,7 +12,7 @@
 -- /Thanks to David Palmer for lending me his OSEPP shield to play with!/
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.NumGuess where
+module System.Hardware.Haskino.SamplePrograms.Shallow.NumGuess where
 
 import System.Hardware.Haskino
 import System.Hardware.Haskino.Parts.LCD

@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.ListE
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Test.ForE
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
@@ -9,7 +9,7 @@
 -- TBD
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.ListE where
+module System.Hardware.Haskino.SamplePrograms.Test.ForE where
 
 import Control.Monad.Trans (liftIO)
 import Data.Word

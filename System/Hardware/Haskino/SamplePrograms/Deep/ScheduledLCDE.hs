@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.ScheduledLCDE
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Deep.ScheduledLCDE
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
@@ -11,7 +11,7 @@
 -- enough RAM.
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.ScheduledLCDE where
+module System.Hardware.Haskino.SamplePrograms.Deep.ScheduledLCDE where
 
 import Control.Monad.Trans (liftIO)
 

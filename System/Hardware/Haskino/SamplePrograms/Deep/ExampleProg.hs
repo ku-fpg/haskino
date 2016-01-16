@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.ExampleProg
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Deep.ExampleProg
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
@@ -9,7 +9,7 @@
 -- Based on our initial simple example
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.ExampleProg where
+module System.Hardware.Haskino.SamplePrograms.Deep.ExampleProg where
 
 import System.Hardware.Haskino
 import Data.Boolean

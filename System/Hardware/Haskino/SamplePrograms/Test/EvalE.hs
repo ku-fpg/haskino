@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.BlinkE
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Test.EvalE
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
@@ -11,7 +11,7 @@
 -- introduced in version 0.3 of Haskino
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.EvalE where
+module System.Hardware.Haskino.SamplePrograms.Test.EvalE where
 
 import Control.Monad.Trans (liftIO)
 import Data.Boolean.Bits

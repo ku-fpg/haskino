@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Arduino.SamplePrograms.JingleBells
+-- Module      :  System.Hardware.Arduino.SamplePrograms.Shallow.JingleBells
 -- Copyright   :  (c) Levent Erkok
 -- License     :  BSD3
 -- Maintainer  :  erkokl@gmail.com
@@ -9,7 +9,7 @@
 -- A (pretty bad!) rendering of Jingle Bells on a piezo speaker
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.JingleBells where
+module System.Hardware.Haskino.SamplePrograms.Shallow.JingleBells where
 
 import System.Hardware.Haskino
 import System.Hardware.Haskino.Parts.Piezo

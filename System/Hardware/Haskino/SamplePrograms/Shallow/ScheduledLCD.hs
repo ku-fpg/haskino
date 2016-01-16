@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.ScheduledLCD
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Shallow.ScheduledLCD
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
@@ -11,7 +11,7 @@
 -- enough RAM.
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.ScheduledLCD where
+module System.Hardware.Haskino.SamplePrograms.Shallow.ScheduledLCD where
 
 import Control.Monad.Trans (liftIO)
 

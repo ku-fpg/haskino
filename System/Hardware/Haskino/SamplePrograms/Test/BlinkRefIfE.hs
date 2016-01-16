@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.BlinkRefIfE
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Test.BlinkRefIfE
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
@@ -12,7 +12,7 @@
 -- Haskino)
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.BlinkRefIfE where
+module System.Hardware.Haskino.SamplePrograms.Test.BlinkRefIfE where
 
 import System.Hardware.Haskino
 import Data.Boolean
