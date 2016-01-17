@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.Shallow.LCD
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Strong.LCD
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -10,7 +10,7 @@
 -- Basic demo of an Hitachi HD44780 LCD
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.Shallow.LCD where
+module System.Hardware.Haskino.SamplePrograms.Strong.LCD where
 
 import Control.Monad.Trans (liftIO)
 import Data.Char           (isSpace)

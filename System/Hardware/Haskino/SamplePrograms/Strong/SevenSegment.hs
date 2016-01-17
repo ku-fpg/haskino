@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.Shallow.SevenSegment
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Strong.SevenSegment
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -12,7 +12,7 @@
 -- pins we need on the Arduino to control the display.
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.Shallow.SevenSegment  where
+module System.Hardware.Haskino.SamplePrograms.Strong.SevenSegment  where
 
 import Control.Monad       (forever)
 import Control.Monad.Trans (liftIO)

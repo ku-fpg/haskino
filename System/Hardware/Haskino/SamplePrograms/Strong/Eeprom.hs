@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.Shallow.Eeprom
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Strong.Eeprom
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -10,7 +10,7 @@
 -- Demo of Microchip 24LC256 comaptible I2C EEPROM.
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.Shallow.Eeprom where
+module System.Hardware.Haskino.SamplePrograms.Strong.Eeprom where
 
 import Control.Monad.Trans (liftIO)
 

@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.Shallow.Example
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Strong.Example
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
@@ -9,7 +9,7 @@
 -- Based on our initial simple example
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.Shallow.Example where
+module System.Hardware.Haskino.SamplePrograms.Strong.Example where
 
 import System.Hardware.Haskino
 import Data.Word

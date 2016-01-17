@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.Shallow.Analog
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Strong.Analog
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -10,7 +10,7 @@
 -- Reads the value of an analog input, controlled by a 10K potentiometer.
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.Shallow.Analog where
+module System.Hardware.Haskino.SamplePrograms.Strong.Analog where
 
 import Control.Monad (when)
 import Control.Monad.Trans (liftIO)

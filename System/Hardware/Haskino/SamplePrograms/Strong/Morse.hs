@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.Shallow.Morse
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Strong.Morse
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
@@ -10,7 +10,7 @@
 -- Morse code blinker. Original by Antoine R. Dumont, modified to simplify
 -- and fit into the existing examples structure.
 -------------------------------------------------------------------------------
-module System.Hardware.Haskino.SamplePrograms.Shallow.Morse where
+module System.Hardware.Haskino.SamplePrograms.Strong.Morse where
 
 import Control.Monad       (forever)
 import Control.Monad.Trans (liftIO)

@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.Shallow.LCDCounter
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Strong.LCDCounter
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
@@ -10,7 +10,7 @@
 --
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.Shallow.LCDCounter where
+module System.Hardware.Haskino.SamplePrograms.Strong.LCDCounter where
 
 import System.Hardware.Haskino
 import System.Hardware.Haskino.Parts.LCD
