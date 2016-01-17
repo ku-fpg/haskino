@@ -15,7 +15,10 @@ in *Practical Aspects of Declarative Languages*, ser. Lecture Notes in
 Computer Science, 2016.
 
 Sample programs are provided in the /System/Hardware/Haskino/SamplePrograms/
-directory.  This directory contains three subdirectories.  The Sha
+directory.  This directory contains three subdirectories.  The Strong examples
+subdirectory uses the tethered Strong Remote Monad of Version 2.0.  The Deep
+examples subdirectory uses the Deep EDSL.  The Test examples subdirectory
+includes very simple tests that were used for unit testing.
 
 # Version 0.2
 
