@@ -217,6 +217,7 @@ packageCodeBlock commands ix ib =
       packProcedure QueryFirmware ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure QueryFirmware ib)))
       packProcedure QueryFirmwareE ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure QueryFirmwareE ib)))
       packProcedure QueryProcessor ix ib k cmds = packageCodeBlock' (k ATMEGA8) ix ib (B.append cmds (lenPackage (packageProcedure QueryProcessor ib)))
+      packProcedure QueryProcessorE ix ib k cmds = packageCodeBlock' (k 0) ix (ib+1) (B.append cmds (lenPackage (packageProcedure QueryProcessorE ib)))
       packProcedure Micros ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure Micros ib)))
       packProcedure MicrosE ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure MicrosE ib)))
       packProcedure Millis ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure Millis ib)))
@@ -281,6 +282,7 @@ packageProcedure :: Procedure a -> Int -> B.ByteString
 packageProcedure QueryFirmware ib    = buildCommand BS_CMD_REQUEST_VERSION [fromIntegral ib]
 packageProcedure QueryFirmwareE ib   = buildCommand BS_CMD_REQUEST_VERSION [fromIntegral ib]
 packageProcedure QueryProcessor ib   = buildCommand BS_CMD_REQUEST_TYPE [fromIntegral ib]
+packageProcedure QueryProcessorE ib  = buildCommand BS_CMD_REQUEST_TYPE [fromIntegral ib]
 packageProcedure Micros ib           = buildCommand BS_CMD_REQUEST_MICROS [fromIntegral ib]
 packageProcedure MicrosE ib          = buildCommand BS_CMD_REQUEST_MICROS [fromIntegral ib]
 packageProcedure Millis ib           = buildCommand BS_CMD_REQUEST_MILLIS [fromIntegral ib]
@@ -620,7 +622,8 @@ unpackageResponse (cmdWord:args)
 parseQueryResult :: Arduino a -> Response -> Maybe a
 parseQueryResult (Procedure QueryFirmware) (Firmware v) = Just v
 parseQueryResult (Procedure QueryFirmwareE) (Firmware v) = Just (lit v)
-parseQueryResult (Procedure QueryProcessor) (ProcessorType pt) = Just $ getProcessor pt
+parseQueryResult (Procedure QueryProcessor) (ProcessorType pt) = Just $ toEnum $ fromIntegral pt
+parseQueryResult (Procedure QueryProcessorE) (ProcessorType pt) = Just $ (lit pt)
 parseQueryResult (Procedure Micros) (MicrosReply m) = Just m
 parseQueryResult (Procedure MicrosE) (MicrosReply m) = Just (lit m)
 parseQueryResult (Procedure Millis) (MillisReply m) = Just m

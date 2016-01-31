@@ -465,7 +465,7 @@ data Procedure :: * -> * where
      QueryFirmware  :: Procedure Word16                   -- ^ Query the Firmware version installed
      QueryFirmwareE :: Procedure (Expr Word16)                  -- ^ Query the Firmware version installed
      QueryProcessor :: Procedure Processor                -- ^ Query the type of processor on 
--- ToDo: E version of QueryProcessor, handle Expr Processor
+     QueryProcessorE :: Procedure (Expr Word8)
      Micros         :: Procedure Word32
      MicrosE        :: Procedure (Expr Word32)
      Millis         :: Procedure Word32
@@ -509,6 +509,9 @@ queryFirmwareE = Procedure QueryFirmwareE
 queryProcessor :: Arduino Processor
 queryProcessor = Procedure QueryProcessor
 
+queryProcessorE :: Arduino (Expr Word8)
+queryProcessorE = Procedure QueryProcessorE
+
 micros :: Arduino Word32
 micros = Procedure Micros
 
@@ -532,14 +535,6 @@ delayMicros t = Procedure $ DelayMicros t
 
 delayMicrosE :: TimeMicrosE -> Arduino ()
 delayMicrosE t = Procedure $ DelayMicrosE t
-
--- ToDo: Do some sort of analog mapping locally?
-
--- digitalPortRead :: Port -> Arduino Word8
--- digitalPortRead p = Procedure $ DigitalPortRead p
-
--- digitalPortReadE :: Port -> Arduino (Expr Word8)
--- digitalPortReadE p = Procedure $ DigitalPortReadE p
 
 digitalRead :: Pin -> Arduino Bool
 digitalRead p = Procedure $ DigitalRead p
@@ -867,20 +862,5 @@ data Processor = ATMEGA8
                | SAM3X8E
                | X86
                | QUARK
-               | UNKNOWN_PROCESSOR Word8
-    deriving Show
-
-getProcessor :: Word8 -> Processor
-getProcessor  0 = ATMEGA8
-getProcessor  1 = ATMEGA168
-getProcessor  2 = ATMEGA328P
-getProcessor  3 = ATMEGA1280
-getProcessor  4 = ATMEGA256
-getProcessor  5 = ATMEGA32U4
-getProcessor  6 = ATMEGA644P
-getProcessor  7 = ATMEGA644
-getProcessor  8 = ATMEGA645
-getProcessor  9 = SAM3X8E
-getProcessor 10 = X86
-getProcessor 11 = QUARK
-getProcessor  n = UNKNOWN_PROCESSOR n
+               | UNKNOWN_PROCESSOR
+    deriving (Eq, Show, Enum)

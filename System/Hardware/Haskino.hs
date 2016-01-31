@@ -16,7 +16,7 @@ module System.Hardware.Haskino (
   -- * Communication functions
   openArduino, closeArduino, withArduino, send, ArduinoConnection
   -- * Deep embeddings
-  , Arduino(..) , Command(..), Procedure(..), Local(..)
+  , Arduino(..) , Command(..), Procedure(..), Local(..), Processor(..)
   -- * Programming the Arduino
   -- ** Pins
   , Pin, PinMode(..), setPinMode, setPinModeE
