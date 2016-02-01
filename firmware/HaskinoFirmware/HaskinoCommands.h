@@ -80,8 +80,15 @@
 
 // Stepper commands
 #define STEP_CMD_TYPE           0x90
+#define STEP_CMD_2PIN           (STEP_CMD_TYPE | 0x0)
+#define STEP_CMD_4PIN           (STEP_CMD_TYPE | 0x1)
+#define STEP_CMD_SET_SPEED      (STEP_CMD_TYPE | 0x2)
+#define STEP_CMD_STEP           (STEP_CMD_TYPE | 0x3)
 
 // Stepper responses
+#define STEP_RESP_2PIN          (STEP_CMD_TYPE | 0x8)
+#define STEP_RESP_4PIN          (STEP_CMD_TYPE | 0x9)
+#define STEP_RESP_STEP          (STEP_CMD_TYPE | 0xA)
 
 // Scheduler commands
 #define SCHED_CMD_TYPE          0xA0

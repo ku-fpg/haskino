@@ -173,6 +173,7 @@ data Command =
      | NoToneE PinE                             -- ^ Stop playing a tone on a pin
      | I2CWrite SlaveAddressE (Expr [Word8])
      | I2CConfig
+     | StepperSetSpeedE (Expr Word8) (Expr Word32)
      | CreateTaskE TaskIDE (Arduino ())
      | DeleteTaskE TaskIDE
      | ScheduleTaskE TaskIDE TimeMillisE
@@ -257,6 +258,12 @@ i2cWriteE sa ws = Command $ I2CWrite sa ws
 
 i2cConfig :: Arduino ()
 i2cConfig = Command $ I2CConfig
+
+stepperSetSpeedE :: Expr Word8 -> Expr Word32 -> Arduino ()
+stepperSetSpeedE st sp = Command $ StepperSetSpeedE st sp
+
+stepperSetSpeed :: Word8 -> Word32 -> Arduino ()
+stepperSetSpeed st sp = Command $ StepperSetSpeedE (lit st) (lit sp)
 
 createTask :: TaskID -> Arduino () -> Arduino ()
 createTask tid ps = Command $ CreateTaskE (lit tid) ps
@@ -482,6 +489,11 @@ data Procedure :: * -> * where
      AnalogReadE    :: PinE -> Procedure (Expr Word16)          
      I2CRead :: SlaveAddress -> Word8 -> Procedure [Word8]
      I2CReadE :: SlaveAddressE -> Expr Word8 -> Procedure (Expr [Word8])
+     Stepper2Pin :: Word16 -> Pin -> Pin -> Procedure Word8
+     Stepper2PinE :: Expr Word16 -> PinE -> PinE -> Procedure (Expr Word8)
+     Stepper4Pin :: Word16 -> Pin -> Pin -> Pin -> Pin -> Procedure Word8
+     Stepper4PinE :: Expr Word16 -> PinE -> PinE -> PinE -> PinE -> Procedure (Expr Word8)
+     StepperStepE :: Expr Word8 -> Expr Int16 -> Procedure ()
      QueryAllTasks  :: Procedure [TaskID]
      QueryAllTasksE :: Procedure (Expr [TaskID])
      QueryTask  :: TaskID -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
@@ -559,6 +571,21 @@ i2cRead sa cnt = Procedure $ I2CRead sa cnt
 
 i2cReadE :: SlaveAddressE -> Expr Word8 -> Arduino (Expr [Word8])
 i2cReadE sa cnt = Procedure $ I2CReadE sa cnt
+
+stepper2Pin :: Word16 -> Pin -> Pin -> Arduino Word8
+stepper2Pin s p1 p2 = Procedure $ Stepper2Pin s p1 p2
+
+stepper2PinE :: Expr Word16 -> PinE -> PinE -> Arduino (Expr Word8)
+stepper2PinE s p1 p2 = Procedure $ Stepper2PinE s p1 p2
+
+stepper4Pin :: Word16 -> Pin -> Pin -> Pin -> Pin -> Arduino Word8
+stepper4Pin s p1 p2 p3 p4 = Procedure $ Stepper4Pin s p1 p2 p3 p4
+
+stepper4PinE :: Expr Word16 -> PinE -> PinE -> PinE -> PinE -> Arduino (Expr Word8)
+stepper4PinE s p1 p2 p3 p4 = Procedure $ Stepper4PinE s p1 p2 p3 p4
+
+stepperStepE :: Expr Word8 -> Expr Int16 -> Arduino ()
+stepperStepE st s = Procedure $ StepperStepE st s
 
 queryAllTasks :: Arduino [TaskID]
 queryAllTasks = Procedure QueryAllTasks
@@ -651,6 +678,9 @@ data Response = DelayResp
               | AnalogReply Word16                   -- ^ Status of an analog pin
               | StringMessage  String                -- ^ String message from Firmware
               | I2CReply [Word8]                     -- ^ Response to a I2C Read
+              | Stepper2PinReply Word8
+              | Stepper4PinReply Word8
+              | StepperStepReply             
               | QueryAllTasksReply [Word8]           -- ^ Response to Query All Tasks
               | QueryTaskReply (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
               | BootTaskResp Word8
@@ -695,6 +725,10 @@ data FirmwareCmd = BC_CMD_SYSTEM_RESET
                  | I2C_CMD_CONFIG
                  | I2C_CMD_READ
                  | I2C_CMD_WRITE
+                 | STEP_CMD_2PIN
+                 | STEP_CMD_4PIN
+                 | STEP_CMD_SET_SPEED
+                 | STEP_CMD_STEP
                  | SCHED_CMD_CREATE_TASK
                  | SCHED_CMD_DELETE_TASK
                  | SCHED_CMD_ADD_TO_TASK
@@ -733,6 +767,10 @@ firmwareCmdVal ALG_CMD_NOTONE_PIN       = 0x43
 firmwareCmdVal I2C_CMD_CONFIG           = 0x50
 firmwareCmdVal I2C_CMD_READ             = 0x51
 firmwareCmdVal I2C_CMD_WRITE            = 0x52
+firmwareCmdVal STEP_CMD_2PIN            = 0x60
+firmwareCmdVal STEP_CMD_4PIN            = 0x61
+firmwareCmdVal STEP_CMD_SET_SPEED       = 0x62
+firmwareCmdVal STEP_CMD_STEP            = 0x63
 firmwareCmdVal SCHED_CMD_CREATE_TASK    = 0xA0
 firmwareCmdVal SCHED_CMD_DELETE_TASK    = 0xA1
 firmwareCmdVal SCHED_CMD_ADD_TO_TASK    = 0xA2
@@ -769,7 +807,11 @@ firmwareValCmd 0x42 = ALG_CMD_TONE_PIN
 firmwareValCmd 0x43 = ALG_CMD_NOTONE_PIN     
 firmwareValCmd 0x50 = I2C_CMD_CONFIG         
 firmwareValCmd 0x51 = I2C_CMD_READ           
-firmwareValCmd 0x52 = I2C_CMD_WRITE          
+firmwareValCmd 0x52 = I2C_CMD_WRITE  
+firmwareValCmd 0x60 = STEP_CMD_2PIN  
+firmwareValCmd 0x61 = STEP_CMD_4PIN  
+firmwareValCmd 0x62 = STEP_CMD_SET_SPEED  
+firmwareValCmd 0x63 = STEP_CMD_STEP  
 firmwareValCmd 0xA0 = SCHED_CMD_CREATE_TASK  
 firmwareValCmd 0xA1 = SCHED_CMD_DELETE_TASK  
 firmwareValCmd 0xA2 = SCHED_CMD_ADD_TO_TASK  
@@ -817,6 +859,9 @@ data FirmwareReply =  BC_RESP_DELAY
                    |  DIG_RESP_READ_PORT
                    |  ALG_RESP_READ_PIN
                    |  I2C_RESP_READ
+                   |  STEP_RESP_2PIN
+                   |  STEP_RESP_4PIN
+                   |  STEP_RESP_STEP
                    |  SCHED_RESP_QUERY
                    |  SCHED_RESP_QUERY_ALL
                    |  SCHED_RESP_BOOT
@@ -835,6 +880,9 @@ getFirmwareReply 0x38 = Right DIG_RESP_READ_PIN
 getFirmwareReply 0x39 = Right DIG_RESP_READ_PORT
 getFirmwareReply 0x48 = Right ALG_RESP_READ_PIN
 getFirmwareReply 0x58 = Right I2C_RESP_READ
+getFirmwareReply 0x68 = Right STEP_RESP_2PIN
+getFirmwareReply 0x69 = Right STEP_RESP_4PIN
+getFirmwareReply 0x6A = Right STEP_RESP_STEP
 getFirmwareReply 0xA8 = Right SCHED_RESP_QUERY
 getFirmwareReply 0xA9 = Right SCHED_RESP_QUERY_ALL
 getFirmwareReply 0xAA = Right SCHED_RESP_BOOT

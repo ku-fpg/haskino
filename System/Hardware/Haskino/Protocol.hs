@@ -65,6 +65,8 @@ packageCommand (I2CWrite sa w8s) ix _ =
     (buildCommand I2C_CMD_WRITE (packageExpr sa ++ packageExpr w8s), ix)
 packageCommand I2CConfig ix _ = 
     (buildCommand I2C_CMD_CONFIG [], ix)
+packageCommand (StepperSetSpeedE st sp) ix _ = 
+    (buildCommand STEP_CMD_SET_SPEED (packageExpr st ++ packageExpr sp), ix)
 packageCommand (DeleteTaskE tid) ix _ =
     (buildCommand SCHED_CMD_DELETE_TASK (packageExpr tid), ix)
 packageCommand (ScheduleTaskE tid tt) ix _ =
@@ -234,6 +236,11 @@ packageCodeBlock commands ix ib =
       packProcedure (AnalogReadE p) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (AnalogReadE p) ib)))
       packProcedure (I2CRead p n) ix ib k cmds = packageCodeBlock' (k []) ix ib (B.append cmds (lenPackage (packageProcedure (I2CRead p n) ib)))
       packProcedure (I2CReadE p n) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (I2CReadE p n) ib)))
+      packProcedure (Stepper2Pin s p1 p2) ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure (Stepper2Pin s p1 p2) ib)))
+      packProcedure (Stepper2PinE s p1 p2) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (Stepper2PinE s p1 p2) ib)))
+      packProcedure (Stepper4Pin s p1 p2 p3 p4) ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure (Stepper4Pin s p1 p2 p3 p4) ib)))
+      packProcedure (Stepper4PinE s p1 p2 p3 p4) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (Stepper4PinE s p1 p2 p3 p4) ib)))
+      packProcedure (StepperStepE st s) ix ib k cmds = packageCodeBlock' (k ()) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (StepperStepE st s) ib)))
       packProcedure QueryAllTasks ix ib k cmds = packageCodeBlock' (k ([])) ix ib (B.append cmds (lenPackage (packageProcedure QueryAllTasks ib)))
       packProcedure QueryAllTasksE ix ib k cmds = packageCodeBlock' (k (lit [])) ix (ib+1) (B.append cmds (lenPackage (packageProcedure QueryAllTasksE ib)))
       packProcedure (QueryTask t) ix ib k cmds = packageCodeBlock' (k Nothing) ix ib (B.append cmds (lenPackage (packageProcedure (QueryTask t) ib)))
@@ -295,6 +302,11 @@ packageProcedure (AnalogRead p) ib   = buildCommand ALG_CMD_READ_PIN ((fromInteg
 packageProcedure (AnalogReadE pe) ib = buildCommand ALG_CMD_READ_PIN ((fromIntegral ib) : (packageExpr pe))
 packageProcedure (I2CRead sa cnt) ib = buildCommand I2C_CMD_READ ((fromIntegral ib) : ((packageExpr $ lit sa) ++ (packageExpr $ lit cnt)))
 packageProcedure (I2CReadE sae cnte) ib = buildCommand I2C_CMD_READ ((fromIntegral ib) : ((packageExpr sae) ++ (packageExpr cnte)))
+packageProcedure (Stepper2Pin s p1 p2) ib = buildCommand STEP_CMD_2PIN ((fromIntegral ib) : ((packageExpr $ lit s) ++ (packageExpr $ lit p1) ++ (packageExpr $ lit p2)))
+packageProcedure (Stepper2PinE s p1 p2) ib = buildCommand STEP_CMD_2PIN ((fromIntegral ib) : ((packageExpr s) ++ (packageExpr p1) ++ (packageExpr p2)))
+packageProcedure (Stepper4Pin s p1 p2 p3 p4) ib = buildCommand STEP_CMD_4PIN ((fromIntegral ib) : ((packageExpr $ lit s) ++ (packageExpr $ lit p1) ++ (packageExpr $ lit p2) ++ (packageExpr $ lit p3) ++ (packageExpr $ lit p4)))
+packageProcedure (Stepper4PinE s p1 p2 p3 p4) ib = buildCommand STEP_CMD_4PIN ((fromIntegral ib) : ((packageExpr s) ++ (packageExpr p1) ++ (packageExpr p2)++ (packageExpr p3) ++ (packageExpr p4)))
+packageProcedure (StepperStepE st s) ib = buildCommand STEP_CMD_STEP ((fromIntegral ib) : ((packageExpr st) ++ (packageExpr s)))
 packageProcedure QueryAllTasks ib    = buildCommand SCHED_CMD_QUERY_ALL [fromIntegral ib]
 packageProcedure QueryAllTasksE ib   = buildCommand SCHED_CMD_QUERY_ALL [fromIntegral ib]
 packageProcedure (QueryTask tid) ib  = buildCommand SCHED_CMD_QUERY ((fromIntegral ib) : (packageExpr $ lit tid))
@@ -584,6 +596,9 @@ unpackageResponse (cmdWord:args)
       (DIG_RESP_READ_PORT, [l,b])       -> DigitalPortReply b
       (ALG_RESP_READ_PIN, [l,bl,bh])    -> AnalogReply (bytesToWord16 (bl,bh))
       (I2C_RESP_READ, _:_:xs)           -> I2CReply xs
+      (STEP_RESP_2PIN, [st])            -> Stepper2PinReply st
+      (STEP_RESP_4PIN, [st])            -> Stepper4PinReply st
+      (STEP_RESP_STEP, [])              -> StepperStepReply
       (SCHED_RESP_BOOT, [l,b])          -> BootTaskResp b
       (SCHED_RESP_QUERY_ALL, _:_:ts)    -> QueryAllTasksReply ts
       (SCHED_RESP_QUERY, ts) | length ts == 0 -> 
@@ -640,6 +655,11 @@ parseQueryResult (Procedure (AnalogRead p)) (AnalogReply a) = Just a
 parseQueryResult (Procedure (AnalogReadE p)) (AnalogReply a) = Just (lit a)
 parseQueryResult (Procedure (I2CRead saq cnt)) (I2CReply ds) = Just ds
 parseQueryResult (Procedure (I2CReadE saq cnt)) (I2CReply ds) = Just (lit ds)
+parseQueryResult (Procedure (Stepper2Pin _ _ _)) (Stepper2PinReply st) = Just st
+parseQueryResult (Procedure (Stepper2PinE _ _ _)) (Stepper2PinReply st) = Just (lit st)
+parseQueryResult (Procedure (Stepper4Pin _ _ _ _ _)) (Stepper4PinReply st) = Just st
+parseQueryResult (Procedure (Stepper4PinE _ _ _ _ _)) (Stepper4PinReply st) = Just (lit st)
+parseQueryResult (Procedure (StepperStepE _ _)) StepperStepReply = Just ()
 parseQueryResult (Procedure QueryAllTasks) (QueryAllTasksReply ts) = Just ts
 parseQueryResult (Procedure QueryAllTasksE) (QueryAllTasksReply ts) = Just (lit ts)
 parseQueryResult (Procedure (QueryTask tid)) (QueryTaskReply tr) = Just tr
