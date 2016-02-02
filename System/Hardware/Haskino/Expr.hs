@@ -847,7 +847,7 @@ exprListOpVal EXPRL_ELEM = 0x06
 exprListOpVal EXPRL_LEN  = 0x07
 exprListOpVal EXPRL_CONS = 0x08
 exprListOpVal EXPRL_APND = 0x09
-exprListOpVal EXPRL_PACK = 0x10
+exprListOpVal EXPRL_PACK = 0x0A
 
 exprFloatOpVal :: ExprFloatOp -> Word8
 exprFloatOpVal EXPRF_LIT  = exprOpVal EXPR_LIT
