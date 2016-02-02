@@ -173,7 +173,10 @@ data Command =
      | NoToneE PinE                             -- ^ Stop playing a tone on a pin
      | I2CWrite SlaveAddressE (Expr [Word8])
      | I2CConfig
-     | StepperSetSpeedE (Expr Word8) (Expr Word32)
+     | StepperSetSpeedE (Expr Word8) (Expr Int32)
+     | ServoDetachE (Expr Word8)
+     | ServoWriteE (Expr Word8) (Expr Int16)
+     | ServoWriteMicrosE (Expr Word8) (Expr Int16)
      | CreateTaskE TaskIDE (Arduino ())
      | DeleteTaskE TaskIDE
      | ScheduleTaskE TaskIDE TimeMillisE
@@ -259,11 +262,29 @@ i2cWriteE sa ws = Command $ I2CWrite sa ws
 i2cConfig :: Arduino ()
 i2cConfig = Command $ I2CConfig
 
-stepperSetSpeedE :: Expr Word8 -> Expr Word32 -> Arduino ()
+stepperSetSpeed :: Word8 -> Int32 -> Arduino ()
+stepperSetSpeed st sp = Command $ StepperSetSpeedE (lit st) (lit sp)
+
+stepperSetSpeedE :: Expr Word8 -> Expr Int32 -> Arduino ()
 stepperSetSpeedE st sp = Command $ StepperSetSpeedE st sp
 
-stepperSetSpeed :: Word8 -> Word32 -> Arduino ()
-stepperSetSpeed st sp = Command $ StepperSetSpeedE (lit st) (lit sp)
+servoDetach :: Word8 -> Arduino ()
+servoDetach s = Command $ ServoDetachE (lit s)
+
+servoDetachE :: Expr Word8 -> Arduino ()
+servoDetachE s = Command $ ServoDetachE s
+
+servoWrite :: Word8 -> Int16 -> Arduino ()
+servoWrite s w = Command $ ServoWriteE (lit s) (lit w)
+
+servoWriteE :: Expr Word8 -> Expr Int16 -> Arduino ()
+servoWriteE s w = Command $ ServoWriteE s w
+
+servoWriteMicros :: Word8 -> Int16 -> Arduino ()
+servoWriteMicros s w = Command $ ServoWriteMicrosE (lit s) (lit w)
+
+servoWriteMicrosE :: Expr Word8 -> Expr Int16 -> Arduino ()
+servoWriteMicrosE s w = Command $ ServoWriteMicrosE s w
 
 createTask :: TaskID -> Arduino () -> Arduino ()
 createTask tid ps = Command $ CreateTaskE (lit tid) ps
@@ -494,6 +515,14 @@ data Procedure :: * -> * where
      Stepper4Pin :: Word16 -> Pin -> Pin -> Pin -> Pin -> Procedure Word8
      Stepper4PinE :: Expr Word16 -> PinE -> PinE -> PinE -> PinE -> Procedure (Expr Word8)
      StepperStepE :: Expr Word8 -> Expr Int16 -> Procedure ()
+     ServoAttach :: Pin -> Procedure Word8
+     ServoAttachE :: PinE -> Procedure (Expr Word8)
+     ServoAttachMinMax :: Pin -> Int16 -> Int16 -> Procedure Word8
+     ServoAttachMinMaxE :: PinE -> Expr Int16 -> Expr Int16 -> Procedure (Expr Word8)
+     ServoRead :: Word8 -> Procedure Int16
+     ServoReadE :: Expr Word8 -> Procedure (Expr Int16)
+     ServoReadMicros :: Word8 -> Procedure Int16
+     ServoReadMicrosE :: Expr Word8 -> Procedure (Expr Int16)
      QueryAllTasks  :: Procedure [TaskID]
      QueryAllTasksE :: Procedure (Expr [TaskID])
      QueryTask  :: TaskID -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
@@ -586,6 +615,30 @@ stepper4PinE s p1 p2 p3 p4 = Procedure $ Stepper4PinE s p1 p2 p3 p4
 
 stepperStepE :: Expr Word8 -> Expr Int16 -> Arduino ()
 stepperStepE st s = Procedure $ StepperStepE st s
+
+servoAttach :: Pin -> Arduino Word8
+servoAttach p = Procedure $ ServoAttach p
+
+servoAttachE :: PinE -> Arduino (Expr Word8)
+servoAttachE p = Procedure $ ServoAttachE p
+
+servoAttachMixMax :: Pin -> Int16 -> Int16 -> Arduino Word8
+servoAttachMixMax p min max = Procedure $ ServoAttachMinMax p min max
+
+servoAttachMixMaxE :: PinE -> Expr Int16 -> Expr Int16 -> Arduino (Expr Word8)
+servoAttachMixMaxE p min max = Procedure $ ServoAttachMinMaxE p min max
+
+servoRead :: Word8 -> Arduino Int16
+servoRead s = Procedure $ ServoRead s
+
+servoReadE :: Expr Word8 -> Arduino (Expr Int16)
+servoReadE s = Procedure $ ServoReadE s
+
+servoReadMicros :: Word8 -> Arduino Int16
+servoReadMicros s = Procedure $ ServoReadMicros s
+
+servoReadMicrosE :: Expr Word8 -> Arduino (Expr Int16)
+servoReadMicrosE s = Procedure $ ServoReadMicrosE s
 
 queryAllTasks :: Arduino [TaskID]
 queryAllTasks = Procedure QueryAllTasks
@@ -681,6 +734,9 @@ data Response = DelayResp
               | Stepper2PinReply Word8
               | Stepper4PinReply Word8
               | StepperStepReply             
+              | ServoAttachReply Word8
+              | ServoReadReply Int16
+              | ServoReadMicrosReply Int16             
               | QueryAllTasksReply [Word8]           -- ^ Response to Query All Tasks
               | QueryTaskReply (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
               | BootTaskResp Word8
@@ -729,6 +785,12 @@ data FirmwareCmd = BC_CMD_SYSTEM_RESET
                  | STEP_CMD_4PIN
                  | STEP_CMD_SET_SPEED
                  | STEP_CMD_STEP
+                 | SRVO_CMD_ATTACH
+                 | SRVO_CMD_DETACH
+                 | SRVO_CMD_WRITE
+                 | SRVO_CMD_WRITE_MICROS
+                 | SRVO_CMD_READ
+                 | SRVO_CMD_READ_MICROS
                  | SCHED_CMD_CREATE_TASK
                  | SCHED_CMD_DELETE_TASK
                  | SCHED_CMD_ADD_TO_TASK
@@ -771,6 +833,12 @@ firmwareCmdVal STEP_CMD_2PIN            = 0x60
 firmwareCmdVal STEP_CMD_4PIN            = 0x61
 firmwareCmdVal STEP_CMD_SET_SPEED       = 0x62
 firmwareCmdVal STEP_CMD_STEP            = 0x63
+firmwareCmdVal SRVO_CMD_ATTACH          = 0x80
+firmwareCmdVal SRVO_CMD_DETACH          = 0x81
+firmwareCmdVal SRVO_CMD_WRITE           = 0x82
+firmwareCmdVal SRVO_CMD_WRITE_MICROS    = 0x83
+firmwareCmdVal SRVO_CMD_READ            = 0x84
+firmwareCmdVal SRVO_CMD_READ_MICROS     = 0x85
 firmwareCmdVal SCHED_CMD_CREATE_TASK    = 0xA0
 firmwareCmdVal SCHED_CMD_DELETE_TASK    = 0xA1
 firmwareCmdVal SCHED_CMD_ADD_TO_TASK    = 0xA2
@@ -812,6 +880,12 @@ firmwareValCmd 0x60 = STEP_CMD_2PIN
 firmwareValCmd 0x61 = STEP_CMD_4PIN  
 firmwareValCmd 0x62 = STEP_CMD_SET_SPEED  
 firmwareValCmd 0x63 = STEP_CMD_STEP  
+firmwareValCmd 0x80 = SRVO_CMD_ATTACH
+firmwareValCmd 0x81 = SRVO_CMD_DETACH
+firmwareValCmd 0x82 = SRVO_CMD_WRITE
+firmwareValCmd 0x83 = SRVO_CMD_WRITE_MICROS
+firmwareValCmd 0x84 = SRVO_CMD_READ
+firmwareValCmd 0x85 = SRVO_CMD_READ_MICROS
 firmwareValCmd 0xA0 = SCHED_CMD_CREATE_TASK  
 firmwareValCmd 0xA1 = SCHED_CMD_DELETE_TASK  
 firmwareValCmd 0xA2 = SCHED_CMD_ADD_TO_TASK  
@@ -862,6 +936,9 @@ data FirmwareReply =  BC_RESP_DELAY
                    |  STEP_RESP_2PIN
                    |  STEP_RESP_4PIN
                    |  STEP_RESP_STEP
+                   |  SRVO_RESP_ATTACH
+                   |  SRVO_RESP_READ
+                   |  SRVO_RESP_READ_MICROS
                    |  SCHED_RESP_QUERY
                    |  SCHED_RESP_QUERY_ALL
                    |  SCHED_RESP_BOOT
@@ -883,20 +960,15 @@ getFirmwareReply 0x58 = Right I2C_RESP_READ
 getFirmwareReply 0x68 = Right STEP_RESP_2PIN
 getFirmwareReply 0x69 = Right STEP_RESP_4PIN
 getFirmwareReply 0x6A = Right STEP_RESP_STEP
+getFirmwareReply 0x88 = Right SRVO_RESP_ATTACH
+getFirmwareReply 0x89 = Right SRVO_RESP_READ
+getFirmwareReply 0x8A = Right SRVO_RESP_READ_MICROS
 getFirmwareReply 0xA8 = Right SCHED_RESP_QUERY
 getFirmwareReply 0xA9 = Right SCHED_RESP_QUERY_ALL
 getFirmwareReply 0xAA = Right SCHED_RESP_BOOT
 getFirmwareReply 0xB8 = Right REF_RESP_NEW
 getFirmwareReply 0xB9 = Right REF_RESP_READ
 getFirmwareReply n    = Left n
-
---stepDelayVal :: StepDelay -> Word8
---stepDelayVal OneUs = 0x00
---stepDelayVal TwoUs = 0x08
-
---stepDirVal :: StepDir -> Word8
---stepDirVal CW = 0x00
---stepDirVal CCW = 0x01
 
 data Processor = ATMEGA8
                | ATMEGA168

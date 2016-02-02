@@ -6,5 +6,10 @@
 #define BIND_SPACING        5
 #define DEFAULT_BIND_COUNT  10
 
+#define MAX_FIRM_SERVOS     4
+#define MAX_FIRM_STEPPERS   4
+
+
+
 //#define DEBUG
 #endif /* HaskinoConfigH */

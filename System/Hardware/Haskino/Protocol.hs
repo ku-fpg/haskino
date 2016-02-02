@@ -17,6 +17,7 @@ module System.Hardware.Haskino.Protocol(framePackage, packageCommand,
                                             maxFirmwareSize) where
 
 import Data.Bits            (xor,shiftR)
+import Data.Int (Int8, Int16, Int32)
 import Data.Word (Word8, Word16, Word32)
 
 import Control.Concurrent   (modifyMVar_, readMVar)
@@ -30,6 +31,13 @@ import System.Hardware.Haskino.Utils
 -- | Maximum size of a Haskino Firmware message
 maxFirmwareSize :: Int
 maxFirmwareSize = 256
+
+-- | Minimum and maximum servo pulse widths
+minServo :: Int16 
+minServo = 544
+
+maxServo :: Int16 
+maxServo = 2400
 
 framePackage :: B.ByteString -> B.ByteString
 framePackage bs = B.append (B.concatMap escape bs) (B.append (escape $ check bs) (B.singleton 0x7E))
@@ -67,6 +75,12 @@ packageCommand I2CConfig ix _ =
     (buildCommand I2C_CMD_CONFIG [], ix)
 packageCommand (StepperSetSpeedE st sp) ix _ = 
     (buildCommand STEP_CMD_SET_SPEED (packageExpr st ++ packageExpr sp), ix)
+packageCommand (ServoDetachE sv) ix _ = 
+    (buildCommand SRVO_CMD_DETACH (packageExpr sv), ix)
+packageCommand (ServoWriteE sv w) ix _ = 
+    (buildCommand SRVO_CMD_WRITE (packageExpr sv ++ packageExpr w), ix)
+packageCommand (ServoWriteMicrosE sv w) ix _ = 
+    (buildCommand SRVO_CMD_WRITE_MICROS (packageExpr sv ++ packageExpr w), ix)
 packageCommand (DeleteTaskE tid) ix _ =
     (buildCommand SCHED_CMD_DELETE_TASK (packageExpr tid), ix)
 packageCommand (ScheduleTaskE tid tt) ix _ =
@@ -241,6 +255,14 @@ packageCodeBlock commands ix ib =
       packProcedure (Stepper4Pin s p1 p2 p3 p4) ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure (Stepper4Pin s p1 p2 p3 p4) ib)))
       packProcedure (Stepper4PinE s p1 p2 p3 p4) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (Stepper4PinE s p1 p2 p3 p4) ib)))
       packProcedure (StepperStepE st s) ix ib k cmds = packageCodeBlock' (k ()) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (StepperStepE st s) ib)))
+      packProcedure (ServoAttach p) ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure (ServoAttach p) ib)))
+      packProcedure (ServoAttachE p) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ServoAttachE p) ib)))
+      packProcedure (ServoAttachMinMax p min max) ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure (ServoAttachMinMax p min max) ib)))
+      packProcedure (ServoAttachMinMaxE p min max) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ServoAttachMinMaxE p min max) ib)))
+      packProcedure (ServoRead sv) ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure (ServoRead sv) ib)))
+      packProcedure (ServoReadE sv) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ServoReadE sv) ib)))
+      packProcedure (ServoReadMicros sv) ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure (ServoReadMicros sv) ib)))
+      packProcedure (ServoReadMicrosE sv) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ServoReadMicrosE sv) ib)))
       packProcedure QueryAllTasks ix ib k cmds = packageCodeBlock' (k ([])) ix ib (B.append cmds (lenPackage (packageProcedure QueryAllTasks ib)))
       packProcedure QueryAllTasksE ix ib k cmds = packageCodeBlock' (k (lit [])) ix (ib+1) (B.append cmds (lenPackage (packageProcedure QueryAllTasksE ib)))
       packProcedure (QueryTask t) ix ib k cmds = packageCodeBlock' (k Nothing) ix ib (B.append cmds (lenPackage (packageProcedure (QueryTask t) ib)))
@@ -307,6 +329,14 @@ packageProcedure (Stepper2PinE s p1 p2) ib = buildCommand STEP_CMD_2PIN ((fromIn
 packageProcedure (Stepper4Pin s p1 p2 p3 p4) ib = buildCommand STEP_CMD_4PIN ((fromIntegral ib) : ((packageExpr $ lit s) ++ (packageExpr $ lit p1) ++ (packageExpr $ lit p2) ++ (packageExpr $ lit p3) ++ (packageExpr $ lit p4)))
 packageProcedure (Stepper4PinE s p1 p2 p3 p4) ib = buildCommand STEP_CMD_4PIN ((fromIntegral ib) : ((packageExpr s) ++ (packageExpr p1) ++ (packageExpr p2)++ (packageExpr p3) ++ (packageExpr p4)))
 packageProcedure (StepperStepE st s) ib = buildCommand STEP_CMD_STEP ((fromIntegral ib) : ((packageExpr st) ++ (packageExpr s)))
+packageProcedure (ServoAttach p) ib = buildCommand SRVO_CMD_ATTACH ((fromIntegral ib) : ((packageExpr $ lit p) ++ (packageExpr $ lit minServo) ++ (packageExpr $ lit maxServo)))
+packageProcedure (ServoAttachE p) ib = buildCommand SRVO_CMD_ATTACH ((fromIntegral ib) : ((packageExpr p) ++ (packageExpr $ lit minServo) ++ (packageExpr $ lit maxServo)))
+packageProcedure (ServoAttachMinMax p min max) ib = buildCommand SRVO_CMD_ATTACH ((fromIntegral ib) : ((packageExpr $ lit p) ++ (packageExpr $ lit min) ++ (packageExpr $ lit max)))
+packageProcedure (ServoAttachMinMaxE p min max) ib = buildCommand SRVO_CMD_ATTACH ((fromIntegral ib) : ((packageExpr p)++ (packageExpr min) ++ (packageExpr max)))
+packageProcedure (ServoRead sv) ib = buildCommand SRVO_CMD_READ ((fromIntegral ib) : ((packageExpr $ lit sv)))
+packageProcedure (ServoReadE sv) ib = buildCommand SRVO_CMD_READ ((fromIntegral ib) : ((packageExpr sv)))
+packageProcedure (ServoReadMicros sv) ib = buildCommand SRVO_CMD_READ_MICROS ((fromIntegral ib) : ((packageExpr $ lit sv)))
+packageProcedure (ServoReadMicrosE sv) ib = buildCommand SRVO_CMD_READ_MICROS ((fromIntegral ib) : ((packageExpr sv)))
 packageProcedure QueryAllTasks ib    = buildCommand SCHED_CMD_QUERY_ALL [fromIntegral ib]
 packageProcedure QueryAllTasksE ib   = buildCommand SCHED_CMD_QUERY_ALL [fromIntegral ib]
 packageProcedure (QueryTask tid) ib  = buildCommand SCHED_CMD_QUERY ((fromIntegral ib) : (packageExpr $ lit tid))
@@ -596,9 +626,12 @@ unpackageResponse (cmdWord:args)
       (DIG_RESP_READ_PORT, [l,b])       -> DigitalPortReply b
       (ALG_RESP_READ_PIN, [l,bl,bh])    -> AnalogReply (bytesToWord16 (bl,bh))
       (I2C_RESP_READ, _:_:xs)           -> I2CReply xs
-      (STEP_RESP_2PIN, [st])            -> Stepper2PinReply st
-      (STEP_RESP_4PIN, [st])            -> Stepper4PinReply st
+      (STEP_RESP_2PIN, [l,st])          -> Stepper2PinReply st
+      (STEP_RESP_4PIN, [l,st])          -> Stepper4PinReply st
       (STEP_RESP_STEP, [])              -> StepperStepReply
+      (SRVO_RESP_ATTACH, [l,sv])        -> ServoAttachReply sv
+      (SRVO_RESP_READ, [l,il,ih])       -> ServoReadReply (fromIntegral (bytesToWord16 (il,ih)))
+      (SRVO_RESP_READ_MICROS, [l,il,ih]) -> ServoReadMicrosReply (fromIntegral (bytesToWord16 (il,ih)))
       (SCHED_RESP_BOOT, [l,b])          -> BootTaskResp b
       (SCHED_RESP_QUERY_ALL, _:_:ts)    -> QueryAllTasksReply ts
       (SCHED_RESP_QUERY, ts) | length ts == 0 -> 
@@ -643,18 +676,18 @@ parseQueryResult (Procedure Micros) (MicrosReply m) = Just m
 parseQueryResult (Procedure MicrosE) (MicrosReply m) = Just (lit m)
 parseQueryResult (Procedure Millis) (MillisReply m) = Just m
 parseQueryResult (Procedure MillisE) (MillisReply m) = Just (lit m)
-parseQueryResult (Procedure (DelayMicros m)) DelayResp = Just ()
-parseQueryResult (Procedure (DelayMicrosE m)) DelayResp = Just ()
-parseQueryResult (Procedure (DelayMillis m)) DelayResp = Just ()
-parseQueryResult (Procedure (DelayMillisE m)) DelayResp = Just ()
-parseQueryResult (Procedure (DigitalRead p)) (DigitalReply d) = Just (if d == 0 then False else True)
-parseQueryResult (Procedure (DigitalReadE p)) (DigitalReply d) = Just (if d == 0 then lit False else lit True)
-parseQueryResult (Procedure (DigitalPortRead p m)) (DigitalPortReply d) = Just d
-parseQueryResult (Procedure (DigitalPortReadE p m)) (DigitalPortReply d) = Just (lit d)
-parseQueryResult (Procedure (AnalogRead p)) (AnalogReply a) = Just a
-parseQueryResult (Procedure (AnalogReadE p)) (AnalogReply a) = Just (lit a)
-parseQueryResult (Procedure (I2CRead saq cnt)) (I2CReply ds) = Just ds
-parseQueryResult (Procedure (I2CReadE saq cnt)) (I2CReply ds) = Just (lit ds)
+parseQueryResult (Procedure (DelayMicros _)) DelayResp = Just ()
+parseQueryResult (Procedure (DelayMicrosE _)) DelayResp = Just ()
+parseQueryResult (Procedure (DelayMillis _)) DelayResp = Just ()
+parseQueryResult (Procedure (DelayMillisE _)) DelayResp = Just ()
+parseQueryResult (Procedure (DigitalRead _)) (DigitalReply d) = Just (if d == 0 then False else True)
+parseQueryResult (Procedure (DigitalReadE _)) (DigitalReply d) = Just (if d == 0 then lit False else lit True)
+parseQueryResult (Procedure (DigitalPortRead _ _)) (DigitalPortReply d) = Just d
+parseQueryResult (Procedure (DigitalPortReadE _ _)) (DigitalPortReply d) = Just (lit d)
+parseQueryResult (Procedure (AnalogRead _)) (AnalogReply a) = Just a
+parseQueryResult (Procedure (AnalogReadE _)) (AnalogReply a) = Just (lit a)
+parseQueryResult (Procedure (I2CRead _ _)) (I2CReply ds) = Just ds
+parseQueryResult (Procedure (I2CReadE _ _)) (I2CReply ds) = Just (lit ds)
 parseQueryResult (Procedure (Stepper2Pin _ _ _)) (Stepper2PinReply st) = Just st
 parseQueryResult (Procedure (Stepper2PinE _ _ _)) (Stepper2PinReply st) = Just (lit st)
 parseQueryResult (Procedure (Stepper4Pin _ _ _ _ _)) (Stepper4PinReply st) = Just st
@@ -662,9 +695,9 @@ parseQueryResult (Procedure (Stepper4PinE _ _ _ _ _)) (Stepper4PinReply st) = Ju
 parseQueryResult (Procedure (StepperStepE _ _)) StepperStepReply = Just ()
 parseQueryResult (Procedure QueryAllTasks) (QueryAllTasksReply ts) = Just ts
 parseQueryResult (Procedure QueryAllTasksE) (QueryAllTasksReply ts) = Just (lit ts)
-parseQueryResult (Procedure (QueryTask tid)) (QueryTaskReply tr) = Just tr
-parseQueryResult (Procedure (QueryTaskE tid)) (QueryTaskReply tr) = Just tr
-parseQueryResult (Procedure (BootTaskE tid)) (BootTaskResp b) = Just (if b == 0 then lit False else lit True)
+parseQueryResult (Procedure (QueryTask _)) (QueryTaskReply tr) = Just tr
+parseQueryResult (Procedure (QueryTaskE _)) (QueryTaskReply tr) = Just tr
+parseQueryResult (Procedure (BootTaskE _)) (BootTaskResp b) = Just (if b == 0 then lit False else lit True)
 parseQueryResult (RemoteBinding (NewRemoteRefB _)) (NewReply r) = Just $ RemoteRefB $ fromIntegral r
 parseQueryResult (RemoteBinding (NewRemoteRefW8 _)) (NewReply r) = Just $ RemoteRefW8 $ fromIntegral r
 parseQueryResult (RemoteBinding (NewRemoteRefW16 _)) (NewReply r) = Just $ RemoteRefW16 $ fromIntegral r

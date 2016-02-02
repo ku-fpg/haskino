@@ -75,8 +75,17 @@
 
 // Servo commands
 #define SRVO_CMD_TYPE           0x80
+#define SRVO_CMD_ATTACH         (SRVO_CMD_TYPE | 0x0)
+#define SRVO_CMD_DETACH         (SRVO_CMD_TYPE | 0x1)
+#define SRVO_CMD_WRITE          (SRVO_CMD_TYPE | 0x2)
+#define SRVO_CMD_WRITE_MICROS   (SRVO_CMD_TYPE | 0x3)
+#define SRVO_CMD_READ           (SRVO_CMD_TYPE | 0x4)
+#define SRVO_CMD_READ_MICROS    (SRVO_CMD_TYPE | 0x5)
 
 // Servo responses
+#define SRVO_RESP_ATTACH        (SRVO_CMD_TYPE | 0x8)
+#define SRVO_RESP_READ          (SRVO_CMD_TYPE | 0x9)
+#define SRVO_RESP_READ_MICROS   (SRVO_CMD_TYPE | 0xA)
 
 // Stepper commands
 #define STEP_CMD_TYPE           0x90

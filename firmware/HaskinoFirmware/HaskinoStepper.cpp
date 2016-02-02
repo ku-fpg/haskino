@@ -6,9 +6,7 @@
 #include "HaskinoConfig.h"
 #include "HaskinoExpr.h"
 
-#define MAX_STEPPERS 2
-
-static Stepper *steppers[MAX_STEPPERS];
+static Stepper *steppers[MAX_FIRM_STEPPERS];
 
 static int nextStepper = 0;
 
