@@ -6,6 +6,7 @@
 #include "HaskinoExpr.h"
 #include "HaskinoI2C.h"
 
+#ifdef INCLUDE_I2C_CMDS
 static bool handleConfig(int size, const byte *msg, CONTEXT *context);
 static bool handleRead(int size, const byte *msg, CONTEXT *context);
 static bool handleWrite(int size, const byte *msg, CONTEXT *context);
@@ -108,3 +109,4 @@ static bool handleWrite(int size, const byte *msg, CONTEXT *context)
 
     return false;
     }
+#endif

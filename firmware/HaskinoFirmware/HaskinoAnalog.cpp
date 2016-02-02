@@ -5,6 +5,7 @@
 #include "HaskinoConfig.h"
 #include "HaskinoExpr.h"
 
+#ifdef INCLUDE_ALG_CMDS
 static bool handleReadPin(int size, const byte *msg, CONTEXT *context);
 static bool handleWritePin(int size, const byte *msg, CONTEXT *context);
 static bool handleTonePin(int size, const byte *msg, CONTEXT *context);
@@ -96,5 +97,5 @@ static bool handleNoTonePin(int size, const byte *msg, CONTEXT *context)
     noTone(pinNo);
     return false;
     }
-
+#endif
 

@@ -6,6 +6,7 @@
 #include "HaskinoConfig.h"
 #include "HaskinoExpr.h"
 
+#ifdef INCLUDE_SRVO_CMDS
 static Servo *servos[MAX_FIRM_SERVOS];
 
 static int nextServo = 0;
@@ -126,3 +127,4 @@ static bool handleReadMicros(int size, const byte *msg, CONTEXT *context)
               (byte *) &readReply, context, bind);
     return false;
     }
+#endif

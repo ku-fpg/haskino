@@ -1,9 +1,11 @@
 #include <Arduino.h>
 #include "HaskinoComm.h"
 #include "HaskinoCommands.h"
+#include "HaskinoConfig.h"
 #include "HaskinoDigital.h"
 #include "HaskinoExpr.h"
 
+#ifdef INCLUDE_DIG_CMDS
 static bool handleReadPin(int size, const byte *msg, CONTEXT *context);
 static bool handleWritePin(int size, const byte *msg, CONTEXT *context);
 static bool handleReadPort(int size, const byte *msg, CONTEXT *context);
@@ -94,3 +96,4 @@ static bool handleWritePort(int size, const byte *msg, CONTEXT *context)
 
     return false;
     }
+#endif

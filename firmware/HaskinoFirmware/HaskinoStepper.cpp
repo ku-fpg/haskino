@@ -6,6 +6,7 @@
 #include "HaskinoConfig.h"
 #include "HaskinoExpr.h"
 
+#ifdef INCLUDE_STEP_CMDS
 static Stepper *steppers[MAX_FIRM_STEPPERS];
 
 static int nextStepper = 0;
@@ -101,3 +102,4 @@ static bool handleStep(int size, const byte *msg, CONTEXT *context)
         }
     return false;
     }
+#endif

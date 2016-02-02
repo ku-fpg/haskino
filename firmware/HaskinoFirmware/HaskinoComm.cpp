@@ -37,27 +37,41 @@ bool parseMessage(int size, const byte *msg, CONTEXT *context)
         case BS_CMD_TYPE:
             return parseBoardStatusMessage(size, msg, context);
             break;
+#ifdef INCLUDE_DIG_CMDS
         case DIG_CMD_TYPE:
             return parseDigitalMessage(size, msg, context);
             break;
+#endif
+#ifdef INCLUDE_ALG_CMDS
         case ALG_CMD_TYPE:
             return parseAnalogMessage(size, msg, context);
             break;
+#endif
+#ifdef INCLUDE_I2C_CMDS
         case I2C_CMD_TYPE:
             return parseI2CMessage(size, msg, context);
             break;
+#endif
+#ifdef INCLUDE_ONEW_CMDS
         case ONEW_CMD_TYPE:
             return parseOneWireMessage(size, msg, context);
             break;
+#endif
+#ifdef INCLUDE_SRVO_CMDS
         case SRVO_CMD_TYPE:
             return parseServoMessage(size, msg, context);
             break;
+#endif
+#ifdef INCLUDE_STEP_CMDS
         case STEP_CMD_TYPE:
             return parseStepperMessage(size, msg, context);
             break;
+#endif
+#ifdef INCLUDE_SCHED_CMDS
         case SCHED_CMD_TYPE:
             return parseSchedulerMessage(size, msg, context);
             break;
+#endif
         case REF_CMD_TYPE:
             return parseRefMessage(size, msg, context);
             break;
