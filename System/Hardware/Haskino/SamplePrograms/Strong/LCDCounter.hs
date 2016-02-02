@@ -16,6 +16,7 @@ import System.Hardware.Haskino
 import System.Hardware.Haskino.Parts.LCD
 import Control.Monad.State  (liftIO)
 import Data.IORef
+import Data.Word
 
 -- | The OSepp LCD Shield is a 16x2 LCD using a Hitachi Controller
 -- Furthermore, it has backlight, and 5 buttons. The hook-up is
@@ -45,6 +46,8 @@ data Key = KeyRight
          | KeyUp
          | KeyDown
          | KeySelect
+         | KeyNone
+  deriving (Eq)
 
 -- | Initialize the shield. This is essentially simply registering the
 -- lcd with the Haskino library. In addition, we return two values to
@@ -58,45 +61,49 @@ initOSepp = do lcd <- lcdRegister osepp
                let button = 0
                setPinMode button INPUT
                -- Analog values obtained from OSEPP site, seems reliable
-               let threshHolds = [ (KeyRight,   30)
-                                 , (KeyUp,     150)
-                                 , (KeyDown,   360)
-                                 , (KeyLeft,   535)
-                                 , (KeySelect, 760)
-                                 ]
+               let valToKey :: Word16 -> Key
+                   valToKey v = if (v < 30) then KeyRight
+                                  else if (v < 150) then KeyUp
+                                    else if (v < 360) then KeyDown
+                                      else if (v < 535) then KeyLeft
+                                        else if (v < 760) then KeySelect
+                                          else KeyNone
                    readButton = do val <- analogRead button
-                                   let walk []            = Nothing
-                                       walk ((k, t):keys) = 
-                                         if (val < t)
-                                         then Just k
-                                         else walk keys
-                                   return $ walk threshHolds
-                   getKey = do mbK <- readButton
-                               case mbK of
-                                 Nothing -> getKey
-                                 Just k  -> do delayMillis 500 -- stabilize by waiting 0.5s
-                                               return k
+                                   return $ valToKey val
+                   getKeyDown = do key <- readButton
+                                   if key == KeyNone then getKeyDown else return key
+                   getKeyUp   = do key <- readButton
+                                   if key /= KeyNone then getKeyUp else return key
+                   getKey = do key <- getKeyDown
+                               getKeyUp
+                               delayMillis 100
+                               return key
                return (lcd, getKey)
+
 
 -- | Program which maintains an integer counter, and displays the counter value 
 --   on the LCD.  Pressing the Up button increments the counter, pressing the 
 --   Down button decrements it
 -- 
+counterProg :: Arduino ()
+counterProg = do
+      (lcd, getKey) <- initOSepp
+      cref <- liftIO $ newIORef 0
+      lcdBacklightOn lcd
+      lcdWrite lcd $ show 0
+      loop $ do
+          key <- getKey
+          case key of
+              KeyRight  -> return ()
+              KeyLeft   -> return ()
+              KeyUp     -> liftIO $ modifyIORef cref (\x -> x + 1)
+              KeyDown   -> liftIO $ modifyIORef cref (\x -> x - 1)
+              KeySelect -> return ()
+          count <- liftIO $ readIORef cref
+          lcdClear lcd
+          lcdHome lcd
+          lcdWrite lcd $ show count
+
 lcdCounter :: IO ()
 lcdCounter = withArduino False "/dev/cu.usbmodem1421" $ do
-                (lcd, getKey) <- initOSepp
-                cref <- liftIO $ newIORef 0
-                lcdBacklightOn lcd
-                lcdWrite lcd $ show 0
-                loop $ do
-                    key <- getKey
-                    case key of
-                        KeyRight  -> return ()
-                        KeyLeft   -> return ()
-                        KeyUp     -> liftIO $ modifyIORef cref (\x -> x + 1)
-                        KeyDown   -> liftIO $ modifyIORef cref (\x -> x - 1)
-                        KeySelect -> return ()
-                    count <- liftIO $ readIORef cref
-                    lcdClear lcd
-                    lcdHome lcd
-                    lcdWrite lcd $ show count
+                counterProg

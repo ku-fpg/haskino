@@ -93,8 +93,8 @@ initOSepp = do lcd <- lcdRegisterE osepp
 --   on the LCD.  Pressing the Up button increments the counter, pressing the 
 --   Down button decrements it
 -- 
-myTask :: Arduino ()
-myTask = do
+counterProg :: Arduino ()
+counterProg = do
       (lcd, getKey) <- initOSepp
       let zero :: Expr Int32
           zero = 0
@@ -114,7 +114,7 @@ myTask = do
 
 lcdCounterE :: IO ()
 lcdCounterE = withArduino True "/dev/cu.usbmodem1421" $ do
-      createTaskE 1 myTask
+      createTaskE 1 counterProg
       -- Schedule the task to start in 1 second
       scheduleTaskE 1 1000
       -- Query to confirm task creation
@@ -123,7 +123,7 @@ lcdCounterE = withArduino True "/dev/cu.usbmodem1421" $ do
 
 lcdCounterEProg :: IO ()
 lcdCounterEProg = withArduino True "/dev/cu.usbmodem1421" $ do
-      createTaskE 1 myTask
+      createTaskE 1 counterProg
       -- Program the task
       bootTaskE 1
       return ()
