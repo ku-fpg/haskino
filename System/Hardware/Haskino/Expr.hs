@@ -691,7 +691,7 @@ infixl 5 *:, ++*
 (++*) :: Expr [Word8] -> Expr [Word8] -> Expr [Word8]
 (++*) l1 l2 = ApndList8 l1 l2
 
--- ToDo: overload length
+-- ToDo: overload length (or implement foldable class)
 len :: Expr [Word8] -> Expr Word8
 len l = LenList8 l
 

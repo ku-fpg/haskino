@@ -160,7 +160,6 @@ type TimeMicros = Word32
 type TimeMicrosE = Expr Word32
 type TaskPos = Word16
 type VarSize = Word8
--- ToDo: Readd Stepper types
 
 data Command =
        SystemReset                              -- ^ Send system reset
@@ -211,7 +210,7 @@ data Command =
      | LoopE (Arduino ())
      | ForInE (Expr [Word8]) (Expr Word8 -> Arduino ()) 
      | IfThenElse (Expr Bool) (Arduino ()) (Arduino ())
-     -- ToDo: add one wire and encoder procedures, readd stepper and servo
+     -- ToDo: add SPI commands
 
 systemReset :: Arduino ()
 systemReset = Command SystemReset
@@ -397,8 +396,6 @@ whileRemoteRefL8 r bf uf cb = Command $ WhileRemoteRefL8 r bf uf cb
 whileRemoteRefFloat :: RemoteRef Float -> (Expr Float -> Expr Bool) -> (Expr Float -> Expr Float) -> Arduino () -> Arduino ()
 whileRemoteRefFloat r bf uf cb = Command $ WhileRemoteRefFloat r bf uf cb
 
--- ToDo: Readd servo and stepper functions
-
 class RemoteReference a where
     newRemoteRef          :: Expr a -> Arduino (RemoteRef a)
     readRemoteRef         :: RemoteRef a -> Arduino (Expr a)
@@ -528,7 +525,6 @@ data Procedure :: * -> * where
      QueryTask  :: TaskID -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
      QueryTaskE :: TaskIDE -> Procedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
      BootTaskE :: TaskIDE -> Procedure (Expr Bool)
-     -- Todo: add one wire queries, readd pulse?
      ReadRemoteRefB  :: RemoteRef Bool   -> Procedure (Expr Bool)
      ReadRemoteRefW8  :: RemoteRef Word8  -> Procedure (Expr Word8)
      ReadRemoteRefW16 :: RemoteRef Word16 -> Procedure (Expr Word16)
@@ -538,6 +534,7 @@ data Procedure :: * -> * where
      ReadRemoteRefI32 :: RemoteRef Int32 -> Procedure (Expr Int32)
      ReadRemoteRefL8 :: RemoteRef [Word8] -> Procedure (Expr [Word8])
      ReadRemoteRefFloat :: RemoteRef Float -> Procedure (Expr Float)
+     -- ToDo: add SPI procedures
 
 deriving instance Show a => Show (Procedure a)
 
