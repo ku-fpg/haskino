@@ -19,7 +19,7 @@ import           Control.Applicative
 import           Control.Concurrent (Chan, MVar, ThreadId, withMVar, modifyMVar, 
                                      modifyMVar_, putMVar, takeMVar, readMVar,
                                      newEmptyMVar)
-import           Control.Monad (ap, liftM2, when, unless, void)
+import           Control.Monad (ap, liftM2, forever)
 import           Control.Monad.Trans
 
 import           Data.Bits ((.|.), (.&.), setBit)
@@ -36,16 +36,11 @@ import           System.Hardware.Serialport (SerialPort)
 import           System.Hardware.Haskino.Expr
 import           System.Hardware.Haskino.Utils
 
-import Debug.Trace
 -----------------------------------------------------------------------------
 
 data Arduino :: * -> * where
-    Control        :: Control                         -> Arduino ()
     Command        :: Command                         -> Arduino ()
-    Local          :: Local a                         -> Arduino a
     Procedure      :: Procedure a                     -> Arduino a
-    RemoteBinding  :: RemoteBinding a                 -> Arduino a
-    LiftIO         :: IO a                            -> Arduino a
     Bind           :: Arduino a -> (a -> Arduino b)   -> Arduino b
     Return         :: a                               -> Arduino a
 
@@ -65,7 +60,7 @@ instance Monoid a => Monoid (Arduino a) where
   mempty  = return mempty
 
 instance MonadIO Arduino where
-  liftIO m = LiftIO m
+  liftIO m = Procedure $ LiftIO m
 
 type Pin  = Word8
 type PinE = Expr Word8
@@ -468,23 +463,8 @@ instance RemoteReference Float where
     modifyRemoteRef = modifyRemoteRefFloat
     while = whileRemoteRefFloat
 
-data Control =
-      Loop (Arduino ())
-
 loop :: Arduino () -> Arduino ()
-loop ps = Control $ Loop ps
-
-data Local :: * -> * where
-     Debug            :: String -> Local ()
-     Die              :: String -> [String] -> Local ()
-
-deriving instance Show a => Show (Local a)
-
-debug :: String -> Arduino ()
-debug msg = Local $ Debug msg
-
-die :: String -> [String] -> Arduino ()
-die msg msgs = Local $ Die msg msgs
+loop = forever
 
 data Procedure :: * -> * where
      QueryFirmware  :: Procedure Word16                   -- ^ Query the Firmware version installed
@@ -534,9 +514,21 @@ data Procedure :: * -> * where
      ReadRemoteRefI32 :: RemoteRef Int32 -> Procedure (Expr Int32)
      ReadRemoteRefL8 :: RemoteRef [Word8] -> Procedure (Expr [Word8])
      ReadRemoteRefFloat :: RemoteRef Float -> Procedure (Expr Float)
+     NewRemoteRefB    :: Expr Bool   -> Procedure (RemoteRef Bool)
+     NewRemoteRefW8   :: Expr Word8  -> Procedure (RemoteRef Word8)
+     NewRemoteRefW16  :: Expr Word16 -> Procedure (RemoteRef Word16)
+     NewRemoteRefW32  :: Expr Word32 -> Procedure (RemoteRef Word32)
+     NewRemoteRefI8   :: Expr Int8  -> Procedure (RemoteRef Int8)
+     NewRemoteRefI16  :: Expr Int16 -> Procedure (RemoteRef Int16)
+     NewRemoteRefI32  :: Expr Int32 -> Procedure (RemoteRef Int32)
+     NewRemoteRefL8   :: Expr [Word8] -> Procedure (RemoteRef [Word8])
+     NewRemoteRefFloat :: Expr Float -> Procedure (RemoteRef Float)
+     LiftIO           :: IO a -> Procedure a
+     Debug            :: String -> Procedure ()
+     Die              :: String -> [String] -> Procedure ()
      -- ToDo: add SPI procedures
 
-deriving instance Show a => Show (Procedure a)
+-- deriving instance Show a => Show (Procedure a)
 
 queryFirmware :: Arduino Word16
 queryFirmware = Procedure QueryFirmware
@@ -679,43 +671,38 @@ readRemoteRefL8 n = Procedure $ ReadRemoteRefL8 n
 readRemoteRefFloat :: RemoteRef Float -> Arduino (Expr Float)
 readRemoteRefFloat n = Procedure $ ReadRemoteRefFloat n
 
-data RemoteBinding :: * -> * where
-     NewRemoteRefB    :: Expr Bool   -> RemoteBinding (RemoteRef Bool)
-     NewRemoteRefW8   :: Expr Word8  -> RemoteBinding (RemoteRef Word8)
-     NewRemoteRefW16  :: Expr Word16 -> RemoteBinding (RemoteRef Word16)
-     NewRemoteRefW32  :: Expr Word32 -> RemoteBinding (RemoteRef Word32)
-     NewRemoteRefI8   :: Expr Int8  -> RemoteBinding (RemoteRef Int8)
-     NewRemoteRefI16  :: Expr Int16 -> RemoteBinding (RemoteRef Int16)
-     NewRemoteRefI32  :: Expr Int32 -> RemoteBinding (RemoteRef Int32)
-     NewRemoteRefL8   :: Expr [Word8] -> RemoteBinding (RemoteRef [Word8])
-     NewRemoteRefFloat :: Expr Float -> RemoteBinding (RemoteRef Float)
-
 newRemoteRefB :: Expr Bool -> Arduino (RemoteRef Bool)
-newRemoteRefB n = RemoteBinding $ NewRemoteRefB n
+newRemoteRefB n = Procedure $ NewRemoteRefB n
 
 newRemoteRefW8 :: Expr Word8 -> Arduino (RemoteRef Word8)
-newRemoteRefW8 n = RemoteBinding $ NewRemoteRefW8 n
+newRemoteRefW8 n = Procedure $ NewRemoteRefW8 n
 
 newRemoteRefW16 :: Expr Word16 -> Arduino (RemoteRef Word16)
-newRemoteRefW16 n = RemoteBinding $ NewRemoteRefW16 n
+newRemoteRefW16 n = Procedure $ NewRemoteRefW16 n
 
 newRemoteRefW32 :: Expr Word32 -> Arduino (RemoteRef Word32)
-newRemoteRefW32 n = RemoteBinding $ NewRemoteRefW32 n
+newRemoteRefW32 n = Procedure $ NewRemoteRefW32 n
 
 newRemoteRefI8 :: Expr Int8 -> Arduino (RemoteRef Int8)
-newRemoteRefI8 n = RemoteBinding $ NewRemoteRefI8 n
+newRemoteRefI8 n = Procedure $ NewRemoteRefI8 n
 
 newRemoteRefI16 :: Expr Int16 -> Arduino (RemoteRef Int16)
-newRemoteRefI16 n = RemoteBinding $ NewRemoteRefI16 n
+newRemoteRefI16 n = Procedure $ NewRemoteRefI16 n
 
 newRemoteRefI32 :: Expr Int32 -> Arduino (RemoteRef Int32)
-newRemoteRefI32 n = RemoteBinding $ NewRemoteRefI32 n
+newRemoteRefI32 n = Procedure $ NewRemoteRefI32 n
 
 newRemoteRefL8 :: Expr [Word8] -> Arduino (RemoteRef [Word8])
-newRemoteRefL8 n = RemoteBinding $ NewRemoteRefL8 n
+newRemoteRefL8 n = Procedure $ NewRemoteRefL8 n
 
 newRemoteRefFloat :: Expr Float -> Arduino (RemoteRef Float)
-newRemoteRefFloat n = RemoteBinding $ NewRemoteRefFloat n
+newRemoteRefFloat n = Procedure $ NewRemoteRefFloat n
+
+debug :: String -> Arduino ()
+debug msg = Procedure $ Debug msg
+
+die :: String -> [String] -> Arduino ()
+die msg msgs = Procedure $ Die msg msgs
 
 -- | A response, as returned from the Arduino
 data Response = DelayResp

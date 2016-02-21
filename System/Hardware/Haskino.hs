@@ -16,7 +16,7 @@ module System.Hardware.Haskino (
   -- * Communication functions
   openArduino, closeArduino, withArduino, send, ArduinoConnection
   -- * Deep embeddings
-  , Arduino(..) , Command(..), Procedure(..), Local(..), Processor(..)
+  , Arduino(..) , Command(..), Procedure(..), Processor(..)
   -- * Programming the Arduino
   -- ** Pins
   , Pin, PinMode(..), setPinMode, setPinModeE
@@ -48,6 +48,8 @@ module System.Hardware.Haskino (
   -- ** Expressions
   , Expr(..), RemoteRef, lit, newRemoteRef, readRemoteRef, writeRemoteRef
   , modifyRemoteRef, (++*), (*:), (!!*), len, pack, litString, showE, showFFloatE
+  -- ** Debugging
+  , debug, die
  )
  where
 

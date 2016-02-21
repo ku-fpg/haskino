@@ -219,15 +219,7 @@ packageCodeBlock commands ix ib =
           packageCodeBlock' (k ()) ix' ib (B.append cmds (lenPackage pc))
         where 
           (pc, ix') = packageCommand cmd ix ib
-      packBind (Local local) ix ib k cmds = packLocal local ix ib k cmds
       packBind (Procedure procedure) ix ib k cmds = packProcedure procedure ix ib k cmds
-      packBind (RemoteBinding binding) ix ib k cmds = packRemoteBinding binding ix ib k cmds
-
-      -- For sending as part of a Scheduler task, locals make no sense.  
-      -- Instead of signalling an error, at this point they are just ignored.
-      packLocal :: Local a -> Int -> Int -> (a -> Arduino b) -> B.ByteString -> (B.ByteString, Int, Int)
-      packLocal (Debug _) ix ib k cmds = packageCodeBlock' (k ()) ix ib cmds
-      packLocal (Die _ _) ix ib k cmds = packageCodeBlock' (k ()) ix ib cmds
 
       packProcedure :: Procedure a -> Int -> Int -> (a -> Arduino b) -> B.ByteString -> (B.ByteString, Int, Int)
       packProcedure QueryFirmware ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure QueryFirmware ib)))
@@ -277,17 +269,20 @@ packageCodeBlock commands ix ib =
       packProcedure (ReadRemoteRefI32 (RemoteRefI32 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefI32 (RemoteRefI32 i)) ib)))
       packProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) ib)))
       packProcedure (ReadRemoteRefFloat (RemoteRefFloat i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefFloat (RemoteRefFloat i)) ib)))
+      packProcedure (NewRemoteRefB e) ix ib k cmds = packageCodeBlock' (k (RemoteRefB ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefB e) ix ib)))
+      packProcedure (NewRemoteRefW8 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefW8 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefW8 e) ix ib)))
+      packProcedure (NewRemoteRefW16 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefW16 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefW16 e) ix ib)))
+      packProcedure (NewRemoteRefW32 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefW32 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefW32 e) ix ib)))
+      packProcedure (NewRemoteRefI8 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefI8 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefI8 e) ix ib)))
+      packProcedure (NewRemoteRefI16 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefI16 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefI16 e) ix ib)))
+      packProcedure (NewRemoteRefI32 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefI32 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefI32 e) ix ib)))
+      packProcedure (NewRemoteRefL8 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefL8 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefL8 e) ix ib)))
+      packProcedure (NewRemoteRefFloat e) ix ib k cmds = packageCodeBlock' (k (RemoteRefFloat ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefFloat e) ix ib)))
+      -- For sending as part of a Scheduler task, debug and die make no sense.  
+      -- Instead of signalling an error, at this point they are just ignored.
+      packProcedure (Debug _) ix ib k cmds = packageCodeBlock' (k ()) ix ib cmds
+      packProcedure (Die _ _) ix ib k cmds = packageCodeBlock' (k ()) ix ib cmds
 
-      packRemoteBinding :: RemoteBinding a -> Int -> Int -> (a -> Arduino b) -> B.ByteString -> (B.ByteString, Int, Int)
-      packRemoteBinding (NewRemoteRefB e) ix ib k cmds = packageCodeBlock' (k (RemoteRefB ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefB e) ix ib)))
-      packRemoteBinding (NewRemoteRefW8 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefW8 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefW8 e) ix ib)))
-      packRemoteBinding (NewRemoteRefW16 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefW16 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefW16 e) ix ib)))
-      packRemoteBinding (NewRemoteRefW32 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefW32 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefW32 e) ix ib)))
-      packRemoteBinding (NewRemoteRefI8 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefI8 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefI8 e) ix ib)))
-      packRemoteBinding (NewRemoteRefI16 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefI16 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefI16 e) ix ib)))
-      packRemoteBinding (NewRemoteRefI32 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefI32 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefI32 e) ix ib)))
-      packRemoteBinding (NewRemoteRefL8 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefL8 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefL8 e) ix ib)))
-      packRemoteBinding (NewRemoteRefFloat e) ix ib k cmds = packageCodeBlock' (k (RemoteRefFloat ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefFloat e) ix ib)))
 
       packageCodeBlock' :: Arduino a -> Int -> Int -> B.ByteString -> (B.ByteString, Int, Int)
       packageCodeBlock' (Bind m k) ix ib cmds = packBind m ix ib k cmds
@@ -356,7 +351,7 @@ packageProcedure (ReadRemoteRefI32 (RemoteRefI32 i)) ib = buildCommand REF_CMD_R
 packageProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_LIST8, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
 packageProcedure (ReadRemoteRefFloat (RemoteRefFloat i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_FLOAT, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
 
-packageRemoteBinding :: RemoteBinding a -> Int -> Int -> B.ByteString
+packageRemoteBinding :: Procedure a -> Int -> Int -> B.ByteString
 packageRemoteBinding (NewRemoteRefB e)  ix ib = buildCommand REF_CMD_NEW ([refTypeCmdVal REF_BOOL, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
 packageRemoteBinding (NewRemoteRefW8 e)  ix ib = buildCommand REF_CMD_NEW ([refTypeCmdVal REF_WORD8, fromIntegral ib, fromIntegral ix] ++(packageExpr e))
 packageRemoteBinding (NewRemoteRefW16 e) ix ib = buildCommand REF_CMD_NEW ([refTypeCmdVal REF_WORD16, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
@@ -698,15 +693,15 @@ parseQueryResult (Procedure QueryAllTasksE) (QueryAllTasksReply ts) = Just (lit 
 parseQueryResult (Procedure (QueryTask _)) (QueryTaskReply tr) = Just tr
 parseQueryResult (Procedure (QueryTaskE _)) (QueryTaskReply tr) = Just tr
 parseQueryResult (Procedure (BootTaskE _)) (BootTaskResp b) = Just (if b == 0 then lit False else lit True)
-parseQueryResult (RemoteBinding (NewRemoteRefB _)) (NewReply r) = Just $ RemoteRefB $ fromIntegral r
-parseQueryResult (RemoteBinding (NewRemoteRefW8 _)) (NewReply r) = Just $ RemoteRefW8 $ fromIntegral r
-parseQueryResult (RemoteBinding (NewRemoteRefW16 _)) (NewReply r) = Just $ RemoteRefW16 $ fromIntegral r
-parseQueryResult (RemoteBinding (NewRemoteRefW32 _)) (NewReply r) = Just $ RemoteRefW32 $ fromIntegral r
-parseQueryResult (RemoteBinding (NewRemoteRefI8 _)) (NewReply r) = Just $ RemoteRefI8 $ fromIntegral r
-parseQueryResult (RemoteBinding (NewRemoteRefI16 _)) (NewReply r) = Just $ RemoteRefI16 $ fromIntegral r
-parseQueryResult (RemoteBinding (NewRemoteRefI32 _)) (NewReply r) = Just $ RemoteRefI32 $ fromIntegral r
-parseQueryResult (RemoteBinding (NewRemoteRefL8 _)) (NewReply r) = Just $ RemoteRefL8 $ fromIntegral r
-parseQueryResult (RemoteBinding (NewRemoteRefFloat _)) (NewReply r) = Just $ RemoteRefFloat$ fromIntegral r
+parseQueryResult (Procedure (NewRemoteRefB _)) (NewReply r) = Just $ RemoteRefB $ fromIntegral r
+parseQueryResult (Procedure (NewRemoteRefW8 _)) (NewReply r) = Just $ RemoteRefW8 $ fromIntegral r
+parseQueryResult (Procedure (NewRemoteRefW16 _)) (NewReply r) = Just $ RemoteRefW16 $ fromIntegral r
+parseQueryResult (Procedure (NewRemoteRefW32 _)) (NewReply r) = Just $ RemoteRefW32 $ fromIntegral r
+parseQueryResult (Procedure (NewRemoteRefI8 _)) (NewReply r) = Just $ RemoteRefI8 $ fromIntegral r
+parseQueryResult (Procedure (NewRemoteRefI16 _)) (NewReply r) = Just $ RemoteRefI16 $ fromIntegral r
+parseQueryResult (Procedure (NewRemoteRefI32 _)) (NewReply r) = Just $ RemoteRefI32 $ fromIntegral r
+parseQueryResult (Procedure (NewRemoteRefL8 _)) (NewReply r) = Just $ RemoteRefL8 $ fromIntegral r
+parseQueryResult (Procedure (NewRemoteRefFloat _)) (NewReply r) = Just $ RemoteRefFloat$ fromIntegral r
 parseQueryResult (Procedure (ReadRemoteRefB _)) (ReadRefBReply r) = Just $ lit r
 parseQueryResult (Procedure (ReadRemoteRefW8 _)) (ReadRefW8Reply r) = Just $ lit r
 parseQueryResult (Procedure (ReadRemoteRefW16 _)) (ReadRefW16Reply r) = Just $ lit r

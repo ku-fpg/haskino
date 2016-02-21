@@ -21,5 +21,5 @@ testE x = withArduino False "/dev/cu.usbmodem1421" $ do
                let local = atanh x
                writeRemoteRef r $ atanh (lit x)
                remote <- readRemoteRef r
-               LiftIO $ print $ "Local  :" ++ show local
-               LiftIO $ print $ "Remote :" ++ show remote
+               liftIO $ print $ "Local  :" ++ show local
+               liftIO $ print $ "Remote :" ++ show remote

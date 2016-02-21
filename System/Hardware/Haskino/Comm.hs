@@ -158,14 +158,7 @@ send conn commands =
           pc <- packageCommandIndex c cmd 
           checkPackageLength c pc
           send' c (k ()) (B.append cmds (framePackage pc))
-      sendBind c (Control ctrl)  k cmds = sendControl c ctrl k cmds
-      sendBind c (Local local)   k cmds = sendLocal c local k cmds
       sendBind c (Procedure procedure) k cmds = sendProcedure c procedure k cmds
-      sendBind c (RemoteBinding procedure) k cmds = sendRemoteBinding c procedure k cmds
-      sendBind c (LiftIO m) k cmds = do
-          sendToArduino c cmds
-          res <- m
-          send' c (k res) B.empty
 
       packageCommandIndex :: ArduinoConnection -> Command -> IO B.ByteString
       packageCommandIndex c cmd = do
@@ -174,21 +167,26 @@ send conn commands =
           putMVar (refIndex c) ix'
           return pc
 
-      sendControl :: ArduinoConnection -> Control -> (a -> Arduino b) -> B.ByteString -> IO b
-      sendControl c (Loop ps) k cmds = do
-          sendToArduino c cmds
-          send c ps
-          sendControl c (Loop ps) k B.empty
-
-      sendLocal :: ArduinoConnection -> Local a -> (a -> Arduino b) -> B.ByteString -> IO b
-      sendLocal c (Debug msg) k cmds = do
+      sendProcedure :: ArduinoConnection -> Procedure a -> (a -> Arduino b) -> B.ByteString -> IO b
+      sendProcedure c (Debug msg) k cmds = do
           message c msg
           send' c (k ()) cmds
-      sendLocal c (Die msg msgs) k cmds = do
+      sendProcedure c (Die msg msgs) k cmds = do
           runDie c msg msgs
           send' c (k ()) cmds
-
-      sendProcedure :: ArduinoConnection -> Procedure a -> (a -> Arduino b) -> B.ByteString -> IO b
+      sendProcedure c (NewRemoteRefB r) k cmds = sendRemoteBinding c (NewRemoteRefB r) k cmds 
+      sendProcedure c (NewRemoteRefW8 r) k cmds = sendRemoteBinding c (NewRemoteRefW8 r) k cmds 
+      sendProcedure c (NewRemoteRefW16 r) k cmds = sendRemoteBinding c (NewRemoteRefW16 r) k cmds 
+      sendProcedure c (NewRemoteRefW32 r) k cmds = sendRemoteBinding c (NewRemoteRefW32 r) k cmds 
+      sendProcedure c (NewRemoteRefI8 r) k cmds = sendRemoteBinding c (NewRemoteRefI8 r) k cmds 
+      sendProcedure c (NewRemoteRefI16 r) k cmds = sendRemoteBinding c (NewRemoteRefI16 r) k cmds 
+      sendProcedure c (NewRemoteRefI32 r) k cmds = sendRemoteBinding c (NewRemoteRefI32 r) k cmds 
+      sendProcedure c (NewRemoteRefL8 r) k cmds = sendRemoteBinding c (NewRemoteRefL8 r) k cmds 
+      sendProcedure c (NewRemoteRefFloat r) k cmds = sendRemoteBinding c (NewRemoteRefFloat r) k cmds 
+      sendProcedure c (LiftIO m) k cmds = do
+          sendToArduino c cmds
+          res <- m
+          send' c (k res) B.empty
       sendProcedure c procedure k cmds = do
           let pc = packageProcedure procedure 0
           checkPackageLength c pc
@@ -204,14 +202,14 @@ send conn commands =
               BootTaskE _             -> secsToMicros 30
               _                       -> secsToMicros 5
 
-      sendRemoteBinding :: ArduinoConnection -> RemoteBinding a -> (a -> Arduino b) -> B.ByteString -> IO b
+      sendRemoteBinding :: ArduinoConnection -> Procedure a -> (a -> Arduino b) -> B.ByteString -> IO b
       sendRemoteBinding c b k cmds = do
           ix <- takeMVar (refIndex c)
           let prb = packageRemoteBinding b ix 0
           checkPackageLength c prb
           putMVar (refIndex c) (ix+1)
           sendToArduino c (B.append cmds (framePackage prb))
-          qr <- waitResponse c (secsToMicros 5) (RemoteBinding b)
+          qr <- waitResponse c (secsToMicros 5) (Procedure b)
           send' c (k qr) B.empty
 
       checkPackageLength :: ArduinoConnection -> B.ByteString -> IO ()
