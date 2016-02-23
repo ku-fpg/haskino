@@ -25,7 +25,8 @@ import Control.Exception    (tryJust, AsyncException(UserInterrupt))
 import Control.Monad.State  (liftIO)
 import Control.Natural (nat, run, (#))
 import Control.Remote.Monad
-import Control.Remote.Monad.Packet.Weak
+import Control.Remote.Monad.Packet.Weak as WP
+import Control.Remote.Monad.Packet.Strong as SP
 import Data.Bits            (testBit, (.&.), xor, shiftR)
 import Data.List            (intercalate)
 import Data.Maybe           (listToMaybe)
@@ -267,14 +268,17 @@ send conn commands =
           lp = B.length cmds
 -}
 
+sendWeak :: ArduinoConnection -> Arduino a -> IO a
+sendWeak c (Arduino m) = (run $ runMonad $ nat (runWP c)) m
+
 send :: ArduinoConnection -> Arduino a -> IO a
-send c (Arduino m) = (run $ runMonad $ nat (runWP c)) m
+send c (Arduino m) = (run $ runMonad $ nat (runSP c)) m
 
 runWP :: ArduinoConnection -> WeakPacket ArduinoCommand ArduinoProcedure a -> IO a 
 runWP c pkt = 
   case pkt of
-    Command cmd -> sendCommand c cmd
-    Procedure p -> sendProcedure c p
+    WP.Command cmd -> sendCommand c cmd
+    WP.Procedure p -> sendProcedure c p
   where
       sendCommand :: ArduinoConnection -> ArduinoCommand -> IO ()
       sendCommand c (Loop m) = forever $ send c m
@@ -302,14 +306,6 @@ runWP c pkt =
           sendToArduino c (framePackage pc)
           qr <- waitResponse c (procDelay procedure) procedure
           return qr
-        where
-          procDelay :: ArduinoProcedure a -> Int
-          procDelay proc = 
-            case proc of
-              DelayMillis d           -> millisToMicros (fromIntegral d) + secsToMicros 2
-              DelayMillisE (LitW32 d) -> millisToMicros (fromIntegral d) + secsToMicros 2
-              BootTaskE _             -> secsToMicros 30
-              _                       -> secsToMicros 5
 
       sendRemoteBinding :: ArduinoConnection -> ArduinoProcedure a -> IO a
       sendRemoteBinding c b = do
@@ -321,54 +317,117 @@ runWP c pkt =
           qr <- waitResponse c (secsToMicros 5) b
           return qr
 
-      packageCommandIndex :: ArduinoConnection -> ArduinoCommand -> IO B.ByteString
-      packageCommandIndex c cmd = do
+runSP :: ArduinoConnection -> StrongPacket ArduinoCommand ArduinoProcedure a -> IO a 
+runSP c pkt = go c pkt B.empty
+  where
+      go :: ArduinoConnection -> StrongPacket ArduinoCommand ArduinoProcedure a -> B.ByteString -> IO a
+      go c pkt cmds = 
+        case pkt of
+          SP.Command cmd k -> do
+            cmds' <- sendCommand c cmd cmds
+            go c k cmds'
+          SP.Procedure p   -> sendProcedure c p cmds
+          SP.Done          -> sendToArduino c cmds
+
+      sendCommand :: ArduinoConnection -> ArduinoCommand -> B.ByteString -> IO B.ByteString
+      sendCommand c (Loop m) cmds = do
+          sendToArduino c cmds
+          forever $ send c m
+      sendCommand c cmd cmds= do
+          pc <- packageCommandIndex c cmd 
+          checkPackageLength c pc
+          return $ B.append cmds (framePackage pc) 
+
+      sendProcedure :: ArduinoConnection -> ArduinoProcedure a -> B.ByteString -> IO a
+      sendProcedure c (Debug msg) cmds = do
+          message c msg
+          sendToArduino c cmds
+      sendProcedure c (Die msg msgs) cmds = runDie c msg msgs
+      sendProcedure c (NewRemoteRefB r) cmds = sendRemoteBinding c (NewRemoteRefB r) cmds
+      sendProcedure c (NewRemoteRefW8 r) cmds  = sendRemoteBinding c (NewRemoteRefW8 r) cmds 
+      sendProcedure c (NewRemoteRefW16 r) cmds = sendRemoteBinding c (NewRemoteRefW16 r) cmds
+      sendProcedure c (NewRemoteRefW32 r) cmds = sendRemoteBinding c (NewRemoteRefW32 r) cmds
+      sendProcedure c (NewRemoteRefI8 r) cmds = sendRemoteBinding c (NewRemoteRefI8 r) cmds
+      sendProcedure c (NewRemoteRefI16 r) cmds = sendRemoteBinding c (NewRemoteRefI16 r) cmds
+      sendProcedure c (NewRemoteRefI32 r) cmds = sendRemoteBinding c (NewRemoteRefI32 r) cmds
+      sendProcedure c (NewRemoteRefL8 r) cmds = sendRemoteBinding c (NewRemoteRefL8 r) cmds 
+      sendProcedure c (NewRemoteRefFloat r) cmds = sendRemoteBinding c (NewRemoteRefFloat r) cmds
+      sendProcedure c (LiftIO m) cmds = do
+          sendToArduino c cmds
+          m
+      sendProcedure c procedure cmds = do
+          let pc = packageProcedure procedure 0
+          checkPackageLength c pc
+          sendToArduino c (B.append cmds (framePackage pc))
+          qr <- waitResponse c (procDelay procedure) procedure
+          return qr
+
+      sendRemoteBinding :: ArduinoConnection -> ArduinoProcedure a -> B.ByteString -> IO a
+      sendRemoteBinding c b cmds = do
           ix <- takeMVar (refIndex c)
-          let (pc, ix') = packageCommand cmd ix 0
-          putMVar (refIndex c) ix'
-          return pc
+          let prb = packageRemoteBinding b ix 0
+          checkPackageLength c prb
+          putMVar (refIndex c) (ix+1)
+          sendToArduino c (B.append cmds (framePackage prb))
+          qr <- waitResponse c (secsToMicros 5) b
+          return qr
 
-      checkPackageLength :: ArduinoConnection -> B.ByteString -> IO ()
-      checkPackageLength c p = if B.length p > (maxFirmwareSize - 2)
-                               then runDie c ("Protocol Frame Too Large (" ++ (show $ B.length p) ++ " bytes)")
-                                            ["Frame in Error starts with " ++ (show $ firmwareValCmd $ B.head p),
-                                             "Common error is a control structure (while, ifThenElse, loopE)",
-                                             "which exceeds frame limits is used outside of a task"]
-                               else return ()
+packageCommandIndex :: ArduinoConnection -> ArduinoCommand -> IO B.ByteString
+packageCommandIndex c cmd = do
+    ix <- takeMVar (refIndex c)
+    let (pc, ix') = packageCommand cmd ix 0
+    putMVar (refIndex c) ix'
+    return pc
 
-      sendToArduino :: ArduinoConnection -> B.ByteString -> IO ()
-      sendToArduino conn cmds = do
-          when (lp /= 0) 
-               (message conn $ "Sending: " ++ show (encode cmds))
-          sent <- liftIO $ S.send (port conn) cmds
-          when (sent /= lp)
-               (message conn $ "Send failed. Tried: " ++ show lp ++ "bytes, reported: " ++ show sent)
-        where
-          lp = B.length cmds
+checkPackageLength :: ArduinoConnection -> B.ByteString -> IO ()
+checkPackageLength c p = if B.length p > (maxFirmwareSize - 2)
+                         then runDie c ("Protocol Frame Too Large (" ++ (show $ B.length p) ++ " bytes)")
+                                      ["Frame in Error starts with " ++ (show $ firmwareValCmd $ B.head p),
+                                       "Common error is a control structure (while, ifThenElse, loopE)",
+                                       "which exceeds frame limits is used outside of a task"]
+                         else return ()
 
-      waitResponse :: ArduinoConnection -> Int -> ArduinoProcedure a -> IO a
-      waitResponse c t procedure = do
-        message c $ "Waiting for response"
-        resp <- liftIO $ timeout t $ readChan $ deviceChannel c
-        case resp of 
-            Nothing -> runDie c "Haskino:ERROR: Response Timeout" 
-                             [ "Make sure your Arduino is running Haskino Firmware"]
-            Just FailedNewRef -> runDie c "Haskino:ERROR: Failed to Allocate Reference" 
-                                  [ "Make sure MAX_REFS is set high enough in Firmware",
-                                    "and that Arudino has sufficient RAM"]
-            Just r -> do 
-                case parseQueryResult procedure r of
-                    -- Ignore responses that do not match expected response
-                    -- and wait for the next response.
-                    Nothing -> do message c $ "Unmatched response" ++ show r
-                                  waitResponse c t procedure
-                    Just qr -> return qr
+sendToArduino :: ArduinoConnection -> B.ByteString -> IO ()
+sendToArduino conn cmds = do
+    when (lp /= 0) 
+         (message conn $ "Sending: " ++ show (encode cmds))
+    sent <- liftIO $ S.send (port conn) cmds
+    when (sent /= lp)
+         (message conn $ "Send failed. Tried: " ++ show lp ++ "bytes, reported: " ++ show sent)
+  where
+    lp = B.length cmds
 
-      millisToMicros :: Int -> Int
-      millisToMicros m = m * 1000
+waitResponse :: ArduinoConnection -> Int -> ArduinoProcedure a -> IO a
+waitResponse c t procedure = do
+  message c $ "Waiting for response"
+  resp <- liftIO $ timeout t $ readChan $ deviceChannel c
+  case resp of 
+      Nothing -> runDie c "Haskino:ERROR: Response Timeout" 
+                       [ "Make sure your Arduino is running Haskino Firmware"]
+      Just FailedNewRef -> runDie c "Haskino:ERROR: Failed to Allocate Reference" 
+                            [ "Make sure MAX_REFS is set high enough in Firmware",
+                              "and that Arudino has sufficient RAM"]
+      Just r -> do 
+          case parseQueryResult procedure r of
+              -- Ignore responses that do not match expected response
+              -- and wait for the next response.
+              Nothing -> do message c $ "Unmatched response" ++ show r
+                            waitResponse c t procedure
+              Just qr -> return qr
 
-      secsToMicros :: Int -> Int
-      secsToMicros s = s * 1000000
+procDelay :: ArduinoProcedure a -> Int
+procDelay proc = 
+  case proc of
+    DelayMillis d           -> millisToMicros (fromIntegral d) + secsToMicros 2
+    DelayMillisE (LitW32 d) -> millisToMicros (fromIntegral d) + secsToMicros 2
+    BootTaskE _             -> secsToMicros 30
+    _                       -> secsToMicros 5
+
+millisToMicros :: Int -> Int
+millisToMicros m = m * 1000
+
+secsToMicros :: Int -> Int
+secsToMicros s = s * 1000000
 
 -- | Start a thread to listen to the board and populate the channel with incoming queries.
 setupListener :: SerialPort -> (String -> IO ()) -> Chan Response -> IO ThreadId
