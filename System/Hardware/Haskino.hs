@@ -16,7 +16,7 @@ module System.Hardware.Haskino (
   -- * Communication functions
   openArduino, closeArduino, withArduino, send, ArduinoConnection
   -- * Deep embeddings
-  , Arduino(..) , Command(..), Procedure(..), Processor(..)
+  , Arduino(..) , ArduinoCommand(..), ArduinoProcedure(..), Processor(..)
   -- * Programming the Arduino
   -- ** Pins
   , Pin, PinMode(..), setPinMode, setPinModeE
@@ -38,13 +38,14 @@ module System.Hardware.Haskino (
   , millis, micros, millisE, microsE, delayMillis, delayMicros,delayMillisE, delayMicrosE
   -- ** Scheduler
   , TaskLength, TaskID, TimeMillis, TimeMicros, TaskPos, queryAllTasks, queryTask
-  , createTask, createTaskE, deleteTask, scheduleTask, scheduleReset, queryTaskE
+  -- , createTask, createTaskE
+  , deleteTask, scheduleTask, scheduleReset, queryTaskE
   , queryAllTasksE, deleteTaskE, scheduleTaskE, bootTaskE
   -- ** Stepper
   --, StepDevice, StepType(..), NumSteps, StepSpeed, StepAccel, StepPerRev
   --, StepDelay(..), StepDir(..), stepperConfig, stepperStep
   -- ** Control structures
-  , loop, while, ifThenElse, loopE, forInE
+  , loop -- , while, ifThenElse, loopE, forInE
   -- ** Expressions
   , Expr(..), RemoteRef, lit, newRemoteRef, readRemoteRef, writeRemoteRef
   , modifyRemoteRef, (++*), (*:), (!!*), len, pack, litString, showE, showFFloatE

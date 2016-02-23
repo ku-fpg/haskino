@@ -16,11 +16,11 @@ module System.Hardware.Haskino.Protocol(framePackage, packageCommand,
                                             unpackageResponse, parseQueryResult,
                                             maxFirmwareSize) where
 
-import Data.Bits            (xor,shiftR)
+import Data.Bits (xor,shiftR)
 import Data.Int (Int8, Int16, Int32)
 import Data.Word (Word8, Word16, Word32)
 
-import Control.Concurrent   (modifyMVar_, readMVar)
+import Control.Concurrent (modifyMVar_, readMVar)
 import qualified Data.ByteString as B
 import qualified Data.Map        as M
 
@@ -53,7 +53,7 @@ buildCommand cmd bs = B.pack $ firmwareCmdVal cmd : bs
 
 -- | Package a request as a sequence of bytes to be sent to the board
 -- using the Haskino Firmware protocol.
-packageCommand :: Command -> Int -> Int -> (B.ByteString, Int)
+packageCommand :: ArduinoCommand -> Int -> Int -> (B.ByteString, Int)
 packageCommand SystemReset ix ib = (buildCommand BC_CMD_SYSTEM_RESET [], ix)
 packageCommand (SetPinModeE p m) ix _ =
     (buildCommand BC_CMD_SET_PIN_MODE (packageExpr p ++ [fromIntegral $ fromEnum m]), ix)
@@ -87,6 +87,7 @@ packageCommand (ScheduleTaskE tid tt) ix _ =
     (buildCommand SCHED_CMD_SCHED_TASK (packageExpr tid ++ packageExpr tt), ix)
 packageCommand ScheduleReset ix _ =
     (buildCommand SCHED_CMD_RESET [], ix)
+{-
 packageCommand (CreateTaskE tid m) ix _ =
     ((framePackage cmd) `B.append` (genAddToTaskCmds td), ix')
   where
@@ -104,6 +105,7 @@ packageCommand (CreateTaskE tid m) ix _ =
     addToTask tds' = framePackage $ buildCommand SCHED_CMD_ADD_TO_TASK ((packageExpr tid) ++ 
                                                                           (packageExpr (LitW8 (fromIntegral (B.length tds')))) ++ 
                                                                           (B.unpack tds'))
+-}
 packageCommand (WriteRemoteRefB (RemoteRefB i) e) ix _ =
     (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_BOOL, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e), ix)
 packageCommand (WriteRemoteRefW8 (RemoteRefW8 i) e) ix _ =
@@ -140,6 +142,7 @@ packageCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) ix _ =
     (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_LIST8, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefList8 i))), ix)
 packageCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) ix _ =
     (buildCommand REF_CMD_WRITE ([refTypeCmdVal REF_FLOAT, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefFloat i))), ix)
+{-
 packageCommand (WhileRemoteRefB (RemoteRefB i) bf uf cb) ix ib =
     (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (RefB i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
   where
@@ -212,16 +215,16 @@ packageCodeBlock commands ix ib =
       packBind :: Arduino a -> Int -> Int -> (a -> Arduino b) -> B.ByteString -> (B.ByteString, Int, Int)
       packBind (Return a) ix ib k cmds = packageCodeBlock' (k a) ix ib cmds
       packBind (Bind m k1) ix ib k2 cmds = packBind m ix ib (\ r -> Bind (k1 r) k2) cmds
-      packBind (Command cmd) ix ib k cmds =
+      packBind (ArduinoCommand cmd) ix ib k cmds =
           -- Instead of framing each command as is done with sending them
           -- seperately, here a sequence which contains the command length
           -- is prepended.
           packageCodeBlock' (k ()) ix' ib (B.append cmds (lenPackage pc))
         where 
           (pc, ix') = packageCommand cmd ix ib
-      packBind (Procedure procedure) ix ib k cmds = packProcedure procedure ix ib k cmds
+      packBind procedure) ix ib k cmds = packProcedure procedure ix ib k cmds
 
-      packProcedure :: Procedure a -> Int -> Int -> (a -> Arduino b) -> B.ByteString -> (B.ByteString, Int, Int)
+      packProcedure :: ArduinoProcedure a -> Int -> Int -> (a -> Arduino b) -> B.ByteString -> (B.ByteString, Int, Int)
       packProcedure QueryFirmware ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure QueryFirmware ib)))
       packProcedure QueryFirmwareE ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure QueryFirmwareE ib)))
       packProcedure QueryProcessor ix ib k cmds = packageCodeBlock' (k ATMEGA8) ix ib (B.append cmds (lenPackage (packageProcedure QueryProcessor ib)))
@@ -301,8 +304,9 @@ packageCodeBlock commands ix ib =
       lenEncode l = if l < 255
                     then B.singleton $ fromIntegral l 
                     else B.pack $ 0xFF : (word16ToBytes $ fromIntegral l)
+-}
 
-packageProcedure :: Procedure a -> Int -> B.ByteString
+packageProcedure :: ArduinoProcedure a -> Int -> B.ByteString
 packageProcedure QueryFirmware ib    = buildCommand BS_CMD_REQUEST_VERSION [fromIntegral ib]
 packageProcedure QueryFirmwareE ib   = buildCommand BS_CMD_REQUEST_VERSION [fromIntegral ib]
 packageProcedure QueryProcessor ib   = buildCommand BS_CMD_REQUEST_TYPE [fromIntegral ib]
@@ -351,7 +355,7 @@ packageProcedure (ReadRemoteRefI32 (RemoteRefI32 i)) ib = buildCommand REF_CMD_R
 packageProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_LIST8, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
 packageProcedure (ReadRemoteRefFloat (RemoteRefFloat i)) ib = buildCommand REF_CMD_READ [refTypeCmdVal REF_FLOAT, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
 
-packageRemoteBinding :: Procedure a -> Int -> Int -> B.ByteString
+packageRemoteBinding :: ArduinoProcedure a -> Int -> Int -> B.ByteString
 packageRemoteBinding (NewRemoteRefB e)  ix ib = buildCommand REF_CMD_NEW ([refTypeCmdVal REF_BOOL, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
 packageRemoteBinding (NewRemoteRefW8 e)  ix ib = buildCommand REF_CMD_NEW ([refTypeCmdVal REF_WORD8, fromIntegral ib, fromIntegral ix] ++(packageExpr e))
 packageRemoteBinding (NewRemoteRefW16 e) ix ib = buildCommand REF_CMD_NEW ([refTypeCmdVal REF_WORD16, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
@@ -662,53 +666,53 @@ unpackageResponse (cmdWord:args)
   = Unimplemented Nothing (cmdWord : args)
 
 -- This is how we match responses with queries
-parseQueryResult :: Arduino a -> Response -> Maybe a
-parseQueryResult (Procedure QueryFirmware) (Firmware v) = Just v
-parseQueryResult (Procedure QueryFirmwareE) (Firmware v) = Just (lit v)
-parseQueryResult (Procedure QueryProcessor) (ProcessorType pt) = Just $ toEnum $ fromIntegral pt
-parseQueryResult (Procedure QueryProcessorE) (ProcessorType pt) = Just $ (lit pt)
-parseQueryResult (Procedure Micros) (MicrosReply m) = Just m
-parseQueryResult (Procedure MicrosE) (MicrosReply m) = Just (lit m)
-parseQueryResult (Procedure Millis) (MillisReply m) = Just m
-parseQueryResult (Procedure MillisE) (MillisReply m) = Just (lit m)
-parseQueryResult (Procedure (DelayMicros _)) DelayResp = Just ()
-parseQueryResult (Procedure (DelayMicrosE _)) DelayResp = Just ()
-parseQueryResult (Procedure (DelayMillis _)) DelayResp = Just ()
-parseQueryResult (Procedure (DelayMillisE _)) DelayResp = Just ()
-parseQueryResult (Procedure (DigitalRead _)) (DigitalReply d) = Just (if d == 0 then False else True)
-parseQueryResult (Procedure (DigitalReadE _)) (DigitalReply d) = Just (if d == 0 then lit False else lit True)
-parseQueryResult (Procedure (DigitalPortRead _ _)) (DigitalPortReply d) = Just d
-parseQueryResult (Procedure (DigitalPortReadE _ _)) (DigitalPortReply d) = Just (lit d)
-parseQueryResult (Procedure (AnalogRead _)) (AnalogReply a) = Just a
-parseQueryResult (Procedure (AnalogReadE _)) (AnalogReply a) = Just (lit a)
-parseQueryResult (Procedure (I2CRead _ _)) (I2CReply ds) = Just ds
-parseQueryResult (Procedure (I2CReadE _ _)) (I2CReply ds) = Just (lit ds)
-parseQueryResult (Procedure (Stepper2Pin _ _ _)) (Stepper2PinReply st) = Just st
-parseQueryResult (Procedure (Stepper2PinE _ _ _)) (Stepper2PinReply st) = Just (lit st)
-parseQueryResult (Procedure (Stepper4Pin _ _ _ _ _)) (Stepper4PinReply st) = Just st
-parseQueryResult (Procedure (Stepper4PinE _ _ _ _ _)) (Stepper4PinReply st) = Just (lit st)
-parseQueryResult (Procedure (StepperStepE _ _)) StepperStepReply = Just ()
-parseQueryResult (Procedure QueryAllTasks) (QueryAllTasksReply ts) = Just ts
-parseQueryResult (Procedure QueryAllTasksE) (QueryAllTasksReply ts) = Just (lit ts)
-parseQueryResult (Procedure (QueryTask _)) (QueryTaskReply tr) = Just tr
-parseQueryResult (Procedure (QueryTaskE _)) (QueryTaskReply tr) = Just tr
-parseQueryResult (Procedure (BootTaskE _)) (BootTaskResp b) = Just (if b == 0 then lit False else lit True)
-parseQueryResult (Procedure (NewRemoteRefB _)) (NewReply r) = Just $ RemoteRefB $ fromIntegral r
-parseQueryResult (Procedure (NewRemoteRefW8 _)) (NewReply r) = Just $ RemoteRefW8 $ fromIntegral r
-parseQueryResult (Procedure (NewRemoteRefW16 _)) (NewReply r) = Just $ RemoteRefW16 $ fromIntegral r
-parseQueryResult (Procedure (NewRemoteRefW32 _)) (NewReply r) = Just $ RemoteRefW32 $ fromIntegral r
-parseQueryResult (Procedure (NewRemoteRefI8 _)) (NewReply r) = Just $ RemoteRefI8 $ fromIntegral r
-parseQueryResult (Procedure (NewRemoteRefI16 _)) (NewReply r) = Just $ RemoteRefI16 $ fromIntegral r
-parseQueryResult (Procedure (NewRemoteRefI32 _)) (NewReply r) = Just $ RemoteRefI32 $ fromIntegral r
-parseQueryResult (Procedure (NewRemoteRefL8 _)) (NewReply r) = Just $ RemoteRefL8 $ fromIntegral r
-parseQueryResult (Procedure (NewRemoteRefFloat _)) (NewReply r) = Just $ RemoteRefFloat$ fromIntegral r
-parseQueryResult (Procedure (ReadRemoteRefB _)) (ReadRefBReply r) = Just $ lit r
-parseQueryResult (Procedure (ReadRemoteRefW8 _)) (ReadRefW8Reply r) = Just $ lit r
-parseQueryResult (Procedure (ReadRemoteRefW16 _)) (ReadRefW16Reply r) = Just $ lit r
-parseQueryResult (Procedure (ReadRemoteRefW32 _)) (ReadRefW32Reply r) = Just $ lit r
-parseQueryResult (Procedure (ReadRemoteRefI8 _)) (ReadRefI8Reply r) = Just $ lit r
-parseQueryResult (Procedure (ReadRemoteRefI16 _)) (ReadRefI16Reply r) = Just $ lit r
-parseQueryResult (Procedure (ReadRemoteRefI32 _)) (ReadRefI32Reply r) = Just $ lit r
-parseQueryResult (Procedure (ReadRemoteRefL8 _)) (ReadRefL8Reply r) = Just $ lit r
-parseQueryResult (Procedure (ReadRemoteRefFloat _)) (ReadRefFloatReply r) = Just $ lit r
+parseQueryResult :: ArduinoProcedure a -> Response -> Maybe a
+parseQueryResult QueryFirmware (Firmware v) = Just v
+parseQueryResult QueryFirmwareE (Firmware v) = Just (lit v)
+parseQueryResult QueryProcessor (ProcessorType pt) = Just $ toEnum $ fromIntegral pt
+parseQueryResult QueryProcessorE (ProcessorType pt) = Just $ (lit pt)
+parseQueryResult Micros (MicrosReply m) = Just m
+parseQueryResult MicrosE (MicrosReply m) = Just (lit m)
+parseQueryResult Millis (MillisReply m) = Just m
+parseQueryResult MillisE (MillisReply m) = Just (lit m)
+parseQueryResult (DelayMicros _) DelayResp = Just ()
+parseQueryResult (DelayMicrosE _) DelayResp = Just ()
+parseQueryResult (DelayMillis _) DelayResp = Just ()
+parseQueryResult (DelayMillisE _) DelayResp = Just ()
+parseQueryResult (DigitalRead _) (DigitalReply d) = Just (if d == 0 then False else True)
+parseQueryResult (DigitalReadE _) (DigitalReply d) = Just (if d == 0 then lit False else lit True)
+parseQueryResult (DigitalPortRead _ _) (DigitalPortReply d) = Just d
+parseQueryResult (DigitalPortReadE _ _) (DigitalPortReply d) = Just (lit d)
+parseQueryResult (AnalogRead _) (AnalogReply a) = Just a
+parseQueryResult (AnalogReadE _) (AnalogReply a) = Just (lit a)
+parseQueryResult (I2CRead _ _) (I2CReply ds) = Just ds
+parseQueryResult (I2CReadE _ _) (I2CReply ds) = Just (lit ds)
+parseQueryResult (Stepper2Pin _ _ _) (Stepper2PinReply st) = Just st
+parseQueryResult (Stepper2PinE _ _ _) (Stepper2PinReply st) = Just (lit st)
+parseQueryResult (Stepper4Pin _ _ _ _ _) (Stepper4PinReply st) = Just st
+parseQueryResult (Stepper4PinE _ _ _ _ _) (Stepper4PinReply st) = Just (lit st)
+parseQueryResult (StepperStepE _ _) StepperStepReply = Just ()
+parseQueryResult QueryAllTasks (QueryAllTasksReply ts) = Just ts
+parseQueryResult QueryAllTasksE (QueryAllTasksReply ts) = Just (lit ts)
+parseQueryResult (QueryTask _) (QueryTaskReply tr) = Just tr
+parseQueryResult (QueryTaskE _) (QueryTaskReply tr) = Just tr
+parseQueryResult (BootTaskE _) (BootTaskResp b) = Just (if b == 0 then lit False else lit True)
+parseQueryResult (NewRemoteRefB _) (NewReply r) = Just $ RemoteRefB $ fromIntegral r
+parseQueryResult (NewRemoteRefW8 _) (NewReply r) = Just $ RemoteRefW8 $ fromIntegral r
+parseQueryResult (NewRemoteRefW16 _) (NewReply r) = Just $ RemoteRefW16 $ fromIntegral r
+parseQueryResult (NewRemoteRefW32 _) (NewReply r) = Just $ RemoteRefW32 $ fromIntegral r
+parseQueryResult (NewRemoteRefI8 _) (NewReply r) = Just $ RemoteRefI8 $ fromIntegral r
+parseQueryResult (NewRemoteRefI16 _) (NewReply r) = Just $ RemoteRefI16 $ fromIntegral r
+parseQueryResult (NewRemoteRefI32 _) (NewReply r) = Just $ RemoteRefI32 $ fromIntegral r
+parseQueryResult (NewRemoteRefL8 _) (NewReply r) = Just $ RemoteRefL8 $ fromIntegral r
+parseQueryResult (NewRemoteRefFloat _) (NewReply r) = Just $ RemoteRefFloat$ fromIntegral r
+parseQueryResult (ReadRemoteRefB _) (ReadRefBReply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefW8 _) (ReadRefW8Reply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefW16 _) (ReadRefW16Reply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefW32 _) (ReadRefW32Reply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefI8 _) (ReadRefI8Reply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefI16 _) (ReadRefI16Reply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefI32 _) (ReadRefI32Reply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefL8 _) (ReadRefL8Reply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefFloat _) (ReadRefFloatReply r) = Just $ lit r
 parseQueryResult q r = Nothing
