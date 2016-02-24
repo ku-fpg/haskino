@@ -15,6 +15,8 @@
 module System.Hardware.Haskino (
   -- * Communication functions
   openArduino, closeArduino, withArduino, send, ArduinoConnection
+  , withArduinoWeak , withArduinoStrong, withArduinoApp
+  , sendWeak, sendStrong, sendApp
   -- * Deep embeddings
   , Arduino(..) , ArduinoCommand(..), ArduinoProcedure(..), Processor(..)
   -- * Programming the Arduino
