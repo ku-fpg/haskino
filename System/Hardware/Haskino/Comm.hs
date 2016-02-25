@@ -209,13 +209,31 @@ runSP c pkt = go c pkt B.empty
 
 runAP :: ArduinoConnection -> ApplicativePacket ArduinoCommand ArduinoProcedure a -> IO a 
 runAP c pkt =
-  case pkt of
-    AP.Command cmd -> do
-      frame <- frameCommand c cmd B.empty
-      sendToArduino c frame
-    AP.Procedure p -> sendProcedureCmds c p B.empty
-    AP.Pure a      -> pure a
-    AP.Zip f g h   -> f <$> runAP c g <*> runAP c h
+  case AP.superCommand pkt of
+    Just a -> do 
+        cmds <- batchCommands c pkt B.empty
+        sendToArduino c cmds
+        return a
+    Nothing -> case pkt of
+                  AP.Command cmd -> do
+                    frame <- frameCommand c cmd B.empty
+                    sendToArduino c frame
+                  AP.Procedure p -> sendProcedureCmds c p B.empty
+                  AP.Pure a      -> pure a
+                  AP.Zip f g h   -> f <$> runAP c g <*> runAP c h
+  where
+      batchCommands :: ArduinoConnection -> ApplicativePacket ArduinoCommand ArduinoProcedure a -> B.ByteString -> IO B.ByteString
+      batchCommands c pkt cmds = 
+          case pkt of
+              AP.Command cmd -> do
+                  frame <- frameCommand c cmd B.empty
+                  return $ B.append cmds frame
+              AP.Procedure p -> return B.empty
+              AP.Pure a      -> return B.empty
+              AP.Zip f g h   -> do
+                  gcmds <- batchCommands c g B.empty
+                  hcmds <- batchCommands c h gcmds
+                  return hcmds
 
 frameCommand :: ArduinoConnection -> ArduinoCommand -> B.ByteString -> IO B.ByteString
 frameCommand c (Loop m) cmds = do
