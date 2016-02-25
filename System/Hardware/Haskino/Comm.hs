@@ -225,13 +225,11 @@ runAP c pkt =
       batchCommands :: ArduinoConnection -> ApplicativePacket ArduinoCommand ArduinoProcedure a -> B.ByteString -> IO B.ByteString
       batchCommands c pkt cmds = 
           case pkt of
-              AP.Command cmd -> do
-                  frame <- frameCommand c cmd B.empty
-                  return $ B.append cmds frame
-              AP.Procedure p -> return B.empty
-              AP.Pure a      -> return B.empty
+              AP.Command cmd -> frameCommand c cmd cmds
+              AP.Procedure p -> return cmds
+              AP.Pure a      -> return cmds
               AP.Zip f g h   -> do
-                  gcmds <- batchCommands c g B.empty
+                  gcmds <- batchCommands c g cmds
                   hcmds <- batchCommands c h gcmds
                   return hcmds
 
