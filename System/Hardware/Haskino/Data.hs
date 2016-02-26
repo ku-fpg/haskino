@@ -587,6 +587,9 @@ stepper4Pin s p1 p2 p3 p4 = Arduino $ procedure $ Stepper4Pin s p1 p2 p3 p4
 stepper4PinE :: Expr Word16 -> PinE -> PinE -> PinE -> PinE -> Arduino (Expr Word8)
 stepper4PinE s p1 p2 p3 p4 = Arduino $ procedure $ Stepper4PinE s p1 p2 p3 p4
 
+stepperStep :: Word8 -> Int16 -> Arduino ()
+stepperStep st s = Arduino $ procedure $ StepperStepE (lit st) (lit s)
+
 stepperStepE :: Expr Word8 -> Expr Int16 -> Arduino ()
 stepperStepE st s = Arduino $ procedure $ StepperStepE st s
 

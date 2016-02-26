@@ -26,17 +26,15 @@ module System.Hardware.Haskino (
   , systemReset, queryFirmware
   -- ** Digital IO
   , digitalWrite, digitalRead, digitalWriteE, digitalReadE  
-  -- ** Programming with triggers
-  --, waitFor, waitAny, waitAnyHigh, waitAnyLow
   -- ** Analog IO
   , analogWrite, analogRead, analogWriteE, analogReadE
   -- ** I2C
   , SlaveAddress, i2cRead, i2cWrite, i2cConfig
-  -- ** Pulse
-  --, pulse
   -- ** Servo
-  --, MinPulse, MaxPulse, servoConfig
-  -- ** TRime 
+  , servoDetach, servoDetachE, servoWrite, servoWriteE, servoWriteMicros
+  , servoWriteMicrosE, servoAttach, servoAttachE, servoAttachMixMax
+  , servoAttachMixMaxE, servoRead, servoReadE, servoReadMicros, servoReadMicrosE
+  -- ** Time 
   , millis, micros, millisE, microsE, delayMillis, delayMicros,delayMillisE, delayMicrosE
   -- ** Scheduler
   , TaskLength, TaskID, TimeMillis, TimeMicros, TaskPos, queryAllTasks, queryTask
@@ -46,8 +44,10 @@ module System.Hardware.Haskino (
   -- ** Stepper
   --, StepDevice, StepType(..), NumSteps, StepSpeed, StepAccel, StepPerRev
   --, StepDelay(..), StepDir(..), stepperConfig, stepperStep
+  , stepper2Pin, stepper2PinE, stepper4Pin, stepper4PinE, stepperSetSpeed
+  , stepperSetSpeedE, stepperStep ,stepperStepE 
   -- ** Control structures
-  , loop -- , while, ifThenElse, loopE, forInE
+  , loop, while, ifThenElse, loopE, forInE
   -- ** Expressions
   , Expr(..), RemoteRef, lit, newRemoteRef, readRemoteRef, writeRemoteRef
   , modifyRemoteRef, (++*), (*:), (!!*), len, pack, litString, showE, showFFloatE
