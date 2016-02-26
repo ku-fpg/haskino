@@ -155,7 +155,7 @@ data ArduinoCommand =
      | ServoDetachE (Expr Word8)
      | ServoWriteE (Expr Word8) (Expr Int16)
      | ServoWriteMicrosE (Expr Word8) (Expr Int16)
-     -- | CreateTaskE TaskIDE (Arduino ())
+     | CreateTaskE TaskIDE (Arduino ())
      | DeleteTaskE TaskIDE
      | ScheduleTaskE TaskIDE TimeMillisE
      | ScheduleReset
@@ -178,18 +178,18 @@ data ArduinoCommand =
      | ModifyRemoteRefL8 (RemoteRef [Word8]) (Expr [Word8] -> Expr [Word8])
      | ModifyRemoteRefFloat (RemoteRef Float) (Expr Float -> Expr Float)
      | Loop (Arduino ())
-     -- | WhileRemoteRefB (RemoteRef Bool) (Expr Bool -> Expr Bool) (Expr Bool -> Expr Bool) (Arduino ())
-     -- | WhileRemoteRefW8 (RemoteRef Word8) (Expr Word8 -> Expr Bool) (Expr Word8 -> Expr Word8) (Arduino ())
-     -- | WhileRemoteRefW16 (RemoteRef Word16) (Expr Word16 -> Expr Bool) (Expr Word16 -> Expr Word16) (Arduino ())
-     -- | WhileRemoteRefW32 (RemoteRef Word32) (Expr Word32 -> Expr Bool) (Expr Word32 -> Expr Word32) (Arduino ())
-     -- | WhileRemoteRefI8 (RemoteRef Int8) (Expr Int8 -> Expr Bool) (Expr Int8 -> Expr Int8) (Arduino ())
-     -- | WhileRemoteRefI16 (RemoteRef Int16) (Expr Int16 -> Expr Bool) (Expr Int16 -> Expr Int16) (Arduino ())
-     -- | WhileRemoteRefI32 (RemoteRef Int32) (Expr Int32 -> Expr Bool) (Expr Int32 -> Expr Int32) (Arduino ())
-     -- | WhileRemoteRefFloat (RemoteRef Float) (Expr Float -> Expr Bool) (Expr Float -> Expr Float) (Arduino ())
-     -- | WhileRemoteRefL8 (RemoteRef [Word8]) (Expr [Word8] -> Expr Bool) (Expr [Word8] -> Expr [Word8]) (Arduino ())
-     -- | LoopE (Arduino ())
-     -- | ForInE (Expr [Word8]) (Expr Word8 -> Arduino ()) 
-     -- | IfThenElse (Expr Bool) (Arduino ()) (Arduino ())
+     | WhileRemoteRefB (RemoteRef Bool) (Expr Bool -> Expr Bool) (Expr Bool -> Expr Bool) (Arduino ())
+     | WhileRemoteRefW8 (RemoteRef Word8) (Expr Word8 -> Expr Bool) (Expr Word8 -> Expr Word8) (Arduino ())
+     | WhileRemoteRefW16 (RemoteRef Word16) (Expr Word16 -> Expr Bool) (Expr Word16 -> Expr Word16) (Arduino ())
+     | WhileRemoteRefW32 (RemoteRef Word32) (Expr Word32 -> Expr Bool) (Expr Word32 -> Expr Word32) (Arduino ())
+     | WhileRemoteRefI8 (RemoteRef Int8) (Expr Int8 -> Expr Bool) (Expr Int8 -> Expr Int8) (Arduino ())
+     | WhileRemoteRefI16 (RemoteRef Int16) (Expr Int16 -> Expr Bool) (Expr Int16 -> Expr Int16) (Arduino ())
+     | WhileRemoteRefI32 (RemoteRef Int32) (Expr Int32 -> Expr Bool) (Expr Int32 -> Expr Int32) (Arduino ())
+     | WhileRemoteRefFloat (RemoteRef Float) (Expr Float -> Expr Bool) (Expr Float -> Expr Float) (Arduino ())
+     | WhileRemoteRefL8 (RemoteRef [Word8]) (Expr [Word8] -> Expr Bool) (Expr [Word8] -> Expr [Word8]) (Arduino ())
+     | LoopE (Arduino ())
+     | ForInE (Expr [Word8]) (Expr Word8 -> Arduino ()) 
+     | IfThenElse (Expr Bool) (Arduino ()) (Arduino ())
      -- ToDo: add SPI commands
 
 systemReset :: Arduino ()
@@ -265,13 +265,11 @@ servoWriteMicros s w = Arduino $ command $ ServoWriteMicrosE (lit s) (lit w)
 servoWriteMicrosE :: Expr Word8 -> Expr Int16 -> Arduino ()
 servoWriteMicrosE s w = Arduino $ command $ ServoWriteMicrosE s w
 
-{-
 createTask :: TaskID -> Arduino () -> Arduino ()
 createTask tid ps = Arduino $ command $ CreateTaskE (lit tid) ps
 
 createTaskE :: TaskIDE -> Arduino () -> Arduino ()
 createTaskE tid ps = Arduino $ command  $ CreateTaskE tid ps
--}
 
 deleteTask :: TaskID -> Arduino ()
 deleteTask tid = Arduino $ command $ DeleteTaskE (lit tid)
@@ -288,7 +286,6 @@ scheduleTaskE tid tt = Arduino $ command $ ScheduleTaskE tid tt
 scheduleReset :: Arduino ()
 scheduleReset = Arduino $ command ScheduleReset
 
-{-
 loopE :: Arduino () -> Arduino()
 loopE ps = Arduino $ command $ LoopE ps
 
@@ -297,7 +294,6 @@ forInE ws f = Arduino $ command $ ForInE ws f
 
 ifThenElse :: Expr Bool -> Arduino () -> Arduino() -> Arduino()
 ifThenElse be tps eps = Arduino $ command $ IfThenElse be tps eps
--}
 
 writeRemoteRefB :: RemoteRef Bool -> Expr Bool -> Arduino ()
 writeRemoteRefB r e = Arduino $ command $ WriteRemoteRefB r e
@@ -353,7 +349,6 @@ modifyRemoteRefL8 r f = Arduino $ command $ ModifyRemoteRefL8 r f
 modifyRemoteRefFloat :: RemoteRef Float -> (Expr Float -> Expr Float) -> Arduino ()
 modifyRemoteRefFloat r f = Arduino $ command $ ModifyRemoteRefFloat r f
 
-{-
 whileRemoteRefB :: RemoteRef Bool -> (Expr Bool -> Expr Bool) -> (Expr Bool -> Expr Bool) -> Arduino () -> Arduino ()
 whileRemoteRefB r bf uf cb  = Arduino $ command $ WhileRemoteRefB r bf uf cb
 
@@ -380,7 +375,6 @@ whileRemoteRefL8 r bf uf cb = Arduino $ command $ WhileRemoteRefL8 r bf uf cb
 
 whileRemoteRefFloat :: RemoteRef Float -> (Expr Float -> Expr Bool) -> (Expr Float -> Expr Float) -> Arduino () -> Arduino ()
 whileRemoteRefFloat r bf uf cb = Arduino $ command $ WhileRemoteRefFloat r bf uf cb
--}
 
 class RemoteReference a where
     newRemoteRef          :: Expr a -> Arduino (RemoteRef a)
@@ -388,73 +382,71 @@ class RemoteReference a where
     writeRemoteRef        :: RemoteRef a -> Expr a -> Arduino ()
     modifyRemoteRef       :: RemoteRef a -> (Expr a -> Expr a) -> 
                              Arduino ()
-{-
     while                 :: RemoteRef a -> (Expr a -> Expr Bool) -> 
                              (Expr a -> Expr a) -> Arduino () -> Arduino ()
--}
 
 instance RemoteReference Bool where
     newRemoteRef = newRemoteRefB
     readRemoteRef = readRemoteRefB
     writeRemoteRef = writeRemoteRefB
     modifyRemoteRef = modifyRemoteRefB
-    -- while = whileRemoteRefB
+    while = whileRemoteRefB
 
 instance RemoteReference Word8 where
     newRemoteRef = newRemoteRefW8
     readRemoteRef = readRemoteRefW8
     writeRemoteRef = writeRemoteRefW8
     modifyRemoteRef = modifyRemoteRefW8
-    -- while = whileRemoteRefW8
+    while = whileRemoteRefW8
 
 instance RemoteReference Word16 where
     newRemoteRef = newRemoteRefW16
     readRemoteRef = readRemoteRefW16
     writeRemoteRef = writeRemoteRefW16
     modifyRemoteRef = modifyRemoteRefW16
-    -- while = whileRemoteRefW16
+    while = whileRemoteRefW16
 
 instance RemoteReference Word32 where
     newRemoteRef = newRemoteRefW32
     readRemoteRef = readRemoteRefW32
     writeRemoteRef = writeRemoteRefW32
     modifyRemoteRef = modifyRemoteRefW32
-    -- while = whileRemoteRefW32
+    while = whileRemoteRefW32
 
 instance RemoteReference Int8 where
     newRemoteRef = newRemoteRefI8
     readRemoteRef = readRemoteRefI8
     writeRemoteRef = writeRemoteRefI8
     modifyRemoteRef = modifyRemoteRefI8
-    -- while = whileRemoteRefI8
+    while = whileRemoteRefI8
 
 instance RemoteReference Int16 where
     newRemoteRef = newRemoteRefI16
     readRemoteRef = readRemoteRefI16
     writeRemoteRef = writeRemoteRefI16
     modifyRemoteRef = modifyRemoteRefI16
-    -- while = whileRemoteRefI16
+    while = whileRemoteRefI16
 
 instance RemoteReference Int32 where
     newRemoteRef = newRemoteRefI32
     readRemoteRef = readRemoteRefI32
     writeRemoteRef = writeRemoteRefI32
     modifyRemoteRef = modifyRemoteRefI32
-    -- while = whileRemoteRefI32
+    while = whileRemoteRefI32
 
 instance RemoteReference [Word8] where
     newRemoteRef = newRemoteRefL8
     readRemoteRef = readRemoteRefL8
     writeRemoteRef = writeRemoteRefL8
     modifyRemoteRef = modifyRemoteRefL8
-    -- while = whileRemoteRefL8
+    while = whileRemoteRefL8
 
 instance RemoteReference Float where
     newRemoteRef = newRemoteRefFloat
     readRemoteRef = readRemoteRefFloat
     writeRemoteRef = writeRemoteRefFloat
     modifyRemoteRef = modifyRemoteRefFloat
-    -- while = whileRemoteRefFloat
+    while = whileRemoteRefFloat
 
 loop :: Arduino () -> Arduino ()
 loop m = Arduino $ command $ Loop m
