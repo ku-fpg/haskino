@@ -239,7 +239,7 @@ frameCommand c (Loop m) cmds = do
     forever $ send c m
 frameCommand c (CreateTaskE tid as) cmds= do
     pc <- packageCommandIndex c (CreateTaskE tid as)  
-    return $ B.append cmds (framePackage pc) 
+    return $ B.append cmds pc 
 frameCommand c cmd cmds= do
     pc <- packageCommandIndex c cmd 
     checkPackageLength c pc
