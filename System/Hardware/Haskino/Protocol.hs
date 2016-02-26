@@ -277,7 +277,7 @@ packageCodeBlock (Arduino commands) ix ib = (cmds', ix', ib')
       packProcedure (Die _ _) ix ib cmds = ((), cmds, ix, ib)
 
       packAppl :: RemoteApplicative ArduinoCommand ArduinoProcedure a -> Int -> Int -> B.ByteString -> (a, B.ByteString, Int, Int)
-      packAppl (T.Command cmd) ix ib cmds = ((), B.append cmds pc, ix', ib)
+      packAppl (T.Command cmd) ix ib cmds = ((), B.append cmds (lenPackage pc), ix', ib)
         where 
           (pc, ix') = packageCommand cmd ix ib
       packAppl (T.Procedure p) ix ib cmds = packProcedure p ix ib cmds
