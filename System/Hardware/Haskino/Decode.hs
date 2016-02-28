@@ -15,7 +15,10 @@
 module System.Hardware.Haskino.Decode where
 
 import qualified Data.ByteString  as B 
+import           Data.ByteString.Base16 (encode)
+import           Data.Foldable (foldMap)
 import           Data.Word
+import           System.Hardware.Haskino.Data
 
 infixr 5 :<
 
@@ -45,4 +48,15 @@ deframe bs = map unescape (deframe' bs [])
       | x == 0x7d && y == 0x5d =  B.cons 0x7d (unescape xs)
       | x == 0x7d && y == 0x5e =  B.cons 0x7e (unescape xs)
       | otherwise              =  B.cons x (unescape (B.cons y xs))
+
+decodeCmd :: B.ByteString -> String
+decodeCmd Empty        = "EmptyCommand"
+decodeCmd (x :< Empty) = show (firmwareValCmd x)
+decodeCmd (x :< xs)    = show (firmwareValCmd x) ++ "[" ++ show (encode xs) ++ "]\n"
+
+decodeCmds :: [B.ByteString] -> String
+decodeCmds cs = concat $ map decodeCmd cs
+
+decodeFrame :: B.ByteString -> String
+decodeFrame bs = decodeCmds $ deframe bs
 

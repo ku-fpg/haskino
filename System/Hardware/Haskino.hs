@@ -52,7 +52,7 @@ module System.Hardware.Haskino (
   , Expr(..), RemoteRef, lit, newRemoteRef, readRemoteRef, writeRemoteRef
   , modifyRemoteRef, (++*), (*:), (!!*), len, pack, litString, showE, showFFloatE
   -- ** Debugging
-  , debug, die
+  , debug, die, deframe
  )
  where
 
@@ -60,4 +60,5 @@ import System.Hardware.Haskino.Data
 import System.Hardware.Haskino.Comm
 import System.Hardware.Haskino.Expr
 import System.Hardware.Haskino.Utils
+import System.Hardware.Haskino.Decode
 import Data.Boolean

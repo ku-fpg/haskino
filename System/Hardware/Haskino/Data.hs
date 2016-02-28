@@ -774,6 +774,7 @@ data FirmwareCmd = BC_CMD_SYSTEM_RESET
                  | REF_CMD_NEW
                  | REF_CMD_READ
                  | REF_CMD_WRITE
+                 | UNKNOWN_COMMAND
                 deriving Show
 
 -- | Compute the numeric value of a command
@@ -868,7 +869,8 @@ firmwareValCmd 0xA6 = SCHED_CMD_RESET
 firmwareValCmd 0xA7 = SCHED_CMD_BOOT_TASK    
 firmwareValCmd 0xB0 = REF_CMD_NEW            
 firmwareValCmd 0xB1 = REF_CMD_READ           
-firmwareValCmd 0xB2 = REF_CMD_WRITE          
+firmwareValCmd 0xB2 = REF_CMD_WRITE 
+firmwareValCmd _    = UNKNOWN_COMMAND        
 
 data RefType = REF_BOOL
              | REF_WORD8
@@ -892,6 +894,17 @@ refTypeCmdVal REF_INT16                 = 0x05
 refTypeCmdVal REF_INT32                 = 0x06
 refTypeCmdVal REF_LIST8                 = 0x07
 refTypeCmdVal REF_FLOAT                 = 0x08
+
+refTypeValCmd :: Word8 -> RefType
+refTypeValCmd 0x00                      = REF_BOOL
+refTypeValCmd 0x01                      = REF_WORD8
+refTypeValCmd 0x02                      = REF_WORD16
+refTypeValCmd 0x03                      = REF_WORD32
+refTypeValCmd 0x04                      = REF_INT8
+refTypeValCmd 0x05                      = REF_INT16
+refTypeValCmd 0x06                      = REF_INT32
+refTypeValCmd 0x07                      = REF_LIST8
+refTypeValCmd 0x08                      = REF_FLOAT
 
 -- | Firmware replies, see: 
 -- | https://github.com/ku-fpg/haskino/wiki/Haskino-Firmware-Protocol-Definition
