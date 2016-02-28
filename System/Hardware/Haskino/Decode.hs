@@ -14,11 +14,13 @@
 
 module System.Hardware.Haskino.Decode where
 
+import           Data.Bits
 import qualified Data.ByteString  as B 
 import           Data.ByteString.Base16 (encode)
 import           Data.Foldable (foldMap)
 import           Data.Word
 import           System.Hardware.Haskino.Data
+import           System.Hardware.Haskino.Expr
 
 infixr 5 :<
 
@@ -49,14 +51,34 @@ deframe bs = map unescape (deframe' bs [])
       | x == 0x7d && y == 0x5e =  B.cons 0x7e (unescape xs)
       | otherwise              =  B.cons x (unescape (B.cons y xs))
 
+decodeFrame :: B.ByteString -> String
+decodeFrame bs = decodeCmds $ deframe bs
+
+decodeCmds :: [B.ByteString] -> String
+decodeCmds cs = concat $ map decodeCmd cs
+
 decodeCmd :: B.ByteString -> String
 decodeCmd Empty        = "EmptyCommand"
 decodeCmd (x :< Empty) = show (firmwareValCmd x)
 decodeCmd (x :< xs)    = show (firmwareValCmd x) ++ "[" ++ show (encode xs) ++ "]\n"
 
-decodeCmds :: [B.ByteString] -> String
-decodeCmds cs = concat $ map decodeCmd cs
+byteToTypeOp :: Word8 -> (Either ExprType ExprExtType, Int)
+byteToTypeOp b = if (byteTypeNum b) < 7
+                 then (Left $ toEnum $ fromIntegral $ byteTypeNum b, 
+                       fromIntegral $ byteOpNum b)
+                 else (Right $ exprExtValType $ byteExtTypeNum b, 
+                       fromIntegral $ byteExtOpNum b)
+  where 
+    byteTypeNum :: Word8 -> Word8
+    byteTypeNum b = (b .&. 0xE0) `shiftL` 5
 
-decodeFrame :: B.ByteString -> String
-decodeFrame bs = decodeCmds $ deframe bs
+    byteExtTypeNum :: Word8 -> Word8
+    byteExtTypeNum b = (b .&. 0xF0) `shiftL` 4
+
+    byteOpNum :: Word8 -> Word8
+    byteOpNum b = b .&. 0x1F
+
+    byteExtOpNum :: Word8 -> Word8
+    byteExtOpNum b = b .&. 0x1F
+
 

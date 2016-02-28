@@ -707,7 +707,7 @@ data ExprType = EXPR_BOOL
               | EXPR_INT16
               | EXPR_INT32
               | EXPR_EXT
-            deriving (Show, Enum)
+            deriving (Show, Enum, Ord, Eq)
 
 data ExprOp = EXPR_LIT
             | EXPR_REF
@@ -737,7 +737,7 @@ data ExprOp = EXPR_LIT
             | EXPR_QUOT
             | EXPR_MOD
             | EXPR_SHOW
-          deriving (Show, Enum)
+          deriving (Show, Enum, Ord, Eq)
 
 data ExprListOp = EXPRL_LIT
             | EXPRL_REF
@@ -750,7 +750,7 @@ data ExprListOp = EXPRL_LIT
             | EXPRL_CONS
             | EXPRL_APND
             | EXPRL_PACK
-          deriving (Show, Enum)
+          deriving (Show, Enum, Ord, Eq)
 
 data ExprFloatOp = EXPRF_LIT
             | EXPRF_REF
@@ -767,7 +767,7 @@ data ExprFloatOp = EXPRF_LIT
             | EXPRF_DIV
             | EXPRF_SHOW
             | EXPRF_MATH
-          deriving (Show, Enum)
+          deriving (Show, Enum, Ord, Eq)
 
 data ExprFloatMathOp = EXPRF_TRUNC 
             | EXPRF_FRAC
@@ -791,7 +791,7 @@ data ExprFloatMathOp = EXPRF_TRUNC
             | EXPRF_POWER
             | EXPRF_ISNAN
             | EXPRF_ISINF
-          deriving (Show, Enum)
+          deriving (Show, Enum, Ord, Eq)
 
 data ExprExtType = EXPR_LIST8
             | EXPR_FLOAT
