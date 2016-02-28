@@ -62,6 +62,62 @@ decodeCmd Empty        = "EmptyCommand"
 decodeCmd (x :< Empty) = show (firmwareValCmd x)
 decodeCmd (x :< xs)    = show (firmwareValCmd x) ++ "[" ++ show (encode xs) ++ "]\n"
 
+decodeCmdArgs :: FirmwareCmd -> B.ByteString -> (String, B.ByteString)
+decodeCmdArgs BC_CMD_SYSTEM_RESET xs = ("", xs)
+decodeCmdArgs BC_CMD_SET_PIN_MODE xs = decodeExprCmd 1 xs
+decodeCmdArgs BC_CMD_DELAY_MILLIS xs = decodeExprCmd 1 xs
+decodeCmdArgs BC_CMD_DELAY_MICROS xs = decodeExprCmd 1 xs
+decodeCmdArgs BC_CMD_LOOP xs = ("", xs) -- TBD
+decodeCmdArgs BC_CMD_WHILE xs = ("", xs) -- TBD
+decodeCmdArgs BC_CMD_IF_THEN_ELSE xs = ("", xs) -- TBD
+decodeCmdArgs BC_CMD_FORIN xs = ("", xs) -- TBD
+decodeCmdArgs BS_CMD_REQUEST_VERSION xs = decodeExprProc 0 xs
+decodeCmdArgs BS_CMD_REQUEST_TYPE xs = decodeExprProc 0 xs
+decodeCmdArgs BS_CMD_REQUEST_MICROS xs = decodeExprProc 0 xs
+decodeCmdArgs BS_CMD_REQUEST_MILLIS xs = decodeExprProc 0 xs
+decodeCmdArgs DIG_CMD_READ_PIN xs = decodeExprProc 1 xs
+decodeCmdArgs DIG_CMD_WRITE_PIN xs = decodeExprCmd 2 xs
+decodeCmdArgs DIG_CMD_READ_PORT xs = decodeExprProc 2 xs
+decodeCmdArgs DIG_CMD_WRITE_PORT xs = decodeExprCmd 3 xs
+decodeCmdArgs ALG_CMD_READ_PIN xs = decodeExprProc 1 xs
+decodeCmdArgs ALG_CMD_WRITE_PIN xs = decodeExprCmd 2 xs
+decodeCmdArgs ALG_CMD_TONE_PIN xs = decodeExprCmd 3 xs
+decodeCmdArgs ALG_CMD_NOTONE_PIN xs = decodeExprCmd 1 xs
+decodeCmdArgs I2C_CMD_CONFIG xs = decodeExprCmd 0 xs
+decodeCmdArgs I2C_CMD_READ xs = decodeExprProc 2 xs
+decodeCmdArgs I2C_CMD_WRITE xs = decodeExprCmd 2 xs
+decodeCmdArgs STEP_CMD_2PIN xs = decodeExprCmd 3 xs
+decodeCmdArgs STEP_CMD_4PIN xs = decodeExprCmd 5 xs
+decodeCmdArgs STEP_CMD_SET_SPEED xs = decodeExprCmd 2 xs
+decodeCmdArgs STEP_CMD_STEP xs = decodeExprCmd 2 xs
+decodeCmdArgs SRVO_CMD_ATTACH xs = decodeExprCmd 3 xs
+decodeCmdArgs SRVO_CMD_DETACH xs = decodeExprCmd 1 xs
+decodeCmdArgs SRVO_CMD_WRITE xs = decodeExprCmd 2 xs
+decodeCmdArgs SRVO_CMD_WRITE_MICROS xs = decodeExprCmd 2 xs
+decodeCmdArgs SRVO_CMD_READ xs = decodeExprProc 1 xs
+decodeCmdArgs SRVO_CMD_READ_MICROS xs = decodeExprProc 1 xs
+decodeCmdArgs SCHED_CMD_CREATE_TASK xs = decodeExprCmd 1 xs
+decodeCmdArgs SCHED_CMD_DELETE_TASK xs = decodeExprCmd 1 xs
+decodeCmdArgs SCHED_CMD_ADD_TO_TASK xs = ("", xs)
+decodeCmdArgs SCHED_CMD_SCHED_TASK xs = decodeExprCmd 2 xs
+decodeCmdArgs SCHED_CMD_QUERY_ALL xs = decodeExprProc 0 xs
+decodeCmdArgs SCHED_CMD_QUERY xs = decodeExprProc 1 xs
+decodeCmdArgs SCHED_CMD_RESET xs =  decodeExprCmd 0 xs
+decodeCmdArgs SCHED_CMD_BOOT_TASK xs = decodeExprCmd 1 xs
+decodeCmdArgs REF_CMD_NEW xs = ("", xs) -- TBD
+decodeCmdArgs REF_CMD_READ xs =  ("", xs) -- TBD
+decodeCmdArgs REF_CMD_WRITE xs = ("", xs) -- TBD
+decodeCmdArgs UNKNOWN_COMMAND xs = ("Error-Unknown Command", xs)
+
+decodeExprCmd :: Int -> B.ByteString -> (String, B.ByteString)
+decodeExprCmd cnt bs = ("", bs)
+
+decodeExprProc :: Int -> B.ByteString -> (String, B.ByteString)
+decodeExprProc cnt bs = ("Bind " ++ show b ++ "<-", bs')
+  where
+    b = B.head bs
+    (c, bs') = decodeExprCmd cnt (B.tail bs)
+
 byteToTypeOp :: Word8 -> (Either ExprType ExprExtType, Int)
 byteToTypeOp b = if (byteTypeNum b) < 7
                  then (Left $ toEnum $ fromIntegral $ byteTypeNum b, 
