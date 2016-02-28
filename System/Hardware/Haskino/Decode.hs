@@ -18,9 +18,11 @@ import           Data.Bits
 import qualified Data.ByteString  as B 
 import           Data.ByteString.Base16 (encode)
 import           Data.Foldable (foldMap)
+import           Data.Int
 import           Data.Word
 import           System.Hardware.Haskino.Data
 import           System.Hardware.Haskino.Expr
+import           System.Hardware.Haskino.Utils
 
 infixr 5 :<
 
@@ -110,13 +112,122 @@ decodeCmdArgs REF_CMD_WRITE xs = ("", xs) -- TBD
 decodeCmdArgs UNKNOWN_COMMAND xs = ("Error-Unknown Command", xs)
 
 decodeExprCmd :: Int -> B.ByteString -> (String, B.ByteString)
-decodeExprCmd cnt bs = ("", bs)
+decodeExprCmd cnt bs = 
 
 decodeExprProc :: Int -> B.ByteString -> (String, B.ByteString)
 decodeExprProc cnt bs = ("Bind " ++ show b ++ "<-", bs')
   where
     b = B.head bs
     (c, bs') = decodeExprCmd cnt (B.tail bs)
+
+decodeErr :: B.ByteString -> (String, B.ByteString)
+decodeErr bs = ("Decode Error, remaining=" ++ show (encode bs), B.empty)
+
+decodeExpr :: B.ByteString -> (String, B.ByteString)
+decodeExpr Empty = decodeErr B.empty
+decodeExpr bs    = ("(" ++ opStr ++ ")", bs') 
+  where
+    (etype, op) = byteToTypeOp $ B.head bs
+    (opStr, bs') = decodeTypeOp etype op (B.tail bs)
+
+decodeTypeOp :: Either ExprType ExprExtType -> Int -> B.ByteString -> (String, B.ByteString)
+decodeTypeOp etype op bs = 
+  case etype of
+    (Left lt)  -> (show lt ++ "-" ++ show eop ++ deop, bs')
+    (Right rt) -> case rt of
+                   EXPR_LIST8 -> (show rt ++ "-" ++ show elop ++ deop, bs'')
+                   EXPR_FLOAT -> (show rt ++ "-" ++ show efop ++ deop, bs''')
+  where
+    eop = toEnum op::ExprOp
+    elop = toEnum op::ExprListOp
+    efop = toEnum op::ExprFloatOp
+    (deop, bs') = case etype of
+                    (Left lt) -> decodeOp lt eop bs
+    (delop, bs'') = decodeListOp elop bs
+    (defop, bs''') = decodeFloatOp efop bs
+
+decodeOp :: ExprType -> ExprOp -> B.ByteString -> (String, B.ByteString)
+decodeOp etype eop bs = 
+  case eop of
+    EXPR_LIT   -> decodeLit etype bs 
+    EXPR_REF   -> case bs of
+                    Empty    -> decodeErr bs
+                    (x :<  xs) -> (show x, xs)
+    EXPR_BIND  -> case bs of
+                    Empty    -> decodeErr bs
+                    (x :<  xs) -> (show x, xs)
+    EXPR_EQ    -> decodeExprOps 2 "" bs
+    EXPR_LESS  -> decodeExprOps 2 "" bs
+    EXPR_IF    -> decodeExprOps 3 "" bs
+    EXPR_FINT  -> decodeExprOps 1 "" bs
+    EXPR_NEG   -> decodeExprOps 1 "" bs
+    EXPR_SIGN  -> decodeExprOps 1 "" bs
+    EXPR_ADD   -> decodeExprOps 2 "" bs
+    EXPR_SUB   -> decodeExprOps 2 "" bs
+    EXPR_MULT  -> decodeExprOps 2 "" bs
+    EXPR_DIV   -> decodeExprOps 2 "" bs
+    EXPR_NOT   -> decodeExprOps 1 "" bs
+    EXPR_AND   -> decodeExprOps 2 "" bs
+    EXPR_OR    -> decodeExprOps 2 "" bs
+    EXPR_TINT  -> decodeExprOps 1 "" bs
+    EXPR_XOR   -> decodeExprOps 2 "" bs
+    EXPR_REM   -> decodeExprOps 2 "" bs 
+    EXPR_COMP  -> decodeExprOps 2 "" bs 
+    EXPR_SHFL  -> decodeExprOps 2 "" bs 
+    EXPR_SHFR  -> decodeExprOps 2 "" bs 
+    EXPR_TSTB  -> decodeExprOps 2 "" bs 
+    EXPR_SETB  -> decodeExprOps 2 "" bs
+    EXPR_CLRB  -> decodeExprOps 2 "" bs
+    EXPR_QUOT  -> decodeExprOps 2 "" bs
+    EXPR_MOD   -> decodeExprOps 2 "" bs
+    EXPR_SHOW  -> decodeExprOps 1 "" bs
+
+decodeLit :: ExprType -> B.ByteString -> (String, B.ByteString)
+decodeLit etype bs =
+  case etype of
+    EXPR_BOOL   -> case bs of
+                     Empty     -> decodeErr bs
+                     (x :< xs) -> (if x==0 then " False" else " True", xs)
+    EXPR_WORD8  -> case bs of
+                     Empty     -> decodeErr bs
+                     (x :< xs) -> (" " ++ show x, xs)
+    EXPR_WORD16 -> case bs of
+                     Empty          -> decodeErr bs
+                     (x :< Empty)   -> decodeErr bs
+                     (x :< y :< xs) -> (" " ++ (show $ bytesToWord16 (x,y)), xs)
+    EXPR_WORD32 -> case bs of
+                     Empty               -> decodeErr bs
+                     (x :< xs) 
+                      | B.length xs < 3  -> decodeErr bs
+                     (x :< y :< z :< a :< xs) -> (" " ++ (show $ bytesToWord32 (x,y,z,a)), xs)
+    EXPR_INT8   -> case bs of
+                     Empty     -> decodeErr bs
+                     (x :< xs) -> (" " ++ show ((fromIntegral x)::Int8), xs)
+    EXPR_INT16  -> case bs of
+                     Empty          -> decodeErr bs
+                     (x :< Empty)   -> decodeErr bs
+                     (x :< y :< xs) -> (" " ++ show ((fromIntegral $ bytesToWord16 (x,y))::Int16), xs)
+    EXPR_INT32 -> case bs of
+                     Empty               -> decodeErr bs
+                     (x :< xs) 
+                      | B.length xs < 3  -> decodeErr bs
+                     (x :< y :< z :< a :< xs) -> (" " ++ show ((fromIntegral $ bytesToWord32 (x,y,z,a))::Int32), xs)
+
+
+decodeExprOps :: Int -> String -> B.ByteString -> (String, B.ByteString)
+decodeExprOps cnt dec bs = 
+    if (cnt == 0)
+    then ("", bs)
+    else (dec ++ dec' ++ dec'', bs'')
+  where
+    (dec', bs') = decodeExpr bs 
+    (dec'', bs'') = decodeExprOps (cnt-1) dec' bs'
+
+decodeListOp :: ExprListOp -> B.ByteString -> (String, B.ByteString)
+decodeListOp elop bs = ("", B.empty)
+
+decodeFloatOp :: ExprFloatOp -> B.ByteString -> (String, B.ByteString)
+decodeFloatOp efop bs = ("", B.empty)
 
 byteToTypeOp :: Word8 -> (Either ExprType ExprExtType, Int)
 byteToTypeOp b = if (byteTypeNum b) < 7
@@ -136,5 +247,3 @@ byteToTypeOp b = if (byteTypeNum b) < 7
 
     byteExtOpNum :: Word8 -> Word8
     byteExtOpNum b = b .&. 0x1F
-
-
