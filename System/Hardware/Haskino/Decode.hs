@@ -76,7 +76,10 @@ decodeCmdArgs BC_CMD_SET_PIN_MODE xs = decodeExprCmd 1 xs
 decodeCmdArgs BC_CMD_DELAY_MILLIS xs = decodeExprProc 1 xs
 decodeCmdArgs BC_CMD_DELAY_MICROS xs = decodeExprCmd 1 xs
 decodeCmdArgs BC_CMD_LOOP xs = ("\n" ++ (decodeCodeBlock xs "Loop"), B.empty)
-decodeCmdArgs BC_CMD_WHILE xs = ("", xs) -- TBD
+decodeCmdArgs BC_CMD_WHILE xs = (dec ++ dec' ++ "\n" ++ (decodeCodeBlock xs'' "While"), B.empty)
+  where
+    (dec, xs') = decodeExprCmd 2 xs
+    (dec', xs'') = decodeExprCmd 1 (B.tail xs') 
 decodeCmdArgs BC_CMD_IF_THEN_ELSE xs = ("", xs) -- TBD
 decodeCmdArgs BC_CMD_FORIN xs = ("", xs) -- TBD
 decodeCmdArgs BS_CMD_REQUEST_VERSION xs = decodeExprProc 0 xs
@@ -112,7 +115,7 @@ decodeCmdArgs SCHED_CMD_QUERY_ALL xs = decodeExprProc 0 xs
 decodeCmdArgs SCHED_CMD_QUERY xs = decodeExprProc 1 xs
 decodeCmdArgs SCHED_CMD_RESET xs =  decodeExprCmd 0 xs
 decodeCmdArgs SCHED_CMD_BOOT_TASK xs = decodeExprCmd 1 xs
-decodeCmdArgs REF_CMD_NEW xs = decodeRefProc 1 xs
+decodeCmdArgs REF_CMD_NEW xs = decodeRefNew 1 xs
 decodeCmdArgs REF_CMD_READ xs =  decodeRefProc 1 xs
 decodeCmdArgs REF_CMD_WRITE xs = decodeRefCmd 2 xs
 decodeCmdArgs UNKNOWN_COMMAND xs = ("Unknown Command", xs)
@@ -144,10 +147,23 @@ decodeRefCmd cnt bs =
     (dec, bs') = decodeExprCmd cnt (B.tail bs)
 
 decodeRefProc :: Int -> B.ByteString -> (String, B.ByteString)
-decodeRefProc cnt bs = (" (Bind " ++ show b ++ ") <-" ++ c, bs')
+decodeRefProc cnt bs = 
+  case bs of
+    Empty         -> decodeErr bs
+    (x :< Empty) -> decodeErr bs
+    (x :< y :< xs) -> ("-" ++ (show ((toEnum (fromIntegral x))::RefType)) ++ " (Bind " ++ show y ++ ") <-"++ dec, bs')
   where
-    b = B.head bs
-    (c, bs') = decodeRefCmd cnt (B.tail bs)
+    (dec, bs') = decodeExprCmd cnt (B.tail $ B.tail bs)
+
+decodeRefNew :: Int -> B.ByteString -> (String, B.ByteString)
+decodeRefNew cnt bs = 
+  case bs of
+    Empty               -> decodeErr bs
+    (x :< Empty)        -> decodeErr bs
+    (x :< y :< Empty)   -> decodeErr bs
+    (x :< _ :< z :< xs) -> ("-" ++ (show ((toEnum (fromIntegral x))::RefType)) ++ " (Ref Index " ++ show z ++ ") "++ dec, bs')
+  where
+    (dec, bs') = decodeExprCmd cnt (B.drop 3 bs)
 
 decodeErr :: B.ByteString -> (String, B.ByteString)
 decodeErr bs = ("Decode Error, remaining=" ++ show (encode bs), B.empty)
