@@ -73,9 +73,9 @@ decodeCmd (x :< xs)    = show cmd ++ decoded ++ "\n"
 decodeCmdArgs :: FirmwareCmd -> B.ByteString -> (String, B.ByteString)
 decodeCmdArgs BC_CMD_SYSTEM_RESET xs = ("", xs)
 decodeCmdArgs BC_CMD_SET_PIN_MODE xs = decodeExprCmd 1 xs
-decodeCmdArgs BC_CMD_DELAY_MILLIS xs = decodeExprCmd 1 xs
+decodeCmdArgs BC_CMD_DELAY_MILLIS xs = decodeExprProc 1 xs
 decodeCmdArgs BC_CMD_DELAY_MICROS xs = decodeExprCmd 1 xs
-decodeCmdArgs BC_CMD_LOOP xs = decodeCodeBlock xs
+decodeCmdArgs BC_CMD_LOOP xs = ("\n" ++ (decodeCodeBlock xs "Loop"), B.empty)
 decodeCmdArgs BC_CMD_WHILE xs = ("", xs) -- TBD
 decodeCmdArgs BC_CMD_IF_THEN_ELSE xs = ("", xs) -- TBD
 decodeCmdArgs BC_CMD_FORIN xs = ("", xs) -- TBD
@@ -106,14 +106,14 @@ decodeCmdArgs SRVO_CMD_READ xs = decodeExprProc 1 xs
 decodeCmdArgs SRVO_CMD_READ_MICROS xs = decodeExprProc 1 xs
 decodeCmdArgs SCHED_CMD_CREATE_TASK xs = decodeExprCmd 1 xs
 decodeCmdArgs SCHED_CMD_DELETE_TASK xs = decodeExprCmd 1 xs
-decodeCmdArgs SCHED_CMD_ADD_TO_TASK xs = ("", xs)
+decodeCmdArgs SCHED_CMD_ADD_TO_TASK xs = ("", xs) -- TBD
 decodeCmdArgs SCHED_CMD_SCHED_TASK xs = decodeExprCmd 2 xs
 decodeCmdArgs SCHED_CMD_QUERY_ALL xs = decodeExprProc 0 xs
 decodeCmdArgs SCHED_CMD_QUERY xs = decodeExprProc 1 xs
 decodeCmdArgs SCHED_CMD_RESET xs =  decodeExprCmd 0 xs
 decodeCmdArgs SCHED_CMD_BOOT_TASK xs = decodeExprCmd 1 xs
-decodeCmdArgs REF_CMD_NEW xs = decodeRefCmd 1 xs
-decodeCmdArgs REF_CMD_READ xs =  decodeRefCmd 1 xs
+decodeCmdArgs REF_CMD_NEW xs = decodeRefProc 1 xs
+decodeCmdArgs REF_CMD_READ xs =  decodeRefProc 1 xs
 decodeCmdArgs REF_CMD_WRITE xs = decodeRefCmd 2 xs
 decodeCmdArgs UNKNOWN_COMMAND xs = ("Unknown Command", xs)
 
@@ -124,13 +124,13 @@ decodeExprCmd cnt bs = decodeExprCmd' cnt "" bs
     decodeExprCmd' cnt dec bs = 
         if (cnt == 0)
         then ("", bs)
-        else (dec ++ dec', bs')
+        else (dec' ++ dec'', bs'')
       where
         (dec', bs') = decodeExpr bs
         (dec'', bs'') = decodeExprCmd' (cnt-1) dec' bs'
 
 decodeExprProc :: Int -> B.ByteString -> (String, B.ByteString)
-decodeExprProc cnt bs = (" (Bind " ++ show b ++ ") <-", bs')
+decodeExprProc cnt bs = (" (Bind " ++ show b ++ ") <-" ++ c, bs')
   where
     b = B.head bs
     (c, bs') = decodeExprCmd cnt (B.tail bs)
@@ -139,27 +139,31 @@ decodeRefCmd :: Int -> B.ByteString -> (String, B.ByteString)
 decodeRefCmd cnt bs =
   case bs of
     Empty     -> decodeErr bs
-    (x :< xs) -> ("-" ++ (show ((toEnum (fromIntegral x))::RefType)) ++ " ", xs)
+    (x :< xs) -> ("-" ++ (show ((toEnum (fromIntegral x))::RefType)) ++ " " ++ dec, bs')
   where
-    (dec, b') = decodeExprCmd cnt bs
+    (dec, bs') = decodeExprCmd cnt (B.tail bs)
+
+decodeRefProc :: Int -> B.ByteString -> (String, B.ByteString)
+decodeRefProc cnt bs = (" (Bind " ++ show b ++ ") <-" ++ c, bs')
+  where
+    b = B.head bs
+    (c, bs') = decodeRefCmd cnt (B.tail bs)
 
 decodeErr :: B.ByteString -> (String, B.ByteString)
 decodeErr bs = ("Decode Error, remaining=" ++ show (encode bs), B.empty)
 
-decodeCodeBlock :: B.ByteString -> (String, B.ByteString)
-decodeCodeBlock bs = ("", B.empty) 
-{-
-  case bs of
-    Empty     -> decodeErr bs
-    _         -> decodeCodeBlock' bs []
-  where
-    decodeCodeBlock' :: B.ByteString -> [B.ByteString] -> [B.ByteString]
-    decodeCodeBlock' bs cmds = 
-      case bs of
-        Empty                -> cmds
-        (x :< xs) | x < 0xFF -> decodeCodeBlock' (drop x xs) (cmds ++ [take x xs])
-        (x : y :< xs)        -> decodeCodeBlock' (drop x xs) (cmds ++ [take x xs])
--}
+decodeCodeBlock :: B.ByteString -> String -> String
+decodeCodeBlock bs desc = 
+  "*** Start of " ++ desc ++ " body:\n" ++ 
+  (decodeCmds $ decodeCodeBlock' bs []) ++ 
+  "*** End of " ++ desc ++ " body\n"
+    where
+      decodeCodeBlock' :: B.ByteString -> [B.ByteString] -> [B.ByteString]
+      decodeCodeBlock' bs cmds = 
+        case bs of
+          Empty                -> cmds
+          (x :< xs) | x < 0xFF -> decodeCodeBlock' (B.drop (fromIntegral x) xs) (cmds ++ [B.take (fromIntegral x) xs])
+          (x :< y :< xs)       -> decodeCodeBlock' (B.drop (fromIntegral x) xs) (cmds ++ [B.take (fromIntegral x) xs])
 
 decodeExpr :: B.ByteString -> (String, B.ByteString)
 decodeExpr Empty = decodeErr B.empty
@@ -257,7 +261,7 @@ decodeExprOps :: Int -> String -> B.ByteString -> (String, B.ByteString)
 decodeExprOps cnt dec bs = 
     if (cnt == 0)
     then ("", bs)
-    else (dec ++ dec' ++ dec'', bs'')
+    else (dec' ++ dec'', bs'')
   where
     (dec', bs') = decodeExpr bs 
     (dec'', bs'') = decodeExprOps (cnt-1) dec' bs'
@@ -348,10 +352,10 @@ byteToTypeOp b = if (byteTypeNum b) < 7
                        fromIntegral $ byteExtOpNum b)
   where 
     byteTypeNum :: Word8 -> Word8
-    byteTypeNum b = (b .&. 0xE0) `shiftL` 5
+    byteTypeNum b = (b .&. 0xE0) `shiftR` 5
 
     byteExtTypeNum :: Word8 -> Word8
-    byteExtTypeNum b = (b .&. 0xF0) `shiftL` 4
+    byteExtTypeNum b = (b .&. 0xF0) `shiftR` 4
 
     byteOpNum :: Word8 -> Word8
     byteOpNum b = b .&. 0x1F
