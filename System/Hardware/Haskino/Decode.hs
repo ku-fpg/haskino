@@ -75,7 +75,7 @@ decodeCmdArgs BC_CMD_SYSTEM_RESET xs = ("", xs)
 decodeCmdArgs BC_CMD_SET_PIN_MODE xs = decodeExprCmd 1 xs
 decodeCmdArgs BC_CMD_DELAY_MILLIS xs = decodeExprCmd 1 xs
 decodeCmdArgs BC_CMD_DELAY_MICROS xs = decodeExprCmd 1 xs
-decodeCmdArgs BC_CMD_LOOP xs = ("", xs) -- TBD
+decodeCmdArgs BC_CMD_LOOP xs = decodeCodeBlock xs
 decodeCmdArgs BC_CMD_WHILE xs = ("", xs) -- TBD
 decodeCmdArgs BC_CMD_IF_THEN_ELSE xs = ("", xs) -- TBD
 decodeCmdArgs BC_CMD_FORIN xs = ("", xs) -- TBD
@@ -112,9 +112,9 @@ decodeCmdArgs SCHED_CMD_QUERY_ALL xs = decodeExprProc 0 xs
 decodeCmdArgs SCHED_CMD_QUERY xs = decodeExprProc 1 xs
 decodeCmdArgs SCHED_CMD_RESET xs =  decodeExprCmd 0 xs
 decodeCmdArgs SCHED_CMD_BOOT_TASK xs = decodeExprCmd 1 xs
-decodeCmdArgs REF_CMD_NEW xs = ("", xs) -- TBD
-decodeCmdArgs REF_CMD_READ xs =  ("", xs) -- TBD
-decodeCmdArgs REF_CMD_WRITE xs = ("", xs) -- TBD
+decodeCmdArgs REF_CMD_NEW xs = decodeRefCmd 1 xs
+decodeCmdArgs REF_CMD_READ xs =  decodeRefCmd 1 xs
+decodeCmdArgs REF_CMD_WRITE xs = decodeRefCmd 2 xs
 decodeCmdArgs UNKNOWN_COMMAND xs = ("Unknown Command", xs)
 
 decodeExprCmd :: Int -> B.ByteString -> (String, B.ByteString)
@@ -130,17 +130,40 @@ decodeExprCmd cnt bs = decodeExprCmd' cnt "" bs
         (dec'', bs'') = decodeExprCmd' (cnt-1) dec' bs'
 
 decodeExprProc :: Int -> B.ByteString -> (String, B.ByteString)
-decodeExprProc cnt bs = ("Bind " ++ show b ++ "<-", bs')
+decodeExprProc cnt bs = (" (Bind " ++ show b ++ ") <-", bs')
   where
     b = B.head bs
     (c, bs') = decodeExprCmd cnt (B.tail bs)
 
+decodeRefCmd :: Int -> B.ByteString -> (String, B.ByteString)
+decodeRefCmd cnt bs =
+  case bs of
+    Empty     -> decodeErr bs
+    (x :< xs) -> ("-" ++ (show ((toEnum (fromIntegral x))::RefType)) ++ " ", xs)
+  where
+    (dec, b') = decodeExprCmd cnt bs
+
 decodeErr :: B.ByteString -> (String, B.ByteString)
 decodeErr bs = ("Decode Error, remaining=" ++ show (encode bs), B.empty)
 
+decodeCodeBlock :: B.ByteString -> (String, B.ByteString)
+decodeCodeBlock bs = ("", B.empty) 
+{-
+  case bs of
+    Empty     -> decodeErr bs
+    _         -> decodeCodeBlock' bs []
+  where
+    decodeCodeBlock' :: B.ByteString -> [B.ByteString] -> [B.ByteString]
+    decodeCodeBlock' bs cmds = 
+      case bs of
+        Empty                -> cmds
+        (x :< xs) | x < 0xFF -> decodeCodeBlock' (drop x xs) (cmds ++ [take x xs])
+        (x : y :< xs)        -> decodeCodeBlock' (drop x xs) (cmds ++ [take x xs])
+-}
+
 decodeExpr :: B.ByteString -> (String, B.ByteString)
 decodeExpr Empty = decodeErr B.empty
-decodeExpr bs    = ("(" ++ opStr ++ ")", bs') 
+decodeExpr bs    = (" (" ++ opStr ++ ")", bs') 
   where
     (etype, op) = byteToTypeOp $ B.head bs
     (opStr, bs') = decodeTypeOp etype op (B.tail bs)
