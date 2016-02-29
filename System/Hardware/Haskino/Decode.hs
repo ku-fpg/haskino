@@ -60,9 +60,15 @@ decodeCmds :: [B.ByteString] -> String
 decodeCmds cs = concat $ map decodeCmd cs
 
 decodeCmd :: B.ByteString -> String
-decodeCmd Empty        = "EmptyCommand"
+decodeCmd Empty        = "Empty Command"
 decodeCmd (x :< Empty) = show (firmwareValCmd x)
-decodeCmd (x :< xs)    = show (firmwareValCmd x) ++ "[" ++ show (encode xs) ++ "]\n"
+decodeCmd (x :< xs)    = show cmd ++ decoded ++ "\n"
+  where
+    cmd = firmwareValCmd x
+    (dec, bs) = decodeCmdArgs cmd xs
+    decoded = case bs of
+                Empty -> dec
+                _     -> dec ++ show (encode bs)
 
 decodeCmdArgs :: FirmwareCmd -> B.ByteString -> (String, B.ByteString)
 decodeCmdArgs BC_CMD_SYSTEM_RESET xs = ("", xs)
@@ -109,10 +115,19 @@ decodeCmdArgs SCHED_CMD_BOOT_TASK xs = decodeExprCmd 1 xs
 decodeCmdArgs REF_CMD_NEW xs = ("", xs) -- TBD
 decodeCmdArgs REF_CMD_READ xs =  ("", xs) -- TBD
 decodeCmdArgs REF_CMD_WRITE xs = ("", xs) -- TBD
-decodeCmdArgs UNKNOWN_COMMAND xs = ("Error-Unknown Command", xs)
+decodeCmdArgs UNKNOWN_COMMAND xs = ("Unknown Command", xs)
 
 decodeExprCmd :: Int -> B.ByteString -> (String, B.ByteString)
-decodeExprCmd cnt bs = 
+decodeExprCmd cnt bs = decodeExprCmd' cnt "" bs
+  where
+    decodeExprCmd' :: Int -> String -> B.ByteString -> (String, B.ByteString)
+    decodeExprCmd' cnt dec bs = 
+        if (cnt == 0)
+        then ("", bs)
+        else (dec ++ dec', bs')
+      where
+        (dec', bs') = decodeExpr bs
+        (dec'', bs'') = decodeExprCmd' (cnt-1) dec' bs'
 
 decodeExprProc :: Int -> B.ByteString -> (String, B.ByteString)
 decodeExprProc cnt bs = ("Bind " ++ show b ++ "<-", bs')
@@ -150,12 +165,8 @@ decodeOp :: ExprType -> ExprOp -> B.ByteString -> (String, B.ByteString)
 decodeOp etype eop bs = 
   case eop of
     EXPR_LIT   -> decodeLit etype bs 
-    EXPR_REF   -> case bs of
-                    Empty    -> decodeErr bs
-                    (x :<  xs) -> (show x, xs)
-    EXPR_BIND  -> case bs of
-                    Empty    -> decodeErr bs
-                    (x :<  xs) -> (show x, xs)
+    EXPR_REF   -> decodeRefBind bs
+    EXPR_BIND  -> decodeRefBind bs
     EXPR_EQ    -> decodeExprOps 2 "" bs
     EXPR_LESS  -> decodeExprOps 2 "" bs
     EXPR_IF    -> decodeExprOps 3 "" bs
@@ -181,6 +192,12 @@ decodeOp etype eop bs =
     EXPR_QUOT  -> decodeExprOps 2 "" bs
     EXPR_MOD   -> decodeExprOps 2 "" bs
     EXPR_SHOW  -> decodeExprOps 1 "" bs
+
+decodeRefBind :: B.ByteString -> (String, B.ByteString)
+decodeRefBind bs = 
+  case bs of
+    Empty    -> decodeErr bs
+    (x :< xs) -> (show x, xs)
 
 decodeLit :: ExprType -> B.ByteString -> (String, B.ByteString)
 decodeLit etype bs =
@@ -213,7 +230,6 @@ decodeLit etype bs =
                       | B.length xs < 3  -> decodeErr bs
                      (x :< y :< z :< a :< xs) -> (" " ++ show ((fromIntegral $ bytesToWord32 (x,y,z,a))::Int32), xs)
 
-
 decodeExprOps :: Int -> String -> B.ByteString -> (String, B.ByteString)
 decodeExprOps cnt dec bs = 
     if (cnt == 0)
@@ -224,10 +240,82 @@ decodeExprOps cnt dec bs =
     (dec'', bs'') = decodeExprOps (cnt-1) dec' bs'
 
 decodeListOp :: ExprListOp -> B.ByteString -> (String, B.ByteString)
-decodeListOp elop bs = ("", B.empty)
+decodeListOp elop bs =
+  case elop of
+    EXPRL_LIT  -> case bs of
+                    Empty     -> decodeErr bs
+                    (x :< xs) -> decodeListLit (fromIntegral x) xs
+    EXPRL_REF  -> decodeRefBind bs
+    EXPRL_BIND -> decodeRefBind bs
+    EXPRL_EQ   -> decodeExprOps 2 "" bs
+    EXPRL_LESS -> decodeExprOps 2 "" bs
+    EXPRL_IF   -> decodeExprOps 3 "" bs
+    EXPRL_ELEM -> decodeExprOps 2 "" bs
+    EXPRL_LEN  -> decodeExprOps 1 "" bs
+    EXPRL_CONS -> decodeExprOps 2 "" bs
+    EXPRL_APND -> decodeExprOps 2 "" bs
+    EXPRL_PACK -> case bs of
+                    Empty     -> decodeErr bs
+                    (x :< xs) -> decodeListPack (fromIntegral x) xs
+  where
+    decodeListLit :: Int -> B.ByteString -> (String, B.ByteString)
+    decodeListLit cnt bs = (show $ B.unpack $ B.take cnt bs, B.drop cnt bs)
+ 
+    decodeListPack :: Int -> B.ByteString -> (String, B.ByteString)
+    decodeListPack cnt bs = ("[" ++ dec ++ "]", bs')
+      where
+        (dec, bs') = decodeExprOps cnt "" bs
 
 decodeFloatOp :: ExprFloatOp -> B.ByteString -> (String, B.ByteString)
-decodeFloatOp efop bs = ("", B.empty)
+decodeFloatOp efop bs = 
+  case efop of
+    EXPRF_LIT   -> case bs of  
+                     Empty               -> decodeErr bs
+                     (x :< xs) 
+                      | B.length xs < 3  -> decodeErr bs
+                     (x :< y :< z :< a :< xs) -> (" " ++ show (bytesToFloat (x,y,z,a)), xs)
+    EXPRF_REF   -> decodeRefBind bs
+    EXPRF_BIND  -> decodeRefBind bs
+    EXPRF_EQ    -> decodeExprOps 2 "" bs
+    EXPRF_LESS  -> decodeExprOps 2 "" bs
+    EXPRF_IF    -> decodeExprOps 3 "" bs
+    EXPRF_FINT  -> decodeExprOps 1 "" bs
+    EXPRF_NEG   -> decodeExprOps 1 "" bs
+    EXPRF_SIGN  -> decodeExprOps 1 "" bs
+    EXPRF_ADD   -> decodeExprOps 2 "" bs
+    EXPRF_SUB   -> decodeExprOps 2 "" bs
+    EXPRF_MULT  -> decodeExprOps 2 "" bs
+    EXPRF_DIV   -> decodeExprOps 2 "" bs
+    EXPRF_SHOW  -> decodeExprOps 1 "" bs
+    EXPRF_MATH  -> case bs of
+                     Empty     -> decodeErr bs
+                     (x :< xs) -> decodeMathOp (toEnum ((fromIntegral x)::Int)) bs
+
+decodeMathOp :: ExprFloatMathOp -> B.ByteString -> (String, B.ByteString)
+decodeMathOp efmop bs =
+  case efmop of
+    EXPRF_TRUNC  -> decodeExprOps 1 "" bs
+    EXPRF_FRAC   -> decodeExprOps 1 "" bs
+    EXPRF_ROUND  -> decodeExprOps 1 "" bs
+    EXPRF_CEIL   -> decodeExprOps 1 "" bs
+    EXPRF_FLOOR  -> decodeExprOps 1 "" bs
+    EXPRF_PI     -> decodeExprOps 0 "" bs
+    EXPRF_EXP    -> decodeExprOps 1 "" bs
+    EXPRF_LOG    -> decodeExprOps 1 "" bs
+    EXPRF_SQRT   -> decodeExprOps 1 "" bs
+    EXPRF_SIN    -> decodeExprOps 1 "" bs
+    EXPRF_COS    -> decodeExprOps 1 "" bs
+    EXPRF_TAN    -> decodeExprOps 1 "" bs
+    EXPRF_ASIN   -> decodeExprOps 1 "" bs
+    EXPRF_ACOS   -> decodeExprOps 1 "" bs
+    EXPRF_ATAN   -> decodeExprOps 1 "" bs
+    EXPRF_ATAN2  -> decodeExprOps 2 "" bs
+    EXPRF_SINH   -> decodeExprOps 1 "" bs
+    EXPRF_COSH   -> decodeExprOps 1 "" bs
+    EXPRF_TANH   -> decodeExprOps 1 "" bs
+    EXPRF_POWER  -> decodeExprOps 2 "" bs
+    EXPRF_ISNAN  -> decodeExprOps 1 "" bs
+    EXPRF_ISINF  -> decodeExprOps 1 "" bs
 
 byteToTypeOp :: Word8 -> (Either ExprType ExprExtType, Int)
 byteToTypeOp b = if (byteTypeNum b) < 7
