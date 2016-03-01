@@ -59,6 +59,12 @@ decodeFrame bs = decodeCmds $ deframe bs
 decodeCmds :: [B.ByteString] -> String
 decodeCmds cs = concat $ map decodeCmd cs
 
+{- ToDo
+condenseAddToFrames :: [B.ByteString] -> [B.ByteString]
+condenseAddToFrames cs = 
+  where
+-}
+
 decodeCmd :: B.ByteString -> String
 decodeCmd Empty        = "Empty Command"
 decodeCmd (x :< Empty) = show (firmwareValCmd x)
@@ -118,7 +124,13 @@ decodeCmdArgs SRVO_CMD_READ xs = decodeExprProc 1 xs
 decodeCmdArgs SRVO_CMD_READ_MICROS xs = decodeExprProc 1 xs
 decodeCmdArgs SCHED_CMD_CREATE_TASK xs = decodeExprCmd 3 xs
 decodeCmdArgs SCHED_CMD_DELETE_TASK xs = decodeExprCmd 1 xs
-decodeCmdArgs SCHED_CMD_ADD_TO_TASK xs = decodeExprCmd 2 xs  -- TBD - Condense and decode code block inside
+decodeCmdArgs SCHED_CMD_ADD_TO_TASK xs = decodeExprCmd 2 xs  -- ToDo - Condense and decode code block inside
+{-
+decodeCmdArgs SCHED_CMD_ADD_TO_TASK xs = (dec ++ "\n" ++ dec', B.empty) 
+  where
+    (dec, xs') = decodeExprCmd 2 xs
+    dec' = decodeCodeBlock xs' "AddToTask"
+-}
 decodeCmdArgs SCHED_CMD_SCHED_TASK xs = decodeExprCmd 2 xs
 decodeCmdArgs SCHED_CMD_QUERY_ALL xs = decodeExprProc 0 xs
 decodeCmdArgs SCHED_CMD_QUERY xs = decodeExprProc 1 xs
