@@ -76,12 +76,21 @@ decodeCmdArgs BC_CMD_SET_PIN_MODE xs = decodeExprCmd 1 xs
 decodeCmdArgs BC_CMD_DELAY_MILLIS xs = decodeExprProc 1 xs
 decodeCmdArgs BC_CMD_DELAY_MICROS xs = decodeExprCmd 1 xs
 decodeCmdArgs BC_CMD_LOOP xs = ("\n" ++ (decodeCodeBlock xs "Loop"), B.empty)
-decodeCmdArgs BC_CMD_WHILE xs = (dec ++ dec' ++ "\n" ++ (decodeCodeBlock xs'' "While"), B.empty)
+decodeCmdArgs BC_CMD_WHILE xs = (dec ++ dec' ++ "\n" ++ dec'', B.empty)
   where
     (dec, xs') = decodeExprCmd 2 xs
-    (dec', xs'') = decodeExprCmd 1 (B.tail xs') 
-decodeCmdArgs BC_CMD_IF_THEN_ELSE xs = ("", xs) -- TBD
-decodeCmdArgs BC_CMD_FORIN xs = ("", xs) -- TBD
+    (dec', xs'') = decodeExprCmd 1 (B.tail xs')
+    dec'' = decodeCodeBlock xs'' "While"
+decodeCmdArgs BC_CMD_IF_THEN_ELSE xs = (dec ++ "\n" ++ dec' ++ dec'', B.empty)
+  where
+    thenSize = bytesToWord16 (B.head xs, B.head (B.tail xs))
+    (dec, xs') = decodeExprCmd 1 (B.drop 2 xs)
+    dec' = decodeCodeBlock (B.take (fromIntegral thenSize) xs') "Then"
+    dec'' = decodeCodeBlock (B.drop (fromIntegral thenSize) xs') "Else"
+decodeCmdArgs BC_CMD_FORIN xs = (dec ++ "\n" ++ dec', B.empty)
+  where
+    (dec, xs') = decodeExprCmd 2 xs
+    dec' = decodeCodeBlock xs' "ForIn"
 decodeCmdArgs BS_CMD_REQUEST_VERSION xs = decodeExprProc 0 xs
 decodeCmdArgs BS_CMD_REQUEST_TYPE xs = decodeExprProc 0 xs
 decodeCmdArgs BS_CMD_REQUEST_MICROS xs = decodeExprProc 0 xs
