@@ -24,10 +24,11 @@ blinkE = withArduino True "/dev/cu.usbmodem1421" $ do
            let delay = 1000
            setPinModeE led OUTPUT
            r <- newRemoteRef true
+           t <- readRemoteRef r
            loopE $ do x <- readRemoteRef r
                       digitalWriteE led x
                       delayMillisE delay
-                      digitalWriteE led false
+                      digitalWriteE led (notB x) -- false
                       delayMillisE delay
 
 blinkEApp :: IO ()
@@ -36,7 +37,20 @@ blinkEApp = withArduino True "/dev/cu.usbmodem1421" $ do
            let delay = 1000
            setPinModeE led OUTPUT
            r <- newRemoteRef true
-           loopE $ do _ <- digitalWriteE <$> pure led <*> readRemoteRef r
+           loopE $ do digitalWriteE led <$> readRemoteRef r
                       delayMillisE delay
-                      digitalWriteE led false
+                      pure (digitalWriteE led) <*> readRemoteRef r
                       delayMillisE delay
+
+blinkE2Blink :: IO ()
+blinkE2Blink = withArduino True "/dev/cu.usbmodem1421" $ do
+           let led = 13
+           let delay = 1000
+           setPinModeE led OUTPUT
+           r <- newRemoteRef true
+           digitalWriteE led <$> readRemoteRef r
+           delayMillisE delay
+           modifyRemoteRef r (\x -> notB x)
+           digitalWriteE led <$> readRemoteRef r
+           delayMillisE delay
+
