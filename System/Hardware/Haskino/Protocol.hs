@@ -14,7 +14,7 @@
 module System.Hardware.Haskino.Protocol(framePackage, packageCommand, 
                                             packageProcedure, packageRemoteBinding,
                                             unpackageResponse, parseQueryResult,
-                                            maxFirmwareSize) where
+                                            maxFirmwareSize, packageExpr) where
 
 import Data.Bits (xor,shiftR)
 import Data.Int (Int8, Int16, Int32)

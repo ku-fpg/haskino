@@ -22,12 +22,16 @@ import           Data.Int
 import           Data.Word
 import           System.Hardware.Haskino.Data
 import           System.Hardware.Haskino.Expr
+import           System.Hardware.Haskino.Protocol
 import           System.Hardware.Haskino.Utils
 
 infixr 5 :<
 
 pattern b :< bs <- (B.uncons -> Just (b, bs))
 pattern Empty   <- (B.uncons -> Nothing)
+
+decodeFrame :: B.ByteString -> String
+decodeFrame bs = decodeCmds $ condenseAddToTasks $ deframe bs
 
 deframe :: B.ByteString -> [B.ByteString]
 deframe bs = map unescape (deframe' bs [])
@@ -53,17 +57,31 @@ deframe bs = map unescape (deframe' bs [])
       | x == 0x7d && y == 0x5e =  B.cons 0x7e (unescape xs)
       | otherwise              =  B.cons x (unescape (B.cons y xs))
 
-decodeFrame :: B.ByteString -> String
-decodeFrame bs = decodeCmds $ deframe bs
-
 decodeCmds :: [B.ByteString] -> String
 decodeCmds cs = concat $ map decodeCmd cs
 
-{- ToDo
-condenseAddToFrames :: [B.ByteString] -> [B.ByteString]
-condenseAddToFrames cs = 
+condenseAddToTasks :: [B.ByteString] -> [B.ByteString]
+condenseAddToTasks cs = scanForAdd cs Nothing B.empty
   where
--}
+    scanForAdd :: [B.ByteString] -> Maybe Word8 -> B.ByteString -> [B.ByteString]
+    scanForAdd bss tid bs = 
+      case tid of
+        Nothing -> case bss of
+                     []       -> []
+                     (x : xs) -> case (firmwareValCmd $ B.head x) of
+                                   SCHED_CMD_ADD_TO_TASK -> scanForAdd xs (Just (B.head (B.drop 2 x))) (B.drop 5 x)
+                                   _                     -> x : scanForAdd xs Nothing B.empty
+        Just t  -> case bss of
+                     []       -> [buildCondensed t bs]
+                     (x : xs) -> case (firmwareValCmd $ B.head x) of
+                                   SCHED_CMD_ADD_TO_TASK -> scanForAdd xs tid (B.append bs (B.drop 5 x))
+                                   _                     -> (buildCondensed t bs) : scanForAdd xs Nothing B.empty
+
+    buildCondensed :: Word8 -> B.ByteString -> B.ByteString
+    buildCondensed t bs = B.cons (firmwareCmdVal SCHED_CMD_ADD_TO_TASK)
+                            (B.pack ((packageExpr (LitW8 $ fromIntegral t)) ++ 
+                                     (packageExpr (LitW16 (fromIntegral (B.length bs)))) ++ 
+                                     (B.unpack bs)))
 
 decodeCmd :: B.ByteString -> String
 decodeCmd Empty        = "Empty Command"
@@ -124,13 +142,10 @@ decodeCmdArgs SRVO_CMD_READ xs = decodeExprProc 1 xs
 decodeCmdArgs SRVO_CMD_READ_MICROS xs = decodeExprProc 1 xs
 decodeCmdArgs SCHED_CMD_CREATE_TASK xs = decodeExprCmd 3 xs
 decodeCmdArgs SCHED_CMD_DELETE_TASK xs = decodeExprCmd 1 xs
-decodeCmdArgs SCHED_CMD_ADD_TO_TASK xs = decodeExprCmd 2 xs  -- ToDo - Condense and decode code block inside
-{-
 decodeCmdArgs SCHED_CMD_ADD_TO_TASK xs = (dec ++ "\n" ++ dec', B.empty) 
   where
     (dec, xs') = decodeExprCmd 2 xs
     dec' = decodeCodeBlock xs' "AddToTask"
--}
 decodeCmdArgs SCHED_CMD_SCHED_TASK xs = decodeExprCmd 2 xs
 decodeCmdArgs SCHED_CMD_QUERY_ALL xs = decodeExprProc 0 xs
 decodeCmdArgs SCHED_CMD_QUERY xs = decodeExprProc 1 xs
