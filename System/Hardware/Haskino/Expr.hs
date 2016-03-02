@@ -707,6 +707,7 @@ data ExprType = EXPR_BOOL
               | EXPR_INT16
               | EXPR_INT32
               | EXPR_EXT
+            deriving (Show, Enum, Ord, Eq)
 
 data ExprOp = EXPR_LIT
             | EXPR_REF
@@ -736,6 +737,7 @@ data ExprOp = EXPR_LIT
             | EXPR_QUOT
             | EXPR_MOD
             | EXPR_SHOW
+          deriving (Show, Enum, Ord, Eq)
 
 data ExprListOp = EXPRL_LIT
             | EXPRL_REF
@@ -748,6 +750,7 @@ data ExprListOp = EXPRL_LIT
             | EXPRL_CONS
             | EXPRL_APND
             | EXPRL_PACK
+          deriving (Show, Enum, Ord, Eq)
 
 data ExprFloatOp = EXPRF_LIT
             | EXPRF_REF
@@ -764,6 +767,7 @@ data ExprFloatOp = EXPRF_LIT
             | EXPRF_DIV
             | EXPRF_SHOW
             | EXPRF_MATH
+          deriving (Show, Enum, Ord, Eq)
 
 data ExprFloatMathOp = EXPRF_TRUNC 
             | EXPRF_FRAC
@@ -787,118 +791,29 @@ data ExprFloatMathOp = EXPRF_TRUNC
             | EXPRF_POWER
             | EXPRF_ISNAN
             | EXPRF_ISINF
-
--- | Compute the numeric value of a command
-exprTypeVal :: ExprType -> Word8
-exprTypeVal EXPR_BOOL   = 0x00
-exprTypeVal EXPR_WORD8  = 0x01
-exprTypeVal EXPR_WORD16 = 0x02
-exprTypeVal EXPR_WORD32 = 0x03
-exprTypeVal EXPR_INT8   = 0x04
-exprTypeVal EXPR_INT16  = 0x05
-exprTypeVal EXPR_INT32  = 0x06
-exprTypeVal EXPR_EXT    = 0x07
+          deriving (Show, Enum, Ord, Eq)
 
 data ExprExtType = EXPR_LIST8
             | EXPR_FLOAT
+          deriving Show
 
 exprExtTypeVal :: ExprExtType -> Word8
-exprExtTypeVal EXPR_LIST8 = exprTypeVal EXPR_EXT `DB.shiftL` 5 DB..|. 0 `DB.shiftL` 4
-exprExtTypeVal EXPR_FLOAT = exprTypeVal EXPR_EXT `DB.shiftL` 5 DB..|. 1 `DB.shiftL` 4
+exprExtTypeVal EXPR_LIST8 = (fromIntegral $ fromEnum EXPR_EXT) `DB.shiftL` 5 DB..|. 0 `DB.shiftL` 4
+exprExtTypeVal EXPR_FLOAT = (fromIntegral $ fromEnum EXPR_EXT) `DB.shiftL` 5 DB..|. 1 `DB.shiftL` 4
 
-exprOpVal :: ExprOp -> Word8
-exprOpVal EXPR_LIT  = 0x00
-exprOpVal EXPR_REF  = 0x01
-exprOpVal EXPR_BIND = 0x02
-exprOpVal EXPR_EQ   = 0x03
-exprOpVal EXPR_LESS = 0x04
-exprOpVal EXPR_IF   = 0x05
-exprOpVal EXPR_FINT = 0x06
-exprOpVal EXPR_NEG  = 0x07
-exprOpVal EXPR_SIGN = 0x08
-exprOpVal EXPR_ADD  = 0x09
-exprOpVal EXPR_SUB  = 0x0A
-exprOpVal EXPR_MULT = 0x0B
-exprOpVal EXPR_DIV  = 0x0C
-exprOpVal EXPR_NOT  = 0x0D
-exprOpVal EXPR_AND  = 0x0E
-exprOpVal EXPR_OR   = 0x0F
-exprOpVal EXPR_TINT = 0x10
-exprOpVal EXPR_XOR  = 0x11
-exprOpVal EXPR_REM  = 0x12
-exprOpVal EXPR_COMP = 0x13
-exprOpVal EXPR_SHFL = 0x14
-exprOpVal EXPR_SHFR = 0x15
-exprOpVal EXPR_TSTB = 0x16
-exprOpVal EXPR_SETB = 0x17
-exprOpVal EXPR_CLRB = 0x18
-exprOpVal EXPR_QUOT = 0x19
-exprOpVal EXPR_MOD  = 0x1A
-exprOpVal EXPR_SHOW = 0x1B
-
-exprListOpVal :: ExprListOp -> Word8
-exprListOpVal EXPRL_LIT  = exprOpVal EXPR_LIT
-exprListOpVal EXPRL_REF  = exprOpVal EXPR_REF
-exprListOpVal EXPRL_BIND = exprOpVal EXPR_BIND
-exprListOpVal EXPRL_EQ   = exprOpVal EXPR_EQ
-exprListOpVal EXPRL_LESS = exprOpVal EXPR_LESS
-exprListOpVal EXPRL_IF   = exprOpVal EXPR_IF
-exprListOpVal EXPRL_ELEM = 0x06
-exprListOpVal EXPRL_LEN  = 0x07
-exprListOpVal EXPRL_CONS = 0x08
-exprListOpVal EXPRL_APND = 0x09
-exprListOpVal EXPRL_PACK = 0x0A
-
-exprFloatOpVal :: ExprFloatOp -> Word8
-exprFloatOpVal EXPRF_LIT  = exprOpVal EXPR_LIT
-exprFloatOpVal EXPRF_REF  = exprOpVal EXPR_REF
-exprFloatOpVal EXPRF_BIND = exprOpVal EXPR_BIND
-exprFloatOpVal EXPRF_EQ   = exprOpVal EXPR_EQ
-exprFloatOpVal EXPRF_LESS = exprOpVal EXPR_LESS
-exprFloatOpVal EXPRF_IF   = exprOpVal EXPR_IF
-exprFloatOpVal EXPRF_FINT = exprOpVal EXPR_FINT
-exprFloatOpVal EXPRF_NEG  = exprOpVal EXPR_NEG
-exprFloatOpVal EXPRF_SIGN = exprOpVal EXPR_SIGN
-exprFloatOpVal EXPRF_ADD  = exprOpVal EXPR_ADD
-exprFloatOpVal EXPRF_SUB  = exprOpVal EXPR_SUB
-exprFloatOpVal EXPRF_MULT = exprOpVal EXPR_MULT
-exprFloatOpVal EXPRF_DIV  = exprOpVal EXPR_DIV
-exprFloatOpVal EXPRF_SHOW = 0x0D
-exprFloatOpVal EXPRF_MATH = 0x0E
-
-exprFloatMathOpVal :: ExprFloatMathOp -> Word8
-exprFloatMathOpVal EXPRF_TRUNC  = 0x00
-exprFloatMathOpVal EXPRF_FRAC   = 0x01
-exprFloatMathOpVal EXPRF_ROUND  = 0x02
-exprFloatMathOpVal EXPRF_CEIL   = 0x03
-exprFloatMathOpVal EXPRF_FLOOR  = 0x04
-exprFloatMathOpVal EXPRF_PI     = 0x05
-exprFloatMathOpVal EXPRF_EXP    = 0x06
-exprFloatMathOpVal EXPRF_LOG    = 0x07
-exprFloatMathOpVal EXPRF_SQRT   = 0x08
-exprFloatMathOpVal EXPRF_SIN    = 0x09
-exprFloatMathOpVal EXPRF_COS    = 0x0A
-exprFloatMathOpVal EXPRF_TAN    = 0x0B
-exprFloatMathOpVal EXPRF_ASIN   = 0x0C
-exprFloatMathOpVal EXPRF_ACOS   = 0x0D
-exprFloatMathOpVal EXPRF_ATAN   = 0x0E
-exprFloatMathOpVal EXPRF_ATAN2  = 0x0F
-exprFloatMathOpVal EXPRF_SINH   = 0x10
-exprFloatMathOpVal EXPRF_COSH   = 0x11
-exprFloatMathOpVal EXPRF_TANH   = 0x12
-exprFloatMathOpVal EXPRF_POWER  = 0x13
-exprFloatMathOpVal EXPRF_ISNAN  = 0x14
-exprFloatMathOpVal EXPRF_ISINF  = 0x15
+exprExtValType :: Word8 -> ExprExtType
+exprExtValType 0x0E = EXPR_LIST8 
+exprExtValType 0x0F = EXPR_FLOAT
 
 exprCmdVal :: ExprType -> ExprOp -> Word8
-exprCmdVal t o = exprTypeVal t `DB.shiftL` 5 DB..|. exprOpVal o
+exprCmdVal t o = (fromIntegral $ fromEnum t) `DB.shiftL` 5 DB..|. (fromIntegral $ fromEnum o)
 
 exprLCmdVal :: ExprListOp -> Word8
-exprLCmdVal o = exprExtTypeVal EXPR_LIST8 DB..|. exprListOpVal o
+exprLCmdVal o = (exprExtTypeVal EXPR_LIST8) DB..|. (fromIntegral $ fromEnum o)
 
 exprFCmdVal :: ExprFloatOp -> Word8
-exprFCmdVal o = exprExtTypeVal EXPR_FLOAT DB..|. exprFloatOpVal o
+exprFCmdVal o = (exprExtTypeVal EXPR_FLOAT) DB..|. (fromIntegral $ fromEnum o)
 
 exprFMathCmdVals :: ExprFloatMathOp -> [Word8]
-exprFMathCmdVals o = [exprFCmdVal EXPRF_MATH, exprFloatMathOpVal o]
+exprFMathCmdVals o = [(fromIntegral $ fromEnum EXPRF_MATH), (fromIntegral $ fromEnum o)]
 

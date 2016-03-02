@@ -42,6 +42,7 @@ import qualified System.Hardware.Serialport as S (openSerial, closeSerial,
                                                   recv, send)
 
 import System.Hardware.Haskino.Data
+import System.Hardware.Haskino.Decode
 import System.Hardware.Haskino.Expr
 import System.Hardware.Haskino.Utils
 import System.Hardware.Haskino.Protocol
@@ -254,7 +255,7 @@ send conn commands =
       sendToArduino :: ArduinoConnection -> B.ByteString -> IO ()
       sendToArduino conn cmds = do
           when (lp /= 0) 
-               (message conn $ "Sending: " ++ show (encode cmds))
+               (message conn $ "Sending: " ++ decodeFrame cmds) -- show (encode cmds))
           sent <- liftIO $ S.send (port conn) cmds
           when (sent /= lp)
                (message conn $ "Send failed. Tried: " ++ show lp ++ "bytes, reported: " ++ show sent)
