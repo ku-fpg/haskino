@@ -68,13 +68,17 @@ condenseAddToTasks cs = scanForAdd cs Nothing B.empty
       case tid of
         Nothing -> case bss of
                      []       -> []
-                     (x : xs) -> case (firmwareValCmd $ B.head x) of
-                                   SCHED_CMD_ADD_TO_TASK -> scanForAdd xs (Just (B.head (B.drop 2 x))) (B.drop 5 x)
+                     (x : xs) -> case (getCmd x) of
+                                   SCHED_CMD_ADD_TO_TASK -> if (B.length x < 5)
+                                                            then scanForAdd xs Nothing B.empty
+                                                            else scanForAdd xs (Just (B.head (B.drop 2 x))) (B.drop 5 x)
                                    _                     -> x : scanForAdd xs Nothing B.empty
         Just t  -> case bss of
                      []       -> [buildCondensed t bs]
-                     (x : xs) -> case (firmwareValCmd $ B.head x) of
-                                   SCHED_CMD_ADD_TO_TASK -> scanForAdd xs tid (B.append bs (B.drop 5 x))
+                     (x : xs) -> case (getCmd x) of
+                                   SCHED_CMD_ADD_TO_TASK -> if (B.length x < 5)
+                                                            then scanForAdd xs tid bs
+                                                            else scanForAdd xs tid (B.append bs (B.drop 5 x))
                                    _                     -> (buildCondensed t bs) : scanForAdd xs Nothing B.empty
 
     buildCondensed :: Word8 -> B.ByteString -> B.ByteString
@@ -82,6 +86,10 @@ condenseAddToTasks cs = scanForAdd cs Nothing B.empty
                             (B.pack ((packageExpr (LitW8 $ fromIntegral t)) ++ 
                                      (packageExpr (LitW16 (fromIntegral (B.length bs)))) ++ 
                                      (B.unpack bs)))
+
+    getCmd :: B.ByteString -> FirmwareCmd
+    getCmd Empty = UNKNOWN_COMMAND
+    getCmd bs = firmwareValCmd $ B.head bs
 
 decodeCmd :: B.ByteString -> String
 decodeCmd Empty        = "Empty Command"
@@ -105,6 +113,8 @@ decodeCmdArgs BC_CMD_WHILE _ xs = (dec ++ dec' ++ "\n" ++ dec'', B.empty)
     (dec, xs') = decodeExprCmd 2 xs
     (dec', xs'') = decodeExprCmd 1 (B.tail xs')
     dec'' = decodeCodeBlock xs'' "While"
+decodeCmdArgs BC_CMD_IF_THEN_ELSE _ Empty = decodeErr B.empty
+decodeCmdArgs BC_CMD_IF_THEN_ELSE _ (x :< Empty) = decodeErr (B.singleton x)
 decodeCmdArgs BC_CMD_IF_THEN_ELSE _ xs = (dec ++ "\n" ++ dec' ++ dec'', B.empty)
   where
     thenSize = bytesToWord16 (B.head xs, B.head (B.tail xs))
@@ -169,6 +179,7 @@ decodeExprCmd cnt bs = decodeExprCmd' cnt "" bs
         (dec'', bs'') = decodeExprCmd' (cnt-1) dec' bs'
 
 decodeExprProc :: Int -> B.ByteString -> (String, B.ByteString)
+decodeExprProc cnt Empty = decodeErr B.empty
 decodeExprProc cnt bs = (" (Bind " ++ show b ++ ") <-" ++ c, bs')
   where
     b = B.head bs
