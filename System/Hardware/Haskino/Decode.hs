@@ -25,8 +25,6 @@ import           System.Hardware.Haskino.Expr
 import           System.Hardware.Haskino.Protocol
 import           System.Hardware.Haskino.Utils
 
-import           Debug.Trace
-
 infixr 5 :<
 
 pattern b :< bs <- (B.uncons -> Just (b, bs))
@@ -60,7 +58,7 @@ deframe bs = map unescape (deframe' bs [])
       | otherwise              =  B.cons x (unescape (B.cons y xs))
 
 decodeCmds :: [B.ByteString] -> String
-decodeCmds cs = concat $ map decodeCmd (trace (show (map B.unpack cs)) cs)
+decodeCmds cs = concat $ map decodeCmd cs
 
 condenseAddToTasks :: [B.ByteString] -> [B.ByteString]
 condenseAddToTasks cs = scanForAdd cs Nothing B.empty
