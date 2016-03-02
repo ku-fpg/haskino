@@ -229,8 +229,8 @@ decodeTypeOp etype op bs =
   case etype of
     (Left lt)  -> (show lt ++ "-" ++ show eop ++ deop, bs')
     (Right rt) -> case rt of
-                   EXPR_LIST8 -> (show rt ++ "-" ++ show elop ++ deop, bs'')
-                   EXPR_FLOAT -> (show rt ++ "-" ++ show efop ++ deop, bs''')
+                   EXPR_LIST8 -> (show rt ++ "-" ++ show elop ++ delop, bs'')
+                   EXPR_FLOAT -> (show rt ++ "-" ++ show efop ++ defop, bs''')
   where
     eop = toEnum op::ExprOp
     elop = toEnum op::ExprListOp
@@ -334,8 +334,9 @@ decodeListOp elop bs =
     EXPRL_CONS -> decodeExprOps 2 "" bs
     EXPRL_APND -> decodeExprOps 2 "" bs
     EXPRL_PACK -> case bs of
-                    Empty     -> decodeErr bs
-                    (x :< xs) -> decodeListPack (fromIntegral x) xs
+                    Empty        -> decodeErr bs
+                    (x :< Empty) -> ("[]", B.tail bs)
+                    (x :< xs)    -> decodeListPack (fromIntegral x) xs
   where
     decodeListLit :: Int -> B.ByteString -> (String, B.ByteString)
     decodeListLit cnt bs = (show $ B.unpack $ B.take cnt bs, B.drop cnt bs)
@@ -413,4 +414,4 @@ byteToTypeOp b = if (byteTypeNum b) < 7
     byteOpNum b = b .&. 0x1F
 
     byteExtOpNum :: Word8 -> Word8
-    byteExtOpNum b = b .&. 0x1F
+    byteExtOpNum b = b .&. 0x0F
