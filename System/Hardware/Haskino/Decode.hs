@@ -25,6 +25,8 @@ import           System.Hardware.Haskino.Expr
 import           System.Hardware.Haskino.Protocol
 import           System.Hardware.Haskino.Utils
 
+import           Debug.Trace
+
 infixr 5 :<
 
 pattern b :< bs <- (B.uncons -> Just (b, bs))
@@ -58,7 +60,7 @@ deframe bs = map unescape (deframe' bs [])
       | otherwise              =  B.cons x (unescape (B.cons y xs))
 
 decodeCmds :: [B.ByteString] -> String
-decodeCmds cs = concat $ map decodeCmd cs
+decodeCmds cs = concat $ map decodeCmd (trace (show (map B.unpack cs)) cs)
 
 condenseAddToTasks :: [B.ByteString] -> [B.ByteString]
 condenseAddToTasks cs = scanForAdd cs Nothing B.empty
@@ -89,72 +91,72 @@ decodeCmd (x :< Empty) = show (firmwareValCmd x)
 decodeCmd (x :< xs)    = show cmd ++ decoded ++ "\n"
   where
     cmd = firmwareValCmd x
-    (dec, bs) = decodeCmdArgs cmd xs
+    (dec, bs) = decodeCmdArgs cmd x xs
     decoded = case bs of
                 Empty -> dec
                 _     -> dec ++ show (encode bs)
 
-decodeCmdArgs :: FirmwareCmd -> B.ByteString -> (String, B.ByteString)
-decodeCmdArgs BC_CMD_SYSTEM_RESET xs = ("", xs)
-decodeCmdArgs BC_CMD_SET_PIN_MODE xs = decodeExprCmd 1 xs
-decodeCmdArgs BC_CMD_DELAY_MILLIS xs = decodeExprProc 1 xs
-decodeCmdArgs BC_CMD_DELAY_MICROS xs = decodeExprCmd 1 xs
-decodeCmdArgs BC_CMD_LOOP xs = ("\n" ++ (decodeCodeBlock xs "Loop"), B.empty)
-decodeCmdArgs BC_CMD_WHILE xs = (dec ++ dec' ++ "\n" ++ dec'', B.empty)
+decodeCmdArgs :: FirmwareCmd -> Word8 -> B.ByteString -> (String, B.ByteString)
+decodeCmdArgs BC_CMD_SYSTEM_RESET _ xs = ("", xs)
+decodeCmdArgs BC_CMD_SET_PIN_MODE _ xs = decodeExprCmd 1 xs
+decodeCmdArgs BC_CMD_DELAY_MILLIS _ xs = decodeExprProc 1 xs
+decodeCmdArgs BC_CMD_DELAY_MICROS _ xs = decodeExprCmd 1 xs
+decodeCmdArgs BC_CMD_LOOP _ xs = ("\n" ++ (decodeCodeBlock xs "Loop"), B.empty)
+decodeCmdArgs BC_CMD_WHILE _ xs = (dec ++ dec' ++ "\n" ++ dec'', B.empty)
   where
     (dec, xs') = decodeExprCmd 2 xs
     (dec', xs'') = decodeExprCmd 1 (B.tail xs')
     dec'' = decodeCodeBlock xs'' "While"
-decodeCmdArgs BC_CMD_IF_THEN_ELSE xs = (dec ++ "\n" ++ dec' ++ dec'', B.empty)
+decodeCmdArgs BC_CMD_IF_THEN_ELSE _ xs = (dec ++ "\n" ++ dec' ++ dec'', B.empty)
   where
     thenSize = bytesToWord16 (B.head xs, B.head (B.tail xs))
     (dec, xs') = decodeExprCmd 1 (B.drop 2 xs)
     dec' = decodeCodeBlock (B.take (fromIntegral thenSize) xs') "Then"
     dec'' = decodeCodeBlock (B.drop (fromIntegral thenSize) xs') "Else"
-decodeCmdArgs BC_CMD_FORIN xs = (dec ++ "\n" ++ dec', B.empty)
+decodeCmdArgs BC_CMD_FORIN _ xs = (dec ++ "\n" ++ dec', B.empty)
   where
     (dec, xs') = decodeExprCmd 2 xs
     dec' = decodeCodeBlock xs' "ForIn"
-decodeCmdArgs BS_CMD_REQUEST_VERSION xs = decodeExprProc 0 xs
-decodeCmdArgs BS_CMD_REQUEST_TYPE xs = decodeExprProc 0 xs
-decodeCmdArgs BS_CMD_REQUEST_MICROS xs = decodeExprProc 0 xs
-decodeCmdArgs BS_CMD_REQUEST_MILLIS xs = decodeExprProc 0 xs
-decodeCmdArgs DIG_CMD_READ_PIN xs = decodeExprProc 1 xs
-decodeCmdArgs DIG_CMD_WRITE_PIN xs = decodeExprCmd 2 xs
-decodeCmdArgs DIG_CMD_READ_PORT xs = decodeExprProc 2 xs
-decodeCmdArgs DIG_CMD_WRITE_PORT xs = decodeExprCmd 3 xs
-decodeCmdArgs ALG_CMD_READ_PIN xs = decodeExprProc 1 xs
-decodeCmdArgs ALG_CMD_WRITE_PIN xs = decodeExprCmd 2 xs
-decodeCmdArgs ALG_CMD_TONE_PIN xs = decodeExprCmd 3 xs
-decodeCmdArgs ALG_CMD_NOTONE_PIN xs = decodeExprCmd 1 xs
-decodeCmdArgs I2C_CMD_CONFIG xs = decodeExprCmd 0 xs
-decodeCmdArgs I2C_CMD_READ xs = decodeExprProc 2 xs
-decodeCmdArgs I2C_CMD_WRITE xs = decodeExprCmd 2 xs
-decodeCmdArgs STEP_CMD_2PIN xs = decodeExprCmd 3 xs
-decodeCmdArgs STEP_CMD_4PIN xs = decodeExprCmd 5 xs
-decodeCmdArgs STEP_CMD_SET_SPEED xs = decodeExprCmd 2 xs
-decodeCmdArgs STEP_CMD_STEP xs = decodeExprCmd 2 xs
-decodeCmdArgs SRVO_CMD_ATTACH xs = decodeExprCmd 3 xs
-decodeCmdArgs SRVO_CMD_DETACH xs = decodeExprCmd 1 xs
-decodeCmdArgs SRVO_CMD_WRITE xs = decodeExprCmd 2 xs
-decodeCmdArgs SRVO_CMD_WRITE_MICROS xs = decodeExprCmd 2 xs
-decodeCmdArgs SRVO_CMD_READ xs = decodeExprProc 1 xs
-decodeCmdArgs SRVO_CMD_READ_MICROS xs = decodeExprProc 1 xs
-decodeCmdArgs SCHED_CMD_CREATE_TASK xs = decodeExprCmd 3 xs
-decodeCmdArgs SCHED_CMD_DELETE_TASK xs = decodeExprCmd 1 xs
-decodeCmdArgs SCHED_CMD_ADD_TO_TASK xs = (dec ++ "\n" ++ dec', B.empty) 
+decodeCmdArgs BS_CMD_REQUEST_VERSION _ xs = decodeExprProc 0 xs
+decodeCmdArgs BS_CMD_REQUEST_TYPE _ xs = decodeExprProc 0 xs
+decodeCmdArgs BS_CMD_REQUEST_MICROS _ xs = decodeExprProc 0 xs
+decodeCmdArgs BS_CMD_REQUEST_MILLIS _ xs = decodeExprProc 0 xs
+decodeCmdArgs DIG_CMD_READ_PIN _ xs = decodeExprProc 1 xs
+decodeCmdArgs DIG_CMD_WRITE_PIN _ xs = decodeExprCmd 2 xs
+decodeCmdArgs DIG_CMD_READ_PORT _ xs = decodeExprProc 2 xs
+decodeCmdArgs DIG_CMD_WRITE_PORT _ xs = decodeExprCmd 3 xs
+decodeCmdArgs ALG_CMD_READ_PIN _ xs = decodeExprProc 1 xs
+decodeCmdArgs ALG_CMD_WRITE_PIN _ xs = decodeExprCmd 2 xs
+decodeCmdArgs ALG_CMD_TONE_PIN _ xs = decodeExprCmd 3 xs
+decodeCmdArgs ALG_CMD_NOTONE_PIN _ xs = decodeExprCmd 1 xs
+decodeCmdArgs I2C_CMD_CONFIG _ xs = decodeExprCmd 0 xs
+decodeCmdArgs I2C_CMD_READ _ xs = decodeExprProc 2 xs
+decodeCmdArgs I2C_CMD_WRITE _ xs = decodeExprCmd 2 xs
+decodeCmdArgs STEP_CMD_2PIN _ xs = decodeExprCmd 3 xs
+decodeCmdArgs STEP_CMD_4PIN _ xs = decodeExprCmd 5 xs
+decodeCmdArgs STEP_CMD_SET_SPEED _ xs = decodeExprCmd 2 xs
+decodeCmdArgs STEP_CMD_STEP _ xs = decodeExprCmd 2 xs
+decodeCmdArgs SRVO_CMD_ATTACH _ xs = decodeExprCmd 3 xs
+decodeCmdArgs SRVO_CMD_DETACH _ xs = decodeExprCmd 1 xs
+decodeCmdArgs SRVO_CMD_WRITE _ xs = decodeExprCmd 2 xs
+decodeCmdArgs SRVO_CMD_WRITE_MICROS _ xs = decodeExprCmd 2 xs
+decodeCmdArgs SRVO_CMD_READ _ xs = decodeExprProc 1 xs
+decodeCmdArgs SRVO_CMD_READ_MICROS _ xs = decodeExprProc 1 xs
+decodeCmdArgs SCHED_CMD_CREATE_TASK _ xs = decodeExprCmd 3 xs
+decodeCmdArgs SCHED_CMD_DELETE_TASK _ xs = decodeExprCmd 1 xs
+decodeCmdArgs SCHED_CMD_ADD_TO_TASK _ xs = (dec ++ "\n" ++ dec', B.empty) 
   where
     (dec, xs') = decodeExprCmd 2 xs
     dec' = decodeCodeBlock xs' "AddToTask"
-decodeCmdArgs SCHED_CMD_SCHED_TASK xs = decodeExprCmd 2 xs
-decodeCmdArgs SCHED_CMD_QUERY_ALL xs = decodeExprProc 0 xs
-decodeCmdArgs SCHED_CMD_QUERY xs = decodeExprProc 1 xs
-decodeCmdArgs SCHED_CMD_RESET xs =  decodeExprCmd 0 xs
-decodeCmdArgs SCHED_CMD_BOOT_TASK xs = decodeExprCmd 1 xs
-decodeCmdArgs REF_CMD_NEW xs = decodeRefNew 1 xs
-decodeCmdArgs REF_CMD_READ xs =  decodeRefProc 1 xs
-decodeCmdArgs REF_CMD_WRITE xs = decodeRefCmd 2 xs
-decodeCmdArgs UNKNOWN_COMMAND xs = ("Unknown Command", xs)
+decodeCmdArgs SCHED_CMD_SCHED_TASK _ xs = decodeExprCmd 2 xs
+decodeCmdArgs SCHED_CMD_QUERY_ALL _ xs = decodeExprProc 0 xs
+decodeCmdArgs SCHED_CMD_QUERY _ xs = decodeExprProc 1 xs
+decodeCmdArgs SCHED_CMD_RESET _ xs =  decodeExprCmd 0 xs
+decodeCmdArgs SCHED_CMD_BOOT_TASK _ xs = decodeExprCmd 1 xs
+decodeCmdArgs REF_CMD_NEW _ xs = decodeRefNew 1 xs
+decodeCmdArgs REF_CMD_READ _ xs =  decodeRefProc 1 xs
+decodeCmdArgs REF_CMD_WRITE _ xs = decodeRefCmd 2 xs
+decodeCmdArgs UNKNOWN_COMMAND x xs = ("-" ++ show x, xs)
 
 decodeExprCmd :: Int -> B.ByteString -> (String, B.ByteString)
 decodeExprCmd cnt bs = decodeExprCmd' cnt "" bs
