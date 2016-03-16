@@ -2,17 +2,45 @@
 #include "HaskinoComm.h"
 #include "HaskinoConfig.h"
 
-static bool codeBlock = false;
-
-void runCodeBlock(int blockSize, const byte * block, CONTEXT *context)
+bool runCodeBlock(int blockSize, const byte * block, CONTEXT *context)
     {
     int currPos = 0;
-    bool oldCodeBlock = context->codeBlock;
+    TASK *task = context->task;
+    bool taskRescheduled;
+    int16_t thisBlockLevel;
+    sendStringf("Run Block %d %d %d",task->rescheduled,context->recallBlockLevel,context->currBlockLevel);
 
-    context->codeBlock = true;
+    if (task && task->rescheduled)
+        {
+        // A task is running, and has been rescheduled.
+        // Increase the block level as we return to the level at which we
+        // rescheduled.
+        context->recallBlockLevel++;
+        // Go to the position in the block at which we were interrupted.
+        currPos = context->blockStatus[context->recallBlockLevel].currPos;
+        // Set the block level we are executing at.
+        thisBlockLevel = context->recallBlockLevel;
+        // If we have reached the level at which we were rescheduled, then
+        // the rescheduling process is complete, and we can resume normal
+        // operation.
+        if (context->recallBlockLevel == context->currBlockLevel)
+            {
+            task->rescheduled = false;
+            }
+        }
+    else
+        {
+        // Increase the current context block level
+        context->currBlockLevel++;
+        // Start execution at the start of the code block
+        context->blockStatus[context->currBlockLevel].currPos = 0;
+        thisBlockLevel = context->currBlockLevel;
+        }
+    sendStringf("Run Block Lvl %d",thisBlockLevel);
 
     while (currPos < blockSize)
         {
+        sendStringf("Block %d",currPos);
         const byte *msg = &block[currPos];
         byte cmdSize;
         const byte *cmd;
@@ -29,9 +57,26 @@ void runCodeBlock(int blockSize, const byte * block, CONTEXT *context)
             cmd = &msg[3];
             }
 
-        parseMessage(cmdSize, cmd, context);  
+        taskRescheduled = parseMessage(cmdSize, cmd, context); 
 
-        currPos += cmdSize + 1;
+        if (!taskRescheduled || thisBlockLevel == context->currBlockLevel)
+            {
+            // If we weren't rescheduled, or we are running, then
+            // move to the next command in the command block.
+            currPos += cmdSize + 1;
+            context->blockStatus[context->currBlockLevel].currPos = currPos;
+            }
+        if (task && taskRescheduled)
+            {
+            // Reset the recallBlockLevel for when task is reactivated. 
+            context->recallBlockLevel = -1;
+            task->rescheduled = true;
+            sendStringf("Resched Exit Block Lvl %d",thisBlockLevel);
+            return true;
+            } 
         }
-    context->codeBlock = oldCodeBlock;
+
+    context->currBlockLevel--;
+    sendStringf("Normal Exit Block Lvl %d",thisBlockLevel);
+    return false;
     }

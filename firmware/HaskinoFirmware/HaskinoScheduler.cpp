@@ -22,7 +22,6 @@ static void deleteTask(TASK* task);
 static TASK *findTask(int id);
 static bool createById(byte id, unsigned int taskSize, unsigned int bindSize);
 static bool scheduleById(byte id, unsigned long deltaMillis);
-static bool executeTask(TASK *task);
 
 static TASK *firstTask = NULL;
 static TASK *runningTask = NULL;
@@ -73,6 +72,8 @@ CONTEXT *schedulerDefaultContext()
         defaultContext = (CONTEXT *) calloc(1, sizeof(CONTEXT));
         defaultContext->bind = (byte *) calloc(1, DEFAULT_BIND_COUNT * BIND_SPACING);
         defaultContext->bindSize = DEFAULT_BIND_COUNT;
+        defaultContext->currBlockLevel = -1;
+        defaultContext->recallBlockLevel = -1;
         }
     return defaultContext;
     }
@@ -118,7 +119,10 @@ static bool createById(byte id, unsigned int taskSize, unsigned int bindSize)
             newTask->size = taskSize;
             newTask->currLen = 0;
             newTask->currPos = 0;
+            newTask->rescheduled = false;
             newTask->endData = newTask->data + newTask->size;
+            newContext->currBlockLevel = -1;
+            newContext->recallBlockLevel = -1;
             newContext->task = newTask;
             newContext->bindSize = bindSize;
             newContext->bind = bind;
@@ -255,7 +259,7 @@ static bool handleQueryAll(int size, const byte *msg, CONTEXT *context)
 
     localMem[1] = i;
 
-    if (context->codeBlock || context->task)
+    if (context->currBlockLevel >= 0)
         {
         putBindListPtr(context, bind, localMem);
         }
@@ -365,7 +369,8 @@ void schedulerRunTasks()
             if (current->millis > 0 && current->millis < now) 
                 { // ToDo: handle overflow
                 runningTask = current;
-                if (!executeTask(current)) 
+                if (!runCodeBlock(current->currLen, 
+                                  current->data, current->context))
                     {
                     deleteTask(current);
                     }
@@ -374,44 +379,6 @@ void schedulerRunTasks()
             current = next;
             }
         }
-    }
-
-static bool executeTask(TASK *task)
-    {
-    // Find end of next command
-    bool taskRescheduled;
-
-    while (task->currPos < task->currLen)
-        {
-        byte *msg = &task->data[task->currPos];
-        uint16_t cmdSize;
-        byte *cmd;
-
-        if (msg[0] != 0xFF)
-            {
-            cmdSize = msg[0];
-            cmd = &msg[1];
-            }
-        else
-            {
-            cmdSize = ((uint16_t) msg[2]) << 8 |
-                      ((uint16_t) msg[1]);
-            cmd = &msg[3];
-            }
-
-        taskRescheduled = parseMessage(cmdSize, cmd, task->context);  
-
-        task->currPos += cmdSize + 1;
-        if (taskRescheduled)
-            {
-            if (task->currPos >= task->currLen)
-                {
-                task->currPos = 0;
-                }
-            return true;
-            }
-        }
-    return false;
     }
 
 bool isRunningTask()

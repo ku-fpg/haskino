@@ -96,7 +96,7 @@ static bool handleStep(int size, const byte *msg, CONTEXT *context)
     int16_t steps = evalInt16Expr(&expr, context);
 
     steppers[stepperId]->step(steps);
-    if (!context->task && !context->codeBlock)
+    if (context->currBlockLevel <= 0)
         {
         sendReply(0, STEP_RESP_STEP, NULL, context, bind);
         }

@@ -31,10 +31,12 @@ progDelay = 10500
 -- Task which will execute on Arduino, blink on a second, off a second and
 -- repeat
 myTask :: Expr Word8 -> Arduino ()
-myTask led = do digitalWriteE led (lit True)
-                delayMillisE blinkDelay
-                digitalWriteE led (lit False)
-                delayMillisE blinkDelay
+myTask led = 
+    loopE $ do 
+        digitalWriteE led (lit True)
+        delayMillisE blinkDelay
+        digitalWriteE led (lit False)
+        delayMillisE blinkDelay
 
 scheduledBlinkE :: IO ()
 scheduledBlinkE = withArduino True "/dev/cu.usbmodem1421" $ do

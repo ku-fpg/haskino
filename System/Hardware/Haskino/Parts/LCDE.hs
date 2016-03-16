@@ -146,11 +146,11 @@ pulseEnableDig :: LCDController -> Arduino ()
 pulseEnableDig Hitachi44780{lcdEN} = do
   debug "Sending LCD pulseEnable"
   digitalWriteE (lit lcdEN) false
-  delayMillisE 1
+  delayMicrosE 1
   digitalWriteE (lit lcdEN) true
-  delayMillisE 1
+  delayMicrosE 1
   digitalWriteE (lit lcdEN) false
-  delayMillisE 1
+  delayMicrosE 100
 
 -- | Transmit data down to the LCD
 transmit :: Expr Bool -> LCDE -> LCDController -> Expr Word8 -> Arduino ()
@@ -202,9 +202,9 @@ transmitI2C mode lcd c@I2CHitachi44780{address} val = do
 pulseEnableI2C :: LCDController -> Expr Word8 -> Arduino ()
 pulseEnableI2C c@I2CHitachi44780{address} d = do
     i2cWriteE (lit address) $ pack [d .|. en]
-    delayMillisE 1
+    delayMicrosE 1
     i2cWriteE (lit address) $ pack [d .&. (complement en)]
-    delayMillisE 1
+    delayMicrosE 100
   where
     en = lcdI2CBitsToVal LCD_I2C_ENABLE
 

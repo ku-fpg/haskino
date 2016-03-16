@@ -67,19 +67,17 @@ static bool handleDelayMillis(int size, const byte *msg, CONTEXT *context)
 
     uint32_t millis = evalWord32Expr(&expr, context);
 
-    if (context->task && !context->codeBlock )
+    if (context->task)
         {
         delayRunningTask(millis);
+        return true;
         }
     else 
         {
         delay(millis);
-        if (!context->task && !context->codeBlock)
-            {
-            sendReply(0, BC_RESP_DELAY, NULL, context, bind);
-            }
+        sendReply(0, BC_RESP_DELAY, NULL, context, bind);
+        return false;
         }
-    return true;
     }
 
 static bool handleDelayMicros(int size, const byte *msg, CONTEXT *context)
@@ -89,10 +87,7 @@ static bool handleDelayMicros(int size, const byte *msg, CONTEXT *context)
 
     uint32_t micros = evalWord16Expr(&expr, context);
     delayMicroseconds(micros);
-    if (!context->task && !context->codeBlock)
-        {
-        sendReply(0, BC_RESP_DELAY, NULL, context, bind);
-        }
+    sendReply(0, BC_RESP_DELAY, NULL, context, bind);
     return false;
     }
 
@@ -106,10 +101,13 @@ static bool handleLoop(int size, const byte *msg, CONTEXT *context)
     {
     byte *codeBlock = (byte *) &msg[1];
     int loopSize = size - 1;
+    bool rescheduled;
 
     while (true)
         {
-        runCodeBlock(loopSize, codeBlock, context);
+        rescheduled = runCodeBlock(loopSize, codeBlock, context);
+        if (rescheduled)
+            return true;
         }
 
     return false;
