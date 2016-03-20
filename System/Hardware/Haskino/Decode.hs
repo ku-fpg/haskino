@@ -224,9 +224,13 @@ decodeCodeBlock bs desc =
       decodeCodeBlock' :: B.ByteString -> [B.ByteString] -> [B.ByteString]
       decodeCodeBlock' bs cmds = 
         case bs of
-          Empty                -> cmds
-          (x :< xs) | x < 0xFF -> decodeCodeBlock' (B.drop (fromIntegral x) xs) (cmds ++ [B.take (fromIntegral x) xs])
-          (x :< y :< xs)       -> decodeCodeBlock' (B.drop (fromIntegral x) xs) (cmds ++ [B.take (fromIntegral x) xs])
+          Empty                  -> cmds
+          (x :< xs) | x < 0xFF   -> decodeCodeBlock' (B.drop (fromIntegral x) xs) (cmds ++ [B.take (fromIntegral x) xs])
+          (0xFF :< x :< y :< xs) -> decodeCodeBlock' (B.drop (fromIntegral len) xs) (cmds ++ [B.take (fromIntegral len) xs])
+                                    where 
+                                      len :: Word16
+                                      len = ((fromIntegral y) `shiftL` 8) .|. (fromIntegral x)
+          _                      -> cmds
 
 decodeExpr :: B.ByteString -> (String, B.ByteString)
 decodeExpr Empty = decodeErr B.empty
