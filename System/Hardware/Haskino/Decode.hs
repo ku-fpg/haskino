@@ -106,7 +106,7 @@ decodeCmdArgs :: FirmwareCmd -> Word8 -> B.ByteString -> (String, B.ByteString)
 decodeCmdArgs BC_CMD_SYSTEM_RESET _ xs = ("", xs)
 decodeCmdArgs BC_CMD_SET_PIN_MODE _ xs = decodeExprCmd 1 xs
 decodeCmdArgs BC_CMD_DELAY_MILLIS _ xs = decodeExprProc 1 xs
-decodeCmdArgs BC_CMD_DELAY_MICROS _ xs = decodeExprCmd 1 xs
+decodeCmdArgs BC_CMD_DELAY_MICROS _ xs = decodeExprProc 1 xs
 decodeCmdArgs BC_CMD_LOOP _ xs = ("\n" ++ (decodeCodeBlock xs "Loop"), B.empty)
 decodeCmdArgs BC_CMD_WHILE _ xs = (dec ++ dec' ++ "\n" ++ dec'', B.empty)
   where
