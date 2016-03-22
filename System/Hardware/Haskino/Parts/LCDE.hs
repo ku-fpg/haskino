@@ -150,7 +150,7 @@ pulseEnableDig Hitachi44780{lcdEN} = do
   digitalWriteE (lit lcdEN) true
   delayMicrosE 1
   digitalWriteE (lit lcdEN) false
-  delayMicrosE 100
+  delayMillisE 2
 
 -- | Transmit data down to the LCD
 transmit :: Expr Bool -> LCDE -> LCDController -> Expr Word8 -> Arduino ()
@@ -204,7 +204,7 @@ pulseEnableI2C c@I2CHitachi44780{address} d = do
     i2cWriteE (lit address) $ pack [d .|. en]
     delayMicrosE 1
     i2cWriteE (lit address) $ pack [d .&. (complement en)]
-    delayMicrosE 100
+    delayMillisE 2
   where
     en = lcdI2CBitsToVal LCD_I2C_ENABLE
 
@@ -288,13 +288,13 @@ lcdWriteCharE lcd w = withLCD lcd ("Writing " ++ show w ++ " to LCD") $ \c -> se
 lcdClearE :: LCDE -> Arduino ()
 lcdClearE lcd = withLCD lcd "Sending clearLCD" $ \c ->
                  do sendCmd lcd c LCD_CLEARDISPLAY
-                    delayMillisE 2 -- give some time to make sure LCD is really cleared
+                    delayMicrosE 200 -- give some time to make sure LCD is really cleared
 
 -- | Send the cursor to home position
 lcdHomeE :: LCDE -> Arduino ()
 lcdHomeE lcd = withLCD lcd "Sending the cursor home" $ \c ->
                  do sendCmd lcd c LCD_RETURNHOME
-                    delayMillisE 2
+                    delayMicrosE 200
 
 -- | Set the cursor location. The pair of arguments is the new column and row numbers
 -- respectively:
