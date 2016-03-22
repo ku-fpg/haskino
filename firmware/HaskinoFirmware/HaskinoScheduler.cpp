@@ -27,6 +27,7 @@ static TASK *firstTask = NULL;
 static TASK *runningTask = NULL;
 static CONTEXT *defaultContext = NULL;
 static int taskCount = 0;
+static SEMAPHORE semaphores[NUM_SEMAPHORES];
 
 int getTaskCount()
     {

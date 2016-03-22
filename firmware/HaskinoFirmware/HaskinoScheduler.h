@@ -8,6 +8,11 @@ struct context_t;
 typedef struct block_status_t
     {
     uint16_t currPos;
+    union 
+        {
+        bool condition;
+        int index;
+        } info;
     } BLOCK_STATUS;
 
 typedef struct task_t 
@@ -34,6 +39,12 @@ typedef struct context_t
     uint16_t            bindSize;
     byte               *bind;
     } CONTEXT;
+
+typedef struct semphore_t
+    {
+    bool full;
+    TASK *waiting;
+    } SEMAPHORE;
 
 bool parseSchedulerMessage(int size, const byte *msg, CONTEXT *context);
 CONTEXT *schedulerDefaultContext();

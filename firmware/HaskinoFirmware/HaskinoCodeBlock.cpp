@@ -2,13 +2,17 @@
 #include "HaskinoComm.h"
 #include "HaskinoConfig.h"
 
+#undef  DEBUG
+
 bool runCodeBlock(int blockSize, const byte * block, CONTEXT *context)
     {
     int currPos = 0;
     TASK *task = context->task;
     bool taskRescheduled;
     int16_t thisBlockLevel;
+#ifdef DEBUG
     sendStringf("Run Block %d %d %d",task->rescheduled,context->recallBlockLevel,context->currBlockLevel);
+#endif
 
     if (task && task->rescheduled)
         {
@@ -36,11 +40,15 @@ bool runCodeBlock(int blockSize, const byte * block, CONTEXT *context)
         context->blockStatus[context->currBlockLevel].currPos = 0;
         thisBlockLevel = context->currBlockLevel;
         }
+#ifdef DEBUG
     sendStringf("Run Block Lvl %d",thisBlockLevel);
+#endif
 
     while (currPos < blockSize)
         {
+#ifdef DEBUG
         sendStringf("Block %d",currPos);
+#endif
         const byte *msg = &block[currPos];
         byte cmdSize;
         const byte *cmd;
@@ -68,15 +76,22 @@ bool runCodeBlock(int blockSize, const byte * block, CONTEXT *context)
             }
         if (task && taskRescheduled)
             {
-            // Reset the recallBlockLevel for when task is reactivated. 
-            context->recallBlockLevel = -1;
-            task->rescheduled = true;
+            if (!task->rescheduled)
+                {
+                // Reset the recallBlockLevel for when task is reactivated. 
+                context->recallBlockLevel = -1;
+                task->rescheduled = true;
+                }
+#ifdef DEBUG
             sendStringf("Resched Exit Block Lvl %d",thisBlockLevel);
+#endif
             return true;
             } 
         }
 
     context->currBlockLevel--;
+#ifdef DEBUG
     sendStringf("Normal Exit Block Lvl %d",thisBlockLevel);
+#endif
     return false;
     }
