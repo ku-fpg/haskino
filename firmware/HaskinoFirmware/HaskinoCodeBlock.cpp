@@ -50,7 +50,7 @@ bool runCodeBlock(int blockSize, const byte * block, CONTEXT *context)
         sendStringf("Block %d",currPos);
 #endif
         const byte *msg = &block[currPos];
-        byte cmdSize;
+        uint16_t cmdSize;
         const byte *cmd;
 
         if (msg[0] != 0xFF)
