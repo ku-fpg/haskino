@@ -109,11 +109,13 @@
 #define SCHED_CMD_QUERY_ALL     (SCHED_CMD_TYPE | 0x5)
 #define SCHED_CMD_RESET         (SCHED_CMD_TYPE | 0x6)
 #define SCHED_CMD_BOOT_TASK     (SCHED_CMD_TYPE | 0x7)
+#define SCHED_CMD_TAKE_SEM      (SCHED_CMD_TYPE | 0x8)
+#define SCHED_CMD_GIVE_SEM      (SCHED_CMD_TYPE | 0x9)
 
 // Scheduler responses
-#define SCHED_RESP_QUERY        (SCHED_CMD_TYPE | 0x8)
-#define SCHED_RESP_QUERY_ALL    (SCHED_CMD_TYPE | 0x9)
-#define SCHED_RESP_BOOT_TASK    (SCHED_CMD_TYPE | 0xA)
+#define SCHED_RESP_QUERY        (SCHED_CMD_TYPE | 0xA)
+#define SCHED_RESP_QUERY_ALL    (SCHED_CMD_TYPE | 0xB)
+#define SCHED_RESP_BOOT_TASK    (SCHED_CMD_TYPE | 0xC)
 
 // Reference commands
 #define REF_CMD_TYPE            0xB0

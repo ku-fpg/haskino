@@ -25,6 +25,7 @@ typedef struct task_t
     uint16_t            currLen;
     uint16_t            currPos;
     uint32_t            millis;
+    bool                ready;
     bool                rescheduled;
     byte               *endData;
     byte                data[];

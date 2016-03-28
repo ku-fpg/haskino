@@ -11,7 +11,7 @@ bool runCodeBlock(int blockSize, const byte * block, CONTEXT *context)
     bool taskRescheduled;
     int16_t thisBlockLevel;
 #ifdef DEBUG
-    sendStringf("Run Block %d %d %d",task->rescheduled,context->recallBlockLevel,context->currBlockLevel);
+    sendStringf("Run %d Block %d %d %d",task->id,task->rescheduled,context->recallBlockLevel,context->currBlockLevel);
 #endif
 
     if (task && task->rescheduled)
@@ -34,6 +34,9 @@ bool runCodeBlock(int blockSize, const byte * block, CONTEXT *context)
         }
     else
         {
+#ifdef DEBUG
+    sendStringf("Start of Block %d",thisBlockLevel);
+#endif
         // Increase the current context block level
         context->currBlockLevel++;
         // Start execution at the start of the code block
@@ -47,7 +50,7 @@ bool runCodeBlock(int blockSize, const byte * block, CONTEXT *context)
     while (currPos < blockSize)
         {
 #ifdef DEBUG
-        sendStringf("Block %d",currPos);
+        sendStringf("Block %d %d",block,currPos);
 #endif
         const byte *msg = &block[currPos];
         uint16_t cmdSize;

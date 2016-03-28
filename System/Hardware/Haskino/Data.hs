@@ -159,6 +159,8 @@ data ArduinoCommand =
      | DeleteTaskE TaskIDE
      | ScheduleTaskE TaskIDE TimeMillisE
      | ScheduleReset
+     | GiveSem (Expr Word8)
+     | TakeSem (Expr Word8)
      | WriteRemoteRefB (RemoteRef Bool) (Expr Bool)
      | WriteRemoteRefW8 (RemoteRef Word8) (Expr Word8)
      | WriteRemoteRefW16 (RemoteRef Word16) (Expr Word16)
@@ -285,6 +287,12 @@ scheduleTaskE tid tt = Arduino $ command $ ScheduleTaskE tid tt
 
 scheduleReset :: Arduino ()
 scheduleReset = Arduino $ command ScheduleReset
+
+giveSem :: Expr Word8 -> Arduino ()
+giveSem id = Arduino $ command $ GiveSem id
+
+takeSem :: Expr Word8 -> Arduino ()
+takeSem id = Arduino $ command $ TakeSem id
 
 loopE :: Arduino () -> Arduino()
 loopE ps = Arduino $ command $ LoopE ps
@@ -771,6 +779,8 @@ data FirmwareCmd = BC_CMD_SYSTEM_RESET
                  | SCHED_CMD_QUERY
                  | SCHED_CMD_RESET
                  | SCHED_CMD_BOOT_TASK
+                 | SCHED_CMD_GIVE_SEM
+                 | SCHED_CMD_TAKE_SEM
                  | REF_CMD_NEW
                  | REF_CMD_READ
                  | REF_CMD_WRITE
@@ -820,6 +830,8 @@ firmwareCmdVal SCHED_CMD_QUERY          = 0xA4
 firmwareCmdVal SCHED_CMD_QUERY_ALL      = 0xA5
 firmwareCmdVal SCHED_CMD_RESET          = 0xA6
 firmwareCmdVal SCHED_CMD_BOOT_TASK      = 0xA7
+firmwareCmdVal SCHED_CMD_TAKE_SEM       = 0xA8
+firmwareCmdVal SCHED_CMD_GIVE_SEM       = 0xA9
 firmwareCmdVal REF_CMD_NEW              = 0xB0
 firmwareCmdVal REF_CMD_READ             = 0xB1
 firmwareCmdVal REF_CMD_WRITE            = 0xB2
@@ -867,6 +879,8 @@ firmwareValCmd 0xA4 = SCHED_CMD_QUERY
 firmwareValCmd 0xA5 = SCHED_CMD_QUERY_ALL    
 firmwareValCmd 0xA6 = SCHED_CMD_RESET        
 firmwareValCmd 0xA7 = SCHED_CMD_BOOT_TASK    
+firmwareValCmd 0xA8 = SCHED_CMD_TAKE_SEM    
+firmwareValCmd 0xA9 = SCHED_CMD_GIVE_SEM    
 firmwareValCmd 0xB0 = REF_CMD_NEW            
 firmwareValCmd 0xB1 = REF_CMD_READ           
 firmwareValCmd 0xB2 = REF_CMD_WRITE 
@@ -925,9 +939,9 @@ getFirmwareReply 0x6A = Right STEP_RESP_STEP
 getFirmwareReply 0x88 = Right SRVO_RESP_ATTACH
 getFirmwareReply 0x89 = Right SRVO_RESP_READ
 getFirmwareReply 0x8A = Right SRVO_RESP_READ_MICROS
-getFirmwareReply 0xA8 = Right SCHED_RESP_QUERY
-getFirmwareReply 0xA9 = Right SCHED_RESP_QUERY_ALL
-getFirmwareReply 0xAA = Right SCHED_RESP_BOOT
+getFirmwareReply 0xAA = Right SCHED_RESP_QUERY
+getFirmwareReply 0xAB = Right SCHED_RESP_QUERY_ALL
+getFirmwareReply 0xAC = Right SCHED_RESP_BOOT
 getFirmwareReply 0xB8 = Right REF_RESP_NEW
 getFirmwareReply 0xB9 = Right REF_RESP_READ
 getFirmwareReply n    = Left n

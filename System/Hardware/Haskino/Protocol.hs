@@ -91,6 +91,10 @@ packageCommand (ScheduleTaskE tid tt) ix _ =
     (buildCommand SCHED_CMD_SCHED_TASK (packageExpr tid ++ packageExpr tt), ix)
 packageCommand ScheduleReset ix _ =
     (buildCommand SCHED_CMD_RESET [], ix)
+packageCommand (GiveSem id) ix _ =
+    (buildCommand SCHED_CMD_GIVE_SEM (packageExpr id), ix)
+packageCommand (TakeSem id) ix _ =
+    (buildCommand SCHED_CMD_TAKE_SEM (packageExpr id), ix)
 packageCommand (CreateTaskE tid m) ix _ =
     ((framePackage cmd) `B.append` (genAddToTaskCmds td), ix')
   where

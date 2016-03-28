@@ -18,6 +18,8 @@ static bool handleScheduleTask(int size, const byte *msg, CONTEXT *context);
 static bool handleQuery(int size, const byte *msg, CONTEXT *context);
 static bool handleReset(int size, const byte *msg, CONTEXT *context);
 static bool handleBootTask(int size, const byte *msg, CONTEXT *context);
+static bool handleTakeSem(int size, const byte *msg, CONTEXT *context);
+static bool handleGiveSem(int size, const byte *msg, CONTEXT *context);
 static void deleteTask(TASK* task);
 static TASK *findTask(int id);
 static bool createById(byte id, unsigned int taskSize, unsigned int bindSize);
@@ -59,8 +61,14 @@ bool parseSchedulerMessage(int size, const byte *msg, CONTEXT *context)
         case SCHED_CMD_RESET:
             return handleReset(size, msg, context);
             break;
-         case SCHED_CMD_BOOT_TASK:
+        case SCHED_CMD_BOOT_TASK:
             return handleBootTask(size, msg, context);
+            break;
+        case SCHED_CMD_TAKE_SEM:
+            return handleTakeSem(size, msg, context);
+            break;
+        case SCHED_CMD_GIVE_SEM:
+            return handleGiveSem(size, msg, context);
             break;
        }
     return false;
@@ -120,6 +128,7 @@ static bool createById(byte id, unsigned int taskSize, unsigned int bindSize)
             newTask->size = taskSize;
             newTask->currLen = 0;
             newTask->currPos = 0;
+            newTask->ready = false;
             newTask->rescheduled = false;
             newTask->endData = newTask->data + newTask->size;
             newContext->currBlockLevel = -1;
@@ -195,6 +204,7 @@ static bool scheduleById(byte id, unsigned long deltaMillis)
     if ((task = findTask(id)) != NULL)
         {
         task->millis = millis() + deltaMillis;
+        task->ready = true;
         }
     return false;
     }
@@ -335,6 +345,68 @@ static bool handleBootTask(int size, const byte *msg, CONTEXT *context)
     return false;
     }
 
+static bool handleTakeSem(int size, const byte *msg, CONTEXT *context)
+    {
+    byte *expr = (byte *) &msg[1];
+    byte id = evalWord8Expr(&expr, context);
+
+    if (id < NUM_SEMAPHORES)
+        {
+        // Semaphore is already full, take it and do not reschedule
+        if (semaphores[id].full)
+            {
+            semaphores[id].full = false;
+            return false;
+            }
+        else
+            // Semaphore is not full, we need to add ourselves to waiting
+            // and reschedule
+            {
+            TASK *task = context->task;
+
+            if (task)
+                {
+                semaphores[id].waiting = task;
+                task->ready = false;
+                }
+            return true;
+            }
+        }
+    else
+        {
+        return false;
+        }
+    }
+
+static bool handleGiveSem(int size, const byte *msg, CONTEXT *context)
+    {
+    byte *expr = (byte *) &msg[1];
+    byte id = evalWord8Expr(&expr, context);
+
+    if (id < NUM_SEMAPHORES)
+        {
+        // Semaphore is already full, do nothing
+        if (semaphores[id].full)
+            {
+            }
+        // Semaphore has a task waiting, ready it to run 
+        else if (semaphores[id].waiting)
+            {
+            TASK* task = semaphores[id].waiting;
+
+            task->ready = true;
+            task->millis = millis();
+            semaphores[id].waiting = NULL;
+            }
+        // Otherwise mark the semphore as full
+        else
+            {
+            semaphores[id].full = true;
+            }
+        }
+        return false;
+    }
+
 void schedulerBootTask()
     {
     if (EEPROM[ 0 ] == 'H' && EEPROM[ 1 ] == 'A' &&
@@ -367,7 +439,7 @@ void schedulerRunTasks()
         while (current) 
             {
             next = current->next;
-            if (current->millis > 0 && current->millis < now) 
+            if (current->ready && current->millis < now) 
                 { // ToDo: handle overflow
                 runningTask = current;
                 if (!runCodeBlock(current->currLen, 
@@ -389,5 +461,5 @@ bool isRunningTask()
 
 void delayRunningTask(unsigned long ms)
     {
-    runningTask->millis += ms;   
+    runningTask->millis = millis() + ms; 
     }
