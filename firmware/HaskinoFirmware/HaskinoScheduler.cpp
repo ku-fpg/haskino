@@ -162,6 +162,7 @@ static void deleteTask(TASK* task)
     if (task->next != NULL)
         task->next->prev = task->prev;
     taskCount--;
+    free(task->context);
     free(task);
     }
 
