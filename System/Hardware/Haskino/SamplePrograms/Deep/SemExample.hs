@@ -13,7 +13,6 @@
 module System.Hardware.Haskino.SamplePrograms.Deep.SemExample where
 
 import Prelude hiding ((<*))
-import Control.Concurrent   (threadDelay)
 import Control.Monad.Trans (liftIO)
 import Data.Boolean
 import Data.Boolean.Numbers
@@ -26,12 +25,6 @@ blinkDelay = 125
 
 taskDelay :: Expr Word32
 taskDelay = 2000
-
-startDelay :: Expr Word32
-startDelay = blinkDelay * lit 5
-
-progDelay :: Int
-progDelay = 10500 
 
 semId :: Expr Word8
 semId = 0
