@@ -5,9 +5,9 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- The /hello world/ of the arduino world, blinking the led.
--- This version is done by creating a scheduled task on the Arduino which
--- blinks the LED on and off without host intervention.
+-- This is an example of using semaphores to communicate between two tasks.
+-- One task gives a semaphore then delays for 2 seconds.  The other task
+-- waits for the semaphore then blinks the led rapidly 3 times.
 -------------------------------------------------------------------------------
 
 module System.Hardware.Haskino.SamplePrograms.Deep.SemExample where
