@@ -56,5 +56,9 @@ intExample = withArduino True "/dev/cu.usbmodem1421" $ do
     -- Query to confirm task creation
     tasks <- queryAllTasksE
     liftIO $ print tasks
+    task1 <- queryTaskE 1
+    liftIO $ print task1
+    task2 <- queryTaskE 2
+    liftIO $ print task2
     liftIO $ print "Delaying 10500 milliseconds"
     liftIO $ threadDelay (10500 * 1000)
