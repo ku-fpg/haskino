@@ -64,6 +64,13 @@ data PinMode = INPUT
              | INPUT_PULLUP
         deriving (Eq, Show, Enum)
 
+-- | The mode for a triggering an interrupt on a pin.
+data IntMode = LOW
+             | CHANGE
+             | FALLING
+             | RISING
+        deriving (Eq, Show, Enum)
+
 -- | LCD's connected to the board
 data LCD = LCD {
                  lcdController     :: LCDController -- ^ Actual controller
@@ -142,8 +149,7 @@ type VarSize = Word8
 
 data ArduinoCommand =
        SystemReset                              -- ^ Send system reset
-     | SetPinModeE PinE PinMode                 -- ^ Set the mode on a pin
---  ToDo: PinMode expression?
+     | SetPinModeE PinE (Expr Word8)            -- ^ Set the mode on a pin
      | DigitalPortWriteE PinE (Expr Word8) (Expr Word8)
      | DigitalWriteE PinE (Expr Bool)              
      | AnalogWriteE PinE (Expr Word16)
@@ -158,9 +164,11 @@ data ArduinoCommand =
      | CreateTaskE TaskIDE (Arduino ())
      | DeleteTaskE TaskIDE
      | ScheduleTaskE TaskIDE TimeMillisE
+     | AttachIntE PinE TaskIDE (Expr Word8)
+     | DetachIntE PinE
      | ScheduleReset
-     | GiveSem (Expr Word8)
-     | TakeSem (Expr Word8)
+     | GiveSemE (Expr Word8)
+     | TakeSemE (Expr Word8)
      | WriteRemoteRefB (RemoteRef Bool) (Expr Bool)
      | WriteRemoteRefW8 (RemoteRef Word8) (Expr Word8)
      | WriteRemoteRefW16 (RemoteRef Word16) (Expr Word16)
@@ -198,10 +206,10 @@ systemReset :: Arduino ()
 systemReset =  Arduino $ command SystemReset
 
 setPinMode :: Pin -> PinMode -> Arduino ()
-setPinMode p pm =  Arduino $ command $ SetPinModeE (lit p) pm
+setPinMode p pm =  Arduino $ command $ SetPinModeE (lit p) (lit $ fromIntegral $ fromEnum pm)
 
 setPinModeE :: PinE -> PinMode -> Arduino ()
-setPinModeE p pm =  Arduino $ command $ SetPinModeE p pm
+setPinModeE p pm =  Arduino $ command $ SetPinModeE p (lit $ fromIntegral $ fromEnum pm)
 
 digitalWrite :: Pin -> Bool -> Arduino ()
 digitalWrite p b = Arduino $ command $ DigitalWriteE (lit p) (lit b)
@@ -285,14 +293,32 @@ scheduleTask tid tt = Arduino $ command $ ScheduleTaskE (lit tid) (lit tt)
 scheduleTaskE :: TaskIDE -> TimeMillisE -> Arduino ()
 scheduleTaskE tid tt = Arduino $ command $ ScheduleTaskE tid tt
 
+attachInt :: Pin -> TaskID -> IntMode -> Arduino ()
+attachInt p tid m = Arduino $ command $ AttachIntE (lit p) (lit tid) (lit $ fromIntegral $ fromEnum m)
+
+attachIntE :: PinE -> TaskIDE -> IntMode -> Arduino ()
+attachIntE p tid m = Arduino $ command $ AttachIntE p tid (lit $ fromIntegral $ fromEnum m)
+
+detachInt :: Pin -> Arduino ()
+detachInt p = Arduino $ command $ DetachIntE (lit p)
+
+detachIntE :: PinE -> Arduino ()
+detachIntE p = Arduino $ command $ DetachIntE p
+
 scheduleReset :: Arduino ()
 scheduleReset = Arduino $ command ScheduleReset
 
-giveSem :: Expr Word8 -> Arduino ()
-giveSem id = Arduino $ command $ GiveSem id
+giveSem :: Word8 -> Arduino ()
+giveSem id = Arduino $ command $ GiveSemE (lit id)
 
-takeSem :: Expr Word8 -> Arduino ()
-takeSem id = Arduino $ command $ TakeSem id
+giveSemE :: Expr Word8 -> Arduino ()
+giveSemE id = Arduino $ command $ GiveSemE id
+
+takeSem :: Word8 -> Arduino ()
+takeSem id = Arduino $ command $ TakeSemE (lit id)
+
+takeSemE :: Expr Word8 -> Arduino ()
+takeSemE id = Arduino $ command $ TakeSemE id
 
 loopE :: Arduino () -> Arduino()
 loopE ps = Arduino $ command $ LoopE ps
@@ -781,6 +807,8 @@ data FirmwareCmd = BC_CMD_SYSTEM_RESET
                  | SCHED_CMD_BOOT_TASK
                  | SCHED_CMD_GIVE_SEM
                  | SCHED_CMD_TAKE_SEM
+                 | SCHED_CMD_ATTACH_INT
+                 | SCHED_CMD_DETACH_INT
                  | REF_CMD_NEW
                  | REF_CMD_READ
                  | REF_CMD_WRITE
@@ -832,6 +860,8 @@ firmwareCmdVal SCHED_CMD_RESET          = 0xA6
 firmwareCmdVal SCHED_CMD_BOOT_TASK      = 0xA7
 firmwareCmdVal SCHED_CMD_TAKE_SEM       = 0xA8
 firmwareCmdVal SCHED_CMD_GIVE_SEM       = 0xA9
+firmwareCmdVal SCHED_CMD_ATTACH_INT     = 0xAA
+firmwareCmdVal SCHED_CMD_DETACH_INT     = 0xAB
 firmwareCmdVal REF_CMD_NEW              = 0xB0
 firmwareCmdVal REF_CMD_READ             = 0xB1
 firmwareCmdVal REF_CMD_WRITE            = 0xB2
@@ -881,6 +911,8 @@ firmwareValCmd 0xA6 = SCHED_CMD_RESET
 firmwareValCmd 0xA7 = SCHED_CMD_BOOT_TASK    
 firmwareValCmd 0xA8 = SCHED_CMD_TAKE_SEM    
 firmwareValCmd 0xA9 = SCHED_CMD_GIVE_SEM    
+firmwareValCmd 0xAA = SCHED_CMD_ATTACH_INT    
+firmwareValCmd 0xAB = SCHED_CMD_DETACH_INT    
 firmwareValCmd 0xB0 = REF_CMD_NEW            
 firmwareValCmd 0xB1 = REF_CMD_READ           
 firmwareValCmd 0xB2 = REF_CMD_WRITE 
@@ -939,9 +971,9 @@ getFirmwareReply 0x6A = Right STEP_RESP_STEP
 getFirmwareReply 0x88 = Right SRVO_RESP_ATTACH
 getFirmwareReply 0x89 = Right SRVO_RESP_READ
 getFirmwareReply 0x8A = Right SRVO_RESP_READ_MICROS
-getFirmwareReply 0xAA = Right SCHED_RESP_QUERY
-getFirmwareReply 0xAB = Right SCHED_RESP_QUERY_ALL
-getFirmwareReply 0xAC = Right SCHED_RESP_BOOT
+getFirmwareReply 0xAC = Right SCHED_RESP_QUERY
+getFirmwareReply 0xAD = Right SCHED_RESP_QUERY_ALL
+getFirmwareReply 0xAE = Right SCHED_RESP_BOOT
 getFirmwareReply 0xB8 = Right REF_RESP_NEW
 getFirmwareReply 0xB9 = Right REF_RESP_READ
 getFirmwareReply n    = Left n

@@ -60,7 +60,7 @@ buildCommand cmd bs = B.pack $ firmwareCmdVal cmd : bs
 packageCommand :: ArduinoCommand -> Int -> Int -> (B.ByteString, Int)
 packageCommand SystemReset ix ib = (buildCommand BC_CMD_SYSTEM_RESET [], ix)
 packageCommand (SetPinModeE p m) ix _ =
-    (buildCommand BC_CMD_SET_PIN_MODE (packageExpr p ++ [fromIntegral $ fromEnum m]), ix)
+    (buildCommand BC_CMD_SET_PIN_MODE (packageExpr p ++ packageExpr m), ix)
 packageCommand (DigitalWriteE p b) ix _ =
     (buildCommand DIG_CMD_WRITE_PIN (packageExpr p ++ packageExpr b), ix)
 packageCommand (DigitalPortWriteE p b m) ix _ =
@@ -91,9 +91,13 @@ packageCommand (ScheduleTaskE tid tt) ix _ =
     (buildCommand SCHED_CMD_SCHED_TASK (packageExpr tid ++ packageExpr tt), ix)
 packageCommand ScheduleReset ix _ =
     (buildCommand SCHED_CMD_RESET [], ix)
-packageCommand (GiveSem id) ix _ =
+packageCommand (AttachIntE p t m) ix _ =
+    (buildCommand SCHED_CMD_ATTACH_INT (packageExpr p ++ packageExpr t ++ packageExpr m), ix)
+packageCommand (DetachIntE p) ix _ =
+    (buildCommand SCHED_CMD_DETACH_INT (packageExpr p), ix)
+packageCommand (GiveSemE id) ix _ =
     (buildCommand SCHED_CMD_GIVE_SEM (packageExpr id), ix)
-packageCommand (TakeSem id) ix _ =
+packageCommand (TakeSemE id) ix _ =
     (buildCommand SCHED_CMD_TAKE_SEM (packageExpr id), ix)
 packageCommand (CreateTaskE tid m) ix _ =
     ((framePackage cmd) `B.append` (genAddToTaskCmds td), ix')

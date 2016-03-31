@@ -1751,7 +1751,8 @@ uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc)
     byte exprType = *pExpr >> EXPR_TYPE_SHFT;
     byte exprExtType = *pExpr >> EXPR_EXT_TYPE_SHFT;
     byte exprOp = *pExpr & EXPR_OP_MASK;
-    byte *ppSizeExpr, *listMem, *bindPtr;
+    byte *ppSizeExpr, *bindPtr;
+    byte *listMem = NULL;
     byte size, bind, refNum;
 
     if (exprType == EXPR_EXT && exprExtType == EXPR_LIST8)

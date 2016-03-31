@@ -33,7 +33,7 @@ myTask1 :: Expr Word8 -> Arduino ()
 myTask1 led = do
     i <- newRemoteRef $ lit (0 :: Word8)
     loopE $ do
-        takeSem semId
+        takeSemE semId
         writeRemoteRef i 0
         while i (\x -> x <* 3) (\x -> x + 1) $ do 
             digitalWriteE led true
@@ -44,7 +44,7 @@ myTask1 led = do
 myTask2 :: Arduino ()
 myTask2 =
     loopE $ do
-        giveSem semId
+        giveSemE semId
         delayMillisE taskDelay
 
 semExample :: IO ()

@@ -21,7 +21,7 @@ module System.Hardware.Haskino (
   , Arduino(..) , ArduinoCommand(..), ArduinoProcedure(..), Processor(..)
   -- * Programming the Arduino
   -- ** Pins
-  , Pin, PinMode(..), setPinMode, setPinModeE
+  , Pin, PinMode(..), IntMode(..), setPinMode, setPinModeE
   -- ** Gereral utils
   , systemReset, queryFirmware
   -- ** Digital IO
@@ -41,7 +41,7 @@ module System.Hardware.Haskino (
   , createTask, createTaskE
   , deleteTask, scheduleTask, scheduleReset, queryTaskE
   , queryAllTasksE, deleteTaskE, scheduleTaskE, bootTaskE
-  , takeSem, giveSem
+  , takeSem, giveSem, takeSemE, giveSemE, attachInt, attachIntE, detachInt, detachIntE
   -- ** Stepper
   --, StepDevice, StepType(..), NumSteps, StepSpeed, StepAccel, StepPerRev
   --, StepDelay(..), StepDir(..), stepperConfig, stepperStep

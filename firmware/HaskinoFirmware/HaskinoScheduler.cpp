@@ -15,6 +15,8 @@ static bool handleCreateTask(int size, const byte *msg, CONTEXT *context);
 static bool handleDeleteTask(int size, const byte *msg, CONTEXT *context);
 static bool handleAddToTask(int size, const byte *msg, CONTEXT *context);
 static bool handleScheduleTask(int size, const byte *msg, CONTEXT *context);
+static bool handleAttachInterrupt(int size, const byte *msg, CONTEXT *context);
+static bool handleDetachInterrupt(int size, const byte *msg, CONTEXT *context);
 static bool handleQuery(int size, const byte *msg, CONTEXT *context);
 static bool handleReset(int size, const byte *msg, CONTEXT *context);
 static bool handleBootTask(int size, const byte *msg, CONTEXT *context);
@@ -24,12 +26,20 @@ static void deleteTask(TASK* task);
 static TASK *findTask(int id);
 static bool createById(byte id, unsigned int taskSize, unsigned int bindSize);
 static bool scheduleById(byte id, unsigned long deltaMillis);
+static void handleISR(int intNum);
+static void ISR0(void);
+static void ISR1(void);
+static void ISR2(void);
+static void ISR3(void);
+static void ISR4(void);
+static void ISR5(void);
 
 static TASK *firstTask = NULL;
 static TASK *runningTask = NULL;
 static CONTEXT *defaultContext = NULL;
 static int taskCount = 0;
 static SEMAPHORE semaphores[NUM_SEMAPHORES];
+static TASK *intTasks[MAX_INTERRUPTS];
 
 int getTaskCount()
     {
@@ -54,6 +64,12 @@ bool parseSchedulerMessage(int size, const byte *msg, CONTEXT *context)
             break;
         case SCHED_CMD_SCHED_TASK:
             return handleScheduleTask(size, msg, context);
+            break;
+        case SCHED_CMD_ATTACH_INT:
+            return handleAttachInterrupt(size, msg, context);
+            break;
+        case SCHED_CMD_DETACH_INT:
+            return handleDetachInterrupt(size, msg, context);
             break;
         case SCHED_CMD_QUERY:
             return handleQuery(size, msg, context);
@@ -216,6 +232,60 @@ static bool handleScheduleTask(int size, const byte *msg, CONTEXT *context)
     byte id = evalWord8Expr(&expr, context);
     unsigned long deltaMillis = evalWord32Expr(&expr, context);
     return scheduleById(id, deltaMillis);
+    }
+
+static bool handleAttachInterrupt(int size, const byte *msg, CONTEXT *context)
+    {
+    byte *expr = (byte *) &msg[1];
+    byte pin = evalWord8Expr(&expr, context);
+    byte id = evalWord8Expr(&expr, context);
+    byte mode = evalWord8Expr(&expr, context);
+    byte intNum;
+    TASK *task;
+    void (*isr)(void);
+
+    if ((intNum = digitalPinToInterrupt(pin)) < MAX_INTERRUPTS)
+        {
+        if ((task = findTask(id)) != NULL)
+            {
+            switch(intNum)
+                {
+                case 0:
+                    isr = ISR0;
+                    break;
+                case 1:
+                    isr = ISR1;
+                    break;
+                case 2:
+                    isr = ISR2;
+                    break;
+                case 3:
+                    isr = ISR3;
+                    break;
+                case 4:
+                    isr = ISR4;
+                    break;
+                case 5:
+                    isr = ISR5;
+                    break;
+                }
+            attachInterrupt(intNum, isr, mode);
+            }
+        }
+    return false;
+    }
+
+static bool handleDetachInterrupt(int size, const byte *msg, CONTEXT *context)
+    {
+    byte *expr = (byte *) &msg[1];
+    byte pin = evalWord8Expr(&expr, context);
+    byte intNum;
+
+    if ((intNum = digitalPinToInterrupt(pin)) < MAX_INTERRUPTS)
+        {
+        detachInterrupt(intNum);
+        }
+    return false;
     }
 
 static bool handleQuery(int size, const byte *msg, CONTEXT *context)
@@ -464,3 +534,41 @@ void delayRunningTask(unsigned long ms)
     {
     runningTask->millis = millis() + ms; 
     }
+
+static void handleISR(int intNum)
+    {
+    TASK *task = intTasks[intNum];
+
+    runCodeBlock(task->currLen, task->data, task->context);
+    }
+
+static void ISR0(void)
+    {
+    handleISR(0);
+    }
+
+static void ISR1(void)
+    {
+    handleISR(1);
+    }
+
+static void ISR2(void)
+    {
+    handleISR(2);
+    }
+
+static void ISR3(void)
+    {
+    handleISR(3);
+    }
+
+static void ISR4(void)
+    {
+    handleISR(4);
+    }
+
+static void ISR5(void)
+    {
+    handleISR(5);
+    }
+

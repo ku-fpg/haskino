@@ -20,7 +20,7 @@ static int messageCount = 0;
 static int processingEscapeState = 0;
 static byte inputData[MESSAGE_MAX_SIZE];
 
-static void processChar(char c);
+static void processChar(byte c);
 
 int processingMessage() 
     {

@@ -7,6 +7,7 @@
 #define DEFAULT_BIND_COUNT  10
 #define MAX_BLOCK_LEVELS    5
 #define NUM_SEMAPHORES      5
+#define MAX_INTERRUPTS      6 
 
 #define MAX_FIRM_SERVOS     4
 #define MAX_FIRM_STEPPERS   4
