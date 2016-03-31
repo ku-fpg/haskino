@@ -285,6 +285,7 @@ static bool handleDetachInterrupt(int size, const byte *msg, CONTEXT *context)
     if ((intNum = digitalPinToInterrupt(pin)) < MAX_INTERRUPTS)
         {
         detachInterrupt(intNum);
+        intTasks[intNum] = NULL;
         }
     return false;
     }
@@ -540,7 +541,10 @@ static void handleISR(int intNum)
     {
     TASK *task = intTasks[intNum];
 
-    runCodeBlock(task->currLen, task->data, task->context);
+    if (task)
+        {
+        runCodeBlock(task->currLen, task->data, task->context);
+        }
     }
 
 static void ISR0(void)
