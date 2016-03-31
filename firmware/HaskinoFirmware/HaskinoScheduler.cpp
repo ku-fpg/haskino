@@ -17,6 +17,8 @@ static bool handleAddToTask(int size, const byte *msg, CONTEXT *context);
 static bool handleScheduleTask(int size, const byte *msg, CONTEXT *context);
 static bool handleAttachInterrupt(int size, const byte *msg, CONTEXT *context);
 static bool handleDetachInterrupt(int size, const byte *msg, CONTEXT *context);
+static bool handleInterrupts(int size, const byte *msg, CONTEXT *context);
+static bool handleNoInterrupts(int size, const byte *msg, CONTEXT *context);
 static bool handleQuery(int size, const byte *msg, CONTEXT *context);
 static bool handleReset(int size, const byte *msg, CONTEXT *context);
 static bool handleBootTask(int size, const byte *msg, CONTEXT *context);
@@ -70,6 +72,12 @@ bool parseSchedulerMessage(int size, const byte *msg, CONTEXT *context)
             break;
         case SCHED_CMD_DETACH_INT:
             return handleDetachInterrupt(size, msg, context);
+            break;
+        case SCHED_CMD_INTERRUPTS:
+            return handleInterrupts(size, msg, context);
+            break;
+        case SCHED_CMD_NOINTERRUPTS:
+            return handleNoInterrupts(size, msg, context);
             break;
         case SCHED_CMD_QUERY:
             return handleQuery(size, msg, context);
@@ -287,6 +295,18 @@ static bool handleDetachInterrupt(int size, const byte *msg, CONTEXT *context)
         detachInterrupt(intNum);
         intTasks[intNum] = NULL;
         }
+    return false;
+    }
+
+static bool handleInterrupts(int size, const byte *msg, CONTEXT *context)
+    {
+    interrupts();
+    return false;
+    }
+
+static bool handleNoInterrupts(int size, const byte *msg, CONTEXT *context)
+    {
+    noInterrupts();
     return false;
     }
 

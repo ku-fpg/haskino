@@ -42,6 +42,7 @@ module System.Hardware.Haskino (
   , deleteTask, scheduleTask, scheduleReset, queryTaskE
   , queryAllTasksE, deleteTaskE, scheduleTaskE, bootTaskE
   , takeSem, giveSem, takeSemE, giveSemE, attachInt, attachIntE, detachInt, detachIntE
+  , interrupts, noInterrupts
   -- ** Stepper
   --, StepDevice, StepType(..), NumSteps, StepSpeed, StepAccel, StepPerRev
   --, StepDelay(..), StepDir(..), stepperConfig, stepperStep

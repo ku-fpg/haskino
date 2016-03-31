@@ -95,6 +95,10 @@ packageCommand (AttachIntE p t m) ix _ =
     (buildCommand SCHED_CMD_ATTACH_INT (packageExpr p ++ packageExpr t ++ packageExpr m), ix)
 packageCommand (DetachIntE p) ix _ =
     (buildCommand SCHED_CMD_DETACH_INT (packageExpr p), ix)
+packageCommand (Interrupts) ix _ =
+    (buildCommand SCHED_CMD_INTERRUPTS [], ix)
+packageCommand (NoInterrupts) ix _ =
+    (buildCommand SCHED_CMD_NOINTERRUPTS [], ix)
 packageCommand (GiveSemE id) ix _ =
     (buildCommand SCHED_CMD_GIVE_SEM (packageExpr id), ix)
 packageCommand (TakeSemE id) ix _ =

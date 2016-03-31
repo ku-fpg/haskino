@@ -164,9 +164,11 @@ data ArduinoCommand =
      | CreateTaskE TaskIDE (Arduino ())
      | DeleteTaskE TaskIDE
      | ScheduleTaskE TaskIDE TimeMillisE
+     | ScheduleReset
      | AttachIntE PinE TaskIDE (Expr Word8)
      | DetachIntE PinE
-     | ScheduleReset
+     | Interrupts
+     | NoInterrupts
      | GiveSemE (Expr Word8)
      | TakeSemE (Expr Word8)
      | WriteRemoteRefB (RemoteRef Bool) (Expr Bool)
@@ -304,6 +306,12 @@ detachInt p = Arduino $ command $ DetachIntE (lit p)
 
 detachIntE :: PinE -> Arduino ()
 detachIntE p = Arduino $ command $ DetachIntE p
+
+interrupts :: Arduino ()
+interrupts = Arduino $ command $ Interrupts
+
+noInterrupts :: Arduino ()
+noInterrupts = Arduino $ command $ NoInterrupts
 
 scheduleReset :: Arduino ()
 scheduleReset = Arduino $ command ScheduleReset
@@ -809,6 +817,8 @@ data FirmwareCmd = BC_CMD_SYSTEM_RESET
                  | SCHED_CMD_TAKE_SEM
                  | SCHED_CMD_ATTACH_INT
                  | SCHED_CMD_DETACH_INT
+                 | SCHED_CMD_INTERRUPTS
+                 | SCHED_CMD_NOINTERRUPTS
                  | REF_CMD_NEW
                  | REF_CMD_READ
                  | REF_CMD_WRITE
@@ -862,9 +872,11 @@ firmwareCmdVal SCHED_CMD_TAKE_SEM       = 0xA8
 firmwareCmdVal SCHED_CMD_GIVE_SEM       = 0xA9
 firmwareCmdVal SCHED_CMD_ATTACH_INT     = 0xAA
 firmwareCmdVal SCHED_CMD_DETACH_INT     = 0xAB
-firmwareCmdVal REF_CMD_NEW              = 0xB0
-firmwareCmdVal REF_CMD_READ             = 0xB1
-firmwareCmdVal REF_CMD_WRITE            = 0xB2
+firmwareCmdVal SCHED_CMD_INTERRUPTS     = 0xAC
+firmwareCmdVal SCHED_CMD_NOINTERRUPTS   = 0xAD
+firmwareCmdVal REF_CMD_NEW              = 0xC0
+firmwareCmdVal REF_CMD_READ             = 0xC1
+firmwareCmdVal REF_CMD_WRITE            = 0xC2
 
 -- | Compute the numeric value of a command
 firmwareValCmd :: Word8 -> FirmwareCmd
@@ -912,10 +924,12 @@ firmwareValCmd 0xA7 = SCHED_CMD_BOOT_TASK
 firmwareValCmd 0xA8 = SCHED_CMD_TAKE_SEM    
 firmwareValCmd 0xA9 = SCHED_CMD_GIVE_SEM    
 firmwareValCmd 0xAA = SCHED_CMD_ATTACH_INT    
-firmwareValCmd 0xAB = SCHED_CMD_DETACH_INT    
-firmwareValCmd 0xB0 = REF_CMD_NEW            
-firmwareValCmd 0xB1 = REF_CMD_READ           
-firmwareValCmd 0xB2 = REF_CMD_WRITE 
+firmwareValCmd 0xAB = SCHED_CMD_DETACH_INT
+firmwareValCmd 0xAC = SCHED_CMD_INTERRUPTS
+firmwareValCmd 0xAD = SCHED_CMD_NOINTERRUPTS    
+firmwareValCmd 0xC0 = REF_CMD_NEW            
+firmwareValCmd 0xC1 = REF_CMD_READ           
+firmwareValCmd 0xC2 = REF_CMD_WRITE 
 firmwareValCmd _    = UNKNOWN_COMMAND        
 
 data RefType = REF_BOOL
@@ -971,11 +985,11 @@ getFirmwareReply 0x6A = Right STEP_RESP_STEP
 getFirmwareReply 0x88 = Right SRVO_RESP_ATTACH
 getFirmwareReply 0x89 = Right SRVO_RESP_READ
 getFirmwareReply 0x8A = Right SRVO_RESP_READ_MICROS
-getFirmwareReply 0xAC = Right SCHED_RESP_QUERY
-getFirmwareReply 0xAD = Right SCHED_RESP_QUERY_ALL
-getFirmwareReply 0xAE = Right SCHED_RESP_BOOT
-getFirmwareReply 0xB8 = Right REF_RESP_NEW
-getFirmwareReply 0xB9 = Right REF_RESP_READ
+getFirmwareReply 0xB0 = Right SCHED_RESP_QUERY
+getFirmwareReply 0xB1 = Right SCHED_RESP_QUERY_ALL
+getFirmwareReply 0xB2 = Right SCHED_RESP_BOOT
+getFirmwareReply 0xC8 = Right REF_RESP_NEW
+getFirmwareReply 0xC9 = Right REF_RESP_READ
 getFirmwareReply n    = Left n
 
 data Processor = ATMEGA8

@@ -113,14 +113,17 @@
 #define SCHED_CMD_GIVE_SEM      (SCHED_CMD_TYPE | 0x9)
 #define SCHED_CMD_ATTACH_INT    (SCHED_CMD_TYPE | 0xA)
 #define SCHED_CMD_DETACH_INT    (SCHED_CMD_TYPE | 0xB)
+#define SCHED_CMD_INTERRUPTS    (SCHED_CMD_TYPE | 0xC)
+#define SCHED_CMD_NOINTERRUPTS  (SCHED_CMD_TYPE | 0xD)
 
 // Scheduler responses
-#define SCHED_RESP_QUERY        (SCHED_CMD_TYPE | 0xC)
-#define SCHED_RESP_QUERY_ALL    (SCHED_CMD_TYPE | 0xD)
-#define SCHED_RESP_BOOT_TASK    (SCHED_CMD_TYPE | 0xE)
+#define SCHED_RESP_TYPE          0xB0
+#define SCHED_RESP_QUERY        (SCHED_RESP_TYPE | 0x0)
+#define SCHED_RESP_QUERY_ALL    (SCHED_RESP_TYPE | 0x1)
+#define SCHED_RESP_BOOT_TASK    (SCHED_RESP_TYPE | 0x2)
 
 // Reference commands
-#define REF_CMD_TYPE            0xB0
+#define REF_CMD_TYPE            0xC0
 
 #define REF_CMD_NEW             (REF_CMD_TYPE | 0x0)
 #define REF_CMD_READ            (REF_CMD_TYPE | 0x1)
