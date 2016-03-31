@@ -13,6 +13,7 @@
 module System.Hardware.Haskino.SamplePrograms.Deep.IntExample where
 
 import Prelude hiding ((<*))
+import Control.Concurrent   (threadDelay)
 import Control.Monad.Trans (liftIO)
 import Data.Boolean
 import Data.Boolean.Numbers
@@ -44,12 +45,16 @@ intExample = withArduino True "/dev/cu.usbmodem1421" $ do
     setPinModeE led OUTPUT
     let button = 2
     setPinModeE led INPUT
+    let myTaskId = 1
+    let intTaskId = 2
     -- Create the tasks
-    createTaskE 1 (myTask led)
-    createTaskE 2 intTask
+    createTaskE myTaskId (myTask led)
+    createTaskE intTaskId intTask
     -- Schedule the task to start in 50ms, the second starting after the first
-    scheduleTaskE 1 50
-    attachIntE 2 1050 FALLING
+    scheduleTaskE myTaskId 50
+    attachIntE button intTaskId CHANGE
     -- Query to confirm task creation
     tasks <- queryAllTasksE
     liftIO $ print tasks
+    liftIO $ print "Delaying 10500 milliseconds"
+    liftIO $ threadDelay (10500 * 1000)

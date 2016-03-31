@@ -244,14 +244,17 @@ static bool handleAttachInterrupt(int size, const byte *msg, CONTEXT *context)
     TASK *task;
     void (*isr)(void);
 
+sendStringf("Attaching Int");
     if ((intNum = digitalPinToInterrupt(pin)) < MAX_INTERRUPTS)
         {
+sendStringf("Attaching Int Num %d",intNum);
         if ((task = findTask(id)) != NULL)
             {
             switch(intNum)
                 {
                 case 0:
                     isr = ISR0;
+sendStringf("Attaching Int 0 task %d mode %d",id,mode);
                     break;
                 case 1:
                     isr = ISR1;
