@@ -52,7 +52,7 @@ intExample = withArduino True "/dev/cu.usbmodem1421" $ do
     createTaskE intTaskId intTask
     -- Schedule the task to start in 50ms, the second starting after the first
     scheduleTaskE myTaskId 50
-    attachIntE button intTaskId CHANGE
+    attachIntE button intTaskId FALLING
     -- Query to confirm task creation
     tasks <- queryAllTasksE
     liftIO $ print tasks
@@ -60,5 +60,3 @@ intExample = withArduino True "/dev/cu.usbmodem1421" $ do
     liftIO $ print task1
     task2 <- queryTaskE 2
     liftIO $ print task2
-    liftIO $ print "Delaying 10500 milliseconds"
-    liftIO $ threadDelay (10500 * 1000)

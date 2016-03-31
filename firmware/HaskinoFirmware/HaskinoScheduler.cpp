@@ -269,6 +269,7 @@ static bool handleAttachInterrupt(int size, const byte *msg, CONTEXT *context)
                     isr = ISR5;
                     break;
                 }
+            intTasks[intNum] = task;
             attachInterrupt(intNum, isr, mode);
             }
         }
