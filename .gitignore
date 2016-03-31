@@ -43,4 +43,3 @@ firmware/HaskinoFirmware/build-*
 firmware/EEPROMErase/build-*
 
 *.hi
-Control/
