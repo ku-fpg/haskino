@@ -33,5 +33,5 @@ exampleProg :: IO ()
 exampleProg = withArduino False "/dev/cu.usbmodem1421" $ do
               let tid = 1
               createTaskE tid example
-              bootTaskE tid
+              bootTaskE (pack [tid])
               return ()

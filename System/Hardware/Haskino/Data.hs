@@ -531,7 +531,7 @@ data ArduinoProcedure :: * -> * where
      QueryAllTasksE :: ArduinoProcedure (Expr [TaskID])
      QueryTask  :: TaskID -> ArduinoProcedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
      QueryTaskE :: TaskIDE -> ArduinoProcedure (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
-     BootTaskE :: TaskIDE -> ArduinoProcedure (Expr Bool)
+     BootTaskE :: Expr [Word8] -> ArduinoProcedure (Expr Bool)
      ReadRemoteRefB  :: RemoteRef Bool   -> ArduinoProcedure (Expr Bool)
      ReadRemoteRefW8  :: RemoteRef Word8  -> ArduinoProcedure (Expr Word8)
      ReadRemoteRefW16 :: RemoteRef Word16 -> ArduinoProcedure (Expr Word16)
@@ -671,8 +671,8 @@ queryTask tid = Arduino $ procedure $ QueryTask tid
 queryTaskE :: TaskIDE -> Arduino (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
 queryTaskE tid = Arduino $ procedure $ QueryTaskE tid
 
-bootTaskE :: TaskIDE -> Arduino (Expr Bool)
-bootTaskE tid = Arduino $ procedure $ BootTaskE tid
+bootTaskE :: Expr [Word8] -> Arduino (Expr Bool)
+bootTaskE tids = Arduino $ procedure $ BootTaskE tids
 
 readRemoteRefB :: RemoteRef Bool -> Arduino (Expr Bool)
 readRemoteRefB n = Arduino $ procedure $ ReadRemoteRefB n

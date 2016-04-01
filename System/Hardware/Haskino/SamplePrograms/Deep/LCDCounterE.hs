@@ -125,6 +125,6 @@ lcdCounterEProg :: IO ()
 lcdCounterEProg = withArduino True "/dev/cu.usbmodem1421" $ do
       createTaskE 1 counterProg
       -- Program the task
-      bootTaskE 1
+      bootTaskE (lit [1::Word8])
       return ()
 

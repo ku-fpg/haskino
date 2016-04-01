@@ -7,8 +7,7 @@
 #include "HaskinoExpr.h"
 #include "HaskinoScheduler.h"
 
-#define BOOT_TASK_INDEX_START   8
-#define BOOT_TASK_ID            255
+#define BOOT_TASK_INDEX_START   5
 
 static bool handleQueryAll(int size, const byte *msg, CONTEXT *context);
 static bool handleCreateTask(int size, const byte *msg, CONTEXT *context);
@@ -395,45 +394,72 @@ static bool handleReset(int size, const byte *msg, CONTEXT *context)
 
 static bool handleBootTask(int size, const byte *msg, CONTEXT *context)
     {
-    TASK *task;
     byte bind = msg[1];
     byte *expr = (byte *) &msg[2];
-    byte id = evalWord8Expr(&expr, context);
+    bool alloc;
+    byte *ids = evalList8Expr(&expr, context, &alloc);
     byte bootReply[2];
-    byte status = 0;
+    byte status = 1;
+    unsigned int index = BOOT_TASK_INDEX_START;
+    unsigned int idsLen = ids[1];
+    unsigned int taskCount = 0;
 
-    if ((task = findTask(id)) != NULL)
+    /* Write the Magic pattern */
+    EEPROM[ 0 ] = 'H';
+    EEPROM[ 1 ] = 'A';
+    EEPROM[ 2 ] = 'S';
+    EEPROM[ 3 ] = 'K';
+
+    for (unsigned int i=0; i<idsLen; i++)
         {
-        unsigned int index = BOOT_TASK_INDEX_START;
+        TASK *task;
+        byte id = ids[2+i];
 
-        EEPROM[ 0 ] = 'H';
-        EEPROM[ 1 ] = 'A';
-        EEPROM[ 2 ] = 'S';
-        EEPROM[ 3 ] = 'K';
-        EEPROM[ 4 ] = task->currLen & 0xFF;
-        EEPROM[ 5 ] = task->currLen >> 8;
-        EEPROM[ 6 ] = task->context->bindSize & 0xFF;
-        EEPROM[ 7 ] = task->context->bindSize >> 8;
-
-        for (unsigned int i=0;i<task->currLen;i++,index++)
+        if ((task = findTask(id)) != NULL)
             {
-            EEPROM[ index ] = task->data[i];
+            unsigned int taskBodyStart;
+
+            /* Write the task ID */
+            EEPROM[ index++ ] = id;
+
+            /* Write the length of the task */
+            EEPROM[ index++ ] = task->currLen & 0xFF;
+            EEPROM[ index++ ] = task->currLen >> 8;
+
+            /* Write the number of binds in the task */
+            EEPROM[ index++ ] = task->context->bindSize & 0xFF;
+            EEPROM[ index++ ] = task->context->bindSize >> 8;
+
+            /* Write the body of the task */
+            taskBodyStart = index;
+            for (unsigned int i=0;i<task->currLen;i++,index++)
+                {
+                EEPROM[ index ] = task->data[i];
+                }
+
+            /* Validate body writing */
+            index = taskBodyStart;
+            for (unsigned int i=0;i<task->currLen;i++,index++)
+                {
+                if (EEPROM[ index ] != task->data[i])
+                    status = 0;
+                }
             }
 
-        index = BOOT_TASK_INDEX_START;
-        status = 1;
-        for (unsigned int i=0;i<task->currLen;i++,index++)
-            {
-            if (EEPROM[ index ] != task->data[i])
-                status = 0;
-            }
+            taskCount++;
         }
+
+    /* Write the number of boot tasks */
+    EEPROM[ 4 ] = taskCount;
 
     bootReply[0] = EXPR(EXPR_BOOL, EXPR_LIT);
     bootReply[1] = status;
 
     sendReply(sizeof(bootReply), SCHED_RESP_BOOT_TASK, 
               bootReply, context, bind);
+
+    if (alloc)
+        free(ids);
 
     return false;
     }
@@ -506,18 +532,31 @@ void schedulerBootTask()
         EEPROM[ 2 ] == 'S' && EEPROM[ 3 ] == 'K')
         {
         TASK *task;
-        uint16_t taskSize = EEPROM[ 4 ] | (EEPROM[ 5 ] << 8);
-        uint16_t bindSize = EEPROM[ 6 ] | (EEPROM[ 7 ] << 8);
-        int index = BOOT_TASK_INDEX_START;
+        unsigned int taskCount = EEPROM[ 4 ];
+        unsigned int index = BOOT_TASK_INDEX_START;
 
-        createById(BOOT_TASK_ID, taskSize, bindSize);
-        task = findTask(BOOT_TASK_ID);
-        for (unsigned int i=0;i<taskSize;i++,index++)
+        for (unsigned int t=0; t<taskCount; t++)
             {
-            task->data[i] = EEPROM[ index ];
+            byte low, high;
+            uint16_t taskSize, bindSize;
+            byte id = EEPROM[ index++ ];
+
+            low = EEPROM[ index++ ];
+            high = EEPROM[ index++ ];
+            taskSize = low | high << 8;
+            low = EEPROM[ index++ ];
+            high = EEPROM[ index++ ];
+            bindSize = low | high << 8;
+
+            createById(id, taskSize, bindSize);
+            task = findTask(id);
+            for (unsigned int i=0;i<taskSize;i++,index++)
+                {
+                task->data[i] = EEPROM[ index ];
+                }
+            task->currLen = taskSize;           
+            scheduleById(id, 10);
             }
-        task->currLen = taskSize;           
-        scheduleById(BOOT_TASK_ID, 10);
         }
     }
 

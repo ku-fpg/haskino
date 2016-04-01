@@ -31,6 +31,7 @@ semId = 0
 
 myTask1 :: Expr Word8 -> Arduino ()
 myTask1 led = do
+    setPinModeE led OUTPUT
     i <- newRemoteRef $ lit (0 :: Word8)
     loopE $ do
         takeSemE semId
@@ -50,7 +51,6 @@ myTask2 =
 semExample :: IO ()
 semExample = withArduino True "/dev/cu.usbmodem1421" $ do
     let led = 13
-    setPinModeE led OUTPUT
     -- Create the tasks
     createTaskE 1 (myTask1 led)
     createTaskE 2 myTask2
@@ -64,4 +64,14 @@ semExample = withArduino True "/dev/cu.usbmodem1421" $ do
     liftIO $ print task1
     task2 <- queryTaskE 2
     liftIO $ print task2
+
+semExampleProg :: IO ()
+semExampleProg = withArduino True "/dev/cu.usbmodem1421" $ do
+    let led = 13
+    -- Create the tasks
+    createTaskE 1 (myTask1 led)
+    createTaskE 2 myTask2
+    -- Program the boot tasks
+    bootTaskE (lit [1,2])
+    return ()
 

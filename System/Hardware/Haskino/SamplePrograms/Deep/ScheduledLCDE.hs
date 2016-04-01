@@ -18,6 +18,7 @@ import Control.Monad.Trans (liftIO)
 import System.Hardware.Haskino
 import System.Hardware.Haskino.Parts.LCDE
 import Data.Boolean
+import Data.Word
 
 hitachi :: LCDController
 hitachi = Hitachi44780 { lcdRS = 8
@@ -64,6 +65,6 @@ scheduledLCDEProg :: IO ()
 scheduledLCDEProg = withArduino True "/dev/cu.usbmodem1421" $ do
     createTaskE 1 myTask
     -- Program the task
-    bootTaskE 1
+    bootTaskE (lit [1::Word8])
     return ()
         
