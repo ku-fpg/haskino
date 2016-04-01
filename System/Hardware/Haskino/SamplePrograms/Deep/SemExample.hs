@@ -48,8 +48,8 @@ myTask2 =
         giveSemE semId
         delayMillisE taskDelay
 
-semExample :: IO ()
-semExample = withArduino True "/dev/cu.usbmodem1421" $ do
+initExample :: Arduino ()
+initExample = do
     let led = 13
     -- Create the tasks
     createTaskE 1 (myTask1 led)
@@ -57,6 +57,10 @@ semExample = withArduino True "/dev/cu.usbmodem1421" $ do
     -- Schedule the tasks to start in 1 second, the second starting after the first
     scheduleTaskE 1 1000
     scheduleTaskE 2 1050
+
+semExample :: IO ()
+semExample = withArduino True "/dev/cu.usbmodem1421" $ do
+    initExample
     -- Query to confirm task creation
     tasks <- queryAllTasksE
     liftIO $ print tasks
@@ -67,10 +71,7 @@ semExample = withArduino True "/dev/cu.usbmodem1421" $ do
 
 semExampleProg :: IO ()
 semExampleProg = withArduino True "/dev/cu.usbmodem1421" $ do
-    let led = 13
-    -- Create the tasks
-    createTaskE 1 (myTask1 led)
-    createTaskE 2 myTask2
+    initExample
     -- Program the boot tasks
     bootTaskE (lit [1,2])
     return ()

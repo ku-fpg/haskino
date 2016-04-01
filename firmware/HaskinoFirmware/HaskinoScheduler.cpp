@@ -418,6 +418,17 @@ static bool handleBootTask(int size, const byte *msg, CONTEXT *context)
         if ((task = findTask(id)) != NULL)
             {
             unsigned int taskBodyStart;
+            uint32_t startTime;
+            uint32_t now = millis();
+
+            if (task->millis == 0 || task->millis < now)
+                {
+                startTime = 0;
+                }
+            else
+                {
+                startTime = now;
+                }
 
             /* Write the task ID */
             EEPROM[ index++ ] = id;
@@ -429,6 +440,12 @@ static bool handleBootTask(int size, const byte *msg, CONTEXT *context)
             /* Write the number of binds in the task */
             EEPROM[ index++ ] = task->context->bindSize & 0xFF;
             EEPROM[ index++ ] = task->context->bindSize >> 8;
+
+            /* Write the scheduled time of the task */
+            EEPROM[ index++ ] = startTime & 0xFF;
+            EEPROM[ index++ ] = (startTime >> 8) & 0xFF;
+            EEPROM[ index++ ] = (startTime >> 16) & 0xFF;
+            EEPROM[ index++ ] = startTime >> 24;            
 
             /* Write the body of the task */
             taskBodyStart = index;
@@ -537,8 +554,9 @@ void schedulerBootTask()
 
         for (unsigned int t=0; t<taskCount; t++)
             {
-            byte low, high;
+            byte low, high, midl, midh;
             uint16_t taskSize, bindSize;
+            uint32_t taskMillis;
             byte id = EEPROM[ index++ ];
 
             low = EEPROM[ index++ ];
@@ -547,6 +565,11 @@ void schedulerBootTask()
             low = EEPROM[ index++ ];
             high = EEPROM[ index++ ];
             bindSize = low | high << 8;
+            low = EEPROM[ index++ ];
+            midl = EEPROM[ index++ ];
+            midh = EEPROM[ index++ ];
+            high = EEPROM[ index++ ];
+            taskMillis = low | midl << 8 | midh << 16 | high << 24;
 
             createById(id, taskSize, bindSize);
             task = findTask(id);
@@ -555,7 +578,7 @@ void schedulerBootTask()
                 task->data[i] = EEPROM[ index ];
                 }
             task->currLen = taskSize;           
-            scheduleById(id, 10);
+            scheduleById(id, taskMillis);
             }
         }
     }
