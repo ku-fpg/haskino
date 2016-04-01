@@ -329,6 +329,7 @@ procDelay proc =
   case proc of
     DelayMillis d           -> millisToMicros (fromIntegral d) + secsToMicros 2
     DelayMillisE (LitW32 d) -> millisToMicros (fromIntegral d) + secsToMicros 2
+    DebugListen             -> 1000 * 1000 * 60 * 60 *24 -- Listen for a day
     BootTaskE _             -> secsToMicros 30
     _                       -> secsToMicros 5
 

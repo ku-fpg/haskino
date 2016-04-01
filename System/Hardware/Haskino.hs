@@ -54,7 +54,7 @@ module System.Hardware.Haskino (
   , Expr(..), RemoteRef, lit, newRemoteRef, readRemoteRef, writeRemoteRef
   , modifyRemoteRef, (++*), (*:), (!!*), len, pack, litString, showE, showFFloatE
   -- ** Debugging
-  , debug, debugE, die, deframe
+  , debug, debugE, debugListen, die, deframe
  )
  where
 

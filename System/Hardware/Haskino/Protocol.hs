@@ -287,6 +287,7 @@ packageCodeBlock (Arduino commands) ix ib = (cmds', ix', ib')
       -- For sending as part of a Scheduler task, debug and die make no sense.  
       -- Instead of signalling an error, at this point they are just ignored.
       packProcedure (Debug _) ix ib cmds = ((), cmds, ix, ib)
+      packProcedure DebugListen ix ib cmds = ((), cmds, ix, ib)
       packProcedure (Die _ _) ix ib cmds = ((), cmds, ix, ib)
 
       packAppl :: RemoteApplicative ArduinoCommand ArduinoProcedure a -> Int -> Int -> B.ByteString -> (a, B.ByteString, Int, Int)
@@ -372,6 +373,7 @@ packageProcedure (ReadRemoteRefI32 (RemoteRefI32 i)) ib = buildCommand REF_CMD_R
 packageProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) ib = buildCommand REF_CMD_READ [fromIntegral $ fromEnum REF_LIST8, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
 packageProcedure (ReadRemoteRefFloat (RemoteRefFloat i)) ib = buildCommand REF_CMD_READ [fromIntegral $ fromEnum REF_FLOAT, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
 packageProcedure (DebugE s) ib = buildCommand BS_CMD_DEBUG ((fromIntegral ib) : (packageExpr s))
+packageProcedure DebugListen ib = B.empty
 
 packageRemoteBinding :: ArduinoProcedure a -> Int -> Int -> B.ByteString
 packageRemoteBinding (NewRemoteRefB e)  ix ib = buildCommand REF_CMD_NEW ([fromIntegral $ fromEnum REF_BOOL, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))

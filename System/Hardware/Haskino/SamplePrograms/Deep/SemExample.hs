@@ -13,6 +13,7 @@
 module System.Hardware.Haskino.SamplePrograms.Deep.SemExample where
 
 import Prelude hiding ((<*))
+import Control.Concurrent   (threadDelay)
 import Control.Monad.Trans (liftIO)
 import Data.Boolean
 import Data.Boolean.Numbers
@@ -43,9 +44,13 @@ myTask1 led = do
             delayMillisE blinkDelay
 
 myTask2 :: Arduino ()
-myTask2 =
+myTask2 = do
+    loopCount <- newRemoteRef $ lit (0 :: Word8)
     loopE $ do
         giveSemE semId
+        t <- readRemoteRef loopCount
+        writeRemoteRef loopCount (t+1)
+        debugE $ showE t
         delayMillisE taskDelay
 
 initExample :: Arduino ()
@@ -68,6 +73,8 @@ semExample = withArduino True "/dev/cu.usbmodem1421" $ do
     liftIO $ print task1
     task2 <- queryTaskE 2
     liftIO $ print task2
+    -- Wait for any debug messgaes from Arduino
+    debugListen
 
 semExampleProg :: IO ()
 semExampleProg = withArduino True "/dev/cu.usbmodem1421" $ do

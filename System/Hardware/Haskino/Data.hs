@@ -553,6 +553,7 @@ data ArduinoProcedure :: * -> * where
      LiftIO           :: IO a -> ArduinoProcedure a
      Debug            :: String -> ArduinoProcedure ()
      DebugE           :: Expr [Word8] -> ArduinoProcedure ()
+     DebugListen      :: ArduinoProcedure ()
      Die              :: String -> [String] -> ArduinoProcedure ()
      -- ToDo: add SPI procedures
 
@@ -734,6 +735,9 @@ debug msg = Arduino $ procedure $ Debug msg
 
 debugE :: Expr [Word8] -> Arduino ()
 debugE msg = Arduino $ procedure $ DebugE msg
+
+debugListen :: Arduino ()
+debugListen = Arduino $ procedure $ DebugListen
 
 die :: String -> [String] -> Arduino ()
 die msg msgs = Arduino $ procedure $ Die msg msgs
