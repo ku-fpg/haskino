@@ -283,6 +283,7 @@ packageCodeBlock (Arduino commands) ix ib = (cmds', ix', ib')
       packProcedure (NewRemoteRefI32 e) ix ib cmds = (RemoteRefI32 ix, B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefI32 e) ix ib)), ix+1, ib+1)
       packProcedure (NewRemoteRefL8 e) ix ib cmds = (RemoteRefL8 ix, B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefL8 e) ix ib)), ix+1, ib+1)
       packProcedure (NewRemoteRefFloat e) ix ib cmds = (RemoteRefFloat ix, B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefFloat e) ix ib)), ix+1, ib+1)
+      packProcedure (DebugE s) ix ib cmds = ((), B.append cmds (lenPackage (packageProcedure (DebugE s) ib)), ix, ib+1) 
       -- For sending as part of a Scheduler task, debug and die make no sense.  
       -- Instead of signalling an error, at this point they are just ignored.
       packProcedure (Debug _) ix ib cmds = ((), cmds, ix, ib)
@@ -370,6 +371,7 @@ packageProcedure (ReadRemoteRefI16 (RemoteRefI16 i)) ib = buildCommand REF_CMD_R
 packageProcedure (ReadRemoteRefI32 (RemoteRefI32 i)) ib = buildCommand REF_CMD_READ [fromIntegral $ fromEnum REF_INT32, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
 packageProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) ib = buildCommand REF_CMD_READ [fromIntegral $ fromEnum REF_LIST8, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
 packageProcedure (ReadRemoteRefFloat (RemoteRefFloat i)) ib = buildCommand REF_CMD_READ [fromIntegral $ fromEnum REF_FLOAT, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
+packageProcedure (DebugE s) ib = buildCommand BS_CMD_DEBUG ((fromIntegral ib) : (packageExpr s))
 
 packageRemoteBinding :: ArduinoProcedure a -> Int -> Int -> B.ByteString
 packageRemoteBinding (NewRemoteRefB e)  ix ib = buildCommand REF_CMD_NEW ([fromIntegral $ fromEnum REF_BOOL, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
@@ -632,6 +634,7 @@ unpackageResponse (cmdWord:args)
   | Right cmd <- getFirmwareReply cmdWord
   = case (cmd, args) of
       (BC_RESP_DELAY, [])               -> DelayResp
+      (BS_RESP_DEBUG, [])               -> DebugResp
       (BS_RESP_VERSION, [majV, minV])   -> Firmware (bytesToWord16 (majV,minV))
       (BS_RESP_TYPE, [p])               -> ProcessorType p
       (BS_RESP_MICROS, [l,m0,m1,m2,m3]) -> MicrosReply (bytesToWord32 (m0,m1,m2,m3))
@@ -695,6 +698,7 @@ parseQueryResult (DelayMicros _) DelayResp = Just ()
 parseQueryResult (DelayMicrosE _) DelayResp = Just ()
 parseQueryResult (DelayMillis _) DelayResp = Just ()
 parseQueryResult (DelayMillisE _) DelayResp = Just ()
+parseQueryResult (DebugE _) DebugResp = Just ()
 parseQueryResult (DigitalRead _) (DigitalReply d) = Just (if d == 0 then False else True)
 parseQueryResult (DigitalReadE _) (DigitalReply d) = Just (if d == 0 then lit False else lit True)
 parseQueryResult (DigitalPortRead _ _) (DigitalPortReply d) = Just d

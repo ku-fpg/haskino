@@ -129,6 +129,7 @@ decodeCmdArgs BS_CMD_REQUEST_VERSION _ xs = decodeExprProc 0 xs
 decodeCmdArgs BS_CMD_REQUEST_TYPE _ xs = decodeExprProc 0 xs
 decodeCmdArgs BS_CMD_REQUEST_MICROS _ xs = decodeExprProc 0 xs
 decodeCmdArgs BS_CMD_REQUEST_MILLIS _ xs = decodeExprProc 0 xs
+decodeCmdArgs BS_CMD_DEBUG _ xs = decodeExprProc 1 xs
 decodeCmdArgs DIG_CMD_READ_PIN _ xs = decodeExprProc 1 xs
 decodeCmdArgs DIG_CMD_WRITE_PIN _ xs = decodeExprCmd 2 xs
 decodeCmdArgs DIG_CMD_READ_PORT _ xs = decodeExprProc 2 xs

@@ -552,6 +552,7 @@ data ArduinoProcedure :: * -> * where
      NewRemoteRefFloat :: Expr Float -> ArduinoProcedure (RemoteRef Float)
      LiftIO           :: IO a -> ArduinoProcedure a
      Debug            :: String -> ArduinoProcedure ()
+     DebugE           :: Expr [Word8] -> ArduinoProcedure ()
      Die              :: String -> [String] -> ArduinoProcedure ()
      -- ToDo: add SPI procedures
 
@@ -731,6 +732,9 @@ newRemoteRefFloat n = Arduino $ procedure $ NewRemoteRefFloat n
 debug :: String -> Arduino ()
 debug msg = Arduino $ procedure $ Debug msg
 
+debugE :: Expr [Word8] -> Arduino ()
+debugE msg = Arduino $ procedure $ DebugE msg
+
 die :: String -> [String] -> Arduino ()
 die msg msgs = Arduino $ procedure $ Die msg msgs
 
@@ -764,6 +768,7 @@ data Response = DelayResp
               | ReadRefI32Reply Int32
               | ReadRefL8Reply [Word8]
               | ReadRefFloatReply Float
+              | DebugResp
               | FailedNewRef
               | Unimplemented (Maybe String) [Word8] -- ^ Represents messages currently unsupported
               | EmptyFrame
@@ -784,6 +789,7 @@ data FirmwareCmd = BC_CMD_SYSTEM_RESET
                  | BS_CMD_REQUEST_TYPE
                  | BS_CMD_REQUEST_MICROS
                  | BS_CMD_REQUEST_MILLIS
+                 | BS_CMD_DEBUG
                  | DIG_CMD_READ_PIN
                  | DIG_CMD_WRITE_PIN
                  | DIG_CMD_READ_PORT
@@ -839,6 +845,7 @@ firmwareCmdVal BS_CMD_REQUEST_VERSION   = 0x20
 firmwareCmdVal BS_CMD_REQUEST_TYPE      = 0x21
 firmwareCmdVal BS_CMD_REQUEST_MILLIS    = 0x22
 firmwareCmdVal BS_CMD_REQUEST_MICROS    = 0x23
+firmwareCmdVal BS_CMD_DEBUG             = 0x24
 firmwareCmdVal DIG_CMD_READ_PIN         = 0x30
 firmwareCmdVal DIG_CMD_WRITE_PIN        = 0x31
 firmwareCmdVal DIG_CMD_READ_PORT        = 0x32
@@ -892,6 +899,7 @@ firmwareValCmd 0x20 = BS_CMD_REQUEST_VERSION
 firmwareValCmd 0x21 = BS_CMD_REQUEST_TYPE    
 firmwareValCmd 0x22 = BS_CMD_REQUEST_MILLIS  
 firmwareValCmd 0x23 = BS_CMD_REQUEST_MICROS  
+firmwareValCmd 0x24 = BS_CMD_DEBUG  
 firmwareValCmd 0x30 = DIG_CMD_READ_PIN       
 firmwareValCmd 0x31 = DIG_CMD_WRITE_PIN      
 firmwareValCmd 0x32 = DIG_CMD_READ_PORT      
@@ -951,6 +959,7 @@ data FirmwareReply =  BC_RESP_DELAY
                    |  BS_RESP_MICROS
                    |  BS_RESP_MILLIS
                    |  BS_RESP_STRING
+                   |  BS_RESP_DEBUG
                    |  DIG_RESP_READ_PIN
                    |  DIG_RESP_READ_PORT
                    |  ALG_RESP_READ_PIN
@@ -975,6 +984,7 @@ getFirmwareReply 0x29 = Right BS_RESP_TYPE
 getFirmwareReply 0x2A = Right BS_RESP_MICROS
 getFirmwareReply 0x2B = Right BS_RESP_MILLIS
 getFirmwareReply 0x2C = Right BS_RESP_STRING
+getFirmwareReply 0x2D = Right BS_RESP_DEBUG
 getFirmwareReply 0x38 = Right DIG_RESP_READ_PIN
 getFirmwareReply 0x39 = Right DIG_RESP_READ_PORT
 getFirmwareReply 0x48 = Right ALG_RESP_READ_PIN

@@ -10,6 +10,7 @@ static bool handleRequestVersion(int size, const byte *msg, CONTEXT *context);
 static bool handleRequestType(int size, const byte *msg, CONTEXT *context);
 static bool handleRequestMicros(int size, const byte *msg, CONTEXT *context);
 static bool handleRequestMillis(int size, const byte *msg, CONTEXT *context);
+static bool handleDebug(int size, const byte *msg, CONTEXT *context);
 
 bool parseBoardStatusMessage(int size, const byte *msg, CONTEXT *context)
     {
@@ -26,6 +27,9 @@ bool parseBoardStatusMessage(int size, const byte *msg, CONTEXT *context)
             break;
         case BS_CMD_REQUEST_MILLIS:
             return handleRequestMillis(size, msg, context);
+            break;
+        case BS_CMD_DEBUG:
+            return handleDebug(size, msg, context);
             break;
         }
     return false;
@@ -108,5 +112,25 @@ static bool handleRequestMillis(int size, const byte *msg, CONTEXT *context)
 
     sendReply(sizeof(uint32_t), BS_RESP_MILLIS, 
               (byte *) &milliReply, context, bind);
+    return false;
+    }
+
+static bool handleDebug(int size, const byte *msg, CONTEXT *context)
+    {
+    bool alloc;
+    byte *expr = (byte *) &msg[2];
+    byte bind = msg[1];
+    uint8_t *string = evalList8Expr(&expr, context, &alloc);
+
+    /* Send the output of the debug with no context, so that it will
+     * always go out the serial port, even if we are executing a code 
+     * block */
+    sendReply(string[1], BS_RESP_STRING, &string[2], NULL, 0);
+    /* Send the debug reply so if we are not executing a code block
+     * host will continue */
+    sendReply(0, BS_RESP_DEBUG, NULL, context, bind);
+
+    if (alloc)
+        free(string);
     return false;
     }

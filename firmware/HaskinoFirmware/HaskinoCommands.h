@@ -30,6 +30,7 @@
 #define BS_CMD_REQUEST_TYPE     (BS_CMD_TYPE | 0x1)
 #define BS_CMD_REQUEST_MICROS   (BS_CMD_TYPE | 0x2)
 #define BS_CMD_REQUEST_MILLIS   (BS_CMD_TYPE | 0x3)
+#define BS_CMD_DEBUG            (BS_CMD_TYPE | 0x4)
 
 // Board Status responses
 #define BS_RESP_VERSION         (BS_CMD_TYPE | 0x8)
@@ -37,6 +38,7 @@
 #define BS_RESP_MICROS          (BS_CMD_TYPE | 0xA)
 #define BS_RESP_MILLIS          (BS_CMD_TYPE | 0xB)
 #define BS_RESP_STRING          (BS_CMD_TYPE | 0xC)
+#define BS_RESP_DEBUG           (BS_CMD_TYPE | 0xD)
 
 // Digital commands
 #define DIG_CMD_TYPE            0x30
