@@ -594,8 +594,9 @@ void schedulerRunTasks()
         while (current) 
             {
             next = current->next;
-            if (current->ready && current->millis < now) 
-                { // ToDo: handle overflow
+            if (current->ready && 
+                now - current->millis < 0x80000000UL)
+                {
                 runningTask = current;
                 if (!runCodeBlock(current->currLen, 
                                   current->data, current->context))
