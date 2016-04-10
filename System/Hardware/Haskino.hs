@@ -63,4 +63,5 @@ import System.Hardware.Haskino.Comm
 import System.Hardware.Haskino.Expr
 import System.Hardware.Haskino.Utils
 import System.Hardware.Haskino.Decode
+import System.Hardware.Haskino.Compiler
 import Data.Boolean
