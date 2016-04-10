@@ -33,7 +33,7 @@ semId = 0
 myTask1 :: Expr Word8 -> Arduino ()
 myTask1 led = do
     setPinModeE led OUTPUT
-    i <- newRemoteRef $ lit (0 :: Word8)
+    i <- newRemoteRef $ lit 0::Word8
     loopE $ do
         takeSemE semId
         writeRemoteRef i 0
@@ -49,7 +49,7 @@ myTask2 = do
     loopE $ do
         giveSemE semId
         t <- readRemoteRef loopCount
-        writeRemoteRef loopCount (t+1)
+        writeRemoteRef loopCount $ t+1
         debugE $ showE t
         delayMillisE taskDelay
 
@@ -57,7 +57,7 @@ initExample :: Arduino ()
 initExample = do
     let led = 13
     -- Create the tasks
-    createTaskE 1 (myTask1 led)
+    createTaskE 1 $ myTask1 led
     createTaskE 2 myTask2
     -- Schedule the tasks to start in 1 second, the second starting after the first
     scheduleTaskE 1 1000
