@@ -348,16 +348,19 @@ compileSubExpr :: String -> Expr a -> String
 compileSubExpr ec e = ec ++ "(" ++ compileExpr e ++ ")"
 
 compileTwoSubExpr :: String -> Expr a -> Expr b -> String
-compileTwoSubExpr ec e1 e2 = ec ++ "(" ++ compileExpr e1 ++ "," ++ compileExpr e2 ++ ")"
+compileTwoSubExpr ec e1 e2 = ec ++ "(" ++ compileExpr e1 ++ 
+                             "," ++ compileExpr e2 ++ ")"
 
 compileInfixSubExpr :: String -> Expr a -> Expr b -> String
-compileInfixSubExpr ec e1 e2 = "(" ++ compileExpr e1 ++ " " ++ ec ++ " " ++ compileExpr e2 ++ ")"
+compileInfixSubExpr ec e1 e2 = "(" ++ compileExpr e1 ++ " " ++ ec ++ 
+                               " " ++ compileExpr e2 ++ ")"
 
 compileSign :: Expr a -> String
 compileSign e = "(" ++ compileExpr e ++ " == 0 ? 0 : 1)"
 
 compileIfSubExpr :: Expr a -> Expr b -> Expr b -> String
-compileIfSubExpr e1 e2 e3 = compileExpr e1 ++ " ? " ++ compileExpr e2 ++ " : " ++ compileExpr e3
+compileIfSubExpr e1 e2 e3 = compileExpr e1 ++ " ? " ++ 
+                            compileExpr e2 ++ " : " ++ compileExpr e3
 
 compileNeg :: Expr a -> String
 compileNeg = compileSubExpr "-"
@@ -416,13 +419,13 @@ compileToInt e = "((int_32) " ++ compileExpr e ++ ")"
 compileFromInt :: String -> Expr a -> String
 compileFromInt t e = "((" ++ t ++ ") " ++ compileExpr e ++ ")"
  
-compileRef :: Int -> String
-compileRef n = "pack" ++ show n
+compileRef :: String -> Int -> String
+compileRef t n = "ref[" ++ show n ++ "]." ++ t
 
 compileExpr :: Expr a -> String
 compileExpr (LitB b) = if b then "1" else "0"
-compileExpr (ShowB e) = compileSubExpr "showBool" e   -- ToDo: runtime
-compileExpr (RefB n) = compileRef n
+compileExpr (ShowB e) = compileSubExpr "showBool" e
+compileExpr (RefB n) = compileRef "boolVal" n
 compileExpr (RemBindB b) = "bind" ++ show b
 compileExpr (NotB e) = compileSubExpr "!" e 
 compileExpr (AndB e1 e2) = compileBAnd e1 e2 
@@ -442,13 +445,13 @@ compileExpr (EqI16 e1 e2) = compileEqual e1 e2
 compileExpr (LessI16 e1 e2) = compileLess e1 e2 
 compileExpr (EqI32 e1 e2) = compileEqual e1 e2 
 compileExpr (LessI32 e1 e2) = compileLess e1 e2 
-compileExpr (EqL8 e1 e2) = compileTwoSubExpr "list8Equal" e1 e2   -- ToDo: runtime
-compileExpr (LessL8 e1 e2) = compileTwoSubExpr "list8Less" e1 e2  -- ToDo: runtime
+compileExpr (EqL8 e1 e2) = compileTwoSubExpr "list8Equal" e1 e2
+compileExpr (LessL8 e1 e2) = compileTwoSubExpr "list8Less" e1 e2
 compileExpr (EqFloat e1 e2) = compileEqual e1 e2 
 compileExpr (LessFloat e1 e2) = compileLess e1 e2 
 compileExpr (LitW8 w) = show w
-compileExpr (ShowW8 e) = compileSubExpr "showWord8" e   -- ToDo: runtime
-compileExpr (RefW8 n) = compileRef n
+compileExpr (ShowW8 e) = compileSubExpr "showWord8" e
+compileExpr (RefW8 n) = compileRef "word8Val" n
 compileExpr (RemBindW8 b) = compileBind b
 compileExpr (FromIntW8 e) = compileFromInt "uint_8" e
 compileExpr (ToIntW8 e) = compileToInt e
@@ -468,12 +471,12 @@ compileExpr (CompW8 e) = compileComp e
 compileExpr (ShfLW8 e1 e2) = compileShiftLeft e1 e2 
 compileExpr (ShfRW8 e1 e2) = compileShiftRight e1 e2 
 compileExpr (IfW8 e1 e2 e3) = compileIfSubExpr e1 e2 e3
-compileExpr (TestBW8 e1 e2) = compileTwoSubExpr "testB8" e1 e2   -- ToDo: runtime 
-compileExpr (SetBW8 e1 e2) = compileTwoSubExpr "setB8" e1 e2    -- ToDo: runtime
-compileExpr (ClrBW8 e1 e2) = compileTwoSubExpr "clrB8" e1 e2   -- ToDo: runtime 
+compileExpr (TestBW8 e1 e2) = compileTwoSubExpr "testBW8" e1 e2 
+compileExpr (SetBW8 e1 e2) = compileTwoSubExpr "setBW8" e1 e2
+compileExpr (ClrBW8 e1 e2) = compileTwoSubExpr "clrBW8" e1 e2 
 compileExpr (LitW16 w) = show w
-compileExpr (ShowW16 e) = compileSubExpr "showWord16" e   -- ToDo: runtime
-compileExpr (RefW16 n) = compileRef n
+compileExpr (ShowW16 e) = compileSubExpr "showWord16" e
+compileExpr (RefW16 n) = compileRef "word16Val" n
 compileExpr (RemBindW16 b) = compileBind b
 compileExpr (FromIntW16 e) = compileFromInt "uint_16" e
 compileExpr (ToIntW16 e) = compileToInt e
@@ -493,12 +496,12 @@ compileExpr (CompW16 e) = compileComp e
 compileExpr (ShfLW16 e1 e2) = compileShiftLeft e1 e2 
 compileExpr (ShfRW16 e1 e2) = compileShiftRight e1 e2 
 compileExpr (IfW16 e1 e2 e3) = compileIfSubExpr e1 e2 e3
-compileExpr (TestBW16 e1 e2) = compileTwoSubExpr "testB16" e1 e2  -- ToDo: runtime 
-compileExpr (SetBW16 e1 e2) = compileTwoSubExpr "setB16" e1 e2  -- ToDo: runtime 
-compileExpr (ClrBW16 e1 e2) = compileTwoSubExpr "clrB16" e1 e2  -- ToDo: runtime 
+compileExpr (TestBW16 e1 e2) = compileTwoSubExpr "testBW16" e1 e2 
+compileExpr (SetBW16 e1 e2) = compileTwoSubExpr "setBW16" e1 e2 
+compileExpr (ClrBW16 e1 e2) = compileTwoSubExpr "clrBW16" e1 e2 
 compileExpr (LitW32 w) = show w
-compileExpr (ShowW32 e) = compileSubExpr "showWord32" e   -- ToDo: runtime
-compileExpr (RefW32 n) = compileRef n
+compileExpr (ShowW32 e) = compileSubExpr "showWord32" e
+compileExpr (RefW32 n) = compileRef "word32Val" n
 compileExpr (RemBindW32 b) = compileBind b
 compileExpr (FromIntW32 e) = ""
 compileExpr (ToIntW32 e) = ""
@@ -518,24 +521,24 @@ compileExpr (CompW32 e) = compileComp e
 compileExpr (ShfLW32 e1 e2) = compileShiftLeft e1 e2 
 compileExpr (ShfRW32 e1 e2) = compileShiftRight e1 e2 
 compileExpr (IfW32 e1 e2 e3) = compileIfSubExpr e1 e2 e3
-compileExpr (TestBW32 e1 e2) = compileTwoSubExpr "testB32" e1 e2   -- ToDo: runtime
-compileExpr (SetBW32 e1 e2) = compileTwoSubExpr "setB32" e1 e2  -- ToDo: runtime
-compileExpr (ClrBW32 e1 e2) = compileTwoSubExpr "clrB32" e1 e2   -- ToDo: runtime
+compileExpr (TestBW32 e1 e2) = compileTwoSubExpr "testBW32" e1 e2
+compileExpr (SetBW32 e1 e2) = compileTwoSubExpr "setBW32" e1 e2
+compileExpr (ClrBW32 e1 e2) = compileTwoSubExpr "clrBW32" e1 e2
 compileExpr (LitI8 w) = show w
-compileExpr (ShowI8 e) = compileSubExpr "showInt8" e   -- ToDo: runtime
-compileExpr (RefI8 n) = compileRef n
+compileExpr (ShowI8 e) = compileSubExpr "showInt8" e
+compileExpr (RefI8 n) = compileRef "int8Val" n
 compileExpr (RemBindI8 b) = compileBind b
 compileExpr (FromIntI8 e) = compileFromInt "int_8" e
 compileExpr (ToIntI8 e) = compileToInt e
 compileExpr (NegI8 e) = compileNeg e
-compileExpr (SignI8 e) = compileSubExpr "sign8" e  -- ToDo: runtime
+compileExpr (SignI8 e) = compileSubExpr "sign8" e
 compileExpr (AddI8 e1 e2) = compileAdd e1 e2 
 compileExpr (SubI8 e1 e2) = compileSub e1 e2 
 compileExpr (MultI8 e1 e2) = compileMult e1 e2 
-compileExpr (DivI8 e1 e2) = compileTwoSubExpr "div8" e1 e2  -- ToDo: runtime 
+compileExpr (DivI8 e1 e2) = compileTwoSubExpr "div8" e1 e2 
 compileExpr (RemI8 e1 e2) = compileMod e1 e2 
 compileExpr (QuotI8 e1 e2) = compileDiv e1 e2 
-compileExpr (ModI8 e1 e2) = compileTwoSubExpr "mod8" e1 e2  -- ToDo: runtime
+compileExpr (ModI8 e1 e2) = compileTwoSubExpr "mod8" e1 e2
 compileExpr (AndI8 e1 e2) = compileAdd e1 e2 
 compileExpr (OrI8 e1 e2) = compileOr e1 e2 
 compileExpr (XorI8 e1 e2) = compileXor e1 e2 
@@ -543,24 +546,24 @@ compileExpr (CompI8 e) = compileComp e
 compileExpr (ShfLI8 e1 e2) = compileShiftLeft e1 e2  -- ToDo: need runtinme??
 compileExpr (ShfRI8 e1 e2) = compileShiftRight e1 e2 
 compileExpr (IfI8 e1 e2 e3) = compileIfSubExpr e1 e2 e3
-compileExpr (TestBI8 e1 e2) = compileTwoSubExpr "testB8" e1 e2  -- ToDo: runtime 
-compileExpr (SetBI8 e1 e2) = compileTwoSubExpr "setB8" e1 e2  -- ToDo: runtime
-compileExpr (ClrBI8 e1 e2) = compileTwoSubExpr "clrB8" e1 e2  -- ToDo: runtime
+compileExpr (TestBI8 e1 e2) = compileTwoSubExpr "testBI8" e1 e2 
+compileExpr (SetBI8 e1 e2) = compileTwoSubExpr "setBI8" e1 e2
+compileExpr (ClrBI8 e1 e2) = compileTwoSubExpr "clrBI8" e1 e2
 compileExpr (LitI16 w) = show w
-compileExpr (ShowI16 e) = compileSubExpr "showInt16" e   -- ToDo: runtime
-compileExpr (RefI16 n) = compileRef n
+compileExpr (ShowI16 e) = compileSubExpr "showInt16" e
+compileExpr (RefI16 n) = compileRef "int16Val" n
 compileExpr (RemBindI16 b) = compileBind b
 compileExpr (FromIntI16 e) = compileFromInt "int_16" e
 compileExpr (ToIntI16 e) = compileToInt e
 compileExpr (NegI16 e) = compileNeg e
-compileExpr (SignI16 e) = compileSubExpr "sign16" e  -- ToDo: runtime e
+compileExpr (SignI16 e) = compileSubExpr "sign16" e
 compileExpr (AddI16 e1 e2) = compileAdd e1 e2 
 compileExpr (SubI16 e1 e2) = compileSub e1 e2 
 compileExpr (MultI16 e1 e2) = compileMult e1 e2 
-compileExpr (DivI16 e1 e2) = compileTwoSubExpr "div16" e1 e2  -- ToDo: runtime  
+compileExpr (DivI16 e1 e2) = compileTwoSubExpr "div16" e1 e2  
 compileExpr (RemI16 e1 e2) = compileMod e1 e2 
 compileExpr (QuotI16 e1 e2) = compileDiv e1 e2 
-compileExpr (ModI16 e1 e2) = compileTwoSubExpr "mod16" e1 e2  -- ToDo: runtime  
+compileExpr (ModI16 e1 e2) = compileTwoSubExpr "mod16" e1 e2  
 compileExpr (AndI16 e1 e2) = compileAnd e1 e2 
 compileExpr (OrI16 e1 e2) = compileOr e1 e2 
 compileExpr (XorI16 e1 e2) = compileXor e1 e2 
@@ -568,22 +571,22 @@ compileExpr (CompI16 e) = compileComp e
 compileExpr (ShfLI16 e1 e2) = compileShiftLeft e1 e2 
 compileExpr (ShfRI16 e1 e2) = compileShiftRight e1 e2 
 compileExpr (IfI16 e1 e2 e3) = compileIfSubExpr e1 e2 e3
-compileExpr (TestBI16 e1 e2) = compileTwoSubExpr "testB16" e1 e2  -- ToDo: runtime
-compileExpr (SetBI16 e1 e2) = compileTwoSubExpr "setB16" e1 e2  -- ToDo: runtime 
-compileExpr (ClrBI16 e1 e2) = compileTwoSubExpr "clrB16" e1 e2  -- ToDo: runtime
+compileExpr (TestBI16 e1 e2) = compileTwoSubExpr "testBI16" e1 e2
+compileExpr (SetBI16 e1 e2) = compileTwoSubExpr "setBI16" e1 e2 
+compileExpr (ClrBI16 e1 e2) = compileTwoSubExpr "clrBI16" e1 e2
 compileExpr (LitI32 w) = show w
-compileExpr (ShowI32 e) = compileSubExpr "showInt32" e   -- ToDo: runtime
-compileExpr (RefI32 n) = compileRef n
+compileExpr (ShowI32 e) = compileSubExpr "showInt32" e
+compileExpr (RefI32 n) = compileRef "int32Val" n
 compileExpr (RemBindI32 b) = compileBind b
 compileExpr (NegI32 e) = compileNeg e
 compileExpr (SignI32 e) = compileSubExpr "sign32" e
 compileExpr (AddI32 e1 e2) = compileAdd e1 e2 
 compileExpr (SubI32 e1 e2) = compileSub e1 e2 
 compileExpr (MultI32 e1 e2) = compileMult e1 e2 
-compileExpr (DivI32 e1 e2) = compileTwoSubExpr "div32" e1 e2  -- ToDo: runtime  
+compileExpr (DivI32 e1 e2) = compileTwoSubExpr "div32" e1 e2  
 compileExpr (RemI32 e1 e2) = compileMod e1 e2 
 compileExpr (QuotI32 e1 e2) = compileDiv e1 e2
-compileExpr (ModI32 e1 e2) = compileTwoSubExpr "mod32" e1 e2  -- ToDo: runtime 
+compileExpr (ModI32 e1 e2) = compileTwoSubExpr "mod32" e1 e2 
 compileExpr (AndI32 e1 e2) = compileAnd e1 e2 
 compileExpr (OrI32 e1 e2) = compileOr e1 e2 
 compileExpr (XorI32 e1 e2) = compileXor e1 e2 
@@ -591,36 +594,38 @@ compileExpr (CompI32 e) = compileComp e
 compileExpr (ShfLI32 e1 e2) = compileShiftLeft e1 e2 
 compileExpr (ShfRI32 e1 e2) = compileShiftRight e1 e2 
 compileExpr (IfI32 e1 e2 e3) = compileIfSubExpr e1 e2 e3
-compileExpr (TestBI32 e1 e2) = compileTwoSubExpr "testB32" e1 e2  -- ToDo: runtime 
-compileExpr (SetBI32 e1 e2) = compileTwoSubExpr "setB32" e1 e2  -- ToDo: runtime 
-compileExpr (ClrBI32 e1 e2) = compileTwoSubExpr "clrB32" e1 e2  -- ToDo: runtime  
+compileExpr (TestBI32 e1 e2) = compileTwoSubExpr "testBI32" e1 e2 
+compileExpr (SetBI32 e1 e2) = compileTwoSubExpr "setBI32" e1 e2 
+compileExpr (ClrBI32 e1 e2) = compileTwoSubExpr "clrBI32" e1 e2  
 compileExpr (LitList8 ws) = "{" ++ (show $ length ws) ++ "," ++ compListLit ws
   where
     compListLit :: [Word8] -> String
     compListLit [] = "}"
+    compListLit (w : ws) | null ws = show w ++ "}"
     compListLit (w : ws) = show w ++ ", " ++ compListLit ws
-compileExpr (RefList8 n) = compileRef n
+compileExpr (RefList8 n) = compileRef "list8Val" n
 compileExpr (RemBindList8 b) = compileBind b
 compileExpr (IfL8 e1 e2 e3) = compileIfSubExpr e1 e2 e3
-compileExpr (ElemList8 e1 e2) = compileTwoSubExpr "list8Elem" e1 e2   -- ToDo: runtime
-compileExpr (LenList8 e) = compileSubExpr "list8Len" e  -- ToDo: runtime
-compileExpr (ConsList8 e1 e2) = compileTwoSubExpr "list8Cons" e1 e2   -- ToDo: runtime
-compileExpr (ApndList8 e1 e2) = compileTwoSubExpr "list8Apnd" e1 e2  -- ToDo: runtime
+compileExpr (ElemList8 e1 e2) = compileTwoSubExpr "list8Elem" e1 e2
+compileExpr (LenList8 e) = compileSubExpr "list8Len" e
+compileExpr (ConsList8 e1 e2) = compileTwoSubExpr "list8Cons" e1 e2
+compileExpr (ApndList8 e1 e2) = compileTwoSubExpr "list8Apnd" e1 e2
+-- ToDo:
 -- compileExpr (PackList8 es) = [exprLCmdVal EXPRL_PACK, fromIntegral $ length es] ++ (foldl (++) [] (map compileExpr es))
 compileExpr (LitFloat f) = show f -- ToDo:  Is this correct?
-compileExpr (ShowFloat e1 e2) = compileTwoSubExpr "showF" e1 e2 -- ToDo: runtime
-compileExpr (RefFloat n) = compileRef n
+compileExpr (ShowFloat e1 e2) = compileTwoSubExpr "showF" e1 e2
+compileExpr (RefFloat n) = compileRef "floatVal" n
 compileExpr (RemBindFloat b) = compileBind b
 compileExpr (FromIntFloat e) = compileFromInt "float" e
 compileExpr (NegFloat e) = compileNeg e
-compileExpr (SignFloat e) = compileSubExpr "signF" e  -- ToDo: runtime
+compileExpr (SignFloat e) = compileSubExpr "signF" e
 compileExpr (AddFloat e1 e2) = compileAdd e1 e2 
 compileExpr (SubFloat e1 e2) = compileSub e1 e2 
 compileExpr (MultFloat e1 e2) = compileMult e1 e2 
 compileExpr (DivFloat e1 e2) = compileDiv e1 e2 
 compileExpr (IfFloat e1 e2 e3) = compileIfSubExpr e1 e2 e3
 compileExpr (TruncFloat e) = compileSubExpr "trunc" e 
-compileExpr (FracFloat e) = compileSubExpr "frac" e  -- ToDo: runtime
+compileExpr (FracFloat e) = compileSubExpr "frac" e
 compileExpr (RoundFloat e) = compileSubExpr "round" e 
 compileExpr (CeilFloat e) = compileSubExpr "ceil" e 
 compileExpr (FloorFloat e) = compileSubExpr "floor" e 

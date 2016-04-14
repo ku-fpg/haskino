@@ -55,6 +55,8 @@ module System.Hardware.Haskino (
   , modifyRemoteRef, (++*), (*:), (!!*), len, pack, litString, showE, showFFloatE
   -- ** Debugging
   , debug, debugE, debugListen, die, deframe
+  -- ** Compiler
+  , compileExpr
  )
  where
 
