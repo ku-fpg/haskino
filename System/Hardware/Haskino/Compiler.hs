@@ -25,34 +25,6 @@ import System.Hardware.Haskino.Expr
 import System.Hardware.Haskino.Utils
 
 {-
-buildCommand :: FirmwareCmd -> [Word8] -> B.ByteString
-buildCommand cmd bs = B.pack $ firmwareCmdVal cmd : bs
-
--- | Package a request as a sequence of bytes to be sent to the board
--- using the Haskino Firmware protocol.
-compileCommand :: ArduinoCommand -> Int -> Int -> (String, Int)
-compileCommand SystemReset ix _ = ("", ix)
-compileCommand (SetPinModeE p m) ix _ =
-    ("pinMode(" ++ compileExpr p ++ "," ++ compileExpr m ++ ");\n", ix)
-
-packageCommand (DigitalWriteE p b) ix _ =
-    (buildCommand DIG_CMD_WRITE_PIN (packageExpr p ++ packageExpr b), ix)
-packageCommand (DigitalPortWriteE p b m) ix _ =
-    (buildCommand DIG_CMD_WRITE_PORT (packageExpr p ++ packageExpr b ++ packageExpr m), ix)
-packageCommand (AnalogWriteE p w) ix _ =
-    (buildCommand ALG_CMD_WRITE_PIN (packageExpr p ++ packageExpr w), ix)
-packageCommand (ToneE p f (Just d)) ix _ =
-    (buildCommand ALG_CMD_TONE_PIN (packageExpr p ++ packageExpr f ++ packageExpr d), ix)
-packageCommand (ToneE p f Nothing) ix ib =
-    packageCommand (ToneE p f (Just 0)) ix ib
-packageCommand (NoToneE p) ix _ =
-    (buildCommand ALG_CMD_NOTONE_PIN (packageExpr  p), ix)
-packageCommand (I2CWrite sa w8s) ix _ = 
-    (buildCommand I2C_CMD_WRITE (packageExpr sa ++ packageExpr w8s), ix)
-packageCommand I2CConfig ix _ = 
-    (buildCommand I2C_CMD_CONFIG [], ix)
-packageCommand (StepperSetSpeedE st sp) ix _ = 
-    (buildCommand STEP_CMD_SET_SPEED (packageExpr st ++ packageExpr sp), ix)
 packageCommand (ServoDetachE sv) ix _ = 
     (buildCommand SRVO_CMD_DETACH (packageExpr sv), ix)
 packageCommand (ServoWriteE sv w) ix _ = 
@@ -210,6 +182,10 @@ compileSimpleCommand cmd = do
     put (ix, ib, cmds ++ cmd)
     return ()
 
+compileNoExprCommand :: String -> State (Int, Int, String) ()
+compileNoExprCommand s =
+    compileSimpleCommand (s ++ "();\n")
+
 compile1ExprCommand :: String -> Expr a -> State (Int, Int, String) ()
 compile1ExprCommand s e =
     compileSimpleCommand (s ++ "(" ++ compileExpr e ++ ");\n")
@@ -218,6 +194,7 @@ compile2ExprCommand :: String -> Expr a -> Expr b -> State (Int, Int, String) ()
 compile2ExprCommand s e1 e2 =
     compileSimpleCommand (s ++ "(" ++ compileExpr e1 ++ "," ++ 
                                       compileExpr e2 ++ ");\n")
+
 compile3ExprCommand :: String -> Expr a -> Expr b -> Expr c -> State (Int, Int, String) ()
 compile3ExprCommand s e1 e2 e3 =
     compileSimpleCommand (s ++ "(" ++ compileExpr e1 ++ "," ++
@@ -228,8 +205,16 @@ compileCommand :: ArduinoCommand -> State (Int, Int, String) ()
 compileCommand SystemReset = return ()
 compileCommand (SetPinModeE p m) = compile2ExprCommand "pinMode" p m
 compileCommand (DigitalWriteE p b) = compile2ExprCommand "digitalWrite" p b
-compileCommand (DigitalPortWriteE p b m) = compile3ExprCommand "digitalPortWrite" p b m
+compileCommand (DigitalPortWriteE p b m) = 
+    compile3ExprCommand "digitalPortWrite" p b m -- ToDo runtime
 compileCommand (AnalogWriteE p w) = compile2ExprCommand "analogWrite" p w
+compileCommand (ToneE p f (Just d)) = compile3ExprCommand "tone" p f d
+compileCommand (ToneE p f Nothing) = compile3ExprCommand "tone" p f 0
+compileCommand (NoToneE p) = compile3ExprCommand "noTone" p
+compileCommand (I2CWrite sa w8s) = compile2ExprCommand "i2cWrite" p m -- ToDo: runtime
+compileCommand I2CConfig = compileNoExprCommand "i2cConfig" -- ToDo: runtime
+compileCommand (StepperSetSpeedE st sp) = 
+    compile2ExprCommand "stepperSetSpeed" st sp -- ToDo: runtime
 
 compileProcedure :: ArduinoProcedure a -> State (Int, Int, String) a
 compileProcedure MillisE = do
@@ -240,7 +225,8 @@ compileProcedure MillisE = do
 compileCodeBlock :: Arduino a -> State (Int, Int, String) a
 compileCodeBlock (Arduino commands) = compileMonad commands
   where 
-      compileMonad :: RemoteMonad ArduinoCommand ArduinoProcedure a -> State (Int, Int, String) a
+      compileMonad :: RemoteMonad ArduinoCommand ArduinoProcedure a -> 
+                      State (Int, Int, String) a
       compileMonad (T.Appl app) = compileAppl app 
       compileMonad (T.Bind m k) = do
         r <- compileMonad m
@@ -250,7 +236,8 @@ compileCodeBlock (Arduino commands) = compileMonad commands
         g <- compileMonad m2
         return (f g)
 
-      compileAppl :: RemoteApplicative ArduinoCommand ArduinoProcedure a -> State (Int, Int, String) a
+      compileAppl :: RemoteApplicative ArduinoCommand ArduinoProcedure a -> 
+                     State (Int, Int, String) a
       compileAppl (T.Command cmd) = compileCommand cmd
       compileAppl (T.Procedure p) = compileProcedure p
       compileAppl (T.Ap a1 a2) = do
