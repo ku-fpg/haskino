@@ -10,10 +10,12 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE GADTs #-}
 
-module System.Hardware.Haskino.Compiler(compileExpr) where 
+module System.Hardware.Haskino.Compiler(compileExpr, runTest) where 
 
 import Data.Int (Int8, Int16, Int32)
 import Data.Word (Word8, Word16, Word32)
+
+import Control.Monad.State
 
 import Control.Remote.Monad
 import Control.Remote.Monad.Types as T
@@ -190,6 +192,73 @@ packageCommand (IfThenElse e cb1 cb2) ix ib =
     thenSize = word16ToBytes $ fromIntegral (B.length pc1)
 -}
 
+myTest :: Arduino ()
+myTest =  do
+  setPinModeE 2 INPUT 
+  setPinModeE 3 OUTPUT
+  a <- millisE
+  return ()
+
+runTest :: String
+runTest = output
+  where
+    (_, (_, _, output)) = runState (compileCodeBlock myTest) (0,0,"")
+
+compileSimpleCommand :: String -> State (Int, Int, String) ()
+compileSimpleCommand cmd = do
+    (ix, ib, cmds) <- get 
+    put (ix, ib, cmds ++ cmd)
+    return ()
+
+compile1ExprCommand :: String -> Expr a -> State (Int, Int, String) ()
+compile1ExprCommand s e =
+    compileSimpleCommand (s ++ "(" ++ compileExpr e ++ ");\n")
+
+compile2ExprCommand :: String -> Expr a -> Expr b -> State (Int, Int, String) ()
+compile2ExprCommand s e1 e2 =
+    compileSimpleCommand (s ++ "(" ++ compileExpr e1 ++ "," ++ 
+                                      compileExpr e2 ++ ");\n")
+compile3ExprCommand :: String -> Expr a -> Expr b -> Expr c -> State (Int, Int, String) ()
+compile3ExprCommand s e1 e2 e3 =
+    compileSimpleCommand (s ++ "(" ++ compileExpr e1 ++ "," ++
+                                      compileExpr e2 ++ "," ++ 
+                                      compileExpr e3 ++ ");\n")
+
+compileCommand :: ArduinoCommand -> State (Int, Int, String) ()
+compileCommand SystemReset = return ()
+compileCommand (SetPinModeE p m) = compile2ExprCommand "pinMode" p m
+compileCommand (DigitalWriteE p b) = compile2ExprCommand "digitalWrite" p b
+compileCommand (DigitalPortWriteE p b m) = compile3ExprCommand "digitalPortWrite" p b m
+compileCommand (AnalogWriteE p w) = compile2ExprCommand "analogWrite" p w
+
+compileProcedure :: ArduinoProcedure a -> State (Int, Int, String) a
+compileProcedure MillisE = do
+    (ix, ib, cmds) <- get
+    put (ix, ib+1, cmds ++ "bind" ++ show ib ++ " = millis();\n")
+    return (remBind ib)
+
+compileCodeBlock :: Arduino a -> State (Int, Int, String) a
+compileCodeBlock (Arduino commands) = compileMonad commands
+  where 
+      compileMonad :: RemoteMonad ArduinoCommand ArduinoProcedure a -> State (Int, Int, String) a
+      compileMonad (T.Appl app) = compileAppl app 
+      compileMonad (T.Bind m k) = do
+        r <- compileMonad m
+        compileMonad (k r)
+      compileMonad (T.Ap' m1 m2) = do
+        f <- compileMonad m1
+        g <- compileMonad m2
+        return (f g)
+
+      compileAppl :: RemoteApplicative ArduinoCommand ArduinoProcedure a -> State (Int, Int, String) a
+      compileAppl (T.Command cmd) = compileCommand cmd
+      compileAppl (T.Procedure p) = compileProcedure p
+      compileAppl (T.Ap a1 a2) = do
+        f <- compileAppl a1
+        g <- compileAppl a2
+        return (f g)
+      compileAppl (T.Pure a) = return a
+
 {-
 compileCodeBlock :: Arduino a -> Int -> Int -> (String, Int, Int)
 compileCodeBlock (Arduino commands) ix ib = (cmds', ix', ib')
@@ -259,28 +328,8 @@ compileCodeBlock (Arduino commands) ix ib = (cmds', ix', ib')
       packProcedure (Debug _) ix ib cmds = ((), cmds, ix, ib)
       packProcedure DebugListen ix ib cmds = ((), cmds, ix, ib)
       packProcedure (Die _ _) ix ib cmds = ((), cmds, ix, ib)
-
-      compileAppl :: RemoteApplicative ArduinoCommand ArduinoProcedure a -> Int -> Int -> String -> (a, String, Int, Int)
-      compileAppl (T.Command cmd) ix ib cmds = ((), B.append cmds (lenPackage pc), ix', ib)
-        where 
-          (pc, ix') = packageCommand cmd ix ib
-      compileAppl (T.Procedure p) ix ib cmds = packProcedure p ix ib cmds
-      compileAppl (T.Ap a1 a2) ix ib cmds = (f g, cmds'', ix'', ib'')
-        where
-          (f, cmds', ix', ib') = compileAppl a1 ix ib cmds
-          (g, cmds'', ix'', ib'') = compileAppl a2 ix' ib' cmds'
-      compileAppl (T.Pure a) ix ib cmds = (a, cmds, ix, ib)
-
-      compileMonad :: RemoteMonad ArduinoCommand ArduinoProcedure a -> Int -> Int -> String -> (a, String, Int, Int)
-      compileMonad (T.Appl app) ix ib cmds = compileAppl app ix ib cmds
-      compileMonad (T.Bind m k) ix ib cmds = compileMonad (k r) ix' ib' cmds'
-        where
-          (r, cmds', ix', ib') = compileMonad m ix ib cmds
-      compileMonad (T.Ap' m1 m2) ix ib cmds = (f g, cmds'', ix'', ib'')
-        where
-          (f, cmds', ix', ib') = compileMonad m1 ix ib cmds
-          (g, cmds'', ix'', ib'') = compileMonad m2 ix' ib' cmds'
-
+-}
+{-
 packageProcedure :: ArduinoProcedure a -> Int -> B.ByteString
 packageProcedure QueryFirmware ib    = buildCommand BS_CMD_REQUEST_VERSION [fromIntegral ib]
 packageProcedure QueryFirmwareE ib   = buildCommand BS_CMD_REQUEST_VERSION [fromIntegral ib]
@@ -597,12 +646,11 @@ compileExpr (IfI32 e1 e2 e3) = compileIfSubExpr e1 e2 e3
 compileExpr (TestBI32 e1 e2) = compileTwoSubExpr "testBI32" e1 e2 
 compileExpr (SetBI32 e1 e2) = compileTwoSubExpr "setBI32" e1 e2 
 compileExpr (ClrBI32 e1 e2) = compileTwoSubExpr "clrBI32" e1 e2  
-compileExpr (LitList8 ws) = "{" ++ (show $ length ws) ++ "," ++ compListLit ws
+compileExpr (LitList8 ws) = "{" ++ (show $ length ws) ++ compListLit ws
   where
     compListLit :: [Word8] -> String
     compListLit [] = "}"
-    compListLit (w : ws) | null ws = show w ++ "}"
-    compListLit (w : ws) = show w ++ ", " ++ compListLit ws
+    compListLit (w : ws) = "," ++ show w ++ compListLit ws
 compileExpr (RefList8 n) = compileRef "list8Val" n
 compileExpr (RemBindList8 b) = compileBind b
 compileExpr (IfL8 e1 e2 e3) = compileIfSubExpr e1 e2 e3
