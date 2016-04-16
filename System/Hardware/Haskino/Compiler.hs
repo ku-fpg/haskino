@@ -298,24 +298,49 @@ compile3ExprProcedure t p e1 e2 e3 = do
                                                compileExpr e3 ++ ")")
     return b
 
--- compileNewRef :: String -> Expr a -> State CompileState Int
--- compileNewRef s e = do
-
+compileNewRef :: String -> Expr a -> State CompileState Int
+compileNewRef t e = do
+    s <- get
+    let x = ix s
+    put s {ix = x + 1}
+    compileAllocRef $ t ++ " ref" ++ show x ++ ";"
+    s <- get
+    let b = ib s
+    put s {ib = b + 1}
+    compileLine $ "ref" ++ show b ++ " = " ++ compileExpr e
+    return  x
 
 compileProcedure :: ArduinoProcedure a -> State CompileState a
 compileProcedure MillisE = do
     b <- compileNoExprProcedure "uint32_t" "millis"
     return $ remBind b
 compileProcedure (NewRemoteRefB e) = do
-    s <- get
-    let x = ix s
-    put s {ix = x + 1}
-    compileAllocRef $ "bool" ++ " ref" ++ show x ++ ";"
-    s <- get
-    let b = ib s
-    put s {ib = b + 1}
-    compileLine $ "ref" ++ show b ++ " = " ++ compileExpr e
+    x <- compileNewRef "bool" e
     return $ RemoteRefB x
+compileProcedure (NewRemoteRefW8 e) = do
+    x <- compileNewRef "uint8_t" e
+    return $ RemoteRefW8 x
+compileProcedure (NewRemoteRefW16 e) = do
+    x <- compileNewRef "uint16_t" e
+    return $ RemoteRefW16 x
+compileProcedure (NewRemoteRefW32 e) = do
+    x <- compileNewRef "uint32_t" e
+    return $ RemoteRefW32 x
+compileProcedure (NewRemoteRefI8 e) = do
+    x <- compileNewRef "int8_t" e
+    return $ RemoteRefI8 x
+compileProcedure (NewRemoteRefI16 e) = do
+    x <- compileNewRef "int16_t" e
+    return $ RemoteRefI16 x
+compileProcedure (NewRemoteRefI32 e) = do
+    x <- compileNewRef "int32_t" e
+    return $ RemoteRefI32 x
+compileProcedure (NewRemoteRefL8 e) = do
+    x <- compileNewRef "byte *" e
+    return $ RemoteRefL8 x
+compileProcedure (NewRemoteRefFloat e) = do
+    x <- compileNewRef "float" e
+    return $ RemoteRefFloat x
 
 compileCodeBlock :: Arduino a -> State CompileState a
 compileCodeBlock (Arduino commands) = do
