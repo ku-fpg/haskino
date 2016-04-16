@@ -14,6 +14,7 @@ module System.Hardware.Haskino.Compiler(compileExpr, runTest) where
 
 import Data.Int (Int8, Int16, Int32)
 import Data.Word (Word8, Word16, Word32)
+import Data.Boolean
 
 import Control.Monad.State
 
@@ -29,6 +30,7 @@ data CompileState = CompileState { ix :: Int
                      , ib :: Int  
                      , cmds :: String
                      , binds :: String
+                     , refs :: String
                      , cmdList :: [String]
                      , bindList :: [String]
                      , tasks :: [String] 
@@ -176,16 +178,28 @@ packageCommand (IfThenElse e cb1 cb2) ix ib =
 
 myTest :: Arduino ()
 myTest =  do
+  r <- newRemoteRefB true
+  a <- millisE
   loopE $ do
     setPinModeE 2 INPUT 
     setPinModeE 3 OUTPUT
-    a <- millisE
+    b <- millisE
     return ()
 
 runTest :: String
-runTest = "{\n" ++ binds s ++ cmds s ++ "}\n"
+runTest = compileProgram myTest
+
+compileProgram :: Arduino () -> String
+compileProgram p = refs st ++ "\n" ++ cmds st
   where
-    (_, s) = runState (compileCodeBlock myTest) (CompileState 0 0 "" "" [] [] [])
+    (_, st) = runState (compileTask p "haskinoMain") 
+                       (CompileState 0 0 "" "" "" [] [] [])
+
+compileTask :: Arduino () -> String -> State CompileState ()
+compileTask t name = do
+    compileLine $ "void " ++ name ++ "()"
+    compileCodeBlock t 
+    return ()
 
 compileLine :: String -> State CompileState ()
 compileLine s = do
@@ -197,6 +211,12 @@ compileAllocBind :: String -> State CompileState ()
 compileAllocBind s = do
     st <- get 
     put st { binds = binds st ++ s ++ "\n"}
+    return ()
+
+compileAllocRef :: String -> State CompileState ()
+compileAllocRef s = do
+    st <- get 
+    put st { refs = refs st ++ s ++ "\n"}
     return ()
 
 compileNoExprCommand :: String -> State CompileState ()
@@ -278,10 +298,24 @@ compile3ExprProcedure t p e1 e2 e3 = do
                                                compileExpr e3 ++ ")")
     return b
 
+-- compileNewRef :: String -> Expr a -> State CompileState Int
+-- compileNewRef s e = do
+
+
 compileProcedure :: ArduinoProcedure a -> State CompileState a
 compileProcedure MillisE = do
     b <- compileNoExprProcedure "uint32_t" "millis"
     return $ remBind b
+compileProcedure (NewRemoteRefB e) = do
+    s <- get
+    let x = ix s
+    put s {ix = x + 1}
+    compileAllocRef $ "bool" ++ " ref" ++ show x ++ ";"
+    s <- get
+    let b = ib s
+    put s {ib = b + 1}
+    compileLine $ "ref" ++ show b ++ " = " ++ compileExpr e
+    return $ RemoteRefB x
 
 compileCodeBlock :: Arduino a -> State CompileState a
 compileCodeBlock (Arduino commands) = do
