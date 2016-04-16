@@ -186,28 +186,28 @@ runTest = "{\n" ++ binds s ++ cmds s ++ "}\n"
   where
     (_, s) = runState (compileCodeBlock myTest) (CompileState 0 0 "" "" [] [])
 
-compileSimpleCommand :: String -> State CompileState ()
-compileSimpleCommand cmd = do
-    s <- get 
-    put s { cmds = cmds s ++ cmd ++ "\n"}
+compileLine :: String -> State CompileState ()
+compileLine s = do
+    st <- get 
+    put st { cmds = cmds st ++ s ++ "\n"}
     return ()
 
 compileNoExprCommand :: String -> State CompileState ()
 compileNoExprCommand s =
-    compileSimpleCommand (s ++ "()")
+    compileLine (s ++ "()")
 
 compile1ExprCommand :: String -> Expr a -> State CompileState ()
 compile1ExprCommand s e =
-    compileSimpleCommand (s ++ "(" ++ compileExpr e ++ ")")
+    compileLine (s ++ "(" ++ compileExpr e ++ ")")
 
 compile2ExprCommand :: String -> Expr a -> Expr b -> State CompileState ()
 compile2ExprCommand s e1 e2 =
-    compileSimpleCommand (s ++ "(" ++ compileExpr e1 ++ "," ++ 
+    compileLine (s ++ "(" ++ compileExpr e1 ++ "," ++ 
                                       compileExpr e2 ++ ")")
 
 compile3ExprCommand :: String -> Expr a -> Expr b -> Expr c -> State CompileState ()
 compile3ExprCommand s e1 e2 e3 =
-    compileSimpleCommand (s ++ "(" ++ compileExpr e1 ++ "," ++
+    compileLine (s ++ "(" ++ compileExpr e1 ++ "," ++
                                       compileExpr e2 ++ "," ++ 
                                       compileExpr e3 ++ ")")
 
@@ -226,31 +226,64 @@ compileCommand I2CConfig = compileNoExprCommand "i2cConfig" -- ToDo: runtime
 compileCommand (StepperSetSpeedE st sp) = 
     compile2ExprCommand "stepperSetSpeed" st sp -- ToDo: runtime
 compileCommand (LoopE cb) = do
-    compileSimpleCommand "while (1)"
-    compileSimpleCommand "{"
+    compileLine "while (1)"
     compileCodeBlock cb
-    compileSimpleCommand "}"
     return ()
 compileCommand (IfThenElse e cb1 cb2) = do
-    compileSimpleCommand $ "if (" ++ compileExpr e ++ ")"
-    compileSimpleCommand "{"
+    compileLine $ "if (" ++ compileExpr e ++ ")"
     compileCodeBlock cb1
-    compileSimpleCommand "}\nelse\n{"
+    compileLine "else"
     compileCodeBlock cb2
-    compileSimpleCommand "}"
     return ()
 
-compileProcedure :: ArduinoProcedure a -> State CompileState a
-compileProcedure MillisE = do
+compileSimpleProcedure :: String -> String -> State CompileState Int
+compileSimpleProcedure t p = do
     s <- get
     let b = ib s
     put s {ib = b + 1, 
-           cmds = cmds s ++ "bind" ++ show b ++ " = millis();\n",
-           binds = binds s ++ "uint32_t bind" ++ show b ++ ";\n"}
-    return $ remBind $ ib s
+           cmds = cmds s ++ "bind" ++ show b ++ " = " ++ p ++ ";\n",
+           binds = binds s ++ t ++ " bind" ++ show b ++ ";\n"}
+    return b
+
+compileNoExprProcedure :: String -> String -> State CompileState Int
+compileNoExprProcedure t p = do
+    b <- compileSimpleProcedure t (p ++ "()")
+    return b
+
+compile1ExprProcedure :: String -> String -> Expr a -> State CompileState Int
+compile1ExprProcedure t p e = do
+    b <- compileSimpleProcedure t (p ++ "(" ++ compileExpr e ++ ")")
+    return b
+
+compile2ExprProcedure :: String -> String -> 
+                         Expr a -> Expr a -> State CompileState Int
+compile2ExprProcedure t p e1 e2 = do
+    b <- compileSimpleProcedure t (p ++ "(" ++ compileExpr e1 ++ "," ++ 
+                                               compileExpr e2 ++ ")")
+    return b
+
+compile3ExprProcedure :: String -> String -> 
+                         Expr a -> Expr a  -> Expr a -> State CompileState Int
+compile3ExprProcedure t p e1 e2 e3 = do
+    b <- compileSimpleProcedure t (p ++ "(" ++ compileExpr e1 ++ "," ++
+                                               compileExpr e2 ++ "," ++ 
+                                               compileExpr e3 ++ ")")
+    return b
+
+compileProcedure :: ArduinoProcedure a -> State CompileState a
+compileProcedure MillisE = do
+    b <- compileNoExprProcedure "uint32_t" "millis"
+    return $ remBind b
 
 compileCodeBlock :: Arduino a -> State CompileState a
-compileCodeBlock (Arduino commands) = compileMonad commands
+compileCodeBlock (Arduino commands) = do
+    compileLine "{"
+    r <- compileMonad commands
+    s <- get
+    compileLine $ binds s
+    put s {binds = ""}
+    compileLine "}"
+    return r
   where 
       compileMonad :: RemoteMonad ArduinoCommand ArduinoProcedure a -> 
                       State CompileState a
