@@ -29,7 +29,8 @@ data CompileState = CompileState { ix :: Int
                      , ib :: Int  
                      , cmds :: String
                      , binds :: String
-                     , blocks :: [String]
+                     , cmdList :: [String]
+                     , bindList :: [String]
                      , tasks :: [String] 
                      } deriving (Show)   
 
@@ -184,12 +185,18 @@ myTest =  do
 runTest :: String
 runTest = "{\n" ++ binds s ++ cmds s ++ "}\n"
   where
-    (_, s) = runState (compileCodeBlock myTest) (CompileState 0 0 "" "" [] [])
+    (_, s) = runState (compileCodeBlock myTest) (CompileState 0 0 "" "" [] [] [])
 
 compileLine :: String -> State CompileState ()
 compileLine s = do
     st <- get 
     put st { cmds = cmds st ++ s ++ "\n"}
+    return ()
+
+compileAllocBind :: String -> State CompileState ()
+compileAllocBind s = do
+    st <- get 
+    put st { binds = binds st ++ s ++ "\n"}
     return ()
 
 compileNoExprCommand :: String -> State CompileState ()
@@ -240,9 +247,10 @@ compileSimpleProcedure :: String -> String -> State CompileState Int
 compileSimpleProcedure t p = do
     s <- get
     let b = ib s
-    put s {ib = b + 1, 
-           cmds = cmds s ++ "bind" ++ show b ++ " = " ++ p ++ ";\n",
-           binds = binds s ++ t ++ " bind" ++ show b ++ ";\n"}
+    compileLine $ "bind" ++ show b ++ " = " ++ p ++ ";"
+    compileAllocBind $ t ++ " bind" ++ show b ++ ";"
+    s <- get
+    put s {ib = b + 1}
     return b
 
 compileNoExprProcedure :: String -> String -> State CompileState Int
@@ -277,12 +285,18 @@ compileProcedure MillisE = do
 
 compileCodeBlock :: Arduino a -> State CompileState a
 compileCodeBlock (Arduino commands) = do
-    compileLine "{"
+    s <- get
+    put s {bindList = (binds s) : (bindList s),
+           cmdList = (cmds s) : (cmdList s),
+           binds = "",
+           cmds = "" }
     r <- compileMonad commands
     s <- get
-    compileLine $ binds s
-    put s {binds = ""}
-    compileLine "}"
+    put s {bindList = tail $ bindList s,
+           cmdList = tail $ cmdList s,
+           binds = head $ bindList s,
+           cmds = (head $ cmdList s) ++ "{\n" ++ binds s ++ "\n" ++ cmds s ++ "}\n"
+           }
     return r
   where 
       compileMonad :: RemoteMonad ArduinoCommand ArduinoProcedure a -> 
