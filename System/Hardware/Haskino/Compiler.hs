@@ -166,10 +166,11 @@ packageCommand (IfThenElse e cb1 cb2) ix ib =
 
 myTest :: Arduino ()
 myTest =  do
-  setPinModeE 2 INPUT 
-  setPinModeE 3 OUTPUT
-  a <- millisE
-  return ()
+  loopE $ do
+    setPinModeE 2 INPUT 
+    setPinModeE 3 OUTPUT
+    a <- millisE
+    return ()
 
 runTest :: String
 runTest = output
@@ -179,27 +180,27 @@ runTest = output
 compileSimpleCommand :: String -> State (Int, Int, String) ()
 compileSimpleCommand cmd = do
     (ix, ib, cmds) <- get 
-    put (ix, ib, cmds ++ cmd)
+    put (ix, ib, cmds ++ cmd ++ "\n")
     return ()
 
 compileNoExprCommand :: String -> State (Int, Int, String) ()
 compileNoExprCommand s =
-    compileSimpleCommand (s ++ "();\n")
+    compileSimpleCommand (s ++ "()")
 
 compile1ExprCommand :: String -> Expr a -> State (Int, Int, String) ()
 compile1ExprCommand s e =
-    compileSimpleCommand (s ++ "(" ++ compileExpr e ++ ");\n")
+    compileSimpleCommand (s ++ "(" ++ compileExpr e ++ ")")
 
 compile2ExprCommand :: String -> Expr a -> Expr b -> State (Int, Int, String) ()
 compile2ExprCommand s e1 e2 =
     compileSimpleCommand (s ++ "(" ++ compileExpr e1 ++ "," ++ 
-                                      compileExpr e2 ++ ");\n")
+                                      compileExpr e2 ++ ")")
 
 compile3ExprCommand :: String -> Expr a -> Expr b -> Expr c -> State (Int, Int, String) ()
 compile3ExprCommand s e1 e2 e3 =
     compileSimpleCommand (s ++ "(" ++ compileExpr e1 ++ "," ++
                                       compileExpr e2 ++ "," ++ 
-                                      compileExpr e3 ++ ");\n")
+                                      compileExpr e3 ++ ")")
 
 compileCommand :: ArduinoCommand -> State (Int, Int, String) ()
 compileCommand SystemReset = return ()
@@ -209,12 +210,17 @@ compileCommand (DigitalPortWriteE p b m) =
     compile3ExprCommand "digitalPortWrite" p b m -- ToDo runtime
 compileCommand (AnalogWriteE p w) = compile2ExprCommand "analogWrite" p w
 compileCommand (ToneE p f (Just d)) = compile3ExprCommand "tone" p f d
-compileCommand (ToneE p f Nothing) = compile3ExprCommand "tone" p f 0
-compileCommand (NoToneE p) = compile3ExprCommand "noTone" p
-compileCommand (I2CWrite sa w8s) = compile2ExprCommand "i2cWrite" p m -- ToDo: runtime
+compileCommand (ToneE p f Nothing) = compile3ExprCommand "tone" p f (lit (0::Word32))
+compileCommand (NoToneE p) = compile1ExprCommand "noTone" p
+compileCommand (I2CWrite sa w8s) = compile2ExprCommand "i2cWrite" sa w8s -- ToDo: runtime
 compileCommand I2CConfig = compileNoExprCommand "i2cConfig" -- ToDo: runtime
 compileCommand (StepperSetSpeedE st sp) = 
     compile2ExprCommand "stepperSetSpeed" st sp -- ToDo: runtime
+compileCommand (LoopE cb) = do
+    compileSimpleCommand "{\n"
+    compileCodeBlock cb
+    compileSimpleCommand "\n}"
+    return ()
 
 compileProcedure :: ArduinoProcedure a -> State (Int, Int, String) a
 compileProcedure MillisE = do
