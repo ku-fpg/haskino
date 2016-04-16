@@ -27,7 +27,10 @@ import System.Hardware.Haskino.Utils
 -- type CompileState = (Int, Int, String)
 data CompileState = CompileState { ix :: Int  
                      , ib :: Int  
-                     , cmds :: String  
+                     , cmds :: String
+                     , binds :: String
+                     , blocks :: [String]
+                     , tasks :: [String] 
                      } deriving (Show)   
 
 {-
@@ -179,9 +182,9 @@ myTest =  do
     return ()
 
 runTest :: String
-runTest = cmds s
+runTest = "{\n" ++ binds s ++ cmds s ++ "}\n"
   where
-    (_, s) = runState (compileCodeBlock myTest) (CompileState 0 0 "")
+    (_, s) = runState (compileCodeBlock myTest) (CompileState 0 0 "" "" [] [])
 
 compileSimpleCommand :: String -> State CompileState ()
 compileSimpleCommand cmd = do
@@ -223,15 +226,27 @@ compileCommand I2CConfig = compileNoExprCommand "i2cConfig" -- ToDo: runtime
 compileCommand (StepperSetSpeedE st sp) = 
     compile2ExprCommand "stepperSetSpeed" st sp -- ToDo: runtime
 compileCommand (LoopE cb) = do
-    compileSimpleCommand "{\n"
+    compileSimpleCommand "while (1)"
+    compileSimpleCommand "{"
     compileCodeBlock cb
-    compileSimpleCommand "\n}"
+    compileSimpleCommand "}"
+    return ()
+compileCommand (IfThenElse e cb1 cb2) = do
+    compileSimpleCommand $ "if (" ++ compileExpr e ++ ")"
+    compileSimpleCommand "{"
+    compileCodeBlock cb1
+    compileSimpleCommand "}\nelse\n{"
+    compileCodeBlock cb2
+    compileSimpleCommand "}"
     return ()
 
 compileProcedure :: ArduinoProcedure a -> State CompileState a
 compileProcedure MillisE = do
     s <- get
-    put s {ib = (ib s) + 1, cmds = cmds s ++ "bind" ++ show (ib s) ++ " = millis();\n"}
+    let b = ib s
+    put s {ib = b + 1, 
+           cmds = cmds s ++ "bind" ++ show b ++ " = millis();\n",
+           binds = binds s ++ "uint32_t bind" ++ show b ++ ";\n"}
     return $ remBind $ ib s
 
 compileCodeBlock :: Arduino a -> State CompileState a
