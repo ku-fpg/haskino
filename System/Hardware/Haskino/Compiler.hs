@@ -24,6 +24,12 @@ import System.Hardware.Haskino.Data
 import System.Hardware.Haskino.Expr
 import System.Hardware.Haskino.Utils
 
+-- type CompileState = (Int, Int, String)
+data CompileState = CompileState { ix :: Int  
+                     , ib :: Int  
+                     , cmds :: String  
+                     } deriving (Show)   
+
 {-
 packageCommand (ServoDetachE sv) ix _ = 
     (buildCommand SRVO_CMD_DETACH (packageExpr sv), ix)
@@ -173,36 +179,36 @@ myTest =  do
     return ()
 
 runTest :: String
-runTest = output
+runTest = cmds s
   where
-    (_, (_, _, output)) = runState (compileCodeBlock myTest) (0,0,"")
+    (_, s) = runState (compileCodeBlock myTest) (CompileState 0 0 "")
 
-compileSimpleCommand :: String -> State (Int, Int, String) ()
+compileSimpleCommand :: String -> State CompileState ()
 compileSimpleCommand cmd = do
-    (ix, ib, cmds) <- get 
-    put (ix, ib, cmds ++ cmd ++ "\n")
+    s <- get 
+    put s { cmds = cmds s ++ cmd ++ "\n"}
     return ()
 
-compileNoExprCommand :: String -> State (Int, Int, String) ()
+compileNoExprCommand :: String -> State CompileState ()
 compileNoExprCommand s =
     compileSimpleCommand (s ++ "()")
 
-compile1ExprCommand :: String -> Expr a -> State (Int, Int, String) ()
+compile1ExprCommand :: String -> Expr a -> State CompileState ()
 compile1ExprCommand s e =
     compileSimpleCommand (s ++ "(" ++ compileExpr e ++ ")")
 
-compile2ExprCommand :: String -> Expr a -> Expr b -> State (Int, Int, String) ()
+compile2ExprCommand :: String -> Expr a -> Expr b -> State CompileState ()
 compile2ExprCommand s e1 e2 =
     compileSimpleCommand (s ++ "(" ++ compileExpr e1 ++ "," ++ 
                                       compileExpr e2 ++ ")")
 
-compile3ExprCommand :: String -> Expr a -> Expr b -> Expr c -> State (Int, Int, String) ()
+compile3ExprCommand :: String -> Expr a -> Expr b -> Expr c -> State CompileState ()
 compile3ExprCommand s e1 e2 e3 =
     compileSimpleCommand (s ++ "(" ++ compileExpr e1 ++ "," ++
                                       compileExpr e2 ++ "," ++ 
                                       compileExpr e3 ++ ")")
 
-compileCommand :: ArduinoCommand -> State (Int, Int, String) ()
+compileCommand :: ArduinoCommand -> State CompileState ()
 compileCommand SystemReset = return ()
 compileCommand (SetPinModeE p m) = compile2ExprCommand "pinMode" p m
 compileCommand (DigitalWriteE p b) = compile2ExprCommand "digitalWrite" p b
@@ -222,17 +228,17 @@ compileCommand (LoopE cb) = do
     compileSimpleCommand "\n}"
     return ()
 
-compileProcedure :: ArduinoProcedure a -> State (Int, Int, String) a
+compileProcedure :: ArduinoProcedure a -> State CompileState a
 compileProcedure MillisE = do
-    (ix, ib, cmds) <- get
-    put (ix, ib+1, cmds ++ "bind" ++ show ib ++ " = millis();\n")
-    return (remBind ib)
+    s <- get
+    put s {ib = (ib s) + 1, cmds = cmds s ++ "bind" ++ show (ib s) ++ " = millis();\n"}
+    return $ remBind $ ib s
 
-compileCodeBlock :: Arduino a -> State (Int, Int, String) a
+compileCodeBlock :: Arduino a -> State CompileState a
 compileCodeBlock (Arduino commands) = compileMonad commands
   where 
       compileMonad :: RemoteMonad ArduinoCommand ArduinoProcedure a -> 
-                      State (Int, Int, String) a
+                      State CompileState a
       compileMonad (T.Appl app) = compileAppl app 
       compileMonad (T.Bind m k) = do
         r <- compileMonad m
@@ -243,7 +249,7 @@ compileCodeBlock (Arduino commands) = compileMonad commands
         return (f g)
 
       compileAppl :: RemoteApplicative ArduinoCommand ArduinoProcedure a -> 
-                     State (Int, Int, String) a
+                     State CompileState a
       compileAppl (T.Command cmd) = compileCommand cmd
       compileAppl (T.Procedure p) = compileProcedure p
       compileAppl (T.Ap a1 a2) = do
