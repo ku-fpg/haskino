@@ -73,7 +73,6 @@ indent :: Int -> String
 indent k = concat $ replicate k indentString
 
 {-
-                                                                          (B.unpack tds'))
 packageCommand (ForInE ws f) ix ib =
     (buildCommand BC_CMD_FORIN ((packageExpr ws) ++ (packageExpr (RemBindW8 ib)) ++ (B.unpack pc)), ix')
   where
@@ -392,6 +391,18 @@ compileProcedure (ServoReadE sv) = do
 compileProcedure (ServoReadMicrosE sv) = do
     b <- compile1ExprProcedure Word16Type "servoReadMicros" sv -- ToDo: runtime
     return $ remBind b
+compileProcedure QueryAllTasksE = do
+    compileLine "/* queryAllTasksE not suppported by compiler */"
+    return (litString "")
+compileProcedure (QueryTaskE t) = do
+    compileLine "/* queryTaskE not suppported by compiler */"
+    return Nothing
+compileProcedure (BootTaskE tids) = do
+    compileLine "/* bootTaskE not suppported by compiler */"
+    return true
+compileProcedure (DebugE s) = do
+    compile1ExprCommand "debug" s -- ToDo: Runtime
+    return ()
 compileProcedure (NewRemoteRefB e) = do
     x <- compileNewRef BoolType e
     return $ RemoteRefB x
@@ -485,19 +496,6 @@ compileCodeBlock (Arduino commands) = do
         g <- compileAppl a2
         return (f g)
       compileAppl (T.Pure a) = return a
-
-{-
-compileCodeBlock :: Arduino a -> Int -> Int -> (String, Int, Int)
-compileCodeBlock (Arduino commands) ix ib = (cmds', ix', ib')
-  where
-      (_, cmds', ix', ib') = compileMonad commands ix ib ""
-
-      packProcedure :: ArduinoProcedure a -> Int -> Int -> B.ByteString -> (a, B.ByteString, Int, Int)
-      packProcedure QueryAllTasksE ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure QueryAllTasksE ib)), ix, ib+1)
-      packProcedure (QueryTaskE t) ix ib cmds = (Nothing, B.append cmds (lenPackage (packageProcedure (QueryTaskE t) ib)), ix, ib+1)
-      packProcedure (BootTaskE tids) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (BootTaskE tids) ib)), ix, ib+1) 
-      packProcedure (DebugE s) ix ib cmds = ((), B.append cmds (lenPackage (packageProcedure (DebugE s) ib)), ix, ib+1)       -- For sending as part of a Scheduler task, debug and die make no sense.  
--}
 
 compileSubExpr :: String -> Expr a -> String
 compileSubExpr ec e = ec ++ "(" ++ compileExpr e ++ ")"
