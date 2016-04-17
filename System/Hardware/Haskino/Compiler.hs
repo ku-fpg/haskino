@@ -233,6 +233,12 @@ compile3ExprCommand s e1 e2 e3 =
 compileWriteRef :: Int -> Expr a -> State CompileState ()
 compileWriteRef ix e = compileLine $ refName ++ show ix ++ " = " ++ compileExpr e
 
+compileWhileCommand :: Expr a -> Expr b -> Arduino () -> State CompileState ()
+compileWhileCommand be ue cb = do
+    compileLine $ "for (;" ++ compileExpr be ++ ";" ++ compileExpr ue ++ ")"
+    compileCodeBlock cb
+    return ()
+
 compileCommand :: ArduinoCommand -> State CompileState ()
 compileCommand SystemReset = return ()
 compileCommand (SetPinModeE p m) = compile2ExprCommand "pinMode" p m
@@ -256,16 +262,38 @@ compileCommand (WriteRemoteRefI16 (RemoteRefI16 i) e) = compileWriteRef i e
 compileCommand (WriteRemoteRefI32 (RemoteRefI32 i) e) = compileWriteRef i e
 compileCommand (WriteRemoteRefL8 (RemoteRefL8 i) e) = compileWriteRef i e
 compileCommand (WriteRemoteRefFloat (RemoteRefFloat i) e) = compileWriteRef i e
-compileCommand (ModifyRemoteRefB (RemoteRefB i) f) = compileWriteRef i (f (RefB i))
-compileCommand (ModifyRemoteRefW8 (RemoteRefW8 i) f) = compileWriteRef i (f (RefW8 i))
-compileCommand (ModifyRemoteRefW16 (RemoteRefW16 i) f) = compileWriteRef i (f (RefW16 i))
-compileCommand (ModifyRemoteRefW32 (RemoteRefW32 i) f) = compileWriteRef i (f (RefW32 i))
-compileCommand (ModifyRemoteRefI8 (RemoteRefI8 i) f) = compileWriteRef i (f (RefI8 i))
-compileCommand (ModifyRemoteRefI16 (RemoteRefI16 i) f) = compileWriteRef i (f (RefI16 i))
-compileCommand (ModifyRemoteRefI32 (RemoteRefI32 i) f) = compileWriteRef i (f (RefI32 i))
-compileCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) = compileWriteRef i (f (RefList8 i))
-compileCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) = compileWriteRef i (f (RefFloat i))
-
+compileCommand (ModifyRemoteRefB (RemoteRefB i) f) = 
+    compileWriteRef i (f (RefB i))
+compileCommand (ModifyRemoteRefW8 (RemoteRefW8 i) f) = 
+    compileWriteRef i (f (RefW8 i))
+compileCommand (ModifyRemoteRefW16 (RemoteRefW16 i) f) = 
+    compileWriteRef i (f (RefW16 i))
+compileCommand (ModifyRemoteRefW32 (RemoteRefW32 i) f) = 
+    compileWriteRef i (f (RefW32 i))
+compileCommand (ModifyRemoteRefI8 (RemoteRefI8 i) f) = 
+    compileWriteRef i (f (RefI8 i))
+compileCommand (ModifyRemoteRefI16 (RemoteRefI16 i) f) = 
+    compileWriteRef i (f (RefI16 i))
+compileCommand (ModifyRemoteRefI32 (RemoteRefI32 i) f) = 
+    compileWriteRef i (f (RefI32 i))
+compileCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) = 
+    compileWriteRef i (f (RefList8 i))
+compileCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) = 
+    compileWriteRef i (f (RefFloat i))
+compileCommand (WhileRemoteRefB (RemoteRefB i) bf uf cb) = 
+    compileWhileCommand (bf (RefB i)) (uf (RefB i)) cb
+compileCommand (WhileRemoteRefW8 (RemoteRefW8 i) bf uf cb) = 
+    compileWhileCommand (bf (RefW8 i)) (uf (RefW8 i)) cb
+compileCommand (WhileRemoteRefW16 (RemoteRefW16 i) bf uf cb) = 
+    compileWhileCommand (bf (RefW16 i)) (uf (RefW16 i)) cb
+compileCommand (WhileRemoteRefW32 (RemoteRefW32 i) bf uf cb) = 
+    compileWhileCommand (bf (RefW32 i)) (uf (RefW32 i)) cb
+compileCommand (WhileRemoteRefI8 (RemoteRefI8 i) bf uf cb) = 
+    compileWhileCommand (bf (RefI8 i)) (uf (RefI8 i)) cb
+compileCommand (WhileRemoteRefI16 (RemoteRefI16 i) bf uf cb) = 
+    compileWhileCommand (bf (RefI16 i)) (uf (RefI16 i)) cb
+compileCommand (WhileRemoteRefI32 (RemoteRefI32 i) bf uf cb) = 
+    compileWhileCommand (bf (RefI32 i)) (uf (RefI32 i)) cb
 compileCommand (LoopE cb) = do
     compileLine "while (1)"
     compileCodeBlock cb
