@@ -36,6 +36,34 @@ data CompileState = CompileState { ix :: Int
                      , tasks :: [String] 
                      } deriving (Show)   
 
+data CompileType = 
+    BoolType
+  | Word8Type 
+  | Word16Type
+  | Word32Type
+  | Int8Type
+  | Int16Type
+  | Int32Type
+  | List8Type
+  | FloatType
+
+compileTypeToString :: CompileType -> String
+compileTypeToString BoolType   = "bool"
+compileTypeToString Word8Type  = "uint8_t"
+compileTypeToString Word16Type = "uint16_t"
+compileTypeToString Word32Type = "uint32_t"
+compileTypeToString Int8Type   = "int8_t"
+compileTypeToString Int16Type  = "int16_t"
+compileTypeToString Int32Type  = "int32_t"
+compileTypeToString List8Type  = "byte *"
+compileTypeToString FloatType  = "float"
+
+refName :: String
+refName = "ref"
+
+bindName :: String
+bindName = "bind"
+
 {-
 packageCommand (ServoDetachE sv) ix _ = 
     (buildCommand SRVO_CMD_DETACH (packageExpr sv), ix)
@@ -263,34 +291,34 @@ compileCommand (IfThenElse e cb1 cb2) = do
     compileCodeBlock cb2
     return ()
 
-compileSimpleProcedure :: String -> String -> State CompileState Int
+compileSimpleProcedure :: CompileType -> String -> State CompileState Int
 compileSimpleProcedure t p = do
     s <- get
     let b = ib s
-    compileLine $ "bind" ++ show b ++ " = " ++ p ++ ";"
-    compileAllocBind $ t ++ " bind" ++ show b ++ ";"
+    compileLine $ bindName ++ show b ++ " = " ++ p ++ ";"
+    compileAllocBind $ compileTypeToString t ++ " bind" ++ show b ++ ";"
     s <- get
     put s {ib = b + 1}
     return b
 
-compileNoExprProcedure :: String -> String -> State CompileState Int
+compileNoExprProcedure :: CompileType -> String -> State CompileState Int
 compileNoExprProcedure t p = do
     b <- compileSimpleProcedure t (p ++ "()")
     return b
 
-compile1ExprProcedure :: String -> String -> Expr a -> State CompileState Int
+compile1ExprProcedure :: CompileType -> String -> Expr a -> State CompileState Int
 compile1ExprProcedure t p e = do
     b <- compileSimpleProcedure t (p ++ "(" ++ compileExpr e ++ ")")
     return b
 
-compile2ExprProcedure :: String -> String -> 
+compile2ExprProcedure :: CompileType -> String -> 
                          Expr a -> Expr a -> State CompileState Int
 compile2ExprProcedure t p e1 e2 = do
     b <- compileSimpleProcedure t (p ++ "(" ++ compileExpr e1 ++ "," ++ 
                                                compileExpr e2 ++ ")")
     return b
 
-compile3ExprProcedure :: String -> String -> 
+compile3ExprProcedure :: CompileType -> String -> 
                          Expr a -> Expr a  -> Expr a -> State CompileState Int
 compile3ExprProcedure t p e1 e2 e3 = do
     b <- compileSimpleProcedure t (p ++ "(" ++ compileExpr e1 ++ "," ++
@@ -298,49 +326,85 @@ compile3ExprProcedure t p e1 e2 e3 = do
                                                compileExpr e3 ++ ")")
     return b
 
-compileNewRef :: String -> Expr a -> State CompileState Int
+compileNewRef :: CompileType -> Expr a -> State CompileState Int
 compileNewRef t e = do
     s <- get
     let x = ix s
     put s {ix = x + 1}
-    compileAllocRef $ t ++ " ref" ++ show x ++ ";"
+    compileAllocRef $ compileTypeToString t ++ " ref" ++ show x ++ ";"
     s <- get
     let b = ib s
     put s {ib = b + 1}
-    compileLine $ "ref" ++ show b ++ " = " ++ compileExpr e
+    compileLine $ refName ++ show b ++ " = " ++ compileExpr e
     return  x
+
+compileReadRef :: CompileType -> Int -> State CompileState Int
+compileReadRef t ix = do
+    s <- get
+    let b = ib s
+    put s {ib = b + 1}
+    compileLine $ bindName ++ show b ++ " = ref" ++ show ix ++ ";"
+    compileAllocBind $ compileTypeToString t ++ " bind" ++ show b ++ ";"
+    return b
 
 compileProcedure :: ArduinoProcedure a -> State CompileState a
 compileProcedure MillisE = do
-    b <- compileNoExprProcedure "uint32_t" "millis"
+    b <- compileNoExprProcedure Word32Type "millis"
     return $ remBind b
 compileProcedure (NewRemoteRefB e) = do
-    x <- compileNewRef "bool" e
+    x <- compileNewRef BoolType e
     return $ RemoteRefB x
 compileProcedure (NewRemoteRefW8 e) = do
-    x <- compileNewRef "uint8_t" e
+    x <- compileNewRef Word8Type e
     return $ RemoteRefW8 x
 compileProcedure (NewRemoteRefW16 e) = do
-    x <- compileNewRef "uint16_t" e
+    x <- compileNewRef Word16Type e
     return $ RemoteRefW16 x
 compileProcedure (NewRemoteRefW32 e) = do
-    x <- compileNewRef "uint32_t" e
+    x <- compileNewRef Word32Type e
     return $ RemoteRefW32 x
 compileProcedure (NewRemoteRefI8 e) = do
-    x <- compileNewRef "int8_t" e
+    x <- compileNewRef Int8Type e
     return $ RemoteRefI8 x
 compileProcedure (NewRemoteRefI16 e) = do
-    x <- compileNewRef "int16_t" e
+    x <- compileNewRef Int16Type e
     return $ RemoteRefI16 x
 compileProcedure (NewRemoteRefI32 e) = do
-    x <- compileNewRef "int32_t" e
+    x <- compileNewRef Int32Type e
     return $ RemoteRefI32 x
 compileProcedure (NewRemoteRefL8 e) = do
-    x <- compileNewRef "byte *" e
+    x <- compileNewRef List8Type e
     return $ RemoteRefL8 x
 compileProcedure (NewRemoteRefFloat e) = do
-    x <- compileNewRef "float" e
+    x <- compileNewRef FloatType e
     return $ RemoteRefFloat x
+compileProcedure (ReadRemoteRefB (RemoteRefB i)) = do
+    b <- compileReadRef BoolType i
+    return $ remBind b
+compileProcedure (ReadRemoteRefW8 (RemoteRefW8 i)) = do
+    b <- compileReadRef Word8Type i
+    return $ remBind b
+compileProcedure (ReadRemoteRefW16 (RemoteRefW16 i)) = do
+    b <- compileReadRef Word16Type i
+    return $ remBind b
+compileProcedure (ReadRemoteRefW32 (RemoteRefW32 i)) = do
+    b <- compileReadRef Word32Type i
+    return $ remBind b
+compileProcedure (ReadRemoteRefI8 (RemoteRefI8 i)) = do
+    b <- compileReadRef Int8Type i
+    return $ remBind b
+compileProcedure (ReadRemoteRefI16 (RemoteRefI16 i)) = do
+    b <- compileReadRef Int16Type i
+    return $ remBind b
+compileProcedure (ReadRemoteRefI32 (RemoteRefI32 i)) = do
+    b <- compileReadRef Int32Type i
+    return $ remBind b
+compileProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) = do
+    b <- compileReadRef List8Type i
+    return $ remBind b
+compileProcedure (ReadRemoteRefFloat (RemoteRefFloat i)) = do
+    b <- compileReadRef FloatType i
+    return $ remBind b
 
 compileCodeBlock :: Arduino a -> State CompileState a
 compileCodeBlock (Arduino commands) = do
@@ -538,7 +602,7 @@ compileComp :: Expr a -> String
 compileComp = compileSubExpr "~"
  
 compileBind :: Int -> String
-compileBind b = "bind" ++ show b
+compileBind b = bindName ++ show b
  
 compileBAnd :: Expr a -> Expr a -> String
 compileBAnd = compileInfixSubExpr "&&"
@@ -588,14 +652,14 @@ compileToInt e = "((int_32) " ++ compileExpr e ++ ")"
 compileFromInt :: String -> Expr a -> String
 compileFromInt t e = "((" ++ t ++ ") " ++ compileExpr e ++ ")"
  
-compileRef :: String -> Int -> String
-compileRef t n = "ref[" ++ show n ++ "]." ++ t
+compileRef :: Int -> String
+compileRef n = refName ++ show n
 
 compileExpr :: Expr a -> String
 compileExpr (LitB b) = if b then "1" else "0"
 compileExpr (ShowB e) = compileSubExpr "showBool" e
-compileExpr (RefB n) = compileRef "boolVal" n
-compileExpr (RemBindB b) = "bind" ++ show b
+compileExpr (RefB n) = compileRef n
+compileExpr (RemBindB b) = bindName ++ show b
 compileExpr (NotB e) = compileSubExpr "!" e 
 compileExpr (AndB e1 e2) = compileBAnd e1 e2 
 compileExpr (OrB e1 e2) = compileBOr e1 e2  
@@ -620,7 +684,7 @@ compileExpr (EqFloat e1 e2) = compileEqual e1 e2
 compileExpr (LessFloat e1 e2) = compileLess e1 e2 
 compileExpr (LitW8 w) = show w
 compileExpr (ShowW8 e) = compileSubExpr "showWord8" e
-compileExpr (RefW8 n) = compileRef "word8Val" n
+compileExpr (RefW8 n) = compileRef n
 compileExpr (RemBindW8 b) = compileBind b
 compileExpr (FromIntW8 e) = compileFromInt "uint_8" e
 compileExpr (ToIntW8 e) = compileToInt e
@@ -645,7 +709,7 @@ compileExpr (SetBW8 e1 e2) = compileTwoSubExpr "setBW8" e1 e2
 compileExpr (ClrBW8 e1 e2) = compileTwoSubExpr "clrBW8" e1 e2 
 compileExpr (LitW16 w) = show w
 compileExpr (ShowW16 e) = compileSubExpr "showWord16" e
-compileExpr (RefW16 n) = compileRef "word16Val" n
+compileExpr (RefW16 n) = compileRef n
 compileExpr (RemBindW16 b) = compileBind b
 compileExpr (FromIntW16 e) = compileFromInt "uint_16" e
 compileExpr (ToIntW16 e) = compileToInt e
@@ -670,7 +734,7 @@ compileExpr (SetBW16 e1 e2) = compileTwoSubExpr "setBW16" e1 e2
 compileExpr (ClrBW16 e1 e2) = compileTwoSubExpr "clrBW16" e1 e2 
 compileExpr (LitW32 w) = show w
 compileExpr (ShowW32 e) = compileSubExpr "showWord32" e
-compileExpr (RefW32 n) = compileRef "word32Val" n
+compileExpr (RefW32 n) = compileRef n
 compileExpr (RemBindW32 b) = compileBind b
 compileExpr (FromIntW32 e) = ""
 compileExpr (ToIntW32 e) = ""
@@ -695,7 +759,7 @@ compileExpr (SetBW32 e1 e2) = compileTwoSubExpr "setBW32" e1 e2
 compileExpr (ClrBW32 e1 e2) = compileTwoSubExpr "clrBW32" e1 e2
 compileExpr (LitI8 w) = show w
 compileExpr (ShowI8 e) = compileSubExpr "showInt8" e
-compileExpr (RefI8 n) = compileRef "int8Val" n
+compileExpr (RefI8 n) = compileRef n
 compileExpr (RemBindI8 b) = compileBind b
 compileExpr (FromIntI8 e) = compileFromInt "int_8" e
 compileExpr (ToIntI8 e) = compileToInt e
@@ -720,7 +784,7 @@ compileExpr (SetBI8 e1 e2) = compileTwoSubExpr "setBI8" e1 e2
 compileExpr (ClrBI8 e1 e2) = compileTwoSubExpr "clrBI8" e1 e2
 compileExpr (LitI16 w) = show w
 compileExpr (ShowI16 e) = compileSubExpr "showInt16" e
-compileExpr (RefI16 n) = compileRef "int16Val" n
+compileExpr (RefI16 n) = compileRef n
 compileExpr (RemBindI16 b) = compileBind b
 compileExpr (FromIntI16 e) = compileFromInt "int_16" e
 compileExpr (ToIntI16 e) = compileToInt e
@@ -745,7 +809,7 @@ compileExpr (SetBI16 e1 e2) = compileTwoSubExpr "setBI16" e1 e2
 compileExpr (ClrBI16 e1 e2) = compileTwoSubExpr "clrBI16" e1 e2
 compileExpr (LitI32 w) = show w
 compileExpr (ShowI32 e) = compileSubExpr "showInt32" e
-compileExpr (RefI32 n) = compileRef "int32Val" n
+compileExpr (RefI32 n) = compileRef n
 compileExpr (RemBindI32 b) = compileBind b
 compileExpr (NegI32 e) = compileNeg e
 compileExpr (SignI32 e) = compileSubExpr "sign32" e
@@ -771,7 +835,7 @@ compileExpr (LitList8 ws) = "{" ++ (show $ length ws) ++ compListLit ws
     compListLit :: [Word8] -> String
     compListLit [] = "}"
     compListLit (w : ws) = "," ++ show w ++ compListLit ws
-compileExpr (RefList8 n) = compileRef "list8Val" n
+compileExpr (RefList8 n) = compileRef n
 compileExpr (RemBindList8 b) = compileBind b
 compileExpr (IfL8 e1 e2 e3) = compileIfSubExpr e1 e2 e3
 compileExpr (ElemList8 e1 e2) = compileTwoSubExpr "list8Elem" e1 e2
@@ -782,7 +846,7 @@ compileExpr (ApndList8 e1 e2) = compileTwoSubExpr "list8Apnd" e1 e2
 -- compileExpr (PackList8 es) = [exprLCmdVal EXPRL_PACK, fromIntegral $ length es] ++ (foldl (++) [] (map compileExpr es))
 compileExpr (LitFloat f) = show f -- ToDo:  Is this correct?
 compileExpr (ShowFloat e1 e2) = compileTwoSubExpr "showF" e1 e2
-compileExpr (RefFloat n) = compileRef "floatVal" n
+compileExpr (RefFloat n) = compileRef n
 compileExpr (RemBindFloat b) = compileBind b
 compileExpr (FromIntFloat e) = compileFromInt "float" e
 compileExpr (NegFloat e) = compileNeg e
