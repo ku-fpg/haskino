@@ -100,7 +100,15 @@ compileProgram p f = writeFile f prog
     (_, st) = runState compileTasks  
                 (CompileState 0 0 0 "" "" "" "" [] [] [(p, "haskinoMain")] [])
     prog = "#include \"HaskinoRuntime.h\"\n\n" ++ 
-           forwards st ++ "\n" ++ refs st ++ "\n" ++ (concat $ tasksDone st)
+           forwards st ++ "\n" ++
+           "void setup()\n" ++
+           "    {\n" ++
+           "    haskinoMain();\n" ++
+           "    }\n\n" ++
+           "void loop()\n" ++
+           "    {\n" ++
+           "    }\n\n" ++
+           refs st ++ "\n" ++ (concat $ tasksDone st)
 
 compileTasks :: State CompileState ()
 compileTasks = do

@@ -12,7 +12,7 @@ typedef union ref_t
     int32_t   int32Val;
     byte      *list8Val;
     float     floatVal;
-    }
+    };
 
 // Show routines
 
@@ -45,7 +45,7 @@ bool testBI32(int32_t w, uint8_t b);
 uint8_t setBW8(uint8_t w, uint8_t b);
 uint16_t setBW8(uint16_t w, uint8_t b);
 uint32_t setBW8(uint32_t w, uint8_t b);
-uint8_t setBI8(int8_t w), uint8_t b;
+uint8_t setBI8(int8_t w, uint8_t b);
 uint16_t setBI8(int16_t w, uint8_t b);
 uint32_t setBI8(int32_t w, uint8_t b);
 uint8_t clrBW8(uint8_t w, uint8_t b);
