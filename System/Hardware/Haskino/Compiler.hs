@@ -57,7 +57,7 @@ compileTypeToString Word32Type = "uint32_t"
 compileTypeToString Int8Type   = "int8_t"
 compileTypeToString Int16Type  = "int16_t"
 compileTypeToString Int32Type  = "int32_t"
-compileTypeToString List8Type  = "byte *"
+compileTypeToString List8Type  = "uint8_t *"
 compileTypeToString FloatType  = "float"
 
 refName :: String
@@ -275,9 +275,9 @@ compileCommand (ForInE ws f) = do
     s <- get
     let belem = ib s
     let blist = belem + 1
+    put s {ib = belem + 2}
     compileAllocBind $ compileTypeToString Word8Type ++ " bind" ++ show belem ++ ";"
     compileAllocBind $ compileTypeToString List8Type ++ " bind" ++ show blist ++ ";"
-    put s {ib = belem + 1}
     let belemName = bindName ++ show belem
     let blistName = bindName ++ show blist
     compileLine $ "for (int i=0, " ++ blistName ++ " = " ++ compileExpr ws ++ ","
