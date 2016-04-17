@@ -67,7 +67,7 @@ bindName :: String
 bindName = "bind"
 
 indentString :: String
-indentString = "  "
+indentString = "    "
 
 indent :: Int -> String
 indent k = concat $ replicate k indentString
@@ -91,14 +91,16 @@ myTest =  do
     b <- millisE
     return ()
 
-runTest :: String
-runTest = compileProgram myTest
+runTest :: IO ()
+runTest = compileProgram myTest "test.c"
 
-compileProgram :: Arduino () -> String
-compileProgram p = forwards st ++ "\n" ++ refs st ++ "\n" ++ (concat $ tasksDone st)
+compileProgram :: Arduino () -> FilePath -> IO ()
+compileProgram p f = writeFile f prog
   where
     (_, st) = runState compileTasks  
                 (CompileState 0 0 0 "" "" "" "" [] [] [(p, "haskinoMain")] [])
+    prog = "#include \"HaskinoRuntime.h\"\n\n" ++ 
+           forwards st ++ "\n" ++ refs st ++ "\n" ++ (concat $ tasksDone st)
 
 compileTasks :: State CompileState ()
 compileTasks = do
@@ -149,25 +151,25 @@ compileForward s = do
 
 compileNoExprCommand :: String -> State CompileState ()
 compileNoExprCommand s =
-    compileLine (s ++ "()")
+    compileLine (s ++ "();")
 
 compile1ExprCommand :: String -> Expr a -> State CompileState ()
 compile1ExprCommand s e =
-    compileLine (s ++ "(" ++ compileExpr e ++ ")")
+    compileLine (s ++ "(" ++ compileExpr e ++ ");")
 
 compile2ExprCommand :: String -> Expr a -> Expr b -> State CompileState ()
 compile2ExprCommand s e1 e2 =
     compileLine (s ++ "(" ++ compileExpr e1 ++ "," ++ 
-                                      compileExpr e2 ++ ")")
+                                      compileExpr e2 ++ ");")
 
 compile3ExprCommand :: String -> Expr a -> Expr b -> Expr c -> State CompileState ()
 compile3ExprCommand s e1 e2 e3 =
     compileLine (s ++ "(" ++ compileExpr e1 ++ "," ++
                                       compileExpr e2 ++ "," ++ 
-                                      compileExpr e3 ++ ")")
+                                      compileExpr e3 ++ ");")
 
 compileWriteRef :: Int -> Expr a -> State CompileState ()
-compileWriteRef ix e = compileLine $ refName ++ show ix ++ " = " ++ compileExpr e
+compileWriteRef ix e = compileLine $ refName ++ show ix ++ " = " ++ compileExpr e ++ ";"
 
 compileWhileCommand :: Expr a -> Expr b -> Arduino () -> State CompileState ()
 compileWhileCommand be ue cb = do
@@ -197,8 +199,9 @@ compileCommand (ServoWriteMicrosE sv w) =
     compile2ExprCommand "servoWriteMicros" sv w -- ToDo: runtime
 compileCommand (DeleteTaskE tid) = 
     compile1ExprCommand "deleteTask" tid -- ToDo: runtime
-compileCommand (CreateTaskE (LitW8 tid) m) = do
+compileCommand (CreateTaskE (LitW8 tid) m) = do -- ToDo: runtime
     let taskName = "task" ++ show tid
+    compileLine $ "createTask(" ++ show tid ++ ", " ++ taskName ++ "());"
     s <- get
     put s {tasksToDo = (m, taskName) : (tasksToDo s)}
 compileCommand (ScheduleTaskE tid tt) = 
@@ -338,7 +341,7 @@ compileNewRef t e = do
     s <- get
     let b = ib s
     put s {ib = b + 1}
-    compileLine $ refName ++ show b ++ " = " ++ compileExpr e
+    compileLine $ refName ++ show b ++ " = " ++ compileExpr e ++ ";"
     return  x
 
 compileReadRef :: CompileType -> Int -> State CompileState Int
@@ -483,10 +486,14 @@ compileCodeBlock (Arduino commands) = do
            cmdList = tail $ cmdList s,
            binds = head $ bindList s,
            cmds = (head $ cmdList s) ++ (indent $ level s) ++ "{\n" ++ 
-                  binds s ++ "\n" ++ cmds s ++ (indent $ level s) ++ "}\n",
+                  body (binds s) (cmds s) ++ (indent $ level s) ++ "}\n",
            level = level s - 1 }
     return r
-  where 
+  where
+      body :: String -> String -> String
+      body [] cs = cs
+      body bs cs = bs ++ "\n" ++ cs
+
       compileMonad :: RemoteMonad ArduinoCommand ArduinoProcedure a -> 
                       State CompileState a
       compileMonad (T.Appl app) = compileAppl app 
