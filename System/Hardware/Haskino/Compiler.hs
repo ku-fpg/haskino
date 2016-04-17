@@ -72,17 +72,13 @@ indentString = "  "
 indent :: Int -> String
 indent k = concat $ replicate k indentString
 
-{-
-packageCommand (ForInE ws f) ix ib =
-    (buildCommand BC_CMD_FORIN ((packageExpr ws) ++ (packageExpr (RemBindW8 ib)) ++ (B.unpack pc)), ix')
-  where
-    (pc, ix', _) = packageCodeBlock (f (RemBindW8 ib)) ix (ib+1)
--}
-
 myTask :: Arduino ()
 myTask = do
-    digitalWriteE 2 true
-    digitalWriteE 3 false
+  digitalWriteE 2 true
+  digitalWriteE 3 false
+  let l = lit [1,2,3,4]
+  r <- newRemoteRef 0
+  forInE l (\x -> modifyRemoteRef r (\a -> a + x))
 
 myTest :: Arduino ()
 myTest =  do
@@ -271,6 +267,21 @@ compileCommand (IfThenElse e cb1 cb2) = do
     compileCodeBlock cb1
     compileLine "else"
     compileCodeBlock cb2
+    return ()
+compileCommand (ForInE ws f) = do
+    s <- get
+    let belem = ib s
+    let blist = belem + 1
+    compileAllocBind $ compileTypeToString Word8Type ++ " bind" ++ show belem ++ ";"
+    compileAllocBind $ compileTypeToString List8Type ++ " bind" ++ show blist ++ ";"
+    put s {ib = belem + 1}
+    let belemName = bindName ++ show belem
+    let blistName = bindName ++ show blist
+    compileLine $ "for (int i=0, " ++ blistName ++ " = " ++ compileExpr ws ++ ","
+    compileLine $ "     " ++ belemName ++ " = list8Elem(" ++ blistName ++ ", 0);"
+    compileLine $ "     i = list8Len(" ++ blistName ++ ");"
+    compileLine $ "     i++, " ++ belemName ++ " = list8Elem(" ++ blistName ++ ", i))"
+    compileCodeBlock (f (RemBindW8 belem))
     return ()
 
 compileSimpleProcedure :: CompileType -> String -> State CompileState Int
