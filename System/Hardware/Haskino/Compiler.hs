@@ -324,9 +324,38 @@ compileReadRef t ix = do
     return b
 
 compileProcedure :: ArduinoProcedure a -> State CompileState a
+compileProcedure QueryFirmwareE = do
+    b <- compileNoExprProcedure Word16Type "queryFirmware" -- ToDo: runtime
+    return $ remBind b
+compileProcedure QueryProcessorE = do
+    b <- compileNoExprProcedure Word8Type "queryProcessor" -- ToDo: runtime
+    return $ remBind b
 compileProcedure MillisE = do
     b <- compileNoExprProcedure Word32Type "millis"
     return $ remBind b
+compileProcedure MicrosE = do
+    b <- compileNoExprProcedure Word32Type "micros"
+    return $ remBind b
+compileProcedure (DelayMillisE ms) = do
+    compile1ExprCommand "delayMilliseconds" ms -- ToDo: runtime
+    return ()
+compileProcedure (DelayMicrosE ms) = do
+    compile1ExprCommand "delayMicroseconds" ms
+    return ()
+compileProcedure (DigitalReadE p) = do
+    b <- compile1ExprProcedure BoolType "digitalRead"
+    return $ remBind b
+compileProcedure (DigitalPortReadE p) = do
+    b <- compile1ExprProcedure Word8Type "digitalPortRead" -- ToDo: runtime
+    return $ remBind b
+compileProcedure (AnalogReadE p) = do
+    b <- compile1ExprProcedure Word16Type "analogRead"
+    return $ remBind b
+
+
+
+
+
 compileProcedure (NewRemoteRefB e) = do
     x <- compileNewRef BoolType e
     return $ RemoteRefB x
@@ -428,93 +457,18 @@ compileCodeBlock (Arduino commands) ix ib = (cmds', ix', ib')
       (_, cmds', ix', ib') = compileMonad commands ix ib ""
 
       packProcedure :: ArduinoProcedure a -> Int -> Int -> B.ByteString -> (a, B.ByteString, Int, Int)
-      packProcedure QueryFirmware ix ib cmds = (0, B.append cmds (lenPackage (packageProcedure QueryFirmware ib)), ix, ib)
-      packProcedure QueryFirmwareE ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure QueryFirmwareE ib)), ix, ib+1)
-      packProcedure QueryProcessor ix ib cmds = (UNKNOWN_PROCESSOR, B.append cmds (lenPackage (packageProcedure QueryProcessor ib)), ix, ib)
-      packProcedure QueryProcessorE ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure QueryProcessorE ib)), ix, ib+1)
-      packProcedure Micros ix ib cmds = (0, B.append cmds (lenPackage (packageProcedure Micros ib)), ix, ib)
-      packProcedure MicrosE ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure MicrosE ib)), ix, ib+1)
-      packProcedure Millis ix ib cmds = (0, B.append cmds (lenPackage (packageProcedure Millis ib)), ix, ib)
-      packProcedure MillisE ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure MillisE ib)), ix, ib+1)
-      packProcedure (DelayMillis ms) ix ib cmds = ((), B.append cmds (lenPackage (packageProcedure (DelayMillis ms) ib)), ix, ib)
-      packProcedure (DelayMillisE ms) ix ib cmds = ((), B.append cmds (lenPackage (packageProcedure (DelayMillisE ms) ib)), ix, ib)
-      packProcedure (DelayMicros ms) ix ib cmds = ((), B.append cmds (lenPackage (packageProcedure (DelayMicros ms) ib)), ix, ib)
-      packProcedure (DelayMicrosE ms) ix ib cmds = ((), B.append cmds (lenPackage (packageProcedure (DelayMicrosE ms) ib)), ix, ib)  
-      packProcedure (DigitalRead p) ix ib cmds = (False, B.append cmds (lenPackage (packageProcedure (DigitalRead p) ib)), ix, ib)
-      packProcedure (DigitalReadE p) ib ix cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (DigitalReadE p) ib)), ix, ib+1)
-      packProcedure (DigitalPortRead p m) ix ib cmds = (0, B.append cmds (lenPackage (packageProcedure (DigitalPortRead p m) ib)), ix, ib)
-      packProcedure (DigitalPortReadE p m) ib ix cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (DigitalPortReadE p m) ib)), ix, ib+1)
-      packProcedure (AnalogRead p) ix ib cmds = (0, B.append cmds (lenPackage (packageProcedure (AnalogRead p) ib)), ix, ib)
-      packProcedure (AnalogReadE p) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (AnalogReadE p) ib)), ix, ib+1)
-      packProcedure (I2CRead p n) ix ib cmds = ([], B.append cmds (lenPackage (packageProcedure (I2CRead p n) ib)), ix, ib)
       packProcedure (I2CReadE p n) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (I2CReadE p n) ib)), ix, ib+1)
-      packProcedure (Stepper2Pin s p1 p2) ix ib cmds = (0, B.append cmds (lenPackage (packageProcedure (Stepper2Pin s p1 p2) ib)), ix, ib)
       packProcedure (Stepper2PinE s p1 p2) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (Stepper2PinE s p1 p2) ib)), ix, ib+1)
-      packProcedure (Stepper4Pin s p1 p2 p3 p4) ix ib cmds = (0, B.append cmds (lenPackage (packageProcedure (Stepper4Pin s p1 p2 p3 p4) ib)), ix, ib)
       packProcedure (Stepper4PinE s p1 p2 p3 p4) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (Stepper4PinE s p1 p2 p3 p4) ib)), ix, ib+1)
       packProcedure (StepperStepE st s) ix ib cmds = ((), B.append cmds (lenPackage (packageProcedure (StepperStepE st s) ib)), ix, ib+1)
-      packProcedure (ServoAttach p) ix ib cmds = (0, B.append cmds (lenPackage (packageProcedure (ServoAttach p) ib)), ix, ib)
       packProcedure (ServoAttachE p) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ServoAttachE p) ib)), ix, ib+1)
-      packProcedure (ServoAttachMinMax p min max) ix ib cmds = (0, B.append cmds (lenPackage (packageProcedure (ServoAttachMinMax p min max) ib)), ix, ib)
       packProcedure (ServoAttachMinMaxE p min max) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ServoAttachMinMaxE p min max) ib)), ix, ib+1)
-      packProcedure (ServoRead sv) ix ib cmds = (0, B.append cmds (lenPackage (packageProcedure (ServoRead sv) ib)), ix, ib)
       packProcedure (ServoReadE sv) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ServoReadE sv) ib)), ix, ib+1)
-      packProcedure (ServoReadMicros sv) ix ib cmds = (0, B.append cmds (lenPackage (packageProcedure (ServoReadMicros sv) ib)), ix, ib)
       packProcedure (ServoReadMicrosE sv) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ServoReadMicrosE sv) ib)), ix, ib+1)
-      packProcedure QueryAllTasks ix ib cmds = ([], B.append cmds (lenPackage (packageProcedure QueryAllTasks ib)), ix, ib)
       packProcedure QueryAllTasksE ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure QueryAllTasksE ib)), ix, ib+1)
-      packProcedure (QueryTask t) ix ib cmds = (Nothing, B.append cmds (lenPackage (packageProcedure (QueryTask t) ib)), ix, ib)
       packProcedure (QueryTaskE t) ix ib cmds = (Nothing, B.append cmds (lenPackage (packageProcedure (QueryTaskE t) ib)), ix, ib+1)
       packProcedure (BootTaskE tids) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (BootTaskE tids) ib)), ix, ib+1) 
-      packProcedure (DebugE s) ix ib cmds = ((), B.append cmds (lenPackage (packageProcedure (DebugE s) ib)), ix, ib+1) 
-      -- For sending as part of a Scheduler task, debug and die make no sense.  
-      -- Instead of signalling an error, at this point they are just ignored.
-      packProcedure (Debug _) ix ib cmds = ((), cmds, ix, ib)
-      packProcedure DebugListen ix ib cmds = ((), cmds, ix, ib)
-      packProcedure (Die _ _) ix ib cmds = ((), cmds, ix, ib)
--}
-{-
-packageProcedure :: ArduinoProcedure a -> Int -> B.ByteString
-packageProcedure QueryFirmware ib    = buildCommand BS_CMD_REQUEST_VERSION [fromIntegral ib]
-packageProcedure QueryFirmwareE ib   = buildCommand BS_CMD_REQUEST_VERSION [fromIntegral ib]
-packageProcedure QueryProcessor ib   = buildCommand BS_CMD_REQUEST_TYPE [fromIntegral ib]
-packageProcedure QueryProcessorE ib  = buildCommand BS_CMD_REQUEST_TYPE [fromIntegral ib]
-packageProcedure Micros ib           = buildCommand BS_CMD_REQUEST_MICROS [fromIntegral ib]
-packageProcedure MicrosE ib          = buildCommand BS_CMD_REQUEST_MICROS [fromIntegral ib]
-packageProcedure Millis ib           = buildCommand BS_CMD_REQUEST_MILLIS [fromIntegral ib]
-packageProcedure MillisE ib          = buildCommand BS_CMD_REQUEST_MILLIS [fromIntegral ib]
-packageProcedure (DigitalRead p) ib  = buildCommand DIG_CMD_READ_PIN ((fromIntegral ib) : (packageExpr $ lit p))
-packageProcedure (DigitalReadE pe) ib = buildCommand DIG_CMD_READ_PIN ((fromIntegral ib) : (packageExpr pe))
-packageProcedure (DigitalPortRead p m) ib  = buildCommand DIG_CMD_READ_PORT ((fromIntegral ib) : ((packageExpr $ lit p) ++ (packageExpr $ lit m)))
-packageProcedure (DigitalPortReadE pe me) ib = buildCommand DIG_CMD_READ_PORT ((fromIntegral ib) : ((packageExpr pe) ++ (packageExpr me)))
-packageProcedure (AnalogRead p) ib   = buildCommand ALG_CMD_READ_PIN ((fromIntegral ib) : (packageExpr $ lit p))
-packageProcedure (AnalogReadE pe) ib = buildCommand ALG_CMD_READ_PIN ((fromIntegral ib) : (packageExpr pe))
-packageProcedure (I2CRead sa cnt) ib = buildCommand I2C_CMD_READ ((fromIntegral ib) : ((packageExpr $ lit sa) ++ (packageExpr $ lit cnt)))
-packageProcedure (I2CReadE sae cnte) ib = buildCommand I2C_CMD_READ ((fromIntegral ib) : ((packageExpr sae) ++ (packageExpr cnte)))
-packageProcedure (Stepper2Pin s p1 p2) ib = buildCommand STEP_CMD_2PIN ((fromIntegral ib) : ((packageExpr $ lit s) ++ (packageExpr $ lit p1) ++ (packageExpr $ lit p2)))
-packageProcedure (Stepper2PinE s p1 p2) ib = buildCommand STEP_CMD_2PIN ((fromIntegral ib) : ((packageExpr s) ++ (packageExpr p1) ++ (packageExpr p2)))
-packageProcedure (Stepper4Pin s p1 p2 p3 p4) ib = buildCommand STEP_CMD_4PIN ((fromIntegral ib) : ((packageExpr $ lit s) ++ (packageExpr $ lit p1) ++ (packageExpr $ lit p2) ++ (packageExpr $ lit p3) ++ (packageExpr $ lit p4)))
-packageProcedure (Stepper4PinE s p1 p2 p3 p4) ib = buildCommand STEP_CMD_4PIN ((fromIntegral ib) : ((packageExpr s) ++ (packageExpr p1) ++ (packageExpr p2)++ (packageExpr p3) ++ (packageExpr p4)))
-packageProcedure (StepperStepE st s) ib = buildCommand STEP_CMD_STEP ((fromIntegral ib) : ((packageExpr st) ++ (packageExpr s)))
-packageProcedure (ServoAttach p) ib = buildCommand SRVO_CMD_ATTACH ((fromIntegral ib) : ((packageExpr $ lit p) ++ (packageExpr $ lit minServo) ++ (packageExpr $ lit maxServo)))
-packageProcedure (ServoAttachE p) ib = buildCommand SRVO_CMD_ATTACH ((fromIntegral ib) : ((packageExpr p) ++ (packageExpr $ lit minServo) ++ (packageExpr $ lit maxServo)))
-packageProcedure (ServoAttachMinMax p min max) ib = buildCommand SRVO_CMD_ATTACH ((fromIntegral ib) : ((packageExpr $ lit p) ++ (packageExpr $ lit min) ++ (packageExpr $ lit max)))
-packageProcedure (ServoAttachMinMaxE p min max) ib = buildCommand SRVO_CMD_ATTACH ((fromIntegral ib) : ((packageExpr p)++ (packageExpr min) ++ (packageExpr max)))
-packageProcedure (ServoRead sv) ib = buildCommand SRVO_CMD_READ ((fromIntegral ib) : ((packageExpr $ lit sv)))
-packageProcedure (ServoReadE sv) ib = buildCommand SRVO_CMD_READ ((fromIntegral ib) : ((packageExpr sv)))
-packageProcedure (ServoReadMicros sv) ib = buildCommand SRVO_CMD_READ_MICROS ((fromIntegral ib) : ((packageExpr $ lit sv)))
-packageProcedure (ServoReadMicrosE sv) ib = buildCommand SRVO_CMD_READ_MICROS ((fromIntegral ib) : ((packageExpr sv)))
-packageProcedure QueryAllTasks ib    = buildCommand SCHED_CMD_QUERY_ALL [fromIntegral ib]
-packageProcedure QueryAllTasksE ib   = buildCommand SCHED_CMD_QUERY_ALL [fromIntegral ib]
-packageProcedure (QueryTask tid) ib  = buildCommand SCHED_CMD_QUERY ((fromIntegral ib) : (packageExpr $ lit tid))
-packageProcedure (QueryTaskE tide) ib = buildCommand SCHED_CMD_QUERY ((fromIntegral ib) : (packageExpr tide))
-packageProcedure (DelayMillis ms) ib  = buildCommand BC_CMD_DELAY_MILLIS ((fromIntegral ib) : (packageExpr $ lit ms))
-packageProcedure (DelayMillisE ms) ib = buildCommand BC_CMD_DELAY_MILLIS ((fromIntegral ib) : (packageExpr ms))
-packageProcedure (DelayMicros ms) ib  = buildCommand BC_CMD_DELAY_MICROS ((fromIntegral ib) : (packageExpr $ lit ms))
-packageProcedure (DelayMicrosE ms) ib = buildCommand BC_CMD_DELAY_MICROS ((fromIntegral ib) : (packageExpr ms))
-packageProcedure (BootTaskE tids) ib = buildCommand SCHED_CMD_BOOT_TASK ((fromIntegral ib) : (packageExpr tids))
-packageProcedure (DebugE s) ib = buildCommand BS_CMD_DEBUG ((fromIntegral ib) : (packageExpr s))
-packageProcedure DebugListen ib = B.empty
+      packProcedure (DebugE s) ix ib cmds = ((), B.append cmds (lenPackage (packageProcedure (DebugE s) ib)), ix, ib+1)       -- For sending as part of a Scheduler task, debug and die make no sense.  
 -}
 
 compileSubExpr :: String -> Expr a -> String
