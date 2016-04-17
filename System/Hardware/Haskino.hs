@@ -56,7 +56,7 @@ module System.Hardware.Haskino (
   -- ** Debugging
   , debug, debugE, debugListen, die, deframe
   -- ** Compiler
-  , compileExpr
+  , compileProgram
  )
  where
 

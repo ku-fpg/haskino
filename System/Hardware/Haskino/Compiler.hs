@@ -10,7 +10,7 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE GADTs #-}
 
-module System.Hardware.Haskino.Compiler(compileExpr, runTest) where 
+module System.Hardware.Haskino.Compiler(compileProgram, runTest) where 
 
 import Data.Int (Int8, Int16, Int32)
 import Data.Word (Word8, Word16, Word32)
