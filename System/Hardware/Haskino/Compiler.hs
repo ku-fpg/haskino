@@ -31,10 +31,12 @@ data CompileState = CompileState {level :: Int
                      , cmds :: String
                      , binds :: String
                      , refs :: String
+                     , forwards :: String
                      , cmdList :: [String]
                      , bindList :: [String]
-                     , tasks :: [String] 
-                     } deriving (Show)   
+                     , tasksToDo :: [(Arduino (), String)]
+                     , tasksDone :: [String] 
+                     }    
 
 data CompileType = 
     BoolType
@@ -68,18 +70,9 @@ indentString :: String
 indentString = "  "
 
 indent :: Int -> String
-indent 0 = ""
-indent i = indentString ++ (indent $ i-1)
+indent k = concat $ replicate k indentString
 
 {-
-packageCommand (ServoDetachE sv) ix _ = 
-    (buildCommand SRVO_CMD_DETACH (packageExpr sv), ix)
-packageCommand (ServoWriteE sv w) ix _ = 
-    (buildCommand SRVO_CMD_WRITE (packageExpr sv ++ packageExpr w), ix)
-packageCommand (ServoWriteMicrosE sv w) ix _ = 
-    (buildCommand SRVO_CMD_WRITE_MICROS (packageExpr sv ++ packageExpr w), ix)
-packageCommand (DeleteTaskE tid) ix _ =
-    (buildCommand SCHED_CMD_DELETE_TASK (packageExpr tid), ix)
 packageCommand (ScheduleTaskE tid tt) ix _ =
     (buildCommand SCHED_CMD_SCHED_TASK (packageExpr tid ++ packageExpr tt), ix)
 packageCommand ScheduleReset ix _ =
@@ -96,22 +89,6 @@ packageCommand (GiveSemE id) ix _ =
     (buildCommand SCHED_CMD_GIVE_SEM (packageExpr id), ix)
 packageCommand (TakeSemE id) ix _ =
     (buildCommand SCHED_CMD_TAKE_SEM (packageExpr id), ix)
-packageCommand (CreateTaskE tid m) ix _ =
-    ((framePackage cmd) `B.append` (genAddToTaskCmds td), ix')
-  where
-    (td, ix', ib') = packageCodeBlock m ix 0
-    taskSize = fromIntegral (B.length td)
-    cmd = buildCommand SCHED_CMD_CREATE_TASK ((packageExpr tid) ++ (packageExpr (LitW16 taskSize)) ++ (packageExpr (LitW16 (fromIntegral (ib' + 1)))))                                   
-    -- Max command data size is max frame size - 7 
-    -- command - 1 byte,checksum - 1 byte,frame flag - 1 byte
-    -- task ID - 2 bytes (lit + constant), size - 2 bytes (lit + constant)
-    maxCmdSize = maxFirmwareSize - 7
-    genAddToTaskCmds tds | fromIntegral (B.length tds) > maxCmdSize = 
-        addToTask (B.take maxCmdSize tds) 
-            `B.append` (genAddToTaskCmds (B.drop maxCmdSize tds))
-    genAddToTaskCmds tds = addToTask tds
-    addToTask tds' = framePackage $ buildCommand SCHED_CMD_ADD_TO_TASK ((packageExpr tid) ++ 
-                                                                          (packageExpr (LitW8 (fromIntegral (B.length tds')))) ++ 
                                                                           (B.unpack tds'))
 packageCommand (ForInE ws f) ix ib =
     (buildCommand BC_CMD_FORIN ((packageExpr ws) ++ (packageExpr (RemBindW8 ib)) ++ (B.unpack pc)), ix')
@@ -133,15 +110,31 @@ runTest :: String
 runTest = compileProgram myTest
 
 compileProgram :: Arduino () -> String
-compileProgram p = refs st ++ "\n" ++ cmds st
+compileProgram p = forwards st ++ "\n" ++ refs st ++ "\n" ++ (concat $ tasksDone st)
   where
-    (_, st) = runState (compileTask p "haskinoMain") 
-                       (CompileState 0 0 0 "" "" "" [] [] [])
+    (_, st) = runState compileTasks  
+                (CompileState 0 0 0 "" "" "" "" [] [] [(p, "haskinoMain")] [])
+
+compileTasks :: State CompileState ()
+compileTasks = do
+    s <- get
+    let tasks = tasksToDo s
+    if null tasks 
+    then return ()
+    else do
+        put s {tasksToDo = tail tasks}
+        compileTask (fst $ head tasks) (snd $ head tasks)
+        compileTasks
 
 compileTask :: Arduino () -> String -> State CompileState ()
 compileTask t name = do
+    s <- get
+    put s {level = 0, ib = 0, cmds = "", binds = "", cmdList = [], bindList = []}
     compileLine $ "void " ++ name ++ "()"
+    compileForward $ "void " ++ name ++ "();"
     compileCodeBlock t 
+    s <- get
+    put s {tasksDone = cmds s : tasksDone s}
     return ()
 
 compileLine :: String -> State CompileState ()
@@ -160,6 +153,12 @@ compileAllocRef :: String -> State CompileState ()
 compileAllocRef s = do
     st <- get 
     put st { refs = refs st ++ s ++ "\n"}
+    return ()
+
+compileForward :: String -> State CompileState ()
+compileForward s = do
+    st <- get 
+    put st { forwards = forwards st ++ s ++ "\n"}
     return ()
 
 compileNoExprCommand :: String -> State CompileState ()
@@ -204,6 +203,18 @@ compileCommand (I2CWrite sa w8s) = compile2ExprCommand "i2cWrite" sa w8s -- ToDo
 compileCommand I2CConfig = compileNoExprCommand "i2cConfig" -- ToDo: runtime
 compileCommand (StepperSetSpeedE st sp) = 
     compile2ExprCommand "stepperSetSpeed" st sp -- ToDo: runtime
+compileCommand (ServoDetachE sv) = 
+    compile1ExprCommand "servoDetach" sv -- ToDo: runtime
+compileCommand (ServoWriteE sv w) = 
+    compile2ExprCommand "servoWrite" sv w -- ToDo: runtime
+compileCommand (ServoWriteMicrosE sv w) = 
+    compile2ExprCommand "servoWriteMicros" sv w -- ToDo: runtime
+compileCommand (DeleteTaskE tid) = 
+    compile1ExprCommand "deleteTask" tid -- ToDo: runtime
+compileCommand (CreateTaskE tid m) = do
+    let taskName = "task" ++ show tid
+    s <- get
+    put s {tasksToDo = (m, taskName) : (tasksToDo s)}
 compileCommand (WriteRemoteRefB (RemoteRefB i) e) = compileWriteRef i e
 compileCommand (WriteRemoteRefW8 (RemoteRefW8 i) e) = compileWriteRef i e
 compileCommand (WriteRemoteRefW16 (RemoteRefW16 i) e) = compileWriteRef i e
