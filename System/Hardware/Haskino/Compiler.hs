@@ -80,9 +80,15 @@ packageCommand (ForInE ws f) ix ib =
     (pc, ix', _) = packageCodeBlock (f (RemBindW8 ib)) ix (ib+1)
 -}
 
+myTask :: Arduino ()
+myTask = do
+    digitalWriteE 2 true
+    digitalWriteE 3 false
+
 myTest :: Arduino ()
 myTest =  do
   r <- newRemoteRefB true
+  createTaskE 1 myTask
   a <- millisE
   loopE $ do
     setPinModeE 2 INPUT 
@@ -116,7 +122,8 @@ compileTask t name = do
     put s {level = 0, ib = 0, cmds = "", binds = "", cmdList = [], bindList = []}
     compileLine $ "void " ++ name ++ "()"
     compileForward $ "void " ++ name ++ "();"
-    compileCodeBlock t 
+    compileCodeBlock t
+    compileLine "" 
     s <- get
     put s {tasksDone = cmds s : tasksDone s}
     return ()
@@ -195,7 +202,7 @@ compileCommand (ServoWriteMicrosE sv w) =
     compile2ExprCommand "servoWriteMicros" sv w -- ToDo: runtime
 compileCommand (DeleteTaskE tid) = 
     compile1ExprCommand "deleteTask" tid -- ToDo: runtime
-compileCommand (CreateTaskE tid m) = do
+compileCommand (CreateTaskE (LitW8 tid) m) = do
     let taskName = "task" ++ show tid
     s <- get
     put s {tasksToDo = (m, taskName) : (tasksToDo s)}
@@ -295,11 +302,21 @@ compile2ExprProcedure t p e1 e2 = do
     return b
 
 compile3ExprProcedure :: CompileType -> String -> 
-                         Expr a -> Expr a  -> Expr a -> State CompileState Int
+                         Expr a -> Expr b  -> Expr c -> State CompileState Int
 compile3ExprProcedure t p e1 e2 e3 = do
     b <- compileSimpleProcedure t (p ++ "(" ++ compileExpr e1 ++ "," ++
                                                compileExpr e2 ++ "," ++ 
                                                compileExpr e3 ++ ")")
+    return b
+
+compile5ExprProcedure :: CompileType -> String -> Expr a -> Expr b ->  
+                         Expr c -> Expr d  -> Expr e -> State CompileState Int
+compile5ExprProcedure t p e1 e2 e3 e4 e5 = do
+    b <- compileSimpleProcedure t (p ++ "(" ++ compileExpr e1 ++ "," ++
+                                               compileExpr e2 ++ "," ++ 
+                                               compileExpr e3 ++ "," ++ 
+                                               compileExpr e4 ++ "," ++ 
+                                               compileExpr e5 ++ ")")
     return b
 
 compileNewRef :: CompileType -> Expr a -> State CompileState Int
@@ -343,19 +360,38 @@ compileProcedure (DelayMicrosE ms) = do
     compile1ExprCommand "delayMicroseconds" ms
     return ()
 compileProcedure (DigitalReadE p) = do
-    b <- compile1ExprProcedure BoolType "digitalRead"
+    b <- compile1ExprProcedure BoolType "digitalRead" p
     return $ remBind b
-compileProcedure (DigitalPortReadE p) = do
-    b <- compile1ExprProcedure Word8Type "digitalPortRead" -- ToDo: runtime
+compileProcedure (DigitalPortReadE p m) = do
+    b <- compile2ExprProcedure Word8Type "digitalPortRead" p m -- ToDo: runtime
     return $ remBind b
 compileProcedure (AnalogReadE p) = do
-    b <- compile1ExprProcedure Word16Type "analogRead"
+    b <- compile1ExprProcedure Word16Type "analogRead" p
     return $ remBind b
-
-
-
-
-
+compileProcedure (I2CReadE p n) = do
+    b <- compile2ExprProcedure List8Type "i2cRead" p n -- ToDo: runtime
+    return $ remBind b
+compileProcedure (Stepper2PinE s p1 p2) = do
+    b <- compile3ExprProcedure Word8Type "stepper2Pin" s p1 p2 -- ToDo: runtime
+    return $ remBind b
+compileProcedure (Stepper4PinE s p1 p2 p3 p4) = do
+    b <- compile5ExprProcedure Word8Type "stepper4Pin" s p1 p2 p3 p4 -- ToDo: runtime
+    return $ remBind b
+compileProcedure (StepperStepE st s) = do
+    compile2ExprCommand "stepperStep" st s
+    return ()
+compileProcedure (ServoAttachE p) = do
+    b <- compile1ExprProcedure Word8Type "servoAttach" p -- ToDo: runtime
+    return $ remBind b
+compileProcedure (ServoAttachMinMaxE p min max) = do
+    b <- compile3ExprProcedure Word8Type "servoAttachMixMax" p min max -- ToDo: runtime
+    return $ remBind b
+compileProcedure (ServoReadE sv) = do
+    b <- compile1ExprProcedure Word16Type "servoRead" sv -- ToDo: runtime
+    return $ remBind b
+compileProcedure (ServoReadMicrosE sv) = do
+    b <- compile1ExprProcedure Word16Type "servoReadMicros" sv -- ToDo: runtime
+    return $ remBind b
 compileProcedure (NewRemoteRefB e) = do
     x <- compileNewRef BoolType e
     return $ RemoteRefB x
@@ -457,14 +493,6 @@ compileCodeBlock (Arduino commands) ix ib = (cmds', ix', ib')
       (_, cmds', ix', ib') = compileMonad commands ix ib ""
 
       packProcedure :: ArduinoProcedure a -> Int -> Int -> B.ByteString -> (a, B.ByteString, Int, Int)
-      packProcedure (I2CReadE p n) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (I2CReadE p n) ib)), ix, ib+1)
-      packProcedure (Stepper2PinE s p1 p2) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (Stepper2PinE s p1 p2) ib)), ix, ib+1)
-      packProcedure (Stepper4PinE s p1 p2 p3 p4) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (Stepper4PinE s p1 p2 p3 p4) ib)), ix, ib+1)
-      packProcedure (StepperStepE st s) ix ib cmds = ((), B.append cmds (lenPackage (packageProcedure (StepperStepE st s) ib)), ix, ib+1)
-      packProcedure (ServoAttachE p) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ServoAttachE p) ib)), ix, ib+1)
-      packProcedure (ServoAttachMinMaxE p min max) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ServoAttachMinMaxE p min max) ib)), ix, ib+1)
-      packProcedure (ServoReadE sv) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ServoReadE sv) ib)), ix, ib+1)
-      packProcedure (ServoReadMicrosE sv) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ServoReadMicrosE sv) ib)), ix, ib+1)
       packProcedure QueryAllTasksE ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure QueryAllTasksE ib)), ix, ib+1)
       packProcedure (QueryTaskE t) ix ib cmds = (Nothing, B.append cmds (lenPackage (packageProcedure (QueryTaskE t) ib)), ix, ib+1)
       packProcedure (BootTaskE tids) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (BootTaskE tids) ib)), ix, ib+1) 
