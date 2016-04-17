@@ -25,8 +25,8 @@ import System.Hardware.Haskino.Data
 import System.Hardware.Haskino.Expr
 import System.Hardware.Haskino.Utils
 
--- type CompileState = (Int, Int, String)
-data CompileState = CompileState { ix :: Int  
+data CompileState = CompileState {level :: Int 
+                     , ix :: Int  
                      , ib :: Int  
                      , cmds :: String
                      , binds :: String
@@ -63,6 +63,13 @@ refName = "ref"
 
 bindName :: String
 bindName = "bind"
+
+indentString :: String
+indentString = "  "
+
+indent :: Int -> String
+indent 0 = ""
+indent i = indentString ++ (indent $ i-1)
 
 {-
 packageCommand (ServoDetachE sv) ix _ = 
@@ -106,66 +113,10 @@ packageCommand (CreateTaskE tid m) ix _ =
     addToTask tds' = framePackage $ buildCommand SCHED_CMD_ADD_TO_TASK ((packageExpr tid) ++ 
                                                                           (packageExpr (LitW8 (fromIntegral (B.length tds')))) ++ 
                                                                           (B.unpack tds'))
-packageCommand (WhileRemoteRefB (RemoteRefB i) bf uf cb) ix ib =
-    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (RefB i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
-  where
-    (pc, ix', _) = packageCodeBlock cb ix ib
-    ufe = packageExpr (uf (RefB i))
-packageCommand (WhileRemoteRefW8 (RemoteRefW8 i) bf uf cb) ix ib =
-    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (RefW8 i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
-  where
-    (pc, ix', _) = packageCodeBlock cb ix ib
-    ufe = packageExpr (uf (RefW8 i))
-packageCommand (WhileRemoteRefW16 (RemoteRefW16 i) bf uf cb) ix ib =
-    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (RefW16 i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
-  where
-    (pc, ix', _) = packageCodeBlock cb ix ib
-    ufe = packageExpr (uf (RefW16 i))
-packageCommand (WhileRemoteRefW32 (RemoteRefW32 i) bf uf cb) ix ib =
-    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (RefW32 i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
-  where
-    (pc, ix', _) = packageCodeBlock cb ix ib
-    ufe = packageExpr (uf (RefW32 i))
-packageCommand (WhileRemoteRefI8 (RemoteRefI8 i) bf uf cb) ix ib =
-    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (RefI8 i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
-  where
-    (pc, ix', _) = packageCodeBlock cb ix ib
-    ufe = packageExpr (uf (RefI8 i))
-packageCommand (WhileRemoteRefI16 (RemoteRefI16 i) bf uf cb) ix ib =
-    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (RefI16 i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
-  where
-    (pc, ix', _) = packageCodeBlock cb ix ib
-    ufe = packageExpr (uf (RefI16 i))
-packageCommand (WhileRemoteRefI32 (RemoteRefI32 i) bf uf cb) ix ib =
-    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (RefI32 i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
-  where
-    (pc, ix', _) = packageCodeBlock cb ix ib
-    ufe = packageExpr (uf (RefI32 i))
-packageCommand (WhileRemoteRefFloat (RemoteRefFloat i) bf uf cb) ix ib =
-    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (RefFloat i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
-  where
-    (pc, ix', _) = packageCodeBlock cb ix ib
-    ufe = packageExpr (uf (RefFloat i))
-packageCommand (WhileRemoteRefL8 (RemoteRefL8 i) bf uf cb) ix ib =
-    (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (RefList8 i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
-  where
-    (pc, ix', _) = packageCodeBlock cb ix ib
-    ufe = packageExpr (uf (RefList8 i))
-packageCommand (LoopE cb) ix ib =
-    (buildCommand BC_CMD_LOOP (B.unpack pc), ix')
-  where
-    (pc, ix', _) = packageCodeBlock cb ix ib
 packageCommand (ForInE ws f) ix ib =
     (buildCommand BC_CMD_FORIN ((packageExpr ws) ++ (packageExpr (RemBindW8 ib)) ++ (B.unpack pc)), ix')
   where
     (pc, ix', _) = packageCodeBlock (f (RemBindW8 ib)) ix (ib+1)
-packageCommand (IfThenElse e cb1 cb2) ix ib =
-    (buildCommand BC_CMD_IF_THEN_ELSE (thenSize ++ pe ++ (B.unpack pc1) ++ (B.unpack pc2)), ix'')
-  where
-    pe = packageExpr e
-    (pc1, ix', _) = packageCodeBlock cb1 ix ib
-    (pc2, ix'', _) = packageCodeBlock cb2 ix' ib
-    thenSize = word16ToBytes $ fromIntegral (B.length pc1)
 -}
 
 myTest :: Arduino ()
@@ -185,7 +136,7 @@ compileProgram :: Arduino () -> String
 compileProgram p = refs st ++ "\n" ++ cmds st
   where
     (_, st) = runState (compileTask p "haskinoMain") 
-                       (CompileState 0 0 "" "" "" [] [] [])
+                       (CompileState 0 0 0 "" "" "" [] [] [])
 
 compileTask :: Arduino () -> String -> State CompileState ()
 compileTask t name = do
@@ -196,13 +147,13 @@ compileTask t name = do
 compileLine :: String -> State CompileState ()
 compileLine s = do
     st <- get 
-    put st { cmds = cmds st ++ s ++ "\n"}
+    put st { cmds = cmds st ++ (indent $ level st) ++ s ++ "\n"}
     return ()
 
 compileAllocBind :: String -> State CompileState ()
 compileAllocBind s = do
     st <- get 
-    put st { binds = binds st ++ s ++ "\n"}
+    put st { binds = binds st ++ (indent $ level st) ++  s ++ "\n"}
     return ()
 
 compileAllocRef :: String -> State CompileState ()
@@ -426,14 +377,16 @@ compileCodeBlock (Arduino commands) = do
     put s {bindList = (binds s) : (bindList s),
            cmdList = (cmds s) : (cmdList s),
            binds = "",
-           cmds = "" }
+           cmds = "",
+           level = level s + 1 }
     r <- compileMonad commands
     s <- get
     put s {bindList = tail $ bindList s,
            cmdList = tail $ cmdList s,
            binds = head $ bindList s,
-           cmds = (head $ cmdList s) ++ "{\n" ++ binds s ++ "\n" ++ cmds s ++ "}\n"
-           }
+           cmds = (head $ cmdList s) ++ (indent $ level s) ++ "{\n" ++ 
+                  binds s ++ "\n" ++ cmds s ++ (indent $ level s) ++ "}\n",
+           level = level s - 1 }
     return r
   where 
       compileMonad :: RemoteMonad ArduinoCommand ArduinoProcedure a -> 
