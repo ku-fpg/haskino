@@ -106,42 +106,6 @@ packageCommand (CreateTaskE tid m) ix _ =
     addToTask tds' = framePackage $ buildCommand SCHED_CMD_ADD_TO_TASK ((packageExpr tid) ++ 
                                                                           (packageExpr (LitW8 (fromIntegral (B.length tds')))) ++ 
                                                                           (B.unpack tds'))
-packageCommand (WriteRemoteRefB (RemoteRefB i) e) ix _ =
-    (buildCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_BOOL, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e), ix)
-packageCommand (WriteRemoteRefW8 (RemoteRefW8 i) e) ix _ =
-    (buildCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD8, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e), ix)
-packageCommand (WriteRemoteRefW16 (RemoteRefW16 i) e) ix _ =
-    (buildCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD16, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e), ix)
-packageCommand (WriteRemoteRefW32 (RemoteRefW32 i) e) ix _ =
-    (buildCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD32, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e), ix)
-packageCommand (WriteRemoteRefI8 (RemoteRefI8 i) e) ix _ =
-    (buildCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT8, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e), ix)
-packageCommand (WriteRemoteRefI16 (RemoteRefI16 i) e) ix _ =
-    (buildCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT16, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e), ix)
-packageCommand (WriteRemoteRefI32 (RemoteRefI32 i) e) ix _ =
-    (buildCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT32, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e), ix)
-packageCommand (WriteRemoteRefL8 (RemoteRefL8 i) e) ix _ =
-    (buildCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_LIST8, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e), ix)
-packageCommand (WriteRemoteRefFloat (RemoteRefFloat i) e) ix _ =
-    (buildCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_FLOAT, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e), ix)
-packageCommand (ModifyRemoteRefB (RemoteRefB i) f) ix _ =
-    (buildCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_BOOL, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefB i))), ix)
-packageCommand (ModifyRemoteRefW8 (RemoteRefW8 i) f) ix _ =
-    (buildCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD8, exprCmdVal EXPR_WORD8 EXPR_LIT,fromIntegral i] ++ packageExpr (f (RefW8 i))), ix)
-packageCommand (ModifyRemoteRefW16 (RemoteRefW16 i) f) ix _ =
-    (buildCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD16, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefW16 i))), ix)
-packageCommand (ModifyRemoteRefW32 (RemoteRefW32 i) f) ix _ =
-    (buildCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD32, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefW32 i))), ix)
-packageCommand (ModifyRemoteRefI8 (RemoteRefI8 i) f) ix _ =
-    (buildCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT8, exprCmdVal EXPR_WORD8 EXPR_LIT,fromIntegral i] ++ packageExpr (f (RefI8 i))), ix)
-packageCommand (ModifyRemoteRefI16 (RemoteRefI16 i) f) ix _ =
-    (buildCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT16, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefI16 i))), ix)
-packageCommand (ModifyRemoteRefI32 (RemoteRefI32 i) f) ix _ =
-    (buildCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT32, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefI32 i))), ix)
-packageCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) ix _ =
-    (buildCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_LIST8, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefList8 i))), ix)
-packageCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) ix _ =
-    (buildCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_FLOAT, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefFloat i))), ix)
 packageCommand (WhileRemoteRefB (RemoteRefB i) bf uf cb) ix ib =
     (buildCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (RefB i)) ++ [fromIntegral $ length ufe] ++ ufe ++ (B.unpack pc)), ix')
   where
@@ -266,6 +230,9 @@ compile3ExprCommand s e1 e2 e3 =
                                       compileExpr e2 ++ "," ++ 
                                       compileExpr e3 ++ ")")
 
+compileWriteRef :: Int -> Expr a -> State CompileState ()
+compileWriteRef ix e = compileLine $ refName ++ show ix ++ " = " ++ compileExpr e
+
 compileCommand :: ArduinoCommand -> State CompileState ()
 compileCommand SystemReset = return ()
 compileCommand (SetPinModeE p m) = compile2ExprCommand "pinMode" p m
@@ -280,6 +247,25 @@ compileCommand (I2CWrite sa w8s) = compile2ExprCommand "i2cWrite" sa w8s -- ToDo
 compileCommand I2CConfig = compileNoExprCommand "i2cConfig" -- ToDo: runtime
 compileCommand (StepperSetSpeedE st sp) = 
     compile2ExprCommand "stepperSetSpeed" st sp -- ToDo: runtime
+compileCommand (WriteRemoteRefB (RemoteRefB i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefW8 (RemoteRefW8 i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefW16 (RemoteRefW16 i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefW32 (RemoteRefW32 i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefI8 (RemoteRefI8 i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefI16 (RemoteRefI16 i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefI32 (RemoteRefI32 i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefL8 (RemoteRefL8 i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefFloat (RemoteRefFloat i) e) = compileWriteRef i e
+compileCommand (ModifyRemoteRefB (RemoteRefB i) f) = compileWriteRef i (f (RefB i))
+compileCommand (ModifyRemoteRefW8 (RemoteRefW8 i) f) = compileWriteRef i (f (RefW8 i))
+compileCommand (ModifyRemoteRefW16 (RemoteRefW16 i) f) = compileWriteRef i (f (RefW16 i))
+compileCommand (ModifyRemoteRefW32 (RemoteRefW32 i) f) = compileWriteRef i (f (RefW32 i))
+compileCommand (ModifyRemoteRefI8 (RemoteRefI8 i) f) = compileWriteRef i (f (RefI8 i))
+compileCommand (ModifyRemoteRefI16 (RemoteRefI16 i) f) = compileWriteRef i (f (RefI16 i))
+compileCommand (ModifyRemoteRefI32 (RemoteRefI32 i) f) = compileWriteRef i (f (RefI32 i))
+compileCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) = compileWriteRef i (f (RefList8 i))
+compileCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) = compileWriteRef i (f (RefFloat i))
+
 compileCommand (LoopE cb) = do
     compileLine "while (1)"
     compileCodeBlock cb
@@ -488,24 +474,6 @@ compileCodeBlock (Arduino commands) ix ib = (cmds', ix', ib')
       packProcedure (QueryTask t) ix ib cmds = (Nothing, B.append cmds (lenPackage (packageProcedure (QueryTask t) ib)), ix, ib)
       packProcedure (QueryTaskE t) ix ib cmds = (Nothing, B.append cmds (lenPackage (packageProcedure (QueryTaskE t) ib)), ix, ib+1)
       packProcedure (BootTaskE tids) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (BootTaskE tids) ib)), ix, ib+1) 
-      packProcedure (ReadRemoteRefB (RemoteRefB i)) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ReadRemoteRefB (RemoteRefB i)) ib)), ix, ib+1)
-      packProcedure (ReadRemoteRefW8 (RemoteRefW8 i)) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ReadRemoteRefW8 (RemoteRefW8 i)) ib)), ix, ib+1)
-      packProcedure (ReadRemoteRefW16 (RemoteRefW16 i)) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ReadRemoteRefW16 (RemoteRefW16 i)) ib)), ix, ib+1)
-      packProcedure (ReadRemoteRefW32 (RemoteRefW32 i)) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ReadRemoteRefW32 (RemoteRefW32 i)) ib)), ix, ib+1)
-      packProcedure (ReadRemoteRefI8 (RemoteRefI8 i)) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ReadRemoteRefI8 (RemoteRefI8 i)) ib)), ix, ib+1)
-      packProcedure (ReadRemoteRefI16 (RemoteRefI16 i)) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ReadRemoteRefI16 (RemoteRefI16 i)) ib)), ix, ib+1)
-      packProcedure (ReadRemoteRefI32 (RemoteRefI32 i)) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ReadRemoteRefI32 (RemoteRefI32 i)) ib)), ix, ib+1)
-      packProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) ib)), ix, ib+1)
-      packProcedure (ReadRemoteRefFloat (RemoteRefFloat i)) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ReadRemoteRefFloat (RemoteRefFloat i)) ib)), ix, ib+1)
-      packProcedure (NewRemoteRefB e) ix ib cmds = (RemoteRefB ix, B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefB e) ix ib)), ix+1, ib+1)
-      packProcedure (NewRemoteRefW8 e) ix ib cmds = (RemoteRefW8 ix, B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefW8 e) ix ib)), ix+1, ib+1)
-      packProcedure (NewRemoteRefW16 e) ix ib cmds = (RemoteRefW16 ix, B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefW16 e) ix ib)), ix+1, ib+1)
-      packProcedure (NewRemoteRefW32 e) ix ib cmds = (RemoteRefW32 ix, B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefW32 e) ix ib)), ix+1, ib+1)
-      packProcedure (NewRemoteRefI8 e) ix ib cmds = (RemoteRefI8 ix, B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefI8 e) ix ib)), ix+1, ib+1)
-      packProcedure (NewRemoteRefI16 e) ix ib cmds = (RemoteRefI16 ix, B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefI16 e) ix ib)), ix+1, ib+1)
-      packProcedure (NewRemoteRefI32 e) ix ib cmds = (RemoteRefI32 ix, B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefI32 e) ix ib)), ix+1, ib+1)
-      packProcedure (NewRemoteRefL8 e) ix ib cmds = (RemoteRefL8 ix, B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefL8 e) ix ib)), ix+1, ib+1)
-      packProcedure (NewRemoteRefFloat e) ix ib cmds = (RemoteRefFloat ix, B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefFloat e) ix ib)), ix+1, ib+1)
       packProcedure (DebugE s) ix ib cmds = ((), B.append cmds (lenPackage (packageProcedure (DebugE s) ib)), ix, ib+1) 
       -- For sending as part of a Scheduler task, debug and die make no sense.  
       -- Instead of signalling an error, at this point they are just ignored.
@@ -553,28 +521,8 @@ packageProcedure (DelayMillisE ms) ib = buildCommand BC_CMD_DELAY_MILLIS ((fromI
 packageProcedure (DelayMicros ms) ib  = buildCommand BC_CMD_DELAY_MICROS ((fromIntegral ib) : (packageExpr $ lit ms))
 packageProcedure (DelayMicrosE ms) ib = buildCommand BC_CMD_DELAY_MICROS ((fromIntegral ib) : (packageExpr ms))
 packageProcedure (BootTaskE tids) ib = buildCommand SCHED_CMD_BOOT_TASK ((fromIntegral ib) : (packageExpr tids))
-packageProcedure (ReadRemoteRefB (RemoteRefB i)) ib = buildCommand REF_CMD_READ [fromIntegral $ fromEnum REF_BOOL, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
-packageProcedure (ReadRemoteRefW8 (RemoteRefW8 i)) ib = buildCommand REF_CMD_READ [fromIntegral $ fromEnum REF_WORD8, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
-packageProcedure (ReadRemoteRefW16 (RemoteRefW16 i)) ib = buildCommand REF_CMD_READ [fromIntegral $ fromEnum REF_WORD16, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
-packageProcedure (ReadRemoteRefW32 (RemoteRefW32 i)) ib = buildCommand REF_CMD_READ [fromIntegral $ fromEnum REF_WORD32, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
-packageProcedure (ReadRemoteRefI8 (RemoteRefI8 i)) ib = buildCommand REF_CMD_READ [fromIntegral $ fromEnum REF_INT8, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
-packageProcedure (ReadRemoteRefI16 (RemoteRefI16 i)) ib = buildCommand REF_CMD_READ [fromIntegral $ fromEnum REF_INT16, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
-packageProcedure (ReadRemoteRefI32 (RemoteRefI32 i)) ib = buildCommand REF_CMD_READ [fromIntegral $ fromEnum REF_INT32, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
-packageProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) ib = buildCommand REF_CMD_READ [fromIntegral $ fromEnum REF_LIST8, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
-packageProcedure (ReadRemoteRefFloat (RemoteRefFloat i)) ib = buildCommand REF_CMD_READ [fromIntegral $ fromEnum REF_FLOAT, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
 packageProcedure (DebugE s) ib = buildCommand BS_CMD_DEBUG ((fromIntegral ib) : (packageExpr s))
 packageProcedure DebugListen ib = B.empty
-
-packageRemoteBinding :: ArduinoProcedure a -> Int -> Int -> B.ByteString
-packageRemoteBinding (NewRemoteRefB e)  ix ib = buildCommand REF_CMD_NEW ([fromIntegral $ fromEnum REF_BOOL, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
-packageRemoteBinding (NewRemoteRefW8 e)  ix ib = buildCommand REF_CMD_NEW ([fromIntegral $ fromEnum REF_WORD8, fromIntegral ib, fromIntegral ix] ++(packageExpr e))
-packageRemoteBinding (NewRemoteRefW16 e) ix ib = buildCommand REF_CMD_NEW ([fromIntegral $ fromEnum REF_WORD16, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
-packageRemoteBinding (NewRemoteRefW32 e) ix ib = buildCommand REF_CMD_NEW ([fromIntegral $ fromEnum REF_WORD32, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
-packageRemoteBinding (NewRemoteRefI8 e)  ix ib = buildCommand REF_CMD_NEW ([fromIntegral $ fromEnum REF_INT8, fromIntegral ib, fromIntegral ix] ++(packageExpr e))
-packageRemoteBinding (NewRemoteRefI16 e) ix ib = buildCommand REF_CMD_NEW ([fromIntegral $ fromEnum REF_INT16, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
-packageRemoteBinding (NewRemoteRefI32 e) ix ib = buildCommand REF_CMD_NEW ([fromIntegral $ fromEnum REF_INT32, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
-packageRemoteBinding (NewRemoteRefL8 e) ix ib = buildCommand REF_CMD_NEW ([fromIntegral $ fromEnum REF_LIST8, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
-packageRemoteBinding (NewRemoteRefFloat e) ix ib = buildCommand REF_CMD_NEW ([fromIntegral $ fromEnum REF_FLOAT, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
 -}
 
 compileSubExpr :: String -> Expr a -> String
