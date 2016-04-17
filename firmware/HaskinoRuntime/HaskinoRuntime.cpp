@@ -49,7 +49,7 @@ byte *showWord32(uint32_t w)
     listMem = (byte *) malloc(2+10+1);
     if (listMem)
         {
-        listMem[1] = sprintf((char *) &listMem[1],"%u",w);
+        listMem[1] = sprintf((char *) &listMem[1],"%lu",w);
         }
     return listMem;
     }
@@ -85,12 +85,12 @@ byte *showInt32(int32_t i)
     listMem = (byte *) malloc(2+11+1);
     if (listMem)
         {
-        listMem[1] = sprintf((char *) &listMem[1],"%d",i);
+        listMem[1] = sprintf((char *) &listMem[1],"%ld",i);
         }
     return listMem;
     }
 
-byte *showFloat(byte *f, uint16_t w)
+byte *showFloat(float f, uint16_t w)
     {
     byte *listMem;
 
@@ -108,12 +108,12 @@ byte *showFloat(byte *f, uint16_t w)
 
 bool list8Less(byte *l)
     {
-
+    return false;  // ToDo: Fill in
     }
 
 bool list8Equal(byte *l)
     {
-
+    return false;  // ToDo: Fill in
     }
 
 uint8_t list8Elem(uint8_t *l, uint8_t e)
@@ -131,12 +131,12 @@ uint8_t list8Len(uint8_t *l)
 
 uint8_t *list8Cons(uint8_t w, uint8_t *l)
     {
-
+    return NULL;  // ToDo: Fill in
     }
 
 uint8_t *list8Apnd(uint8_t *l1, uint8_t *l2)
     {
-
+    return NULL;  // ToDo: Fill in
     }
 
 // Bit functions
@@ -333,9 +333,9 @@ float signF(float f)
     {
     float val;
 
-    if (w < 0.0)
+    if (f < 0.0)
         val = -1.0;
-    else if (w == 0.0)
+    else if (f == 0.0)
         val = 0.0;
     else
         val = 1.0;

@@ -1,19 +1,6 @@
 #ifndef HaskinoRuntimeH
 #define HaskinoRuntimeH
 
-typedef union ref_t
-    {
-    bool      boolVal;
-    uint8_t   word8Val;
-    uint16_t  word16Val;
-    uint32_t  word32Val;
-    int8_t    int8Val;
-    int16_t   int16Val;
-    int32_t   int32Val;
-    byte      *list8Val;
-    float     floatVal;
-    };
-
 // Show routines
 
 byte *showBool(bool b);
@@ -43,17 +30,17 @@ bool testBI8(int8_t w, uint8_t b);
 bool testBI16(int16_t w, uint8_t b);
 bool testBI32(int32_t w, uint8_t b);
 uint8_t setBW8(uint8_t w, uint8_t b);
-uint16_t setBW8(uint16_t w, uint8_t b);
-uint32_t setBW8(uint32_t w, uint8_t b);
-uint8_t setBI8(int8_t w, uint8_t b);
-uint16_t setBI8(int16_t w, uint8_t b);
-uint32_t setBI8(int32_t w, uint8_t b);
+uint16_t setBW16(uint16_t w, uint8_t b);
+uint32_t setBW32(uint32_t w, uint8_t b);
+int8_t setBI8(int8_t w, uint8_t b);
+int16_t setBI16(int16_t w, uint8_t b);
+int32_t setBI32(int32_t w, uint8_t b);
 uint8_t clrBW8(uint8_t w, uint8_t b);
-uint16_t clrBW8(uint16_t w, uint8_t b);
-uint32_t clrBW8(uint32_t w, uint8_t b);
-uint8_t clrBI8(int8_t w, uint8_t b);
-uint16_t clrBI8(int16_t w, uint8_t b);
-uint32_t clrBI8(int32_t w, uint8_t b);
+uint16_t clrBW16(uint16_t w, uint8_t b);
+uint32_t clrBW32(uint32_t w, uint8_t b);
+int8_t clrBI8(int8_t w, uint8_t b);
+int16_t clrBI16(int16_t w, uint8_t b);
+int32_t clrBI32(int32_t w, uint8_t b);
 
 // Sign functions
 int8_t sign8(int8_t w);
