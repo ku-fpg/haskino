@@ -73,22 +73,6 @@ indent :: Int -> String
 indent k = concat $ replicate k indentString
 
 {-
-packageCommand (ScheduleTaskE tid tt) ix _ =
-    (buildCommand SCHED_CMD_SCHED_TASK (packageExpr tid ++ packageExpr tt), ix)
-packageCommand ScheduleReset ix _ =
-    (buildCommand SCHED_CMD_RESET [], ix)
-packageCommand (AttachIntE p t m) ix _ =
-    (buildCommand SCHED_CMD_ATTACH_INT (packageExpr p ++ packageExpr t ++ packageExpr m), ix)
-packageCommand (DetachIntE p) ix _ =
-    (buildCommand SCHED_CMD_DETACH_INT (packageExpr p), ix)
-packageCommand (Interrupts) ix _ =
-    (buildCommand SCHED_CMD_INTERRUPTS [], ix)
-packageCommand (NoInterrupts) ix _ =
-    (buildCommand SCHED_CMD_NOINTERRUPTS [], ix)
-packageCommand (GiveSemE id) ix _ =
-    (buildCommand SCHED_CMD_GIVE_SEM (packageExpr id), ix)
-packageCommand (TakeSemE id) ix _ =
-    (buildCommand SCHED_CMD_TAKE_SEM (packageExpr id), ix)
                                                                           (B.unpack tds'))
 packageCommand (ForInE ws f) ix ib =
     (buildCommand BC_CMD_FORIN ((packageExpr ws) ++ (packageExpr (RemBindW8 ib)) ++ (B.unpack pc)), ix')
@@ -215,6 +199,22 @@ compileCommand (CreateTaskE tid m) = do
     let taskName = "task" ++ show tid
     s <- get
     put s {tasksToDo = (m, taskName) : (tasksToDo s)}
+compileCommand (ScheduleTaskE tid tt) = 
+    compile2ExprCommand "scheduleTask" tid tt -- ToDo: runtime
+compileCommand ScheduleReset = 
+    compileNoExprCommand "scheduleReset" -- ToDo: runtime
+compileCommand (AttachIntE p t m) = 
+    compile3ExprCommand "attachInt" p t m -- ToDo: runtime + task name
+compileCommand (DetachIntE p) = 
+    compile1ExprCommand "detachInt" p -- ToDo: runtime
+compileCommand Interrupts = 
+    compileNoExprCommand "interrupts"
+compileCommand NoInterrupts = 
+    compileNoExprCommand "noInterrupts"
+compileCommand (GiveSemE id) = 
+    compile1ExprCommand "giveSem" id -- ToDo: runtime
+compileCommand (TakeSemE id) = 
+    compile1ExprCommand "takeSem" id -- ToDo: runtime
 compileCommand (WriteRemoteRefB (RemoteRefB i) e) = compileWriteRef i e
 compileCommand (WriteRemoteRefW8 (RemoteRefW8 i) e) = compileWriteRef i e
 compileCommand (WriteRemoteRefW16 (RemoteRefW16 i) e) = compileWriteRef i e
