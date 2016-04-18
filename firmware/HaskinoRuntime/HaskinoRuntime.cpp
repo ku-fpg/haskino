@@ -4,6 +4,9 @@
 #include <Wire.h>
 #include "HaskinoRuntime.h"
 
+
+static byte *listAlloc(int n);
+
 // Platform Query routines
 
 uint16_t queryFirmware()
@@ -163,7 +166,7 @@ static int nextServo = 0;
 
 uint8_t servoAttach(uint8_t pin)
     {
-    servoAttachMinMax(pin, DEFAULT_SERVO_MIN, DEFAULT_SERVO_MAX);
+    return servoAttachMinMax(pin, DEFAULT_SERVO_MIN, DEFAULT_SERVO_MAX);
     }
     
 uint8_t servoAttachMinMax(uint8_t pin, uint16_t min, uint16_t max)
@@ -269,7 +272,7 @@ byte *showBool(bool b)
     {
     byte *listMem;
 
-    listMem = (byte *) malloc(2+5+1);
+    listMem = listAlloc(5+1);
     if (listMem)
         {
         if (b)
@@ -284,7 +287,7 @@ byte *showWord8(uint8_t w)
     {
     byte *listMem;
 
-    listMem = (byte *) malloc(2+3+1);
+    listMem = listAlloc(3+1);
     if (listMem)
         {
         listMem[1] = sprintf((char *) &listMem[1],"%u",w);
@@ -296,7 +299,7 @@ byte *showWord16(uint16_t w)
     {
     byte *listMem;
 
-    listMem = (byte *) malloc(2+5+1);
+    listMem = listAlloc(5+1);
     if (listMem)
         {
         listMem[1] = sprintf((char *) &listMem[1],"%u",w);
@@ -308,7 +311,7 @@ byte *showWord32(uint32_t w)
     {
     byte *listMem;
 
-    listMem = (byte *) malloc(2+10+1);
+    listMem = listAlloc(10+1);
     if (listMem)
         {
         listMem[1] = sprintf((char *) &listMem[1],"%lu",w);
@@ -320,7 +323,7 @@ byte *showInt8(int8_t i)
     {
     byte *listMem;
 
-    listMem = (byte *) malloc(2+4+1);
+    listMem = listAlloc(4+1);
     if (listMem)
         {
         listMem[1] = sprintf((char *) &listMem[1],"%d",i);
@@ -332,7 +335,7 @@ byte *showInt16(int16_t i)
     {
     byte *listMem;
 
-    listMem = (byte *) malloc(2+6+1);
+    listMem = listAlloc(6+1);
     if (listMem)
         {
         listMem[1] = sprintf((char *) &listMem[1],"%d",i);
@@ -344,7 +347,7 @@ byte *showInt32(int32_t i)
     {
     byte *listMem;
 
-    listMem = (byte *) malloc(2+11+1);
+    listMem = listAlloc(11+1);
     if (listMem)
         {
         listMem[1] = sprintf((char *) &listMem[1],"%ld",i);
@@ -356,7 +359,7 @@ byte *showFloat(float f, uint16_t w)
     {
     byte *listMem;
 
-    listMem = (byte *) malloc(2+11+1+w+1);
+    listMem = listAlloc(11+1+w+1);
     if (listMem)
         {
         dtostrf(f, 4, w, (char *) &listMem[1]);
@@ -368,20 +371,70 @@ byte *showFloat(float f, uint16_t w)
 
 // List functions
 
-bool list8Less(byte *l)
+static byte *listAlloc(int n)
     {
-    return false;  // ToDo: Fill in
+    byte *localMem;
+
+    localMem = (byte *) malloc(2+n);
+    if (localMem)
+        {
+        localMem[0] = 0; // Ref count
+        localMem[1] = 0; // Size
+        }
+
+    return localMem;
     }
 
-bool list8Equal(byte *l)
+bool list8Less(byte *l1, byte *l2)
     {
-    return false;  // ToDo: Fill in
+    bool val;
+    int l1len = l1[1];
+    int l2len = l2[1];
+    int i;
+
+    for (i=0;
+         i < l1len && i < l2len && l1[2+i] == l2[2+i];
+         i++);
+    if (i == l1len && i == l2len)
+        val = false;
+    else if (i == l1len)
+        val = true;
+    else if (i == l2len)
+        val = false;
+    else 
+        val = l1[2+i] < l2[2+i];
+ 
+    return val;
+    }
+
+bool list8Equal(byte *l1, byte *l2)
+    {
+    bool val;
+    int l1len = l1[1];
+    int l2len = l2[1];
+
+    if (l1len != l2len)
+        val = false;
+    else 
+        {
+        val = true;
+        for (int i=0;i<l1len;i++)
+            {
+            if (l1[2+i] != l2[2+i])
+                {
+                val = false;
+                break;
+                }
+            }
+        }
+
+    return val;
     }
 
 uint8_t list8Elem(uint8_t *l, uint8_t e)
     {
-    if (e < l[0])
-        return l[1+e];
+    if (e < l[1])
+        return l[2+e];
     else // ToDo: handle out of bound index
         return 0;
     }

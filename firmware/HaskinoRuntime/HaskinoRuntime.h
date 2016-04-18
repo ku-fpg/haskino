@@ -69,8 +69,8 @@ byte *showFloat(byte *f, uint16_t w);
 
 // List functions
 
-bool list8Less(byte *l);
-bool list8Equal(byte *l);
+bool list8Less(byte *l1, byte *l2);
+bool list8Equal(byte *l1, byte *l2);
 uint8_t list8Elem(uint8_t *l, uint8_t e);
 uint8_t list8Len(uint8_t *l);
 uint8_t *list8Cons(uint8_t w, uint8_t *l);
