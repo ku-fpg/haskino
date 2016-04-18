@@ -1,6 +1,268 @@
 #include <Arduino.h>
+#include <Servo.h>
+#include <Stepper.h>
+#include <Wire.h>
 #include "HaskinoRuntime.h"
 
+// Platform Query routines
+
+uint16_t queryFirmware()
+    {
+    return (FIRMWARE_MAJOR << 8) | FIRMWARE_MINOR;
+    }
+
+uint8_t queryProcessor()
+    {
+    static uint8_t type = 
+#if defined(__AVR_ATmega8__)
+                                ATmega8_TYPE;
+#elif defined(__AVR_ATmega168__)
+                                ATmega168_TYPE;
+#elif defined(__AVR_ATmega328P__)
+                                ATmega328P_TYPE;
+#elif defined(__AVR_ATmega1280__)
+                                ATmega1280_TYPE;
+#elif defined(__AVR_ATmega2560__)
+                                ATmega256_TYPE;
+#elif defined(__AVR_ATmega32U4__)
+                                ATmega32U4_TYPE;
+#elif defined(__AVR_ATmega644P__)
+                                ATmega644P_TYPE;
+#elif defined(__AVR_ATmega644__)
+                                ATmega644_TYPE;
+#elif defined(__AVR_ATmega645__)
+                                ATmega645_TYPE;
+#elif defined(__SAM3X8E__)
+                                SAM3X8E_TYPE;
+#elif defined(ARDUINO_LINUX)
+                                X86_TYPE;
+#elif defined(INTEL_EDISON)
+                                QUARK_TYPE;
+#else
+#error "Please define a new processor type board"
+#endif
+
+    return type;
+    }
+    
+// Digital port routines
+
+static uint8_t bits[8] = {0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80};
+
+void digitalPortWrite(uint8_t pinNo, uint8_t value, uint8_t mask)
+    {
+    for (int i=0;i<8;i++)
+        {
+        if (bits[i] & mask) 
+            {
+            digitalWrite(pinNo+i, (bits[i] & value) == bits[i]);
+            }
+        }
+    }
+    
+uint8_t digitalPortRead(uint8_t pinNo, uint8_t mask)
+    {
+    uint8_t value = 0;
+
+    for (int i=0;i<8;i++)
+        {
+        if ((bits[i] & mask) && digitalRead(pinNo+i))
+            value |= bits[i];
+        }
+
+    return (value);
+    }
+    
+// I2C routines
+
+void i2cWrite(uint8_t sa, uint8_t *w8s)
+    {
+    if (w8s[0] != 0)
+        {
+        Wire.beginTransmission(sa);
+        Wire.write(&w8s[1], w8s[0]);
+        Wire.endTransmission();
+        delayMicroseconds(70);
+        }
+    }
+    
+uint8_t *i2cRead(uint8_t sa, uint8_t byteCount)
+    {
+    byte *localMem, *local;
+    int byteAvail;
+
+    Wire.requestFrom((int) sa, (int) byteCount);
+    byteAvail = Wire.available();
+
+    localMem = (byte *) malloc(byteAvail+2);
+    if (localMem == NULL)
+        return NULL;
+
+    local = &localMem[2];
+
+    localMem[0] = 0; // ToDo: Fix with lists
+    localMem[1] = byteAvail;
+
+    for (int i = 0; i < byteAvail; i++)
+        { 
+        *local++ = Wire.read();
+        }
+
+    return localMem;
+    }
+    
+void i2cConfig()
+    {
+    Wire.begin();
+    delay(10);
+    }
+    
+// Stepper routines
+
+static Stepper *steppers[MAX_FIRM_STEPPERS];
+
+static int nextStepper = 0;
+
+uint8_t stepper2Pin(uint16_t steps, uint8_t p1, uint8_t p2)
+    {
+    Stepper *newStepper;
+    uint8_t stepperIndex;
+
+    newStepper = new Stepper(steps, p1, p2);
+    stepperIndex = nextStepper;
+
+    steppers[nextStepper++] = newStepper;
+    return stepperIndex;
+    }
+    
+uint8_t stepper4Pin(uint16_t steps, uint8_t p1, uint8_t p2, 
+                    uint8_t p3, uint8_t p4)
+    {
+    Stepper *newStepper;
+    uint8_t stepperIndex;
+
+    newStepper = new Stepper(steps, p1, p2, p3, p4);
+    stepperIndex = nextStepper;
+
+    steppers[nextStepper++] = newStepper;
+    return stepperIndex;
+    }
+    
+void stepperSetSpeed(uint8_t st, int32_t sp)
+    {
+    steppers[st]->setSpeed(sp);
+    }
+    
+// Servo routines
+#define DEFAULT_SERVO_MIN 544
+#define DEFAULT_SERVO_MAX 2400
+
+static Servo *servos[MAX_FIRM_SERVOS];
+
+static int nextServo = 0;
+
+uint8_t servoAttach(uint8_t pin)
+    {
+    servoAttachMinMax(pin, DEFAULT_SERVO_MIN, DEFAULT_SERVO_MAX);
+    }
+    
+uint8_t servoAttachMinMax(uint8_t pin, uint16_t min, uint16_t max)
+    {
+    Servo *newServo;
+    uint8_t servoIndex;
+
+    newServo = new Servo();
+    newServo->attach(pin, min, max);
+    servoIndex = nextServo;
+
+    servos[nextServo++] = newServo;
+
+    return servoIndex;
+    }
+    
+void servoDetach(uint8_t sv)
+    {
+    servos[sv]->detach();
+    }
+    
+void servoWrite(uint8_t sv, uint16_t deg)
+    {
+    servos[sv]->write(deg);
+    }
+    
+void servoWriteMicros(uint8_t sv, uint16_t micros)
+    {
+    servos[sv]->writeMicroseconds(micros);
+    }
+    
+uint16_t servoRead(uint8_t sv)
+    {
+    return servos[sv]->read();
+    }
+    
+uint16_t servoReadMicros(uint8_t sv)
+    {
+    return servos[sv]->readMicroseconds();
+    }
+    
+// Scheduling reoutines
+
+void delayMilliseconds(uint32_t ms)
+    {
+    delay(ms); // ToDo: Fix with scheduling
+    }
+    
+void createTask(uint8_t tid, void (*task)())
+    {
+    // ToDo: Fill in with scheduling
+    }
+    
+void deleteTask(uint8_t tid)
+    {
+    // ToDo: Fill in with scheduling
+    }
+    
+void scheduleTask(uint8_t tid, uint32_t tt)
+    {
+    // ToDo: Fill in with scheduling
+    }
+    
+void scheduleReset()
+    {
+    // ToDo: Fill in with scheduling
+    }
+    
+void attachInt(uint8_t p, uint8_t t, uint8_t m)
+    {
+    // ToDo: Fill in with scheduling
+    }
+    
+void detachInt(uint8_t p)
+    {
+    // ToDo: Fill in with scheduling
+    }
+    
+
+// Semphore routines
+
+void giveSem(uint8_t id)
+    {
+    // ToDo: Fill in with scheduling
+    }
+    
+void takeSem(uint8_t id)
+    {
+    // ToDo: Fill in with scheduling
+    }
+    
+// Debug routines
+
+void debug(uint8_t s)
+    {
+    // ToDo: Fill in
+
+    }
+    
 // Show routines
 
 byte *showBool(bool b)

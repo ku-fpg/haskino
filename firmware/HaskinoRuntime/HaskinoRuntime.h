@@ -1,6 +1,61 @@
 #ifndef HaskinoRuntimeH
 #define HaskinoRuntimeH
 
+#include "../HaskinoFirmware/HaskinoFirmware.h"
+#include "../HaskinoFirmware/HaskinoBoardStatus.h"
+#include "../HaskinoFirmware/HaskinoConfig.h"
+
+// Platform Query routines
+
+uint16_t queryFirmware();
+uint8_t queryProcessor();
+
+// Digital port routines
+
+void digitalPortWrite(uint8_t p, uint8_t b, uint8_t m);
+uint8_t digitalPortRead(uint8_t p, uint8_t m);
+
+// I2C routines
+
+void i2cWrite(uint8_t sa, uint8_t *w8s);
+uint8_t *i2cRead(uint8_t sa, uint8_t n);
+void i2cConfig();
+
+// Stepper routines
+
+uint8_t stepper2Pin(uint16_t s, uint8_t p1, uint8_t p2);
+uint8_t stepper4Pin(uint16_t s, uint8_t p1, uint8_t p2, uint8_t p3, uint8_t p4);
+void stepperSetSpeed(uint8_t st, int32_t sp);
+
+// Servo routines
+
+uint8_t servoAttach(uint8_t p);
+uint8_t servoAttachMinMax(uint8_t p, uint16_t min, uint16_t max);
+void servoDetach(uint8_t sv);
+void servoWrite(uint8_t sv, uint16_t deg);
+void servoWriteMicros(uint8_t sv, uint16_t m);
+uint16_t servoRead(uint8_t sv);
+uint16_t servoReadMicros(uint8_t sv);
+
+// Scheduling reoutines
+
+void delayMilliseconds(uint32_t ms);
+void createTask(uint8_t tid, void (*task)());
+void deleteTask(uint8_t tid);
+void scheduleTask(uint8_t tid, uint32_t tt);
+void scheduleReset();
+void attachInt(uint8_t p, uint8_t t, uint8_t m);
+void detachInt(uint8_t p);
+
+// Semphore routines
+
+void giveSem(uint8_t id);
+void takeSem(uint8_t id);
+
+// Debug routines
+
+void debug(uint8_t s);
+
 // Show routines
 
 byte *showBool(bool b);
