@@ -177,7 +177,12 @@ compile3ExprCommand s e1 e2 e3 =
                                       compileExpr e3 ++ ");")
 
 compileWriteRef :: Int -> Expr a -> State CompileState ()
-compileWriteRef ix e = compileLine $ refName ++ show ix ++ " = " ++ compileExpr e ++ ";"
+compileWriteRef ix e = compileLine $ refName ++ show ix ++ " = " ++ 
+                       compileExpr e ++ ";"
+
+compileWriteListRef :: Int -> Expr a -> State CompileState ()
+compileWriteListRef ix e = compileLine $ "listAssign(&" ++ refName ++ show ix ++ 
+                           ", " ++ compileExpr e ++ ");"
 
 compileWhileCommand :: Expr a -> Expr b -> Arduino () -> State CompileState ()
 compileWhileCommand be ue cb = do
@@ -190,44 +195,44 @@ compileCommand SystemReset = return ()
 compileCommand (SetPinModeE p m) = compile2ExprCommand "pinMode" p m
 compileCommand (DigitalWriteE p b) = compile2ExprCommand "digitalWrite" p b
 compileCommand (DigitalPortWriteE p b m) = 
-    compile3ExprCommand "digitalPortWrite" p b m -- ToDo runtime
+    compile3ExprCommand "digitalPortWrite" p b m
 compileCommand (AnalogWriteE p w) = compile2ExprCommand "analogWrite" p w
 compileCommand (ToneE p f (Just d)) = compile3ExprCommand "tone" p f d
 compileCommand (ToneE p f Nothing) = compile3ExprCommand "tone" p f (lit (0::Word32))
 compileCommand (NoToneE p) = compile1ExprCommand "noTone" p
-compileCommand (I2CWrite sa w8s) = compile2ExprCommand "i2cWrite" sa w8s -- ToDo: runtime
-compileCommand I2CConfig = compileNoExprCommand "i2cConfig" -- ToDo: runtime
+compileCommand (I2CWrite sa w8s) = compile2ExprCommand "i2cWrite" sa w8s 
+compileCommand I2CConfig = compileNoExprCommand "i2cConfig"
 compileCommand (StepperSetSpeedE st sp) = 
-    compile2ExprCommand "stepperSetSpeed" st sp -- ToDo: runtime
+    compile2ExprCommand "stepperSetSpeed" st sp
 compileCommand (ServoDetachE sv) = 
-    compile1ExprCommand "servoDetach" sv -- ToDo: runtime
+    compile1ExprCommand "servoDetach" sv
 compileCommand (ServoWriteE sv w) = 
-    compile2ExprCommand "servoWrite" sv w -- ToDo: runtime
+    compile2ExprCommand "servoWrite" sv w
 compileCommand (ServoWriteMicrosE sv w) = 
-    compile2ExprCommand "servoWriteMicros" sv w -- ToDo: runtime
+    compile2ExprCommand "servoWriteMicros" sv w
 compileCommand (DeleteTaskE tid) = 
-    compile1ExprCommand "deleteTask" tid -- ToDo: runtime
-compileCommand (CreateTaskE (LitW8 tid) m) = do -- ToDo: runtime
+    compile1ExprCommand "deleteTask" tid
+compileCommand (CreateTaskE (LitW8 tid) m) = do
     let taskName = "task" ++ show tid
     compileLine $ "createTask(" ++ show tid ++ ", " ++ taskName ++ "());"
     s <- get
     put s {tasksToDo = (m, taskName) : (tasksToDo s)}
 compileCommand (ScheduleTaskE tid tt) = 
-    compile2ExprCommand "scheduleTask" tid tt -- ToDo: runtime
+    compile2ExprCommand "scheduleTask" tid tt
 compileCommand ScheduleReset = 
-    compileNoExprCommand "scheduleReset" -- ToDo: runtime
+    compileNoExprCommand "scheduleReset"
 compileCommand (AttachIntE p t m) = 
-    compile3ExprCommand "attachInt" p t m -- ToDo: runtime + task name
+    compile3ExprCommand "attachInt" p t m
 compileCommand (DetachIntE p) = 
-    compile1ExprCommand "detachInt" p -- ToDo: runtime
+    compile1ExprCommand "detachInt" p
 compileCommand Interrupts = 
     compileNoExprCommand "interrupts"
 compileCommand NoInterrupts = 
     compileNoExprCommand "noInterrupts"
 compileCommand (GiveSemE id) = 
-    compile1ExprCommand "giveSem" id -- ToDo: runtime
+    compile1ExprCommand "giveSem" id
 compileCommand (TakeSemE id) = 
-    compile1ExprCommand "takeSem" id -- ToDo: runtime
+    compile1ExprCommand "takeSem" id
 compileCommand (WriteRemoteRefB (RemoteRefB i) e) = compileWriteRef i e
 compileCommand (WriteRemoteRefW8 (RemoteRefW8 i) e) = compileWriteRef i e
 compileCommand (WriteRemoteRefW16 (RemoteRefW16 i) e) = compileWriteRef i e
@@ -235,7 +240,7 @@ compileCommand (WriteRemoteRefW32 (RemoteRefW32 i) e) = compileWriteRef i e
 compileCommand (WriteRemoteRefI8 (RemoteRefI8 i) e) = compileWriteRef i e
 compileCommand (WriteRemoteRefI16 (RemoteRefI16 i) e) = compileWriteRef i e
 compileCommand (WriteRemoteRefI32 (RemoteRefI32 i) e) = compileWriteRef i e
-compileCommand (WriteRemoteRefL8 (RemoteRefL8 i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefL8 (RemoteRefL8 i) e) = compileWriteListRef i e
 compileCommand (WriteRemoteRefFloat (RemoteRefFloat i) e) = compileWriteRef i e
 compileCommand (ModifyRemoteRefB (RemoteRefB i) f) = 
     compileWriteRef i (f (RefB i))
@@ -252,7 +257,7 @@ compileCommand (ModifyRemoteRefI16 (RemoteRefI16 i) f) =
 compileCommand (ModifyRemoteRefI32 (RemoteRefI32 i) f) = 
     compileWriteRef i (f (RefI32 i))
 compileCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) = 
-    compileWriteRef i (f (RefList8 i))
+    compileWriteListRef i (f (RefList8 i))
 compileCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) = 
     compileWriteRef i (f (RefFloat i))
 compileCommand (WhileRemoteRefB (RemoteRefB i) bf uf cb) = 
@@ -269,6 +274,10 @@ compileCommand (WhileRemoteRefI16 (RemoteRefI16 i) bf uf cb) =
     compileWhileCommand (bf (RefI16 i)) (uf (RefI16 i)) cb
 compileCommand (WhileRemoteRefI32 (RemoteRefI32 i) bf uf cb) = 
     compileWhileCommand (bf (RefI32 i)) (uf (RefI32 i)) cb
+compileCommand (WhileRemoteRefL8 (RemoteRefL8 i) bf uf cb) = 
+    compileWhileCommand (bf (RefList8 i)) (uf (RefList8 i)) cb
+compileCommand (WhileRemoteRefFloat (RemoteRefFloat i) bf uf cb) = 
+    compileWhileCommand (bf (RefFloat i)) (uf (RefFloat i)) cb
 compileCommand (LoopE cb) = do
     compileLine "while (1)"
     compileCodeBlock cb
@@ -285,10 +294,10 @@ compileCommand (ForInE ws f) = do
     let blist = belem + 1
     put s {ib = belem + 2}
     compileAllocBind $ compileTypeToString Word8Type ++ " bind" ++ show belem ++ ";"
-    compileAllocBind $ compileTypeToString List8Type ++ " bind" ++ show blist ++ ";"
+    compileAllocBind $ compileTypeToString List8Type ++ " bind" ++ show blist ++ " = NULL;"
     let belemName = bindName ++ show belem
     let blistName = bindName ++ show blist
-    compileLine $ "for (int i=0, " ++ blistName ++ " = " ++ compileExpr ws ++ ","
+    compileLine $ "for (int i=0, listAssign(&" ++ blistName ++ ", " ++ compileExpr ws ++ "),"
     compileLine $ "     " ++ belemName ++ " = list8Elem(" ++ blistName ++ ", 0);"
     compileLine $ "     i = list8Len(" ++ blistName ++ ");"
     compileLine $ "     i++, " ++ belemName ++ " = list8Elem(" ++ blistName ++ ", i))"
@@ -299,10 +308,18 @@ compileSimpleProcedure :: CompileType -> String -> State CompileState Int
 compileSimpleProcedure t p = do
     s <- get
     let b = ib s
+    put s {ib = b + 1}
     compileLine $ bindName ++ show b ++ " = " ++ p ++ ";"
     compileAllocBind $ compileTypeToString t ++ " bind" ++ show b ++ ";"
+    return b
+
+compileSimpleListProcedure :: String -> State CompileState Int
+compileSimpleListProcedure p = do
     s <- get
+    let b = ib s
     put s {ib = b + 1}
+    compileLine $ "listAssign(&" ++ bindName ++ show b ++ ", " ++ p ++ ");"
+    compileAllocBind $ compileTypeToString List8Type ++ " bind" ++ show b ++ " = NULL;"
     return b
 
 compileNoExprProcedure :: CompileType -> String -> State CompileState Int
@@ -320,6 +337,13 @@ compile2ExprProcedure :: CompileType -> String ->
 compile2ExprProcedure t p e1 e2 = do
     b <- compileSimpleProcedure t (p ++ "(" ++ compileExpr e1 ++ "," ++ 
                                                compileExpr e2 ++ ")")
+    return b
+
+compile2ExprListProcedure :: String -> 
+                             Expr a -> Expr a -> State CompileState Int
+compile2ExprListProcedure p e1 e2 = do
+    b <- compileSimpleListProcedure (p ++ "(" ++ compileExpr e1 ++ "," ++ 
+                                                 compileExpr e2 ++ ")")
     return b
 
 compile3ExprProcedure :: CompileType -> String -> 
@@ -352,6 +376,18 @@ compileNewRef t e = do
     compileLine $ refName ++ show b ++ " = " ++ compileExpr e ++ ";"
     return  x
 
+compileNewListRef :: Expr a -> State CompileState Int
+compileNewListRef e = do
+    s <- get
+    let x = ix s
+    put s {ix = x + 1}
+    compileAllocRef $ compileTypeToString List8Type ++ " ref" ++ show x ++ " = NULL;"
+    s <- get
+    let b = ib s
+    put s {ib = b + 1}
+    compileLine $ "listAssign(&" ++ refName ++ show b ++ ", " ++ compileExpr e ++ ");"
+    return  x
+
 compileReadRef :: CompileType -> Int -> State CompileState Int
 compileReadRef t ix = do
     s <- get
@@ -361,12 +397,21 @@ compileReadRef t ix = do
     compileAllocBind $ compileTypeToString t ++ " bind" ++ show b ++ ";"
     return b
 
+compileReadListRef :: Int -> State CompileState Int
+compileReadListRef ix = do
+    s <- get
+    let b = ib s
+    put s {ib = b + 1}
+    compileLine $ "listAssign(&" ++ bindName ++ show b ++ ", ref" ++ show ix ++ ");"
+    compileAllocBind $ compileTypeToString List8Type ++ " bind" ++ show b ++ " = NULL;"
+    return b
+
 compileProcedure :: ArduinoProcedure a -> State CompileState a
 compileProcedure QueryFirmwareE = do
-    b <- compileNoExprProcedure Word16Type "queryFirmware" -- ToDo: runtime
+    b <- compileNoExprProcedure Word16Type "queryFirmware"
     return $ remBind b
 compileProcedure QueryProcessorE = do
-    b <- compileNoExprProcedure Word8Type "queryProcessor" -- ToDo: runtime
+    b <- compileNoExprProcedure Word8Type "queryProcessor"
     return $ remBind b
 compileProcedure MillisE = do
     b <- compileNoExprProcedure Word32Type "millis"
@@ -375,7 +420,7 @@ compileProcedure MicrosE = do
     b <- compileNoExprProcedure Word32Type "micros"
     return $ remBind b
 compileProcedure (DelayMillisE ms) = do
-    compile1ExprCommand "delayMilliseconds" ms -- ToDo: runtime
+    compile1ExprCommand "delayMilliseconds" ms
     return ()
 compileProcedure (DelayMicrosE ms) = do
     compile1ExprCommand "delayMicroseconds" ms
@@ -384,34 +429,34 @@ compileProcedure (DigitalReadE p) = do
     b <- compile1ExprProcedure BoolType "digitalRead" p
     return $ remBind b
 compileProcedure (DigitalPortReadE p m) = do
-    b <- compile2ExprProcedure Word8Type "digitalPortRead" p m -- ToDo: runtime
+    b <- compile2ExprProcedure Word8Type "digitalPortRead" p m 
     return $ remBind b
 compileProcedure (AnalogReadE p) = do
     b <- compile1ExprProcedure Word16Type "analogRead" p
     return $ remBind b
 compileProcedure (I2CReadE p n) = do
-    b <- compile2ExprProcedure List8Type "i2cRead" p n -- ToDo: runtime
+    b <- compile2ExprListProcedure "i2cRead" p n
     return $ remBind b
 compileProcedure (Stepper2PinE s p1 p2) = do
-    b <- compile3ExprProcedure Word8Type "stepper2Pin" s p1 p2 -- ToDo: runtime
+    b <- compile3ExprProcedure Word8Type "stepper2Pin" s p1 p2
     return $ remBind b
 compileProcedure (Stepper4PinE s p1 p2 p3 p4) = do
-    b <- compile5ExprProcedure Word8Type "stepper4Pin" s p1 p2 p3 p4 -- ToDo: runtime
+    b <- compile5ExprProcedure Word8Type "stepper4Pin" s p1 p2 p3 p4
     return $ remBind b
 compileProcedure (StepperStepE st s) = do
     compile2ExprCommand "stepperStep" st s
     return ()
 compileProcedure (ServoAttachE p) = do
-    b <- compile1ExprProcedure Word8Type "servoAttach" p -- ToDo: runtime
+    b <- compile1ExprProcedure Word8Type "servoAttach" p
     return $ remBind b
 compileProcedure (ServoAttachMinMaxE p min max) = do
-    b <- compile3ExprProcedure Word8Type "servoAttachMixMax" p min max -- ToDo: runtime
+    b <- compile3ExprProcedure Word8Type "servoAttachMixMax" p min max
     return $ remBind b
 compileProcedure (ServoReadE sv) = do
-    b <- compile1ExprProcedure Word16Type "servoRead" sv -- ToDo: runtime
+    b <- compile1ExprProcedure Word16Type "servoRead" sv
     return $ remBind b
 compileProcedure (ServoReadMicrosE sv) = do
-    b <- compile1ExprProcedure Word16Type "servoReadMicros" sv -- ToDo: runtime
+    b <- compile1ExprProcedure Word16Type "servoReadMicros" sv
     return $ remBind b
 compileProcedure QueryAllTasksE = do
     compileLine "/* queryAllTasksE not suppported by compiler */"
@@ -423,7 +468,7 @@ compileProcedure (BootTaskE tids) = do
     compileLine "/* bootTaskE not suppported by compiler */"
     return true
 compileProcedure (DebugE s) = do
-    compile1ExprCommand "debug" s -- ToDo: Runtime
+    compile1ExprCommand "debug" s
     return ()
 compileProcedure (NewRemoteRefB e) = do
     x <- compileNewRef BoolType e
@@ -447,7 +492,7 @@ compileProcedure (NewRemoteRefI32 e) = do
     x <- compileNewRef Int32Type e
     return $ RemoteRefI32 x
 compileProcedure (NewRemoteRefL8 e) = do
-    x <- compileNewRef List8Type e
+    x <- compileNewListRef e
     return $ RemoteRefL8 x
 compileProcedure (NewRemoteRefFloat e) = do
     x <- compileNewRef FloatType e
@@ -474,7 +519,7 @@ compileProcedure (ReadRemoteRefI32 (RemoteRefI32 i)) = do
     b <- compileReadRef Int32Type i
     return $ remBind b
 compileProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) = do
-    b <- compileReadRef List8Type i
+    b <- compileReadListRef i
     return $ remBind b
 compileProcedure (ReadRemoteRefFloat (RemoteRefFloat i)) = do
     b <- compileReadRef FloatType i
@@ -776,7 +821,7 @@ compileExpr (IfI32 e1 e2 e3) = compileIfSubExpr e1 e2 e3
 compileExpr (TestBI32 e1 e2) = compileTwoSubExpr "testBI32" e1 e2 
 compileExpr (SetBI32 e1 e2) = compileTwoSubExpr "setBI32" e1 e2 
 compileExpr (ClrBI32 e1 e2) = compileTwoSubExpr "clrBI32" e1 e2  
-compileExpr (LitList8 ws) = "{" ++ (show $ length ws) ++ compListLit ws
+compileExpr (LitList8 ws) = "{255, " ++ (show $ length ws) ++ compListLit ws
   where
     compListLit :: [Word8] -> String
     compListLit [] = "}"

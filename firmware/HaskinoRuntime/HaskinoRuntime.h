@@ -54,7 +54,7 @@ void takeSem(uint8_t id);
 
 // Debug routines
 
-void debug(uint8_t s);
+void debug(uint8_t *s);
 
 // Show routines
 
@@ -69,6 +69,9 @@ byte *showFloat(byte *f, uint16_t w);
 
 // List functions
 
+#define LITERAL_USE_COUNT   255
+
+void listAssign(byte **v, byte *l);
 bool list8Less(byte *l1, byte *l2);
 bool list8Equal(byte *l1, byte *l2);
 uint8_t list8Elem(uint8_t *l, uint8_t e);

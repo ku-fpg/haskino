@@ -6,6 +6,8 @@
 
 
 static byte *listAlloc(int n);
+static void listFree(byte *l);
+void listAssign(byte **v, byte *l);
 
 // Platform Query routines
 
@@ -80,13 +82,14 @@ uint8_t digitalPortRead(uint8_t pinNo, uint8_t mask)
 
 void i2cWrite(uint8_t sa, uint8_t *w8s)
     {
-    if (w8s[0] != 0)
+    if (w8s[1] != 0)
         {
         Wire.beginTransmission(sa);
-        Wire.write(&w8s[1], w8s[0]);
+        Wire.write(&w8s[2], w8s[1]);
         Wire.endTransmission();
         delayMicroseconds(70);
         }
+    listFree(w8s);
     }
     
 uint8_t *i2cRead(uint8_t sa, uint8_t byteCount)
@@ -97,13 +100,12 @@ uint8_t *i2cRead(uint8_t sa, uint8_t byteCount)
     Wire.requestFrom((int) sa, (int) byteCount);
     byteAvail = Wire.available();
 
-    localMem = (byte *) malloc(byteAvail+2);
+    localMem = listAlloc(byteAvail);
     if (localMem == NULL)
         return NULL;
 
     local = &localMem[2];
 
-    localMem[0] = 0; // ToDo: Fix with lists
     localMem[1] = byteAvail;
 
     for (int i = 0; i < byteAvail; i++)
@@ -260,10 +262,10 @@ void takeSem(uint8_t id)
     
 // Debug routines
 
-void debug(uint8_t s)
+void debug(uint8_t *s)
     {
     // ToDo: Fill in
-
+    listFree(s);
     }
     
 // Show routines
@@ -385,6 +387,28 @@ static byte *listAlloc(int n)
     return localMem;
     }
 
+static void listFree(byte *l)
+    {
+    if (l != NULL && l[0] == 0)
+        free(l);
+    }
+
+void listAssign(byte **v, byte *l)
+    {
+    byte *currList = *v;
+
+    // Decrement ref count of previously assigned list and free if needed
+    if (currList != NULL && currList[0] != 0 && currList[0] != LITERAL_USE_COUNT)
+        currList[0] = currList[0] - 1;
+    listFree(currList);
+
+    // Increment ref count of new assigned list
+    if (l[0] != LITERAL_USE_COUNT)
+        l[0] = l[0] + 1;
+    // Assign the list
+    *v = l;
+    }
+
 bool list8Less(byte *l1, byte *l2)
     {
     bool val;
@@ -403,7 +427,9 @@ bool list8Less(byte *l1, byte *l2)
         val = false;
     else 
         val = l1[2+i] < l2[2+i];
- 
+
+    listFree(l1);
+    listFree(l2);
     return val;
     }
 
@@ -428,6 +454,8 @@ bool list8Equal(byte *l1, byte *l2)
             }
         }
 
+    listFree(l1);
+    listFree(l2);
     return val;
     }
 
@@ -446,12 +474,37 @@ uint8_t list8Len(uint8_t *l)
 
 uint8_t *list8Cons(uint8_t w, uint8_t *l)
     {
-    return NULL;  // ToDo: Fill in
+    byte *newList;
+
+    newList = listAlloc(l[1]+1);
+
+    if (newList)
+        {
+        newList[1] = l[1] + 1;
+        newList[2] = w;
+        memcpy(&newList[3], &l[2], l[1]);
+        }
+
+    listFree(l);
+    return newList;
     }
 
 uint8_t *list8Apnd(uint8_t *l1, uint8_t *l2)
     {
-    return NULL;  // ToDo: Fill in
+    byte *newList;
+
+    newList = listAlloc(l1[1]+l2[1]);
+
+    if (newList)
+        {
+        newList[1] = l1[1] + l2[1];
+        memcpy(&newList[2], &l1[2], l1[1]);
+        memcpy(&newList[2+l1[1]], &l2[2], l2[1]);
+        }
+
+    listFree(l1);
+    listFree(l2);
+    return newList;
     }
 
 // Bit functions
