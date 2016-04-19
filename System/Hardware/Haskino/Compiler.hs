@@ -10,7 +10,7 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE GADTs #-}
 
-module System.Hardware.Haskino.Compiler(compileProgram, runTest) where 
+module System.Hardware.Haskino.Compiler(compileProgram) where 
 
 import Data.Int (Int8, Int16, Int32)
 import Data.Word (Word8, Word16, Word32)
@@ -72,28 +72,6 @@ indentString = "    "
 
 indent :: Int -> String
 indent k = concat $ replicate k indentString
-
-myTask :: Arduino ()
-myTask = do
-  digitalWriteE 2 true
-  digitalWriteE 3 false
-  let l = lit [1,2,3,4]
-  r <- newRemoteRef 0
-  forInE l (\x -> modifyRemoteRef r (\a -> a + x))
-
-myTest :: Arduino ()
-myTest =  do
-  r <- newRemoteRefB true
-  createTaskE 1 myTask
-  a <- millisE
-  loopE $ do
-    setPinModeE 2 INPUT 
-    setPinModeE 3 OUTPUT
-    b <- millisE
-    return ()
-
-runTest :: IO ()
-runTest = compileProgram myTest "test.c"
 
 compileProgram :: Arduino () -> FilePath -> IO ()
 compileProgram p f = do

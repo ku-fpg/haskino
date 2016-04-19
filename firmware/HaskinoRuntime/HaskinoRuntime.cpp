@@ -2,6 +2,7 @@
 #include <Servo.h>
 #include <Stepper.h>
 #include <Wire.h>
+#include <math.h>
 #include "HaskinoRuntime.h"
 
 
@@ -264,7 +265,17 @@ void takeSem(uint8_t id)
 
 void debug(uint8_t *s)
     {
-    // ToDo: Fill in
+    bool opened = false;
+
+    if (!opened)
+        {
+        Serial.begin(115200);
+        opened = true;
+        }
+
+    for (int i=0; i<s[1]; i++)
+        Serial.write(s[2+i]);
+    Serial.write('\n');
     listFree(s);
     }
     
