@@ -399,10 +399,7 @@ compileNewRef t e = do
     let x = ix s
     put s {ix = x + 1}
     compileAllocRef $ compileTypeToString t ++ " " ++ refName ++ show x ++ ";"
-    s <- get
-    let b = ib s
-    put s {ib = b + 1}
-    compileLine $ refName ++ show b ++ " = " ++ compileExpr e ++ ";"
+    compileLine $ refName ++ show x ++ " = " ++ compileExpr e ++ ";"
     return  x
 
 compileNewListRef :: Expr a -> State CompileState Int
@@ -412,10 +409,7 @@ compileNewListRef e = do
     put s {ix = x + 1}
     compileAllocRef $ compileTypeToString List8Type ++ 
                       " " ++ refName ++ show x ++ " = NULL;"
-    s <- get
-    let b = ib s
-    put s {ib = b + 1}
-    compileLine $ "listAssign(&" ++ refName ++ show b ++ 
+    compileLine $ "listAssign(&" ++ refName ++ show x ++ 
                   ", " ++ compileExpr e ++ ");"
     return  x
 
