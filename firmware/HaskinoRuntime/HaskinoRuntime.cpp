@@ -393,9 +393,10 @@ static void listFree(byte *l)
         free(l);
     }
 
-void listAssign(byte **v, byte *l)
+void listAssign(byte **v, const byte *l)
     {
     byte *currList = *v;
+    byte *listLen = (byte *) l;
 
     // Decrement ref count of previously assigned list and free if needed
     if (currList != NULL && currList[0] != 0 && currList[0] != LITERAL_USE_COUNT)
@@ -403,10 +404,10 @@ void listAssign(byte **v, byte *l)
     listFree(currList);
 
     // Increment ref count of new assigned list
-    if (l[0] != LITERAL_USE_COUNT)
-        l[0] = l[0] + 1;
+    if (listLen[0] != LITERAL_USE_COUNT)
+        listLen[0] = listLen[0] + 1;
     // Assign the list
-    *v = l;
+    *v = listLen;
     }
 
 bool list8Less(byte *l1, byte *l2)

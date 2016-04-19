@@ -911,7 +911,7 @@ compileExpr (IfI32 e1 e2 e3) = compileIfSubExpr e1 e2 e3
 compileExpr (TestBI32 e1 e2) = compileTwoSubExpr "testBI32" e1 e2 
 compileExpr (SetBI32 e1 e2) = compileTwoSubExpr "setBI32" e1 e2 
 compileExpr (ClrBI32 e1 e2) = compileTwoSubExpr "clrBI32" e1 e2  
-compileExpr (LitList8 ws) = "{255, " ++ (show $ length ws) ++ compListLit ws
+compileExpr (LitList8 ws) = "(const byte[]) {255, " ++ (show $ length ws) ++ compListLit ws
   where
     compListLit :: [Word8] -> String
     compListLit [] = "}"
