@@ -35,7 +35,8 @@ data CompileState = CompileState {level :: Int
                      , cmdList :: [String]
                      , bindList :: [String]
                      , tasksToDo :: [(Arduino (), String)]
-                     , tasksDone :: [String] 
+                     , tasksDone :: [String]
+                     , errors :: [String] 
                      }    
 
 data CompileType = 
@@ -95,10 +96,15 @@ runTest :: IO ()
 runTest = compileProgram myTest "test.c"
 
 compileProgram :: Arduino () -> FilePath -> IO ()
-compileProgram p f = writeFile f prog
+compileProgram p f = do
+    writeFile f prog
+    if (length $ errors st) == 0
+    then putStrLn "Compile Successful"
+    else putStrLn $ (show $ length $ errors st) ++ " Errors :"
+    mapM_ putStrLn $ errors st
   where
     (_, st) = runState compileTasks  
-                (CompileState 0 0 0 "" "" "" "" [] [] [(p, "haskinoMain")] [])
+                (CompileState 0 0 0 "" "" "" "" [] [] [(p, "haskinoMain")] [] [] )
     prog = "#include \"HaskinoRuntime.h\"\n\n" ++ 
            forwards st ++ "\n" ++
            "void setup()\n" ++
@@ -156,6 +162,25 @@ compileForward s = do
     st <- get 
     put st { forwards = forwards st ++ s ++ "\n"}
     return ()
+
+compileError :: String -> String -> State CompileState ()
+compileError s1 s2 = do
+    compileLine s1
+    st <- get 
+    put st { errors = s2 : (errors st)}
+    return ()
+
+compileStrongProcedureError :: String -> State CompileState ()
+compileStrongProcedureError s = 
+    compileError ("/* " ++ errmsg ++ " */") errmsg
+  where 
+    errmsg = "ERROR - " ++ s ++ " is a Strong procedure, use Deep version instead."
+
+compileUnsupportedError :: String -> State CompileState ()
+compileUnsupportedError s = 
+    compileError ("/* " ++ errmsg ++ " */") errmsg
+  where 
+    errmsg = "ERROR - " ++ s ++ " not suppported by compiler."
 
 compileNoExprCommand :: String -> State CompileState ()
 compileNoExprCommand s =
@@ -407,68 +432,131 @@ compileReadListRef ix = do
     return b
 
 compileProcedure :: ArduinoProcedure a -> State CompileState a
+compileProcedure QueryFirmware = do
+    compileStrongProcedureError "queryFirmware"
+    return 0
 compileProcedure QueryFirmwareE = do
     b <- compileNoExprProcedure Word16Type "queryFirmware"
     return $ remBind b
+compileProcedure QueryProcessor = do
+    compileStrongProcedureError "queryProcessor"
+    return ATMEGA8
 compileProcedure QueryProcessorE = do
     b <- compileNoExprProcedure Word8Type "queryProcessor"
     return $ remBind b
+compileProcedure Millis = do
+    compileStrongProcedureError "millis"
+    return (0::Word32)
 compileProcedure MillisE = do
     b <- compileNoExprProcedure Word32Type "millis"
     return $ remBind b
+compileProcedure Micros = do
+    compileStrongProcedureError "micros"
+    return 0
 compileProcedure MicrosE = do
     b <- compileNoExprProcedure Word32Type "micros"
     return $ remBind b
+compileProcedure (DelayMillis ms) = do
+    compileStrongProcedureError $ "delayMillis " ++ show ms
+    return ()
 compileProcedure (DelayMillisE ms) = do
     compile1ExprCommand "delayMilliseconds" ms
+    return ()
+compileProcedure (DelayMicros ms) = do
+    compileStrongProcedureError $ "delayMicros " ++ show ms
     return ()
 compileProcedure (DelayMicrosE ms) = do
     compile1ExprCommand "delayMicroseconds" ms
     return ()
+compileProcedure (DigitalRead ms) = do
+    compileStrongProcedureError $ "digitalRead " ++ show ms
+    return False
 compileProcedure (DigitalReadE p) = do
     b <- compile1ExprProcedure BoolType "digitalRead" p
     return $ remBind b
+compileProcedure (DigitalPortRead p m) = do
+    compileStrongProcedureError $ "digitalPortRead " ++ show p ++ " " ++ show m
+    return 0
 compileProcedure (DigitalPortReadE p m) = do
     b <- compile2ExprProcedure Word8Type "digitalPortRead" p m 
     return $ remBind b
+compileProcedure (AnalogRead p) = do
+    compileStrongProcedureError $ "analogRead " ++ show p
+    return 0
 compileProcedure (AnalogReadE p) = do
     b <- compile1ExprProcedure Word16Type "analogRead" p
     return $ remBind b
+compileProcedure (I2CRead p n) = do
+    compileStrongProcedureError $ "i2cRead " ++ show p ++ " " ++ show n
+    return []
 compileProcedure (I2CReadE p n) = do
     b <- compile2ExprListProcedure "i2cRead" p n
     return $ remBind b
+compileProcedure (Stepper2Pin s p1 p2) = do
+    compileStrongProcedureError $ "i2cRead " ++ show s ++ " " ++ 
+                                   show p1 ++ " " ++ show p2
+    return 0
 compileProcedure (Stepper2PinE s p1 p2) = do
     b <- compile3ExprProcedure Word8Type "stepper2Pin" s p1 p2
     return $ remBind b
+compileProcedure (Stepper4Pin s p1 p2 p3 p4) = do
+    compileStrongProcedureError $ "i2cRead " ++ show s ++ " " ++ 
+                                   show p1 ++ " " ++ show p2 ++ 
+                                   show p3 ++ " " ++ show p4
+    return 0
 compileProcedure (Stepper4PinE s p1 p2 p3 p4) = do
     b <- compile5ExprProcedure Word8Type "stepper4Pin" s p1 p2 p3 p4
     return $ remBind b
 compileProcedure (StepperStepE st s) = do
     compile2ExprCommand "stepperStep" st s
     return ()
+compileProcedure (ServoAttach p) = do
+    compileStrongProcedureError $ "servoAttach " ++ show p
+    return 0
 compileProcedure (ServoAttachE p) = do
     b <- compile1ExprProcedure Word8Type "servoAttach" p
     return $ remBind b
+compileProcedure (ServoAttachMinMax p min max) = do
+    compileStrongProcedureError $ "servoAttachMixMax " ++ 
+                                  show min ++ " " ++ show max
+    return 0
 compileProcedure (ServoAttachMinMaxE p min max) = do
     b <- compile3ExprProcedure Word8Type "servoAttachMixMax" p min max
     return $ remBind b
+compileProcedure (ServoRead sv) = do
+    compileStrongProcedureError $ "servoRead " ++ show sv
+    return 0
 compileProcedure (ServoReadE sv) = do
     b <- compile1ExprProcedure Word16Type "servoRead" sv
     return $ remBind b
+compileProcedure (ServoReadMicros sv) = do
+    compileStrongProcedureError $ "servoReadMicros" ++ show sv
+    return 0
 compileProcedure (ServoReadMicrosE sv) = do
     b <- compile1ExprProcedure Word16Type "servoReadMicros" sv
     return $ remBind b
+compileProcedure QueryAllTasks = do
+    compileUnsupportedError "queryAllTasks"
+    return []
 compileProcedure QueryAllTasksE = do
-    compileLine "/* queryAllTasksE not suppported by compiler */"
+    compileUnsupportedError "queryAllTasksE"
     return (litString "")
-compileProcedure (QueryTaskE t) = do
-    compileLine "/* queryTaskE not suppported by compiler */"
+compileProcedure (QueryTaskE _) = do
+    compileUnsupportedError "queryTaskE"
     return Nothing
-compileProcedure (BootTaskE tids) = do
-    compileLine "/* bootTaskE not suppported by compiler */"
+compileProcedure (QueryTask _) = do
+    compileUnsupportedError "queryTask"
+    return Nothing
+compileProcedure (BootTaskE _) = do
+    compileUnsupportedError "bootTaskE"
     return true
+compileProcedure (Debug s) = do
+    return ()
 compileProcedure (DebugE s) = do
     compile1ExprCommand "debug" s
+    return ()
+compileProcedure (Die _ _) = do
+    compileUnsupportedError "die"
     return ()
 compileProcedure (NewRemoteRefB e) = do
     x <- compileNewRef BoolType e
