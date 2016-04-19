@@ -212,7 +212,7 @@ compileWriteListRef ix e = compileLine $ "listAssign(&" ++ refName ++ show ix ++
 compileWhileCommand :: Int -> Expr a -> Expr b -> Arduino () -> State CompileState ()
 compileWhileCommand i be ue cb = do
     compileLine $ "for (;" ++ compileExpr be ++ ";" ++ 
-                  "ref" ++ show i ++ " = " ++ compileExpr ue ++ ")"
+                  refName ++ show i ++ " = " ++ compileExpr ue ++ ")"
     compileCodeBlock cb
     return ()
 
@@ -319,8 +319,10 @@ compileCommand (ForInE ws f) = do
     let belem = ib s
     let blist = belem + 1
     put s {ib = belem + 2}
-    compileAllocBind $ compileTypeToString Word8Type ++ " bind" ++ show belem ++ ";"
-    compileAllocBind $ compileTypeToString List8Type ++ " bind" ++ show blist ++ " = NULL;"
+    compileAllocBind $ compileTypeToString Word8Type ++ " " ++ 
+                       bindName ++ show belem ++ ";"
+    compileAllocBind $ compileTypeToString List8Type ++ " " ++ 
+                       bindName ++ show blist ++ " = NULL;"
     let belemName = bindName ++ show belem
     let blistName = bindName ++ show blist
     compileLine $ "listAssign(&" ++ blistName ++ ", " ++ compileExpr ws ++ ");"
@@ -336,7 +338,7 @@ compileSimpleProcedure t p = do
     let b = ib s
     put s {ib = b + 1}
     compileLine $ bindName ++ show b ++ " = " ++ p ++ ";"
-    compileAllocBind $ compileTypeToString t ++ " bind" ++ show b ++ ";"
+    compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
     return b
 
 compileSimpleListProcedure :: String -> State CompileState Int
@@ -345,7 +347,8 @@ compileSimpleListProcedure p = do
     let b = ib s
     put s {ib = b + 1}
     compileLine $ "listAssign(&" ++ bindName ++ show b ++ ", " ++ p ++ ");"
-    compileAllocBind $ compileTypeToString List8Type ++ " bind" ++ show b ++ " = NULL;"
+    compileAllocBind $ compileTypeToString List8Type ++ " " ++ 
+                       bindName ++ show b ++ " = NULL;"
     return b
 
 compileNoExprProcedure :: CompileType -> String -> State CompileState Int
@@ -395,7 +398,7 @@ compileNewRef t e = do
     s <- get
     let x = ix s
     put s {ix = x + 1}
-    compileAllocRef $ compileTypeToString t ++ " ref" ++ show x ++ ";"
+    compileAllocRef $ compileTypeToString t ++ " " ++ refName ++ show x ++ ";"
     s <- get
     let b = ib s
     put s {ib = b + 1}
@@ -407,11 +410,13 @@ compileNewListRef e = do
     s <- get
     let x = ix s
     put s {ix = x + 1}
-    compileAllocRef $ compileTypeToString List8Type ++ " ref" ++ show x ++ " = NULL;"
+    compileAllocRef $ compileTypeToString List8Type ++ 
+                      " " ++ refName ++ show x ++ " = NULL;"
     s <- get
     let b = ib s
     put s {ib = b + 1}
-    compileLine $ "listAssign(&" ++ refName ++ show b ++ ", " ++ compileExpr e ++ ");"
+    compileLine $ "listAssign(&" ++ refName ++ show b ++ 
+                  ", " ++ compileExpr e ++ ");"
     return  x
 
 compileReadRef :: CompileType -> Int -> State CompileState Int
@@ -419,8 +424,8 @@ compileReadRef t ix = do
     s <- get
     let b = ib s
     put s {ib = b + 1}
-    compileLine $ bindName ++ show b ++ " = ref" ++ show ix ++ ";"
-    compileAllocBind $ compileTypeToString t ++ " bind" ++ show b ++ ";"
+    compileLine $ bindName ++ show b ++ " = " ++ refName ++ show ix ++ ";"
+    compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
     return b
 
 compileReadListRef :: Int -> State CompileState Int
@@ -428,8 +433,10 @@ compileReadListRef ix = do
     s <- get
     let b = ib s
     put s {ib = b + 1}
-    compileLine $ "listAssign(&" ++ bindName ++ show b ++ ", ref" ++ show ix ++ ");"
-    compileAllocBind $ compileTypeToString List8Type ++ " bind" ++ show b ++ " = NULL;"
+    compileLine $ "listAssign(&" ++ bindName ++ show b ++ ", " ++ 
+                  refName ++ show ix ++ ");"
+    compileAllocBind $ compileTypeToString List8Type ++ " " ++ 
+                       bindName ++ show b ++ " = NULL;"
     return b
 
 compileProcedure :: ArduinoProcedure a -> State CompileState a
