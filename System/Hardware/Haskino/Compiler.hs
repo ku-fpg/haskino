@@ -322,9 +322,9 @@ compileCommand (ForInE ws f) = do
     compileAllocBind $ compileTypeToString List8Type ++ " bind" ++ show blist ++ " = NULL;"
     let belemName = bindName ++ show belem
     let blistName = bindName ++ show blist
-    compileLine $ "for (int i=0, listAssign(&" ++ blistName ++ ", " ++ compileExpr ws ++ "),"
-    compileLine $ "     " ++ belemName ++ " = list8Elem(" ++ blistName ++ ", 0);"
-    compileLine $ "     i = list8Len(" ++ blistName ++ ");"
+    compileLine $ "listAssign(&" ++ blistName ++ ", " ++ compileExpr ws ++ ");"
+    compileLine $ "for (int i=0, " ++ belemName ++ " = list8Elem(" ++ blistName ++ ", 0);"
+    compileLine $ "     i < list8Len(" ++ blistName ++ ");"
     compileLine $ "     i++, " ++ belemName ++ " = list8Elem(" ++ blistName ++ ", i))"
     compileCodeBlock (f (RemBindW8 belem))
     return ()
