@@ -278,9 +278,9 @@ byte *showBool(bool b)
     if (listMem)
         {
         if (b)
-            listMem[1] = sprintf((char *) &listMem[1],"%s","True");
+            listMem[1] = sprintf((char *) &listMem[2],"%s","True");
         else
-            listMem[1] = sprintf((char *) &listMem[1],"%s","False");
+            listMem[1] = sprintf((char *) &listMem[2],"%s","False");
         }
     return listMem;
     }
@@ -292,7 +292,7 @@ byte *showWord8(uint8_t w)
     listMem = listAlloc(3+1);
     if (listMem)
         {
-        listMem[1] = sprintf((char *) &listMem[1],"%u",w);
+        listMem[1] = sprintf((char *) &listMem[2],"%u",w);
         }
     return listMem;
     }
@@ -304,7 +304,7 @@ byte *showWord16(uint16_t w)
     listMem = listAlloc(5+1);
     if (listMem)
         {
-        listMem[1] = sprintf((char *) &listMem[1],"%u",w);
+        listMem[1] = sprintf((char *) &listMem[2],"%u",w);
         }
     return listMem;
     }
@@ -316,7 +316,7 @@ byte *showWord32(uint32_t w)
     listMem = listAlloc(10+1);
     if (listMem)
         {
-        listMem[1] = sprintf((char *) &listMem[1],"%lu",w);
+        listMem[1] = sprintf((char *) &listMem[2],"%lu",w);
         }
     return listMem;
     }
@@ -328,7 +328,7 @@ byte *showInt8(int8_t i)
     listMem = listAlloc(4+1);
     if (listMem)
         {
-        listMem[1] = sprintf((char *) &listMem[1],"%d",i);
+        listMem[1] = sprintf((char *) &listMem[2],"%d",i);
         }
     return listMem;
     }
@@ -340,7 +340,7 @@ byte *showInt16(int16_t i)
     listMem = listAlloc(6+1);
     if (listMem)
         {
-        listMem[1] = sprintf((char *) &listMem[1],"%d",i);
+        listMem[1] = sprintf((char *) &listMem[2],"%d",i);
         }
     return listMem;
     }
@@ -352,7 +352,7 @@ byte *showInt32(int32_t i)
     listMem = listAlloc(11+1);
     if (listMem)
         {
-        listMem[1] = sprintf((char *) &listMem[1],"%ld",i);
+        listMem[1] = sprintf((char *) &listMem[2],"%ld",i);
         }
     return listMem;
     }
@@ -364,8 +364,8 @@ byte *showFloat(float f, uint16_t w)
     listMem = listAlloc(11+1+w+1);
     if (listMem)
         {
-        dtostrf(f, 4, w, (char *) &listMem[1]);
-        listMem[1] = strlen((char *) &listMem[1]);
+        dtostrf(f, 4, w, (char *) &listMem[2]);
+        listMem[1] = strlen((char *) &listMem[2]);
         }
 
     return listMem;

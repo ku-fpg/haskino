@@ -5,11 +5,11 @@
 # Do a 'make show_boards' to see possible board tags.
 
 # For Mega 2560
-# BOARD_TAG    = mega
-# BOARD_SUB    = atmega2560
+BOARD_TAG    = mega
+BOARD_SUB    = atmega2560
 
 # For Uno
-BOARD_TAG	 = uno
+# BOARD_TAG	 = uno
 
 # Define the serial port name to upload to the Arduino
 MONITOR_PORT = /dev/cu.usbmodem1421
