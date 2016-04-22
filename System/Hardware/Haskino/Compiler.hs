@@ -15,6 +15,7 @@ module System.Hardware.Haskino.Compiler(compileProgram) where
 import Data.Int (Int8, Int16, Int32)
 import Data.Word (Word8, Word16, Word32)
 import Data.Boolean
+import Data.Char
 
 import Control.Monad.State
 
@@ -70,6 +71,12 @@ bindName = "bind"
 indentString :: String
 indentString = "    "
 
+mainEntry :: String
+mainEntry = "haskinoMain"
+
+bindCntStr :: String
+bindCntStr = "_BIND_CNT "
+
 indent :: Int -> String
 indent k = concat $ replicate k indentString
 
@@ -82,12 +89,15 @@ compileProgram p f = do
     mapM_ putStrLn $ errors st
   where
     (_, st) = runState compileTasks  
-                (CompileState 0 0 0 "" "" "" "" [] [] [(p, "haskinoMain")] [] [] )
+                (CompileState 0 0 0 "" "" "" "" [] [] [(p, mainEntry)] [] [] )
     prog = "#include \"HaskinoRuntime.h\"\n\n" ++ 
            forwards st ++ "\n" ++
            "void setup()\n" ++
            "    {\n" ++
-           "    haskinoMain();\n" ++
+           "    createTask(255, " ++ (map toUpper mainEntry) ++ bindCntStr ++
+                ", " ++ mainEntry ++ ");\n" ++
+           "    scheduleTask(255, 0);\n" ++
+           "    startScheduler();\n" ++
            "    }\n\n" ++
            "void loop()\n" ++
            "    {\n" ++
@@ -113,6 +123,9 @@ compileTask t name = do
     compileForward $ "void " ++ name ++ "();"
     compileCodeBlock t
     compileLine "" 
+    s <- get
+    compileForward $ "#define " ++ (map toUpper name) ++ 
+                     bindCntStr ++ " " ++ (show $ ib s)
     s <- get
     put s {tasksDone = cmds s : tasksDone s}
     return ()
@@ -218,7 +231,8 @@ compileCommand (DeleteTaskE tid) =
     compile1ExprCommand "deleteTask" tid
 compileCommand (CreateTaskE (LitW8 tid) m) = do
     let taskName = "task" ++ show tid
-    compileLine $ "createTask(" ++ show tid ++ ", " ++ taskName ++ "());"
+    compileLine $ "createTask(" ++ show tid ++ ", " ++ (map toUpper taskName) ++
+                  "_BIND_CNT, " ++ taskName ++ ");"
     s <- get
     put s {tasksToDo = (m, taskName) : (tasksToDo s)}
 compileCommand (ScheduleTaskE tid tt) = 
