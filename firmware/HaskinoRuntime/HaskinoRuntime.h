@@ -37,13 +37,16 @@ void servoWriteMicros(uint8_t sv, uint16_t m);
 uint16_t servoRead(uint8_t sv);
 uint16_t servoReadMicros(uint8_t sv);
 
-// Scheduling reoutines
+// Scheduling routines
 
 void delayMilliseconds(uint32_t ms);
-void createTask(uint8_t tid, void (*task)());
+void createTask(uint8_t tid, int bindCount, void (*task)());
 void deleteTask(uint8_t tid);
 void scheduleTask(uint8_t tid, uint32_t tt);
 void scheduleReset();
+void taskComplete();
+void startScheduler();
+void reschedule();
 void attachInt(uint8_t p, uint8_t t, uint8_t m);
 void detachInt(uint8_t p);
 
@@ -116,6 +119,28 @@ int32_t mod32(int32_t a, int32_t b);
 
 // Float functions
 float frac(float f);
+
+// Scheduler structures
+
+typedef struct tcb_t 
+    {
+    struct tcb_t       *next;
+    struct tcb_t       *prev;
+    uint16_t            stackPointer;
+    byte                id;
+    void              (*entry)(void);
+    uint16_t            stackSize;
+    uint32_t            millis;
+    bool                hasRan;
+    bool                ready;
+    byte                stack[];
+    } TCB;
+
+typedef struct semphore_c_t
+    {
+    bool full;
+    TCB *waiting;
+    } SEMAPHORE_C;
 
 #endif /* HaskinoRuntimeH */
 

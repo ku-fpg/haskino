@@ -160,8 +160,8 @@ static bool createById(byte id, unsigned int taskSize, unsigned int bindSize)
             newContext->bindSize = bindSize;
             newContext->bind = bind;
             }
+        taskCount++;
         }
-    taskCount++;
 
     return false;
     }
