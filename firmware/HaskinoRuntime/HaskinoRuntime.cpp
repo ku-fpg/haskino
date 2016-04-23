@@ -362,7 +362,6 @@ void createTask(uint8_t tid, int bindCount, void (*task)())
          ((newTask = (TCB *) malloc(stackSize + sizeof(TCB))) != NULL ))
         {
         newTask->next = firstTask;
-        newTask->prev = NULL;
         firstTask = newTask;
         newTask->id = tid;
         newTask->stackSize = stackSize;
@@ -421,7 +420,9 @@ void taskComplete()
 void switchTo(TCB *newTask)
     {
     SAVE_TASK_CONTEXT();
-    
+    runningTask->stackPointer = taskStack;
+
+    runningTask = newTask;
     if(!runningTask->hasRan)
         {
         runningTask->hasRan = true;
@@ -448,24 +449,31 @@ void startScheduler()
 
 void reschedule()
     {
-    unsigned long now = millis();
-    TCB *current = runningTask->next;
-    TCB *next = NULL;
+    TCB *next = runningTask->next;
 
-    while (current) 
+    if (next == NULL)
+        next = firstTask;
+
+    while (true) 
         {
-        next = current->next;
-        if (current->ready && 
-            now - current->millis < 0x80000000UL)
+        unsigned long now;
+
+        now = millis();
+
+        if (next->ready && 
+            now - next->millis < 0x80000000UL)
             {
-            if (current != runningTask)
+            if (next != runningTask)
                 {
-                runningTask = current;
-                switchTo(runningTask);
+                switchTo(next);
                 }
             return;
             }
-        current = next;
+
+        if (next->next == NULL)
+            next = firstTask;
+        else
+            next = next->next;
         }
     }
 
@@ -520,10 +528,8 @@ void takeSem(uint8_t id)
             // Semaphore is not full, we need to add ourselves to waiting
             // and reschedule
             {
-            TCB *task = runningTask;
-
-            semaphores[id].waiting = task;
-            task->ready = false;
+            semaphores[id].waiting = runningTask;
+            runningTask->ready = false;
             }
         }
     }

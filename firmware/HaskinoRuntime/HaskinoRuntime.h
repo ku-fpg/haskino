@@ -125,7 +125,6 @@ float frac(float f);
 typedef struct tcb_t 
     {
     struct tcb_t       *next;
-    struct tcb_t       *prev;
     uint16_t            stackPointer;
     byte                id;
     void              (*entry)(void);
