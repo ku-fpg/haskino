@@ -310,27 +310,26 @@ asm volatile (\
 "out __SREG__, r0       \n\t"\
 "pop r0                 \n\t": : "r" (taskStack))
 
-#define INIT_TASK_STACK()\
-asm volatile(\
-"out __SP_L__, %A0      \n\t"\
-"out __SP_H__, %B0      \n\t": : "r" (taskStack))
-
 #if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
-    #define INIT_TASK_PTR()\
+    #define INIT_TASK_STACK_FUNC()\
     asm volatile(\
-    "mov r0, %A0        \n\t"\
+    "out __SP_L__, %A0  \n\t"\
+    "out __SP_H__, %B0  \n\t"\
+    "mov r0, %A1        \n\t"\
     "push r0            \n\t"\
-    "mov r0, %B0        \n\t"\
+    "mov r0, %B1        \n\t"\
     "push r0            \n\t"\
-    "mov r0, %C0        \n\t"\
-    "push r0            \n\t": : "r" (taskFunction))
+    "mov r0, %C1        \n\t"\
+    "push r0            \n\t" : : "r" (taskStack), "r" (taskFunction))
 #else
-    #define INIT_TASK_PTR()\
+    #define INIT_TASK_STACK_FUNC()\
     asm volatile(\
-    "mov r0, %A0        \n\t"\
+    "out __SP_L__, %A0  \n\t"\
+    "out __SP_H__, %B0  \n\t"\
+    "mov r0, %A1        \n\t"\
     "push r0            \n\t"\
-    "mov r0, %B0        \n\t"\
-    "push r0            \n\t": : "r" (taskFunction))
+    "mov r0, %B1        \n\t"\
+    "push r0            \n\t" : : "r" (taskStack), "r" (taskFunction))
 #endif
 
 static TCB *findTask(int id)
@@ -427,9 +426,8 @@ void switchTo(TCB *newTask)
         {
         runningTask->hasRan = true;
         taskStack = (uint32_t) runningTask->stackPointer;
-        INIT_TASK_STACK();
         taskFunction = (uint32_t) runningTask->entry;
-        INIT_TASK_PTR();
+        INIT_TASK_STACK_FUNC();
         }
     else
         {
