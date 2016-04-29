@@ -433,6 +433,7 @@ void switchTo(TCB *newTask)
         }
     else
         {
+        taskStack = (uint32_t) runningTask->stackPointer;
         LOAD_TASK_CONTEXT();
         }           
     asm("ret");
