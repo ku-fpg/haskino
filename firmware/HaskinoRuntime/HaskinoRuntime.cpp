@@ -531,6 +531,7 @@ void takeSem(uint8_t id)
             {
             semaphores[id].waiting = runningTask;
             runningTask->ready = false;
+            reschedule();
             }
         }
     }
