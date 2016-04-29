@@ -621,13 +621,19 @@ compileCodeBlock (Arduino commands) = do
            cmdList = tail $ cmdList s,
            binds = head $ bindList s,
            cmds = (head $ cmdList s) ++ (indent $ level s) ++ "{\n" ++ 
-                  body (binds s) (cmds s) ++ (indent $ level s) ++ "}\n",
+                  body (binds s) (cmds s) ++ (taskComplete $ level s) ++ 
+                  (indent $ level s) ++ "}\n",
            level = level s - 1 }
     return r
   where
       body :: String -> String -> String
       body [] cs = cs
       body bs cs = bs ++ "\n" ++ cs
+
+      taskComplete :: Int -> String
+      taskComplete l = if (l==1) 
+                       then indent 1 ++ "taskComplete();\n"
+                       else ""
 
       compileMonad :: RemoteMonad ArduinoCommand ArduinoProcedure a -> 
                       State CompileState a
