@@ -40,7 +40,7 @@ uint16_t servoReadMicros(uint8_t sv);
 // Scheduling routines
 
 void delayMilliseconds(uint32_t ms);
-void createTask(uint8_t tid, int bindCount, void (*task)());
+void createTask(uint8_t tid, void *tcb, int stackSize, void (*task)());
 void deleteTask(uint8_t tid);
 void scheduleTask(uint8_t tid, uint32_t tt);
 void scheduleReset();

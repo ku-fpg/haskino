@@ -74,11 +74,23 @@ indentString = "    "
 mainEntry :: String
 mainEntry = "haskinoMain"
 
-bindCntStr :: String
-bindCntStr = "_BIND_CNT "
+stackSizeStr :: String
+stackSizeStr = "_STACK_SIZE"
+
+tcbStr :: String
+tcbStr = "Tcb"
 
 indent :: Int -> String
 indent k = concat $ replicate k indentString
+
+defaultTaskStackSize :: Int
+defaultTaskStackSize = 64
+
+contextTaskStackSize :: Int
+contextTaskStackSize = 36
+
+taskStackSize :: Int -> Int
+taskStackSize binds = binds * 4 + defaultTaskStackSize + contextTaskStackSize;
 
 compileProgram :: Arduino () -> FilePath -> IO ()
 compileProgram p f = do
@@ -94,9 +106,10 @@ compileProgram p f = do
            forwards st ++ "\n" ++
            "void setup()\n" ++
            "    {\n" ++
-           "    haskinoMemInit()\n" ++
-           "    createTask(255, " ++ (map toUpper mainEntry) ++ bindCntStr ++
-                ", " ++ mainEntry ++ ");\n" ++
+           "    haskinoMemInit();\n" ++
+           "    createTask(255, " ++ mainEntry ++ tcbStr ++ ", " ++ 
+                (map toUpper mainEntry) ++ stackSizeStr ++ ", " ++ 
+                mainEntry ++ ");\n" ++
            "    scheduleTask(255, 0);\n" ++
            "    startScheduler();\n" ++
            "    }\n\n" ++
@@ -125,8 +138,11 @@ compileTask t name = do
     compileCodeBlock t
     compileLine "" 
     s <- get
-    compileForward $ "#define " ++ (map toUpper name) ++ 
-                     bindCntStr ++ " " ++ (show $ ib s)
+    let defineStr = (map toUpper name) ++ stackSizeStr
+    compileForward $ "#define " ++ defineStr ++ " " ++ 
+                     (show $ taskStackSize $ ib s)
+    compileForward $ "byte " ++ name ++ tcbStr ++ "[sizeof(TCB) + " ++ 
+                     defineStr ++ "];"
     s <- get
     put s {tasksDone = cmds s : tasksDone s}
     return ()
@@ -232,8 +248,10 @@ compileCommand (DeleteTaskE tid) =
     compile1ExprCommand "deleteTask" tid
 compileCommand (CreateTaskE (LitW8 tid) m) = do
     let taskName = "task" ++ show tid
-    compileLine $ "createTask(" ++ show tid ++ ", " ++ (map toUpper taskName) ++
-                  "_BIND_CNT, " ++ taskName ++ ");"
+    compileLine $ "createTask(" ++ show tid ++ ", " ++ 
+                  taskName ++ tcbStr ++ ", " ++
+                  (map toUpper taskName) ++ stackSizeStr ++ ", " ++ 
+                  taskName ++ ");"
     s <- get
     put s {tasksToDo = (m, taskName) : (tasksToDo s)}
 compileCommand (ScheduleTaskE tid tt) = 

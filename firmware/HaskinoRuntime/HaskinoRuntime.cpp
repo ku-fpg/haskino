@@ -212,8 +212,6 @@ uint16_t servoReadMicros(uint8_t sv)
     }
     
 // Scheduling routines
-#define DEFAULT_TASK_STACK_SIZE 64
-#define CONTEXT_TASK_STACK_SIZE 36
 
 static TCB *firstTask = NULL;
 static TCB *runningTask = NULL;
@@ -351,14 +349,11 @@ void delayMilliseconds(uint32_t ms)
     reschedule();
     }
     
-void createTask(uint8_t tid, int bindCount, void (*task)())
+void createTask(uint8_t tid, void *tcb, int stackSize, void (*task)())
     {
-    TCB *newTask;
-    int stackSize = (bindCount * 4) + DEFAULT_TASK_STACK_SIZE + 
-                    CONTEXT_TASK_STACK_SIZE;
+    TCB *newTask = (TCB *) tcb;
        
-    if ((findTask(tid) == NULL) &&
-         ((newTask = (TCB *) malloc(stackSize + sizeof(TCB))) != NULL ))
+    if (findTask(tid) == NULL)
         {
         newTask->next = firstTask;
         firstTask = newTask;
@@ -369,7 +364,7 @@ void createTask(uint8_t tid, int bindCount, void (*task)())
         newTask->hasRan = false;
         newTask->entry = task;
         newTask->stackPointer = 
-            (uint16_t) &newTask->stack[DEFAULT_TASK_STACK_SIZE-1];
+            (uint16_t) &newTask->stack[stackSize-sizeof(unsigned long)];
         taskCount++;
         }
     }
