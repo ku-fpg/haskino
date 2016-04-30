@@ -558,7 +558,7 @@ byte *showBool(bool b)
     {
     byte *listMem;
 
-    listMem = listAlloc(5+1);
+    listMem = listAlloc(1+5+1);
     if (listMem)
         {
         if (b)
@@ -573,7 +573,7 @@ byte *showWord8(uint8_t w)
     {
     byte *listMem;
 
-    listMem = listAlloc(3+1);
+    listMem = listAlloc(1+3+1);
     if (listMem)
         {
         listMem[1] = sprintf((char *) &listMem[2],"%u",w);
@@ -585,7 +585,7 @@ byte *showWord16(uint16_t w)
     {
     byte *listMem;
 
-    listMem = listAlloc(5+1);
+    listMem = listAlloc(1+5+1);
     if (listMem)
         {
         listMem[1] = sprintf((char *) &listMem[2],"%u",w);
@@ -597,7 +597,7 @@ byte *showWord32(uint32_t w)
     {
     byte *listMem;
 
-    listMem = listAlloc(10+1);
+    listMem = listAlloc(1+10+1);
     if (listMem)
         {
         listMem[1] = sprintf((char *) &listMem[2],"%lu",w);
@@ -609,7 +609,7 @@ byte *showInt8(int8_t i)
     {
     byte *listMem;
 
-    listMem = listAlloc(4+1);
+    listMem = listAlloc(1+4+1);
     if (listMem)
         {
         listMem[1] = sprintf((char *) &listMem[2],"%d",i);
@@ -621,7 +621,7 @@ byte *showInt16(int16_t i)
     {
     byte *listMem;
 
-    listMem = listAlloc(6+1);
+    listMem = listAlloc(1+6+1);
     if (listMem)
         {
         listMem[1] = sprintf((char *) &listMem[2],"%d",i);
@@ -633,7 +633,7 @@ byte *showInt32(int32_t i)
     {
     byte *listMem;
 
-    listMem = listAlloc(11+1);
+    listMem = listAlloc(1+11+1);
     if (listMem)
         {
         listMem[1] = sprintf((char *) &listMem[2],"%ld",i);
@@ -645,7 +645,7 @@ byte *showFloat(float f, uint16_t w)
     {
     byte *listMem;
 
-    listMem = listAlloc(11+1+w+1);
+    listMem = listAlloc(1+11+1+w+1);
     if (listMem)
         {
         dtostrf(f, 4, w, (char *) &listMem[2]);
