@@ -70,6 +70,12 @@ byte *showInt16(int16_t i);
 byte *showInt32(int32_t i);
 byte *showFloat(byte *f, uint16_t w);
 
+// Mem Functions
+
+void haskinoMemInit(void);
+void *haskinoMalloc(size_t size);
+void haskinoFree(void *mem);
+
 // List functions
 
 #define LITERAL_USE_COUNT   255

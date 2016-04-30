@@ -94,6 +94,7 @@ compileProgram p f = do
            forwards st ++ "\n" ++
            "void setup()\n" ++
            "    {\n" ++
+           "    haskinoMemInit()\n" ++
            "    createTask(255, " ++ (map toUpper mainEntry) ++ bindCntStr ++
                 ", " ++ mainEntry ++ ");\n" ++
            "    scheduleTask(255, 0);\n" ++
