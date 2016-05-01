@@ -772,10 +772,10 @@ void *haskinoMalloc(size_t size)
         return NULL;
     }
 
-static void haskinBlockFree(MEM_BLOCK *freeList, MEM_BLOCK *block)
+static void haskinoBlockFree(MEM_BLOCK **freeList, MEM_BLOCK *block)
     {
-    block->next = freeList;
-    freeList = block;
+    block->next = *freeList;
+    *freeList = block;
     }
 
 void haskinoFree(void *mem)
@@ -787,15 +787,15 @@ void haskinoFree(void *mem)
     size = block->size;
 
     if (size == 16)
-        haskinBlockFree(free16, block);
+        haskinoBlockFree(&free16, block);
     else if (size == 32)
-        haskinBlockFree(free32, block);
+        haskinoBlockFree(&free32, block);
     else if (size == 64)
-        haskinBlockFree(free64, block);
+        haskinoBlockFree(&free64, block);
     else if (size == 128)
-        haskinBlockFree(free128, block);
+        haskinoBlockFree(&free128, block);
     else if (size == 0)
-        haskinBlockFree(free256, block);
+        haskinoBlockFree(&free256, block);
     }
 
 // List functions
