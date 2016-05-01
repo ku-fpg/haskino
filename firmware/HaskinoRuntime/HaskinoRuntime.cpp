@@ -739,18 +739,18 @@ void haskinoMemInit(void)
     free256 = (MEM_BLOCK *) memBlocks256;
     }
 
-static void *haskinoBlockAlloc(MEM_BLOCK *freeList)
+static void *haskinoBlockAlloc(MEM_BLOCK **freeList)
     {
     MEM_BLOCK *block;
 
-    if (freeList == NULL)
+    if (*freeList == NULL)
         {
         return NULL;
         }
     else
         {
-        block = freeList;
-        freeList = freeList->next;
+        block = *freeList;
+        *freeList = block->next;
         }
 
     return ((byte *) block) + sizeof(MEM_BLOCK);
@@ -759,15 +759,15 @@ static void *haskinoBlockAlloc(MEM_BLOCK *freeList)
 void *haskinoMalloc(size_t size)
     {
     if (size <= 16)
-        return haskinoBlockAlloc(free16);
+        return haskinoBlockAlloc(&free16);
     else if (size <= 32)
-        return haskinoBlockAlloc(free32);
+        return haskinoBlockAlloc(&free32);
     else if (size <= 64)
-        return haskinoBlockAlloc(free64);
+        return haskinoBlockAlloc(&free64);
     else if (size <= 128)
-        return haskinoBlockAlloc(free128);
+        return haskinoBlockAlloc(&free128);
     else if (size <= 256)
-        return haskinoBlockAlloc(free256);
+        return haskinoBlockAlloc(&free256);
     else
         return NULL;
     }
