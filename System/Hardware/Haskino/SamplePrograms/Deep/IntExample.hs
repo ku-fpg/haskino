@@ -44,7 +44,7 @@ initIntExample = do
     let led = 13
     setPinModeE led OUTPUT
     let button = 2
-    setPinModeE led INPUT
+    setPinModeE button INPUT
     let myTaskId = 1
     let intTaskId = 2
     -- Create the tasks
