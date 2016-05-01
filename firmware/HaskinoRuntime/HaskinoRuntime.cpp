@@ -345,8 +345,12 @@ static TCB *findTask(int id)
 
 void delayMilliseconds(uint32_t ms)
     {
+#if 1
     runningTask->millis = millis() + ms;
     reschedule();
+#else
+    delay(ms);
+#endif
     }
     
 void createTask(uint8_t tid, void *tcb, int stackSize, void (*task)())
@@ -441,6 +445,50 @@ void startScheduler()
     switchTo(task);
     }
 
+bool minWait(TCB *task)
+    {
+    uint32_t now = millis();
+    uint32_t minTime = 0x80000000UL;
+    TCB *currTask = task;
+    TCB *minTask = NULL;
+
+    // Find the task that is ready to run and has the shortest delay
+    do  {
+        if (currTask->ready)
+            {
+            uint32_t timeDiff = currTask->millis - now;
+
+            if (timeDiff >= 0x80000000UL)
+                timeDiff = 0;
+            if (timeDiff < minTime)
+                {
+                minTime = timeDiff;
+                minTask = currTask;
+                }
+            }
+
+        if (currTask->next == NULL)
+            currTask = firstTask;
+        else
+            currTask = currTask->next;
+
+        } while (currTask != task);
+
+    // If one was found, then delay until its delay would time out
+    // and switch to that task.
+    if (minTask)
+        {
+        delay(minTime);
+        if (minTask != runningTask)
+            switchTo(minTask);
+        return false;
+        }
+    else
+        {
+        return true;
+        }
+    }
+
 void reschedule()
     {
     TCB *next = runningTask->next;
@@ -448,26 +496,14 @@ void reschedule()
     if (next == NULL)
         next = firstTask;
 
-    while (true) 
+    // Loop while no tasks are ready.
+    // Start the search with the task after the current one, so that
+    // if all tasks used delayMillis(0), they would proceed in a 
+    // round robin fashion.
+
+    while (minWait(next)) 
         {
-        unsigned long now;
-
-        now = millis();
-
-        if (next->ready && 
-            now - next->millis < 0x80000000UL)
-            {
-            if (next != runningTask)
-                {
-                switchTo(next);
-                }
-            return;
-            }
-
-        if (next->next == NULL)
-            next = firstTask;
-        else
-            next = next->next;
+        delay(1);
         }
     }
 
