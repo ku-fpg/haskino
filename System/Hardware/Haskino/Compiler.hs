@@ -332,8 +332,8 @@ compileCommand (ForInE ws f) = do
     put s {ib = belem + 2}
     compileAllocBind $ compileTypeToString Word8Type ++ " " ++ 
                        bindName ++ show belem ++ ";"
-    compileAllocBind $ compileTypeToString List8Type ++ " " ++ 
-                       bindName ++ show blist ++ " = NULL;"
+    compileAllocBind $ "static " ++ compileTypeToString List8Type ++ " " ++ 
+                       bindName ++ show blist ++ ";"
     let belemName = bindName ++ show belem
     let blistName = bindName ++ show blist
     compileLine $ "listAssign(&" ++ blistName ++ ", " ++ compileExpr ws ++ ");"
