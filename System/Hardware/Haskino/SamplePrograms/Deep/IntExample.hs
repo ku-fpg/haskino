@@ -39,8 +39,8 @@ myTask led =
 intTask :: Arduino ()
 intTask = giveSemE semId
 
-intExample :: IO ()
-intExample = withArduino True "/dev/cu.usbmodem1421" $ do
+initIntExample :: Arduino ()
+initIntExample = do
     let led = 13
     setPinModeE led OUTPUT
     let button = 2
@@ -53,6 +53,10 @@ intExample = withArduino True "/dev/cu.usbmodem1421" $ do
     -- Schedule the task to start in 50ms, the second starting after the first
     scheduleTaskE myTaskId 50
     attachIntE button intTaskId FALLING
+
+intExample :: IO ()
+intExample = withArduino True "/dev/cu.usbmodem1421" $ do
+    initIntExample
     -- Query to confirm task creation
     tasks <- queryAllTasksE
     liftIO $ print tasks

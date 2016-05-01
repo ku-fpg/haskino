@@ -507,17 +507,6 @@ void reschedule()
         }
     }
 
-void attachInt(uint8_t p, uint8_t t, uint8_t m)
-    {
-    // ToDo: Fill in with scheduling
-    }
-    
-void detachInt(uint8_t p)
-    {
-    // ToDo: Fill in with scheduling
-    }
-    
-
 // Semphore routines
 
 void giveSem(uint8_t id)

@@ -47,8 +47,6 @@ void scheduleReset();
 void taskComplete();
 void startScheduler();
 void reschedule();
-void attachInt(uint8_t p, uint8_t t, uint8_t m);
-void detachInt(uint8_t p);
 
 // Semphore routines
 

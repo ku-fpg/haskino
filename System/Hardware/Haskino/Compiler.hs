@@ -25,8 +25,9 @@ import Control.Remote.Monad.Types as T
 import System.Hardware.Haskino.Data
 import System.Hardware.Haskino.Expr
 import System.Hardware.Haskino.Utils
-
+import Debug.Trace
 data CompileState = CompileState {level :: Int 
+                     , intTask :: Bool
                      , ix :: Int  
                      , ib :: Int  
                      , cmds :: String
@@ -35,7 +36,7 @@ data CompileState = CompileState {level :: Int
                      , forwards :: String
                      , cmdList :: [String]
                      , bindList :: [String]
-                     , tasksToDo :: [(Arduino (), String)]
+                     , tasksToDo :: [(Arduino (), String, Bool)]
                      , tasksDone :: [String]
                      , errors :: [String] 
                      }    
@@ -101,7 +102,7 @@ compileProgram p f = do
     mapM_ putStrLn $ errors st
   where
     (_, st) = runState compileTasks  
-                (CompileState 0 0 0 "" "" "" "" [] [] [(p, mainEntry)] [] [] )
+                (CompileState 0 False 0 0 "" "" "" "" [] [] [(p, mainEntry, False)] [] [] )
     prog = "#include \"HaskinoRuntime.h\"\n\n" ++ 
            forwards st ++ "\n" ++
            "void setup()\n" ++
@@ -126,13 +127,15 @@ compileTasks = do
     then return ()
     else do
         put s {tasksToDo = tail tasks}
-        compileTask (fst $ head tasks) (snd $ head tasks)
+        let (m, name, int) = head tasks
+        compileTask m name int
         compileTasks
 
-compileTask :: Arduino () -> String -> State CompileState ()
-compileTask t name = do
+compileTask :: Arduino () -> String -> Bool -> State CompileState ()
+compileTask t name int = do
     s <- get
-    put s {level = 0, ib = 0, cmds = "", binds = "", cmdList = [], bindList = []}
+    put s {level = 0, intTask = int, ib = 0, cmds = "", 
+           binds = "", cmdList = [], bindList = []}
     compileLine $ "void " ++ name ++ "()"
     compileForward $ "void " ++ name ++ "();"
     compileCodeBlock t
@@ -253,15 +256,30 @@ compileCommand (CreateTaskE (LitW8 tid) m) = do
                   (map toUpper taskName) ++ stackSizeStr ++ ", " ++ 
                   taskName ++ ");"
     s <- get
-    put s {tasksToDo = (m, taskName) : (tasksToDo s)}
+    put s {tasksToDo = (m, taskName, False) : (tasksToDo s)}
 compileCommand (ScheduleTaskE tid tt) = 
     compile2ExprCommand "scheduleTask" tid tt
 compileCommand ScheduleReset = 
     compileNoExprCommand "scheduleReset"
-compileCommand (AttachIntE p t m) = 
-    compile3ExprCommand "attachInt" p t m
+compileCommand (AttachIntE p t m) = do
+    let taskName = "task" ++ compileExpr t
+    s <- get
+    put s {tasksToDo = addIntTask (tasksToDo s) taskName}
+    compileLine ("attachInterrupt(digitalPinToInterrupt(" ++ 
+                                 compileExpr p ++ "), task" ++
+                                 compileExpr t ++ ", " ++ 
+                                 compileExpr m ++ ");")
+  where
+    addIntTask :: [(Arduino (), String, Bool)] -> String -> [(Arduino (), String, Bool)]
+    addIntTask [] _ = []
+    addIntTask (t:ts) tn = matchTask t tn : addIntTask ts tn
+
+    matchTask :: (Arduino (), String, Bool) -> String -> (Arduino (), String, Bool)
+    matchTask (m, tn1, i) tn2 = if tn1 == tn2
+                                then (m, tn1, True)
+                                else (m, tn1, i)
 compileCommand (DetachIntE p) = 
-    compile1ExprCommand "detachInt" p
+    compile1ExprCommand "detachInterrupt" p
 compileCommand Interrupts = 
     compileNoExprCommand "interrupts"
 compileCommand NoInterrupts = 
@@ -647,7 +665,7 @@ compileCodeBlock (Arduino commands) = do
            cmdList = tail $ cmdList s,
            binds = head $ bindList s,
            cmds = (head $ cmdList s) ++ (indent $ level s) ++ "{\n" ++ 
-                  body (binds s) (cmds s) ++ (taskComplete $ level s) ++ 
+                  body (binds s) (cmds s) ++ (taskComplete (level s) (intTask s)) ++ 
                   (indent $ level s) ++ "}\n",
            level = level s - 1 }
     return r
@@ -656,8 +674,8 @@ compileCodeBlock (Arduino commands) = do
       body [] cs = cs
       body bs cs = bs ++ "\n" ++ cs
 
-      taskComplete :: Int -> String
-      taskComplete l = if (l==1) 
+      taskComplete :: Int -> Bool -> String
+      taskComplete l i = if ((not i) && (l==1)) 
                        then indent 1 ++ "taskComplete();\n"
                        else ""
 
