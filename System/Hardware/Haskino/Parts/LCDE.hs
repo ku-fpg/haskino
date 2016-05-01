@@ -150,7 +150,7 @@ pulseEnableDig Hitachi44780{lcdEN} = do
   digitalWriteE (lit lcdEN) true
   delayMicrosE 1
   digitalWriteE (lit lcdEN) false
-  delayMillisE 2
+  delayMicrosE 2000
 
 -- | Transmit data down to the LCD
 transmit :: Expr Bool -> LCDE -> LCDController -> Expr Word8 -> Arduino ()
