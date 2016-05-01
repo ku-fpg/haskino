@@ -329,17 +329,24 @@ compileCommand (ForInE ws f) = do
     s <- get
     let belem = ib s
     let blist = belem + 1
-    put s {ib = belem + 2}
+    let bloop = belem + 2
+    put s {ib = belem + 3}
     compileAllocBind $ compileTypeToString Word8Type ++ " " ++ 
                        bindName ++ show belem ++ ";"
     compileAllocBind $ "static " ++ compileTypeToString List8Type ++ " " ++ 
                        bindName ++ show blist ++ ";"
+    compileAllocBind $ compileTypeToString Word16Type ++ " " ++ 
+                       bindName ++ show bloop ++ ";"
     let belemName = bindName ++ show belem
     let blistName = bindName ++ show blist
+    let bloopName = bindName ++ show bloop
     compileLine $ "listAssign(&" ++ blistName ++ ", " ++ compileExpr ws ++ ");"
-    compileLine $ "for (int i=0, " ++ belemName ++ " = list8Elem(" ++ blistName ++ ", 0);"
-    compileLine $ "     i < list8Len(" ++ blistName ++ ");"
-    compileLine $ "     i++, " ++ belemName ++ " = list8Elem(" ++ blistName ++ ", i))"
+    compileLine $ "for (" ++ bloopName ++ "=0, " ++ 
+                             belemName ++ " = list8Elem(" ++ blistName ++ ", 0);"
+    compileLine $ "     " ++ bloopName ++ " < list8Len(" ++ blistName ++ ");"
+    compileLine $ "     " ++ bloopName ++ "++, " ++ 
+                             belemName ++ " = list8Elem(" ++ blistName ++ ", " ++ 
+                             bloopName ++ "))"
     compileCodeBlock (f (RemBindW8 belem))
     return ()
 
