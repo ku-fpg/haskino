@@ -311,12 +311,29 @@ static void reschedule()
         }
     }
 
+// Critical Region global lock routines
+
+static inline uint8_t lock()
+    {
+    uint8_t statReg = SREG;
+    cli();
+    return statReg;
+    }
+
+static inline void unlock(uint8_t statReg)
+    {
+    SREG = statReg;
+    }
+
 // Semphore routines
 
 void giveSem(uint8_t id)
     {
     if (id < NUM_SEMAPHORES)
         {
+        uint8_t reg;
+
+        reg = lock();
         // Semaphore is already full, do nothing
         if (semaphores[id].full)
             {
@@ -335,6 +352,7 @@ void giveSem(uint8_t id)
             {
             semaphores[id].full = true;
             }
+        unlock(reg);
         }
     }
     
@@ -342,10 +360,14 @@ void takeSem(uint8_t id)
     {
     if (id < NUM_SEMAPHORES)
         {
+        uint8_t reg;
+
+        reg = lock();
         // Semaphore is already full, take it and do not reschedule
         if (semaphores[id].full)
             {
             semaphores[id].full = false;
+            unlock(reg);
             }
         else
             // Semaphore is not full, we need to add ourselves to waiting
@@ -353,6 +375,7 @@ void takeSem(uint8_t id)
             {
             semaphores[id].waiting = runningTask;
             runningTask->ready = false;
+            unlock(reg);
             reschedule();
             }
         }
