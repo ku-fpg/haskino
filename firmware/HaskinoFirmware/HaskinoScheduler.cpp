@@ -481,6 +481,20 @@ static bool handleBootTask(int size, const byte *msg, CONTEXT *context)
     return false;
     }
 
+// Critical Region global lock routines
+
+static inline uint8_t lock()
+    {
+    uint8_t statReg = SREG;
+    cli();
+    return statReg;
+    }
+
+static inline void unlock(uint8_t statReg)
+    {
+    SREG = statReg;
+    }
+
 static bool handleTakeSem(int size, const byte *msg, CONTEXT *context)
     {
     byte *expr = (byte *) &msg[1];
@@ -488,10 +502,14 @@ static bool handleTakeSem(int size, const byte *msg, CONTEXT *context)
 
     if (id < NUM_SEMAPHORES)
         {
+        uint8_t reg;
+
+        reg = lock();
         // Semaphore is already full, take it and do not reschedule
         if (semaphores[id].full)
             {
             semaphores[id].full = false;
+            unlock(reg);
             return false;
             }
         else
@@ -505,6 +523,7 @@ static bool handleTakeSem(int size, const byte *msg, CONTEXT *context)
                 semaphores[id].waiting = task;
                 task->ready = false;
                 }
+            unlock(reg);
             return true;
             }
         }
@@ -521,6 +540,9 @@ static bool handleGiveSem(int size, const byte *msg, CONTEXT *context)
 
     if (id < NUM_SEMAPHORES)
         {
+        uint8_t reg;
+
+        reg = lock();
         // Semaphore is already full, do nothing
         if (semaphores[id].full)
             {
@@ -539,6 +561,7 @@ static bool handleGiveSem(int size, const byte *msg, CONTEXT *context)
             {
             semaphores[id].full = true;
             }
+        unlock(reg);
         }
         return false;
     }
@@ -554,7 +577,7 @@ void schedulerBootTask()
 
         for (unsigned int t=0; t<taskCount; t++)
             {
-            byte low, high, midl, midh;
+            uint32_t low, high, midl, midh;
             uint16_t taskSize, bindSize;
             uint32_t taskMillis;
             byte id = EEPROM[ index++ ];
