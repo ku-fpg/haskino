@@ -21,11 +21,17 @@ typedef struct __attribute__ ((packed)) mem_block_t
 
 #define MEM_HDR_SIZE (sizeof(struct mem_block_t))
 
+#define NUM_BLOCK_LISTS 5
+static int blockSizes[NUM_BLOCK_LISTS] = {16, 32, 64, 128, 256};
+
 static MEM_BLOCK *free16;
 static MEM_BLOCK *free32;
 static MEM_BLOCK *free64;
 static MEM_BLOCK *free128;
 static MEM_BLOCK *free256;
+
+static MEM_BLOCK **freeLists[NUM_BLOCK_LISTS] =
+    {&free16, &free32, &free64, &free128, &free256};
 
 static uint8_t memBlocks16[NUM_MEM_BLK_16][MEM_HDR_SIZE+16];
 static uint8_t memBlocks32[NUM_MEM_BLK_32][MEM_HDR_SIZE+32];
@@ -113,18 +119,27 @@ static void *haskinoBlockAlloc(MEM_BLOCK **freeList)
 
 void *haskinoMalloc(size_t size)
     {
-    if (size <= 16)
-        return haskinoBlockAlloc(&free16);
-    else if (size <= 32)
-        return haskinoBlockAlloc(&free32);
-    else if (size <= 64)
-        return haskinoBlockAlloc(&free64);
-    else if (size <= 128)
-        return haskinoBlockAlloc(&free128);
-    else if (size <= 256)
-        return haskinoBlockAlloc(&free256);
-    else
+    int idx = 0;
+    void *block = NULL;
+
+    // Find the starting block size
+    while (size > blockSizes[idx] && idx < NUM_BLOCK_LISTS)
+        {
+        idx++;
+        }
+    if (idx >= NUM_BLOCK_LISTS)
         return NULL;
+
+    // Starting with the smallest free list that will accomodate the request,
+    // search the lists for a free block.
+    while (idx < NUM_BLOCK_LISTS)
+        {
+        block = haskinoBlockAlloc(freeLists[idx]);
+        if (block != NULL)
+            return block;
+        idx++;
+        }
+    return NULL;
     }
 
 static void haskinoBlockFree(MEM_BLOCK **freeList, MEM_BLOCK *block)
