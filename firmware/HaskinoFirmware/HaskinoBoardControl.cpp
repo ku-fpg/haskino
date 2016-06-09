@@ -67,19 +67,17 @@ static bool handleDelayMillis(int size, const byte *msg, CONTEXT *context)
 
     uint32_t millis = evalWord32Expr(&expr, context);
 
-    if (context->task && !context->codeBlock )
+    if (context->task)
         {
         delayRunningTask(millis);
+        return true;
         }
     else 
         {
         delay(millis);
-        if (!context->task && !context->codeBlock)
-            {
-            sendReply(0, BC_RESP_DELAY, NULL, context, bind);
-            }
+        sendReply(0, BC_RESP_DELAY, NULL, context, bind);
+        return false;
         }
-    return true;
     }
 
 static bool handleDelayMicros(int size, const byte *msg, CONTEXT *context)
@@ -89,10 +87,7 @@ static bool handleDelayMicros(int size, const byte *msg, CONTEXT *context)
 
     uint32_t micros = evalWord16Expr(&expr, context);
     delayMicroseconds(micros);
-    if (!context->task && !context->codeBlock)
-        {
-        sendReply(0, BC_RESP_DELAY, NULL, context, bind);
-        }
+    sendReply(0, BC_RESP_DELAY, NULL, context, bind);
     return false;
     }
 
@@ -106,10 +101,13 @@ static bool handleLoop(int size, const byte *msg, CONTEXT *context)
     {
     byte *codeBlock = (byte *) &msg[1];
     int loopSize = size - 1;
+    bool rescheduled;
 
     while (true)
         {
-        runCodeBlock(loopSize, codeBlock, context);
+        rescheduled = runCodeBlock(loopSize, codeBlock, context);
+        if (rescheduled)
+            return true;
         }
 
     return false;
@@ -124,12 +122,25 @@ static bool handleForIn(int size, const byte *msg, CONTEXT *context)
     byte bindIndex = expr[1];
     byte *codeBlock = expr + 2;
     int forSize = size - (codeBlock - msg);
+    bool rescheduled = context->task && context->task->rescheduled;
+    int i;
 
     context->bind[bindIndex * BIND_SPACING] = EXPR(EXPR_WORD8, EXPR_LIT);
-    for (int i=0;i<listSize;i++)
+    for (i=rescheduled ? 
+            context->blockStatus[context->recallBlockLevel+1].info.index : 0;
+         i<listSize;
+         i++)
         {
         context->bind[bindIndex * BIND_SPACING + 1] = listPtr[i+2];
-        runCodeBlock(forSize, codeBlock, context);
+        context->blockStatus[context->currBlockLevel+1].info.index = i;
+        rescheduled = runCodeBlock(forSize, codeBlock, context);
+        if (rescheduled)
+            {
+            if (alloc) 
+                free(listPtr);
+
+            return true;
+            }
         }
 
     if (alloc) 
@@ -149,10 +160,15 @@ static bool handleWhile(int size, const byte *msg, CONTEXT *context)
     byte exprType = *updateExpr >> EXPR_TYPE_SHFT;
     byte *codeBlock = (expr + updateLength);
     int whileSize = size - (expr + updateLength - msg);
-
-    while (condition)
+    bool rescheduled = (context->task && context->task->rescheduled);
+    
+    // If we were rescheduled, always enter the loop to rerun code block
+    while (condition || rescheduled)
         {
-        runCodeBlock(whileSize, codeBlock, context);
+        rescheduled = runCodeBlock(whileSize, codeBlock, context);
+        if (rescheduled) {
+             return true;
+        }
 
         expr = updateExpr;
         switch (exprType)
@@ -196,17 +212,31 @@ static bool handleIfThenElse(int size, const byte *msg, CONTEXT *context)
     byte *expr = (byte *) &msg[3];
     bool condition = evalBoolExpr(&expr, context);
     byte *codeBlock = expr;
+    bool test;
+    bool rescheduled = context->task && context->task->rescheduled;
 
-    if (condition)
+    if (rescheduled)
         {
-        runCodeBlock(thenSize, codeBlock, context);
+        // get test value from block status
+        test = context->blockStatus[context->recallBlockLevel+1].info.condition;
+        }
+    else
+        {
+        test = condition;
+        // save condition to block status
+        context->blockStatus[context->currBlockLevel+1].info.condition = condition;
+        }
+
+    if (test)
+        {
+        rescheduled = runCodeBlock(thenSize, codeBlock, context);
         }
     else
         {
         elseSize = size - (thenSize + (codeBlock - msg));
-        runCodeBlock(elseSize, codeBlock + thenSize, context);
+        rescheduled = runCodeBlock(elseSize, codeBlock + thenSize, context);
         }
 
-    return false;
+    return rescheduled;
     }
 

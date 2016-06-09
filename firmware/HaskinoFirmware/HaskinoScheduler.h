@@ -1,7 +1,19 @@
 #ifndef HaskinoSchedulerH
 #define HaskinoSchedulerH
 
+#include "HaskinoConfig.h"
+
 struct context_t;
+
+typedef struct block_status_t
+    {
+    uint16_t currPos;
+    union 
+        {
+        bool condition;
+        int index;
+        } info;
+    } BLOCK_STATUS;
 
 typedef struct task_t 
     {
@@ -13,6 +25,8 @@ typedef struct task_t
     uint16_t            currLen;
     uint16_t            currPos;
     uint32_t            millis;
+    bool                ready;
+    bool                rescheduled;
     byte               *endData;
     byte                data[];
     } TASK;
@@ -20,10 +34,18 @@ typedef struct task_t
 typedef struct context_t
     {
     TASK               *task;
+    BLOCK_STATUS        blockStatus[MAX_BLOCK_LEVELS];
+    int16_t             currBlockLevel;
+    int16_t             recallBlockLevel;
     uint16_t            bindSize;
     byte               *bind;
-    bool                codeBlock;
     } CONTEXT;
+
+typedef struct semphore_t
+    {
+    bool full;
+    TASK *waiting;
+    } SEMAPHORE;
 
 bool parseSchedulerMessage(int size, const byte *msg, CONTEXT *context);
 CONTEXT *schedulerDefaultContext();

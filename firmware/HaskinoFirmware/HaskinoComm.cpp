@@ -20,7 +20,7 @@ static int messageCount = 0;
 static int processingEscapeState = 0;
 static byte inputData[MESSAGE_MAX_SIZE];
 
-static void processChar(char c);
+static void processChar(byte c);
 
 int processingMessage() 
     {
@@ -158,7 +158,7 @@ void sendReply(int count, byte replyType, const byte *reply,
     const byte *nextChar = reply;
     int i;
 
-    if ((context->codeBlock && (replyType != BS_RESP_STRING))|| context->task)
+    if ((replyType != BS_RESP_STRING) && (context->currBlockLevel >= 0))
         {
         memcpy(&context->bind[bind * BIND_SPACING], reply, count);
         }

@@ -7,27 +7,40 @@
 #include "HaskinoExpr.h"
 #include "HaskinoScheduler.h"
 
-#define BOOT_TASK_INDEX_START   8
-#define BOOT_TASK_ID            255
+#define BOOT_TASK_INDEX_START   5
 
 static bool handleQueryAll(int size, const byte *msg, CONTEXT *context);
 static bool handleCreateTask(int size, const byte *msg, CONTEXT *context);
 static bool handleDeleteTask(int size, const byte *msg, CONTEXT *context);
 static bool handleAddToTask(int size, const byte *msg, CONTEXT *context);
 static bool handleScheduleTask(int size, const byte *msg, CONTEXT *context);
+static bool handleAttachInterrupt(int size, const byte *msg, CONTEXT *context);
+static bool handleDetachInterrupt(int size, const byte *msg, CONTEXT *context);
+static bool handleInterrupts(int size, const byte *msg, CONTEXT *context);
+static bool handleNoInterrupts(int size, const byte *msg, CONTEXT *context);
 static bool handleQuery(int size, const byte *msg, CONTEXT *context);
 static bool handleReset(int size, const byte *msg, CONTEXT *context);
 static bool handleBootTask(int size, const byte *msg, CONTEXT *context);
+static bool handleTakeSem(int size, const byte *msg, CONTEXT *context);
+static bool handleGiveSem(int size, const byte *msg, CONTEXT *context);
 static void deleteTask(TASK* task);
 static TASK *findTask(int id);
 static bool createById(byte id, unsigned int taskSize, unsigned int bindSize);
 static bool scheduleById(byte id, unsigned long deltaMillis);
-static bool executeTask(TASK *task);
+static void handleISR(int intNum);
+static void ISR0(void);
+static void ISR1(void);
+static void ISR2(void);
+static void ISR3(void);
+static void ISR4(void);
+static void ISR5(void);
 
 static TASK *firstTask = NULL;
 static TASK *runningTask = NULL;
 static CONTEXT *defaultContext = NULL;
 static int taskCount = 0;
+static SEMAPHORE semaphores[NUM_SEMAPHORES];
+static TASK *intTasks[MAX_INTERRUPTS];
 
 int getTaskCount()
     {
@@ -53,14 +66,32 @@ bool parseSchedulerMessage(int size, const byte *msg, CONTEXT *context)
         case SCHED_CMD_SCHED_TASK:
             return handleScheduleTask(size, msg, context);
             break;
+        case SCHED_CMD_ATTACH_INT:
+            return handleAttachInterrupt(size, msg, context);
+            break;
+        case SCHED_CMD_DETACH_INT:
+            return handleDetachInterrupt(size, msg, context);
+            break;
+        case SCHED_CMD_INTERRUPTS:
+            return handleInterrupts(size, msg, context);
+            break;
+        case SCHED_CMD_NOINTERRUPTS:
+            return handleNoInterrupts(size, msg, context);
+            break;
         case SCHED_CMD_QUERY:
             return handleQuery(size, msg, context);
             break;
         case SCHED_CMD_RESET:
             return handleReset(size, msg, context);
             break;
-         case SCHED_CMD_BOOT_TASK:
+        case SCHED_CMD_BOOT_TASK:
             return handleBootTask(size, msg, context);
+            break;
+        case SCHED_CMD_TAKE_SEM:
+            return handleTakeSem(size, msg, context);
+            break;
+        case SCHED_CMD_GIVE_SEM:
+            return handleGiveSem(size, msg, context);
             break;
        }
     return false;
@@ -73,6 +104,8 @@ CONTEXT *schedulerDefaultContext()
         defaultContext = (CONTEXT *) calloc(1, sizeof(CONTEXT));
         defaultContext->bind = (byte *) calloc(1, DEFAULT_BIND_COUNT * BIND_SPACING);
         defaultContext->bindSize = DEFAULT_BIND_COUNT;
+        defaultContext->currBlockLevel = -1;
+        defaultContext->recallBlockLevel = -1;
         }
     return defaultContext;
     }
@@ -118,13 +151,17 @@ static bool createById(byte id, unsigned int taskSize, unsigned int bindSize)
             newTask->size = taskSize;
             newTask->currLen = 0;
             newTask->currPos = 0;
+            newTask->ready = false;
+            newTask->rescheduled = false;
             newTask->endData = newTask->data + newTask->size;
+            newContext->currBlockLevel = -1;
+            newContext->recallBlockLevel = -1;
             newContext->task = newTask;
             newContext->bindSize = bindSize;
             newContext->bind = bind;
             }
+        taskCount++;
         }
-    taskCount++;
 
     return false;
     }
@@ -148,6 +185,7 @@ static void deleteTask(TASK* task)
     if (task->next != NULL)
         task->next->prev = task->prev;
     taskCount--;
+    free(task->context);
     free(task);
     }
 
@@ -190,6 +228,7 @@ static bool scheduleById(byte id, unsigned long deltaMillis)
     if ((task = findTask(id)) != NULL)
         {
         task->millis = millis() + deltaMillis;
+        task->ready = true;
         }
     return false;
     }
@@ -200,6 +239,74 @@ static bool handleScheduleTask(int size, const byte *msg, CONTEXT *context)
     byte id = evalWord8Expr(&expr, context);
     unsigned long deltaMillis = evalWord32Expr(&expr, context);
     return scheduleById(id, deltaMillis);
+    }
+
+static bool handleAttachInterrupt(int size, const byte *msg, CONTEXT *context)
+    {
+    byte *expr = (byte *) &msg[1];
+    byte pin = evalWord8Expr(&expr, context);
+    byte id = evalWord8Expr(&expr, context);
+    byte mode = evalWord8Expr(&expr, context);
+    byte intNum;
+    TASK *task;
+    void (*isr)(void);
+
+    if ((intNum = digitalPinToInterrupt(pin)) < MAX_INTERRUPTS)
+        {
+        if ((task = findTask(id)) != NULL)
+            {
+            switch(intNum)
+                {
+                case 0:
+                    isr = ISR0;
+                    break;
+                case 1:
+                    isr = ISR1;
+                    break;
+                case 2:
+                    isr = ISR2;
+                    break;
+                case 3:
+                    isr = ISR3;
+                    break;
+                case 4:
+                    isr = ISR4;
+                    break;
+                case 5:
+                    isr = ISR5;
+                    break;
+                }
+            intTasks[intNum] = task;
+            attachInterrupt(intNum, isr, mode);
+            }
+        }
+    return false;
+    }
+
+static bool handleDetachInterrupt(int size, const byte *msg, CONTEXT *context)
+    {
+    byte *expr = (byte *) &msg[1];
+    byte pin = evalWord8Expr(&expr, context);
+    byte intNum;
+
+    if ((intNum = digitalPinToInterrupt(pin)) < MAX_INTERRUPTS)
+        {
+        detachInterrupt(intNum);
+        intTasks[intNum] = NULL;
+        }
+    return false;
+    }
+
+static bool handleInterrupts(int size, const byte *msg, CONTEXT *context)
+    {
+    interrupts();
+    return false;
+    }
+
+static bool handleNoInterrupts(int size, const byte *msg, CONTEXT *context)
+    {
+    noInterrupts();
+    return false;
     }
 
 static bool handleQuery(int size, const byte *msg, CONTEXT *context)
@@ -255,7 +362,7 @@ static bool handleQueryAll(int size, const byte *msg, CONTEXT *context)
 
     localMem[1] = i;
 
-    if (context->codeBlock || context->task)
+    if (context->currBlockLevel >= 0)
         {
         putBindListPtr(context, bind, localMem);
         }
@@ -287,39 +394,80 @@ static bool handleReset(int size, const byte *msg, CONTEXT *context)
 
 static bool handleBootTask(int size, const byte *msg, CONTEXT *context)
     {
-    TASK *task;
     byte bind = msg[1];
     byte *expr = (byte *) &msg[2];
-    byte id = evalWord8Expr(&expr, context);
+    bool alloc;
+    byte *ids = evalList8Expr(&expr, context, &alloc);
     byte bootReply[2];
-    byte status = 0;
+    byte status = 1;
+    unsigned int index = BOOT_TASK_INDEX_START;
+    unsigned int idsLen = ids[1];
+    unsigned int taskCount = 0;
 
-    if ((task = findTask(id)) != NULL)
+    /* Write the Magic pattern */
+    EEPROM[ 0 ] = 'H';
+    EEPROM[ 1 ] = 'A';
+    EEPROM[ 2 ] = 'S';
+    EEPROM[ 3 ] = 'K';
+
+    for (unsigned int i=0; i<idsLen; i++)
         {
-        unsigned int index = BOOT_TASK_INDEX_START;
+        TASK *task;
+        byte id = ids[2+i];
 
-        EEPROM[ 0 ] = 'H';
-        EEPROM[ 1 ] = 'A';
-        EEPROM[ 2 ] = 'S';
-        EEPROM[ 3 ] = 'K';
-        EEPROM[ 4 ] = task->currLen & 0xFF;
-        EEPROM[ 5 ] = task->currLen >> 8;
-        EEPROM[ 6 ] = task->context->bindSize & 0xFF;
-        EEPROM[ 7 ] = task->context->bindSize >> 8;
-
-        for (unsigned int i=0;i<task->currLen;i++,index++)
+        if ((task = findTask(id)) != NULL)
             {
-            EEPROM[ index ] = task->data[i];
+            unsigned int taskBodyStart;
+            uint32_t startTime;
+            uint32_t now = millis();
+
+            if (task->millis == 0 || task->millis < now)
+                {
+                startTime = 0;
+                }
+            else
+                {
+                startTime = now;
+                }
+
+            /* Write the task ID */
+            EEPROM[ index++ ] = id;
+
+            /* Write the length of the task */
+            EEPROM[ index++ ] = task->currLen & 0xFF;
+            EEPROM[ index++ ] = task->currLen >> 8;
+
+            /* Write the number of binds in the task */
+            EEPROM[ index++ ] = task->context->bindSize & 0xFF;
+            EEPROM[ index++ ] = task->context->bindSize >> 8;
+
+            /* Write the scheduled time of the task */
+            EEPROM[ index++ ] = startTime & 0xFF;
+            EEPROM[ index++ ] = (startTime >> 8) & 0xFF;
+            EEPROM[ index++ ] = (startTime >> 16) & 0xFF;
+            EEPROM[ index++ ] = startTime >> 24;            
+
+            /* Write the body of the task */
+            taskBodyStart = index;
+            for (unsigned int i=0;i<task->currLen;i++,index++)
+                {
+                EEPROM[ index ] = task->data[i];
+                }
+
+            /* Validate body writing */
+            index = taskBodyStart;
+            for (unsigned int i=0;i<task->currLen;i++,index++)
+                {
+                if (EEPROM[ index ] != task->data[i])
+                    status = 0;
+                }
             }
 
-        index = BOOT_TASK_INDEX_START;
-        status = 1;
-        for (unsigned int i=0;i<task->currLen;i++,index++)
-            {
-            if (EEPROM[ index ] != task->data[i])
-                status = 0;
-            }
+            taskCount++;
         }
+
+    /* Write the number of boot tasks */
+    EEPROM[ 4 ] = taskCount;
 
     bootReply[0] = EXPR(EXPR_BOOL, EXPR_LIT);
     bootReply[1] = status;
@@ -327,7 +475,95 @@ static bool handleBootTask(int size, const byte *msg, CONTEXT *context)
     sendReply(sizeof(bootReply), SCHED_RESP_BOOT_TASK, 
               bootReply, context, bind);
 
+    if (alloc)
+        free(ids);
+
     return false;
+    }
+
+// Critical Region global lock routines
+
+static inline uint8_t lock()
+    {
+    uint8_t statReg = SREG;
+    cli();
+    return statReg;
+    }
+
+static inline void unlock(uint8_t statReg)
+    {
+    SREG = statReg;
+    }
+
+static bool handleTakeSem(int size, const byte *msg, CONTEXT *context)
+    {
+    byte *expr = (byte *) &msg[1];
+    byte id = evalWord8Expr(&expr, context);
+
+    if (id < NUM_SEMAPHORES)
+        {
+        uint8_t reg;
+
+        reg = lock();
+        // Semaphore is already full, take it and do not reschedule
+        if (semaphores[id].full)
+            {
+            semaphores[id].full = false;
+            unlock(reg);
+            return false;
+            }
+        else
+            // Semaphore is not full, we need to add ourselves to waiting
+            // and reschedule
+            {
+            TASK *task = context->task;
+
+            if (task)
+                {
+                semaphores[id].waiting = task;
+                task->ready = false;
+                }
+            unlock(reg);
+            return true;
+            }
+        }
+    else
+        {
+        return false;
+        }
+    }
+
+static bool handleGiveSem(int size, const byte *msg, CONTEXT *context)
+    {
+    byte *expr = (byte *) &msg[1];
+    byte id = evalWord8Expr(&expr, context);
+
+    if (id < NUM_SEMAPHORES)
+        {
+        uint8_t reg;
+
+        reg = lock();
+        // Semaphore is already full, do nothing
+        if (semaphores[id].full)
+            {
+            }
+        // Semaphore has a task waiting, ready it to run 
+        else if (semaphores[id].waiting)
+            {
+            TASK* task = semaphores[id].waiting;
+
+            task->ready = true;
+            task->millis = millis();
+            semaphores[id].waiting = NULL;
+            }
+        // Otherwise mark the semphore as full
+        else
+            {
+            semaphores[id].full = true;
+            }
+        unlock(reg);
+        }
+        return false;
     }
 
 void schedulerBootTask()
@@ -336,18 +572,37 @@ void schedulerBootTask()
         EEPROM[ 2 ] == 'S' && EEPROM[ 3 ] == 'K')
         {
         TASK *task;
-        uint16_t taskSize = EEPROM[ 4 ] | (EEPROM[ 5 ] << 8);
-        uint16_t bindSize = EEPROM[ 6 ] | (EEPROM[ 7 ] << 8);
-        int index = BOOT_TASK_INDEX_START;
+        unsigned int taskCount = EEPROM[ 4 ];
+        unsigned int index = BOOT_TASK_INDEX_START;
 
-        createById(BOOT_TASK_ID, taskSize, bindSize);
-        task = findTask(BOOT_TASK_ID);
-        for (unsigned int i=0;i<taskSize;i++,index++)
+        for (unsigned int t=0; t<taskCount; t++)
             {
-            task->data[i] = EEPROM[ index ];
+            uint32_t low, high, midl, midh;
+            uint16_t taskSize, bindSize;
+            uint32_t taskMillis;
+            byte id = EEPROM[ index++ ];
+
+            low = EEPROM[ index++ ];
+            high = EEPROM[ index++ ];
+            taskSize = low | high << 8;
+            low = EEPROM[ index++ ];
+            high = EEPROM[ index++ ];
+            bindSize = low | high << 8;
+            low = EEPROM[ index++ ];
+            midl = EEPROM[ index++ ];
+            midh = EEPROM[ index++ ];
+            high = EEPROM[ index++ ];
+            taskMillis = low | midl << 8 | midh << 16 | high << 24;
+
+            createById(id, taskSize, bindSize);
+            task = findTask(id);
+            for (unsigned int i=0;i<taskSize;i++,index++)
+                {
+                task->data[i] = EEPROM[ index ];
+                }
+            task->currLen = taskSize;           
+            scheduleById(id, taskMillis);
             }
-        task->currLen = taskSize;           
-        scheduleById(BOOT_TASK_ID, 10);
         }
     }
 
@@ -362,10 +617,12 @@ void schedulerRunTasks()
         while (current) 
             {
             next = current->next;
-            if (current->millis > 0 && current->millis < now) 
-                { // ToDo: handle overflow
+            if (current->ready && 
+                now - current->millis < 0x80000000UL)
+                {
                 runningTask = current;
-                if (!executeTask(current)) 
+                if (!runCodeBlock(current->currLen, 
+                                  current->data, current->context))
                     {
                     deleteTask(current);
                     }
@@ -376,44 +633,6 @@ void schedulerRunTasks()
         }
     }
 
-static bool executeTask(TASK *task)
-    {
-    // Find end of next command
-    bool taskRescheduled;
-
-    while (task->currPos < task->currLen)
-        {
-        byte *msg = &task->data[task->currPos];
-        uint16_t cmdSize;
-        byte *cmd;
-
-        if (msg[0] != 0xFF)
-            {
-            cmdSize = msg[0];
-            cmd = &msg[1];
-            }
-        else
-            {
-            cmdSize = ((uint16_t) msg[2]) << 8 |
-                      ((uint16_t) msg[1]);
-            cmd = &msg[3];
-            }
-
-        taskRescheduled = parseMessage(cmdSize, cmd, task->context);  
-
-        task->currPos += cmdSize + 1;
-        if (taskRescheduled)
-            {
-            if (task->currPos >= task->currLen)
-                {
-                task->currPos = 0;
-                }
-            return true;
-            }
-        }
-    return false;
-    }
-
 bool isRunningTask()
     {
     return runningTask != NULL;
@@ -421,5 +640,46 @@ bool isRunningTask()
 
 void delayRunningTask(unsigned long ms)
     {
-    runningTask->millis += ms;   
+    runningTask->millis = millis() + ms; 
     }
+
+static void handleISR(int intNum)
+    {
+    TASK *task = intTasks[intNum];
+
+    if (task)
+        {
+        runCodeBlock(task->currLen, task->data, task->context);
+        }
+    }
+
+static void ISR0(void)
+    {
+    handleISR(0);
+    }
+
+static void ISR1(void)
+    {
+    handleISR(1);
+    }
+
+static void ISR2(void)
+    {
+    handleISR(2);
+    }
+
+static void ISR3(void)
+    {
+    handleISR(3);
+    }
+
+static void ISR4(void)
+    {
+    handleISR(4);
+    }
+
+static void ISR5(void)
+    {
+    handleISR(5);
+    }
+

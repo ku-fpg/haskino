@@ -30,6 +30,7 @@
 #define BS_CMD_REQUEST_TYPE     (BS_CMD_TYPE | 0x1)
 #define BS_CMD_REQUEST_MICROS   (BS_CMD_TYPE | 0x2)
 #define BS_CMD_REQUEST_MILLIS   (BS_CMD_TYPE | 0x3)
+#define BS_CMD_DEBUG            (BS_CMD_TYPE | 0x4)
 
 // Board Status responses
 #define BS_RESP_VERSION         (BS_CMD_TYPE | 0x8)
@@ -37,6 +38,7 @@
 #define BS_RESP_MICROS          (BS_CMD_TYPE | 0xA)
 #define BS_RESP_MILLIS          (BS_CMD_TYPE | 0xB)
 #define BS_RESP_STRING          (BS_CMD_TYPE | 0xC)
+#define BS_RESP_DEBUG           (BS_CMD_TYPE | 0xD)
 
 // Digital commands
 #define DIG_CMD_TYPE            0x30
@@ -109,14 +111,21 @@
 #define SCHED_CMD_QUERY_ALL     (SCHED_CMD_TYPE | 0x5)
 #define SCHED_CMD_RESET         (SCHED_CMD_TYPE | 0x6)
 #define SCHED_CMD_BOOT_TASK     (SCHED_CMD_TYPE | 0x7)
+#define SCHED_CMD_TAKE_SEM      (SCHED_CMD_TYPE | 0x8)
+#define SCHED_CMD_GIVE_SEM      (SCHED_CMD_TYPE | 0x9)
+#define SCHED_CMD_ATTACH_INT    (SCHED_CMD_TYPE | 0xA)
+#define SCHED_CMD_DETACH_INT    (SCHED_CMD_TYPE | 0xB)
+#define SCHED_CMD_INTERRUPTS    (SCHED_CMD_TYPE | 0xC)
+#define SCHED_CMD_NOINTERRUPTS  (SCHED_CMD_TYPE | 0xD)
 
 // Scheduler responses
-#define SCHED_RESP_QUERY        (SCHED_CMD_TYPE | 0x8)
-#define SCHED_RESP_QUERY_ALL    (SCHED_CMD_TYPE | 0x9)
-#define SCHED_RESP_BOOT_TASK    (SCHED_CMD_TYPE | 0xA)
+#define SCHED_RESP_TYPE          0xB0
+#define SCHED_RESP_QUERY        (SCHED_RESP_TYPE | 0x0)
+#define SCHED_RESP_QUERY_ALL    (SCHED_RESP_TYPE | 0x1)
+#define SCHED_RESP_BOOT_TASK    (SCHED_RESP_TYPE | 0x2)
 
 // Reference commands
-#define REF_CMD_TYPE            0xB0
+#define REF_CMD_TYPE            0xC0
 
 #define REF_CMD_NEW             (REF_CMD_TYPE | 0x0)
 #define REF_CMD_READ            (REF_CMD_TYPE | 0x1)

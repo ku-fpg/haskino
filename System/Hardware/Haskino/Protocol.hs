@@ -16,11 +16,15 @@ module System.Hardware.Haskino.Protocol(framePackage, packageCommand,
                                             unpackageResponse, parseQueryResult,
                                             maxFirmwareSize, packageExpr) where
 
-import Data.Bits            (xor,shiftR)
+import Data.Bits (xor,shiftR)
 import Data.Int (Int8, Int16, Int32)
 import Data.Word (Word8, Word16, Word32)
 
-import Control.Concurrent   (modifyMVar_, readMVar)
+import Control.Concurrent (modifyMVar_, readMVar)
+
+import           Control.Remote.Monad
+import           Control.Remote.Monad.Types as T
+
 import qualified Data.ByteString as B
 import qualified Data.Map        as M
 
@@ -53,10 +57,10 @@ buildCommand cmd bs = B.pack $ firmwareCmdVal cmd : bs
 
 -- | Package a request as a sequence of bytes to be sent to the board
 -- using the Haskino Firmware protocol.
-packageCommand :: Command -> Int -> Int -> (B.ByteString, Int)
+packageCommand :: ArduinoCommand -> Int -> Int -> (B.ByteString, Int)
 packageCommand SystemReset ix ib = (buildCommand BC_CMD_SYSTEM_RESET [], ix)
 packageCommand (SetPinModeE p m) ix _ =
-    (buildCommand BC_CMD_SET_PIN_MODE (packageExpr p ++ [fromIntegral $ fromEnum m]), ix)
+    (buildCommand BC_CMD_SET_PIN_MODE (packageExpr p ++ packageExpr m), ix)
 packageCommand (DigitalWriteE p b) ix _ =
     (buildCommand DIG_CMD_WRITE_PIN (packageExpr p ++ packageExpr b), ix)
 packageCommand (DigitalPortWriteE p b m) ix _ =
@@ -87,6 +91,18 @@ packageCommand (ScheduleTaskE tid tt) ix _ =
     (buildCommand SCHED_CMD_SCHED_TASK (packageExpr tid ++ packageExpr tt), ix)
 packageCommand ScheduleReset ix _ =
     (buildCommand SCHED_CMD_RESET [], ix)
+packageCommand (AttachIntE p t m) ix _ =
+    (buildCommand SCHED_CMD_ATTACH_INT (packageExpr p ++ packageExpr t ++ packageExpr m), ix)
+packageCommand (DetachIntE p) ix _ =
+    (buildCommand SCHED_CMD_DETACH_INT (packageExpr p), ix)
+packageCommand (Interrupts) ix _ =
+    (buildCommand SCHED_CMD_INTERRUPTS [], ix)
+packageCommand (NoInterrupts) ix _ =
+    (buildCommand SCHED_CMD_NOINTERRUPTS [], ix)
+packageCommand (GiveSemE id) ix _ =
+    (buildCommand SCHED_CMD_GIVE_SEM (packageExpr id), ix)
+packageCommand (TakeSemE id) ix _ =
+    (buildCommand SCHED_CMD_TAKE_SEM (packageExpr id), ix)
 packageCommand (CreateTaskE tid m) ix _ =
     ((framePackage cmd) `B.append` (genAddToTaskCmds td), ix')
   where
@@ -206,88 +222,94 @@ packageCommand (IfThenElse e cb1 cb2) ix ib =
 -- current remote bind index, and returns a tuple of the packaged block,
 -- final remote reference index, and final remote bind index.
 packageCodeBlock :: Arduino a -> Int -> Int -> (B.ByteString, Int, Int)
-packageCodeBlock commands ix ib =
-      packageCodeBlock' commands ix ib B.empty
+packageCodeBlock (Arduino commands) ix ib = (cmds', ix', ib')
   where
-      packBind :: Arduino a -> Int -> Int -> (a -> Arduino b) -> B.ByteString -> (B.ByteString, Int, Int)
-      packBind (Return a) ix ib k cmds = packageCodeBlock' (k a) ix ib cmds
-      packBind (Bind m k1) ix ib k2 cmds = packBind m ix ib (\ r -> Bind (k1 r) k2) cmds
-      packBind (Command cmd) ix ib k cmds =
-          -- Instead of framing each command as is done with sending them
-          -- seperately, here a sequence which contains the command length
-          -- is prepended.
-          packageCodeBlock' (k ()) ix' ib (B.append cmds (lenPackage pc))
-        where 
-          (pc, ix') = packageCommand cmd ix ib
-      packBind (Procedure procedure) ix ib k cmds = packProcedure procedure ix ib k cmds
+      (_, cmds', ix', ib') = packMonad commands ix ib B.empty
 
-      packProcedure :: Procedure a -> Int -> Int -> (a -> Arduino b) -> B.ByteString -> (B.ByteString, Int, Int)
-      packProcedure QueryFirmware ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure QueryFirmware ib)))
-      packProcedure QueryFirmwareE ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure QueryFirmwareE ib)))
-      packProcedure QueryProcessor ix ib k cmds = packageCodeBlock' (k ATMEGA8) ix ib (B.append cmds (lenPackage (packageProcedure QueryProcessor ib)))
-      packProcedure QueryProcessorE ix ib k cmds = packageCodeBlock' (k 0) ix (ib+1) (B.append cmds (lenPackage (packageProcedure QueryProcessorE ib)))
-      packProcedure Micros ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure Micros ib)))
-      packProcedure MicrosE ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure MicrosE ib)))
-      packProcedure Millis ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure Millis ib)))
-      packProcedure MillisE ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure MillisE ib)))
-      packProcedure (DelayMillis ms) ix ib k cmds = packageCodeBlock' (k ()) ix ib (B.append cmds (lenPackage (packageProcedure (DelayMillis ms) ib)))
-      packProcedure (DelayMillisE ms) ix ib k cmds = packageCodeBlock' (k ()) ix ib (B.append cmds (lenPackage (packageProcedure (DelayMillisE ms) ib)))
-      packProcedure (DelayMicros ms) ix ib k cmds = packageCodeBlock' (k ()) ix ib (B.append cmds (lenPackage (packageProcedure (DelayMicros ms) ib)))
-      packProcedure (DelayMicrosE ms) ix ib k cmds = packageCodeBlock' (k ()) ix ib (B.append cmds (lenPackage (packageProcedure (DelayMicrosE ms) ib)))
-      packProcedure (DigitalRead p) ix ib k cmds = packageCodeBlock' (k False) ix ib (B.append cmds (lenPackage (packageProcedure (DigitalRead p) ib)))
-      packProcedure (DigitalReadE p) ib ix k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (DigitalReadE p) ib)))
-      packProcedure (DigitalPortRead p m) ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure (DigitalPortRead p m) ib)))
-      packProcedure (DigitalPortReadE p m) ib ix k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (DigitalPortReadE p m) ib)))
-      packProcedure (AnalogRead p) ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure (AnalogRead p) ib)))
-      packProcedure (AnalogReadE p) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (AnalogReadE p) ib)))
-      packProcedure (I2CRead p n) ix ib k cmds = packageCodeBlock' (k []) ix ib (B.append cmds (lenPackage (packageProcedure (I2CRead p n) ib)))
-      packProcedure (I2CReadE p n) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (I2CReadE p n) ib)))
-      packProcedure (Stepper2Pin s p1 p2) ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure (Stepper2Pin s p1 p2) ib)))
-      packProcedure (Stepper2PinE s p1 p2) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (Stepper2PinE s p1 p2) ib)))
-      packProcedure (Stepper4Pin s p1 p2 p3 p4) ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure (Stepper4Pin s p1 p2 p3 p4) ib)))
-      packProcedure (Stepper4PinE s p1 p2 p3 p4) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (Stepper4PinE s p1 p2 p3 p4) ib)))
-      packProcedure (StepperStepE st s) ix ib k cmds = packageCodeBlock' (k ()) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (StepperStepE st s) ib)))
-      packProcedure (ServoAttach p) ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure (ServoAttach p) ib)))
-      packProcedure (ServoAttachE p) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ServoAttachE p) ib)))
-      packProcedure (ServoAttachMinMax p min max) ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure (ServoAttachMinMax p min max) ib)))
-      packProcedure (ServoAttachMinMaxE p min max) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ServoAttachMinMaxE p min max) ib)))
-      packProcedure (ServoRead sv) ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure (ServoRead sv) ib)))
-      packProcedure (ServoReadE sv) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ServoReadE sv) ib)))
-      packProcedure (ServoReadMicros sv) ix ib k cmds = packageCodeBlock' (k 0) ix ib (B.append cmds (lenPackage (packageProcedure (ServoReadMicros sv) ib)))
-      packProcedure (ServoReadMicrosE sv) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ServoReadMicrosE sv) ib)))
-      packProcedure QueryAllTasks ix ib k cmds = packageCodeBlock' (k ([])) ix ib (B.append cmds (lenPackage (packageProcedure QueryAllTasks ib)))
-      packProcedure QueryAllTasksE ix ib k cmds = packageCodeBlock' (k (lit [])) ix (ib+1) (B.append cmds (lenPackage (packageProcedure QueryAllTasksE ib)))
-      packProcedure (QueryTask t) ix ib k cmds = packageCodeBlock' (k Nothing) ix ib (B.append cmds (lenPackage (packageProcedure (QueryTask t) ib)))
-      packProcedure (QueryTaskE t) ix ib k cmds = packageCodeBlock' (k Nothing) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (QueryTaskE t) ib)))
-      packProcedure (BootTaskE tid) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (BootTaskE tid) ib)))
-      packProcedure (ReadRemoteRefB (RemoteRefB i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefB (RemoteRefB i)) ib)))
-      packProcedure (ReadRemoteRefW8 (RemoteRefW8 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefW8 (RemoteRefW8 i)) ib)))
-      packProcedure (ReadRemoteRefW16 (RemoteRefW16 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefW16 (RemoteRefW16 i)) ib)))
-      packProcedure (ReadRemoteRefW32 (RemoteRefW32 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefW32 (RemoteRefW32 i)) ib)))
-      packProcedure (ReadRemoteRefI8 (RemoteRefI8 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefI8 (RemoteRefI8 i)) ib)))
-      packProcedure (ReadRemoteRefI16 (RemoteRefI16 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefI16 (RemoteRefI16 i)) ib)))
-      packProcedure (ReadRemoteRefI32 (RemoteRefI32 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefI32 (RemoteRefI32 i)) ib)))
-      packProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) ib)))
-      packProcedure (ReadRemoteRefFloat (RemoteRefFloat i)) ix ib k cmds = packageCodeBlock' (k (remBind ib)) ix (ib+1) (B.append cmds (lenPackage (packageProcedure (ReadRemoteRefFloat (RemoteRefFloat i)) ib)))
-      packProcedure (NewRemoteRefB e) ix ib k cmds = packageCodeBlock' (k (RemoteRefB ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefB e) ix ib)))
-      packProcedure (NewRemoteRefW8 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefW8 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefW8 e) ix ib)))
-      packProcedure (NewRemoteRefW16 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefW16 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefW16 e) ix ib)))
-      packProcedure (NewRemoteRefW32 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefW32 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefW32 e) ix ib)))
-      packProcedure (NewRemoteRefI8 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefI8 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefI8 e) ix ib)))
-      packProcedure (NewRemoteRefI16 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefI16 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefI16 e) ix ib)))
-      packProcedure (NewRemoteRefI32 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefI32 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefI32 e) ix ib)))
-      packProcedure (NewRemoteRefL8 e) ix ib k cmds = packageCodeBlock' (k (RemoteRefL8 ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefL8 e) ix ib)))
-      packProcedure (NewRemoteRefFloat e) ix ib k cmds = packageCodeBlock' (k (RemoteRefFloat ix)) (ix+1) (ib+1) (B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefFloat e) ix ib)))
+      packProcedure :: ArduinoProcedure a -> Int -> Int -> B.ByteString -> (a, B.ByteString, Int, Int)
+      packProcedure QueryFirmware ix ib cmds = (0, B.append cmds (lenPackage (packageProcedure QueryFirmware ib)), ix, ib)
+      packProcedure QueryFirmwareE ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure QueryFirmwareE ib)), ix, ib+1)
+      packProcedure QueryProcessor ix ib cmds = (UNKNOWN_PROCESSOR, B.append cmds (lenPackage (packageProcedure QueryProcessor ib)), ix, ib)
+      packProcedure QueryProcessorE ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure QueryProcessorE ib)), ix, ib+1)
+      packProcedure Micros ix ib cmds = (0, B.append cmds (lenPackage (packageProcedure Micros ib)), ix, ib)
+      packProcedure MicrosE ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure MicrosE ib)), ix, ib+1)
+      packProcedure Millis ix ib cmds = (0, B.append cmds (lenPackage (packageProcedure Millis ib)), ix, ib)
+      packProcedure MillisE ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure MillisE ib)), ix, ib+1)
+      packProcedure (DelayMillis ms) ix ib cmds = ((), B.append cmds (lenPackage (packageProcedure (DelayMillis ms) ib)), ix, ib)
+      packProcedure (DelayMillisE ms) ix ib cmds = ((), B.append cmds (lenPackage (packageProcedure (DelayMillisE ms) ib)), ix, ib)
+      packProcedure (DelayMicros ms) ix ib cmds = ((), B.append cmds (lenPackage (packageProcedure (DelayMicros ms) ib)), ix, ib)
+      packProcedure (DelayMicrosE ms) ix ib cmds = ((), B.append cmds (lenPackage (packageProcedure (DelayMicrosE ms) ib)), ix, ib)  
+      packProcedure (DigitalRead p) ix ib cmds = (False, B.append cmds (lenPackage (packageProcedure (DigitalRead p) ib)), ix, ib)
+      packProcedure (DigitalReadE p) ib ix cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (DigitalReadE p) ib)), ix, ib+1)
+      packProcedure (DigitalPortRead p m) ix ib cmds = (0, B.append cmds (lenPackage (packageProcedure (DigitalPortRead p m) ib)), ix, ib)
+      packProcedure (DigitalPortReadE p m) ib ix cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (DigitalPortReadE p m) ib)), ix, ib+1)
+      packProcedure (AnalogRead p) ix ib cmds = (0, B.append cmds (lenPackage (packageProcedure (AnalogRead p) ib)), ix, ib)
+      packProcedure (AnalogReadE p) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (AnalogReadE p) ib)), ix, ib+1)
+      packProcedure (I2CRead p n) ix ib cmds = ([], B.append cmds (lenPackage (packageProcedure (I2CRead p n) ib)), ix, ib)
+      packProcedure (I2CReadE p n) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (I2CReadE p n) ib)), ix, ib+1)
+      packProcedure (Stepper2Pin s p1 p2) ix ib cmds = (0, B.append cmds (lenPackage (packageProcedure (Stepper2Pin s p1 p2) ib)), ix, ib)
+      packProcedure (Stepper2PinE s p1 p2) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (Stepper2PinE s p1 p2) ib)), ix, ib+1)
+      packProcedure (Stepper4Pin s p1 p2 p3 p4) ix ib cmds = (0, B.append cmds (lenPackage (packageProcedure (Stepper4Pin s p1 p2 p3 p4) ib)), ix, ib)
+      packProcedure (Stepper4PinE s p1 p2 p3 p4) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (Stepper4PinE s p1 p2 p3 p4) ib)), ix, ib+1)
+      packProcedure (StepperStepE st s) ix ib cmds = ((), B.append cmds (lenPackage (packageProcedure (StepperStepE st s) ib)), ix, ib+1)
+      packProcedure (ServoAttach p) ix ib cmds = (0, B.append cmds (lenPackage (packageProcedure (ServoAttach p) ib)), ix, ib)
+      packProcedure (ServoAttachE p) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ServoAttachE p) ib)), ix, ib+1)
+      packProcedure (ServoAttachMinMax p min max) ix ib cmds = (0, B.append cmds (lenPackage (packageProcedure (ServoAttachMinMax p min max) ib)), ix, ib)
+      packProcedure (ServoAttachMinMaxE p min max) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ServoAttachMinMaxE p min max) ib)), ix, ib+1)
+      packProcedure (ServoRead sv) ix ib cmds = (0, B.append cmds (lenPackage (packageProcedure (ServoRead sv) ib)), ix, ib)
+      packProcedure (ServoReadE sv) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ServoReadE sv) ib)), ix, ib+1)
+      packProcedure (ServoReadMicros sv) ix ib cmds = (0, B.append cmds (lenPackage (packageProcedure (ServoReadMicros sv) ib)), ix, ib)
+      packProcedure (ServoReadMicrosE sv) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ServoReadMicrosE sv) ib)), ix, ib+1)
+      packProcedure QueryAllTasks ix ib cmds = ([], B.append cmds (lenPackage (packageProcedure QueryAllTasks ib)), ix, ib)
+      packProcedure QueryAllTasksE ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure QueryAllTasksE ib)), ix, ib+1)
+      packProcedure (QueryTask t) ix ib cmds = (Nothing, B.append cmds (lenPackage (packageProcedure (QueryTask t) ib)), ix, ib)
+      packProcedure (QueryTaskE t) ix ib cmds = (Nothing, B.append cmds (lenPackage (packageProcedure (QueryTaskE t) ib)), ix, ib+1)
+      packProcedure (BootTaskE tids) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (BootTaskE tids) ib)), ix, ib+1) 
+      packProcedure (ReadRemoteRefB (RemoteRefB i)) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ReadRemoteRefB (RemoteRefB i)) ib)), ix, ib+1)
+      packProcedure (ReadRemoteRefW8 (RemoteRefW8 i)) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ReadRemoteRefW8 (RemoteRefW8 i)) ib)), ix, ib+1)
+      packProcedure (ReadRemoteRefW16 (RemoteRefW16 i)) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ReadRemoteRefW16 (RemoteRefW16 i)) ib)), ix, ib+1)
+      packProcedure (ReadRemoteRefW32 (RemoteRefW32 i)) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ReadRemoteRefW32 (RemoteRefW32 i)) ib)), ix, ib+1)
+      packProcedure (ReadRemoteRefI8 (RemoteRefI8 i)) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ReadRemoteRefI8 (RemoteRefI8 i)) ib)), ix, ib+1)
+      packProcedure (ReadRemoteRefI16 (RemoteRefI16 i)) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ReadRemoteRefI16 (RemoteRefI16 i)) ib)), ix, ib+1)
+      packProcedure (ReadRemoteRefI32 (RemoteRefI32 i)) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ReadRemoteRefI32 (RemoteRefI32 i)) ib)), ix, ib+1)
+      packProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) ib)), ix, ib+1)
+      packProcedure (ReadRemoteRefFloat (RemoteRefFloat i)) ix ib cmds = (remBind ib, B.append cmds (lenPackage (packageProcedure (ReadRemoteRefFloat (RemoteRefFloat i)) ib)), ix, ib+1)
+      packProcedure (NewRemoteRefB e) ix ib cmds = (RemoteRefB ix, B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefB e) ix ib)), ix+1, ib+1)
+      packProcedure (NewRemoteRefW8 e) ix ib cmds = (RemoteRefW8 ix, B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefW8 e) ix ib)), ix+1, ib+1)
+      packProcedure (NewRemoteRefW16 e) ix ib cmds = (RemoteRefW16 ix, B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefW16 e) ix ib)), ix+1, ib+1)
+      packProcedure (NewRemoteRefW32 e) ix ib cmds = (RemoteRefW32 ix, B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefW32 e) ix ib)), ix+1, ib+1)
+      packProcedure (NewRemoteRefI8 e) ix ib cmds = (RemoteRefI8 ix, B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefI8 e) ix ib)), ix+1, ib+1)
+      packProcedure (NewRemoteRefI16 e) ix ib cmds = (RemoteRefI16 ix, B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefI16 e) ix ib)), ix+1, ib+1)
+      packProcedure (NewRemoteRefI32 e) ix ib cmds = (RemoteRefI32 ix, B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefI32 e) ix ib)), ix+1, ib+1)
+      packProcedure (NewRemoteRefL8 e) ix ib cmds = (RemoteRefL8 ix, B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefL8 e) ix ib)), ix+1, ib+1)
+      packProcedure (NewRemoteRefFloat e) ix ib cmds = (RemoteRefFloat ix, B.append cmds (lenPackage (packageRemoteBinding (NewRemoteRefFloat e) ix ib)), ix+1, ib+1)
+      packProcedure (DebugE s) ix ib cmds = ((), B.append cmds (lenPackage (packageProcedure (DebugE s) ib)), ix, ib+1) 
       -- For sending as part of a Scheduler task, debug and die make no sense.  
       -- Instead of signalling an error, at this point they are just ignored.
-      packProcedure (Debug _) ix ib k cmds = packageCodeBlock' (k ()) ix ib cmds
-      packProcedure (Die _ _) ix ib k cmds = packageCodeBlock' (k ()) ix ib cmds
+      packProcedure (Debug _) ix ib cmds = ((), cmds, ix, ib)
+      packProcedure DebugListen ix ib cmds = ((), cmds, ix, ib)
+      packProcedure (Die _ _) ix ib cmds = ((), cmds, ix, ib)
 
+      packAppl :: RemoteApplicative ArduinoCommand ArduinoProcedure a -> Int -> Int -> B.ByteString -> (a, B.ByteString, Int, Int)
+      packAppl (T.Command cmd) ix ib cmds = ((), B.append cmds (lenPackage pc), ix', ib)
+        where 
+          (pc, ix') = packageCommand cmd ix ib
+      packAppl (T.Procedure p) ix ib cmds = packProcedure p ix ib cmds
+      packAppl (T.Ap a1 a2) ix ib cmds = (f g, cmds'', ix'', ib'')
+        where
+          (f, cmds', ix', ib') = packAppl a1 ix ib cmds
+          (g, cmds'', ix'', ib'') = packAppl a2 ix' ib' cmds'
+      packAppl (T.Pure a) ix ib cmds = (a, cmds, ix, ib)
 
-      packageCodeBlock' :: Arduino a -> Int -> Int -> B.ByteString -> (B.ByteString, Int, Int)
-      packageCodeBlock' (Bind m k) ix ib cmds = packBind m ix ib k cmds
-      packageCodeBlock' (Return a) ix ib cmds = (cmds, ix, ib)
-      packageCodeBlock' cmd        ix ib cmds = packBind cmd ix ib Return cmds
+      packMonad :: RemoteMonad ArduinoCommand ArduinoProcedure a -> Int -> Int -> B.ByteString -> (a, B.ByteString, Int, Int)
+      packMonad (T.Appl app) ix ib cmds = packAppl app ix ib cmds
+      packMonad (T.Bind m k) ix ib cmds = packMonad (k r) ix' ib' cmds'
+        where
+          (r, cmds', ix', ib') = packMonad m ix ib cmds
+      packMonad (T.Ap' m1 m2) ix ib cmds = (f g, cmds'', ix'', ib'')
+        where
+          (f, cmds', ix', ib') = packMonad m1 ix ib cmds
+          (g, cmds'', ix'', ib'') = packMonad m2 ix' ib' cmds'
 
       lenPackage :: B.ByteString -> B.ByteString
       lenPackage package = B.append (lenEncode $ B.length package) package      
@@ -302,7 +324,7 @@ packageCodeBlock commands ix ib =
                     then B.singleton $ fromIntegral l 
                     else B.pack $ 0xFF : (word16ToBytes $ fromIntegral l)
 
-packageProcedure :: Procedure a -> Int -> B.ByteString
+packageProcedure :: ArduinoProcedure a -> Int -> B.ByteString
 packageProcedure QueryFirmware ib    = buildCommand BS_CMD_REQUEST_VERSION [fromIntegral ib]
 packageProcedure QueryFirmwareE ib   = buildCommand BS_CMD_REQUEST_VERSION [fromIntegral ib]
 packageProcedure QueryProcessor ib   = buildCommand BS_CMD_REQUEST_TYPE [fromIntegral ib]
@@ -340,7 +362,7 @@ packageProcedure (DelayMillis ms) ib  = buildCommand BC_CMD_DELAY_MILLIS ((fromI
 packageProcedure (DelayMillisE ms) ib = buildCommand BC_CMD_DELAY_MILLIS ((fromIntegral ib) : (packageExpr ms))
 packageProcedure (DelayMicros ms) ib  = buildCommand BC_CMD_DELAY_MICROS ((fromIntegral ib) : (packageExpr $ lit ms))
 packageProcedure (DelayMicrosE ms) ib = buildCommand BC_CMD_DELAY_MICROS ((fromIntegral ib) : (packageExpr ms))
-packageProcedure (BootTaskE tid) ib = buildCommand SCHED_CMD_BOOT_TASK ((fromIntegral ib) : (packageExpr tid))
+packageProcedure (BootTaskE tids) ib = buildCommand SCHED_CMD_BOOT_TASK ((fromIntegral ib) : (packageExpr tids))
 packageProcedure (ReadRemoteRefB (RemoteRefB i)) ib = buildCommand REF_CMD_READ [fromIntegral $ fromEnum REF_BOOL, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
 packageProcedure (ReadRemoteRefW8 (RemoteRefW8 i)) ib = buildCommand REF_CMD_READ [fromIntegral $ fromEnum REF_WORD8, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
 packageProcedure (ReadRemoteRefW16 (RemoteRefW16 i)) ib = buildCommand REF_CMD_READ [fromIntegral $ fromEnum REF_WORD16, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
@@ -350,8 +372,10 @@ packageProcedure (ReadRemoteRefI16 (RemoteRefI16 i)) ib = buildCommand REF_CMD_R
 packageProcedure (ReadRemoteRefI32 (RemoteRefI32 i)) ib = buildCommand REF_CMD_READ [fromIntegral $ fromEnum REF_INT32, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
 packageProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) ib = buildCommand REF_CMD_READ [fromIntegral $ fromEnum REF_LIST8, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
 packageProcedure (ReadRemoteRefFloat (RemoteRefFloat i)) ib = buildCommand REF_CMD_READ [fromIntegral $ fromEnum REF_FLOAT, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
+packageProcedure (DebugE s) ib = buildCommand BS_CMD_DEBUG ((fromIntegral ib) : (packageExpr s))
+packageProcedure DebugListen ib = B.empty
 
-packageRemoteBinding :: Procedure a -> Int -> Int -> B.ByteString
+packageRemoteBinding :: ArduinoProcedure a -> Int -> Int -> B.ByteString
 packageRemoteBinding (NewRemoteRefB e)  ix ib = buildCommand REF_CMD_NEW ([fromIntegral $ fromEnum REF_BOOL, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
 packageRemoteBinding (NewRemoteRefW8 e)  ix ib = buildCommand REF_CMD_NEW ([fromIntegral $ fromEnum REF_WORD8, fromIntegral ib, fromIntegral ix] ++(packageExpr e))
 packageRemoteBinding (NewRemoteRefW16 e) ix ib = buildCommand REF_CMD_NEW ([fromIntegral $ fromEnum REF_WORD16, fromIntegral ib, fromIntegral ix] ++ (packageExpr e))
@@ -612,6 +636,7 @@ unpackageResponse (cmdWord:args)
   | Right cmd <- getFirmwareReply cmdWord
   = case (cmd, args) of
       (BC_RESP_DELAY, [])               -> DelayResp
+      (BS_RESP_DEBUG, [])               -> DebugResp
       (BS_RESP_VERSION, [majV, minV])   -> Firmware (bytesToWord16 (majV,minV))
       (BS_RESP_TYPE, [p])               -> ProcessorType p
       (BS_RESP_MICROS, [l,m0,m1,m2,m3]) -> MicrosReply (bytesToWord32 (m0,m1,m2,m3))
@@ -662,53 +687,54 @@ unpackageResponse (cmdWord:args)
   = Unimplemented Nothing (cmdWord : args)
 
 -- This is how we match responses with queries
-parseQueryResult :: Arduino a -> Response -> Maybe a
-parseQueryResult (Procedure QueryFirmware) (Firmware v) = Just v
-parseQueryResult (Procedure QueryFirmwareE) (Firmware v) = Just (lit v)
-parseQueryResult (Procedure QueryProcessor) (ProcessorType pt) = Just $ toEnum $ fromIntegral pt
-parseQueryResult (Procedure QueryProcessorE) (ProcessorType pt) = Just $ (lit pt)
-parseQueryResult (Procedure Micros) (MicrosReply m) = Just m
-parseQueryResult (Procedure MicrosE) (MicrosReply m) = Just (lit m)
-parseQueryResult (Procedure Millis) (MillisReply m) = Just m
-parseQueryResult (Procedure MillisE) (MillisReply m) = Just (lit m)
-parseQueryResult (Procedure (DelayMicros _)) DelayResp = Just ()
-parseQueryResult (Procedure (DelayMicrosE _)) DelayResp = Just ()
-parseQueryResult (Procedure (DelayMillis _)) DelayResp = Just ()
-parseQueryResult (Procedure (DelayMillisE _)) DelayResp = Just ()
-parseQueryResult (Procedure (DigitalRead _)) (DigitalReply d) = Just (if d == 0 then False else True)
-parseQueryResult (Procedure (DigitalReadE _)) (DigitalReply d) = Just (if d == 0 then lit False else lit True)
-parseQueryResult (Procedure (DigitalPortRead _ _)) (DigitalPortReply d) = Just d
-parseQueryResult (Procedure (DigitalPortReadE _ _)) (DigitalPortReply d) = Just (lit d)
-parseQueryResult (Procedure (AnalogRead _)) (AnalogReply a) = Just a
-parseQueryResult (Procedure (AnalogReadE _)) (AnalogReply a) = Just (lit a)
-parseQueryResult (Procedure (I2CRead _ _)) (I2CReply ds) = Just ds
-parseQueryResult (Procedure (I2CReadE _ _)) (I2CReply ds) = Just (lit ds)
-parseQueryResult (Procedure (Stepper2Pin _ _ _)) (Stepper2PinReply st) = Just st
-parseQueryResult (Procedure (Stepper2PinE _ _ _)) (Stepper2PinReply st) = Just (lit st)
-parseQueryResult (Procedure (Stepper4Pin _ _ _ _ _)) (Stepper4PinReply st) = Just st
-parseQueryResult (Procedure (Stepper4PinE _ _ _ _ _)) (Stepper4PinReply st) = Just (lit st)
-parseQueryResult (Procedure (StepperStepE _ _)) StepperStepReply = Just ()
-parseQueryResult (Procedure QueryAllTasks) (QueryAllTasksReply ts) = Just ts
-parseQueryResult (Procedure QueryAllTasksE) (QueryAllTasksReply ts) = Just (lit ts)
-parseQueryResult (Procedure (QueryTask _)) (QueryTaskReply tr) = Just tr
-parseQueryResult (Procedure (QueryTaskE _)) (QueryTaskReply tr) = Just tr
-parseQueryResult (Procedure (BootTaskE _)) (BootTaskResp b) = Just (if b == 0 then lit False else lit True)
-parseQueryResult (Procedure (NewRemoteRefB _)) (NewReply r) = Just $ RemoteRefB $ fromIntegral r
-parseQueryResult (Procedure (NewRemoteRefW8 _)) (NewReply r) = Just $ RemoteRefW8 $ fromIntegral r
-parseQueryResult (Procedure (NewRemoteRefW16 _)) (NewReply r) = Just $ RemoteRefW16 $ fromIntegral r
-parseQueryResult (Procedure (NewRemoteRefW32 _)) (NewReply r) = Just $ RemoteRefW32 $ fromIntegral r
-parseQueryResult (Procedure (NewRemoteRefI8 _)) (NewReply r) = Just $ RemoteRefI8 $ fromIntegral r
-parseQueryResult (Procedure (NewRemoteRefI16 _)) (NewReply r) = Just $ RemoteRefI16 $ fromIntegral r
-parseQueryResult (Procedure (NewRemoteRefI32 _)) (NewReply r) = Just $ RemoteRefI32 $ fromIntegral r
-parseQueryResult (Procedure (NewRemoteRefL8 _)) (NewReply r) = Just $ RemoteRefL8 $ fromIntegral r
-parseQueryResult (Procedure (NewRemoteRefFloat _)) (NewReply r) = Just $ RemoteRefFloat$ fromIntegral r
-parseQueryResult (Procedure (ReadRemoteRefB _)) (ReadRefBReply r) = Just $ lit r
-parseQueryResult (Procedure (ReadRemoteRefW8 _)) (ReadRefW8Reply r) = Just $ lit r
-parseQueryResult (Procedure (ReadRemoteRefW16 _)) (ReadRefW16Reply r) = Just $ lit r
-parseQueryResult (Procedure (ReadRemoteRefW32 _)) (ReadRefW32Reply r) = Just $ lit r
-parseQueryResult (Procedure (ReadRemoteRefI8 _)) (ReadRefI8Reply r) = Just $ lit r
-parseQueryResult (Procedure (ReadRemoteRefI16 _)) (ReadRefI16Reply r) = Just $ lit r
-parseQueryResult (Procedure (ReadRemoteRefI32 _)) (ReadRefI32Reply r) = Just $ lit r
-parseQueryResult (Procedure (ReadRemoteRefL8 _)) (ReadRefL8Reply r) = Just $ lit r
-parseQueryResult (Procedure (ReadRemoteRefFloat _)) (ReadRefFloatReply r) = Just $ lit r
+parseQueryResult :: ArduinoProcedure a -> Response -> Maybe a
+parseQueryResult QueryFirmware (Firmware v) = Just v
+parseQueryResult QueryFirmwareE (Firmware v) = Just (lit v)
+parseQueryResult QueryProcessor (ProcessorType pt) = Just $ toEnum $ fromIntegral pt
+parseQueryResult QueryProcessorE (ProcessorType pt) = Just $ (lit pt)
+parseQueryResult Micros (MicrosReply m) = Just m
+parseQueryResult MicrosE (MicrosReply m) = Just (lit m)
+parseQueryResult Millis (MillisReply m) = Just m
+parseQueryResult MillisE (MillisReply m) = Just (lit m)
+parseQueryResult (DelayMicros _) DelayResp = Just ()
+parseQueryResult (DelayMicrosE _) DelayResp = Just ()
+parseQueryResult (DelayMillis _) DelayResp = Just ()
+parseQueryResult (DelayMillisE _) DelayResp = Just ()
+parseQueryResult (DebugE _) DebugResp = Just ()
+parseQueryResult (DigitalRead _) (DigitalReply d) = Just (if d == 0 then False else True)
+parseQueryResult (DigitalReadE _) (DigitalReply d) = Just (if d == 0 then lit False else lit True)
+parseQueryResult (DigitalPortRead _ _) (DigitalPortReply d) = Just d
+parseQueryResult (DigitalPortReadE _ _) (DigitalPortReply d) = Just (lit d)
+parseQueryResult (AnalogRead _) (AnalogReply a) = Just a
+parseQueryResult (AnalogReadE _) (AnalogReply a) = Just (lit a)
+parseQueryResult (I2CRead _ _) (I2CReply ds) = Just ds
+parseQueryResult (I2CReadE _ _) (I2CReply ds) = Just (lit ds)
+parseQueryResult (Stepper2Pin _ _ _) (Stepper2PinReply st) = Just st
+parseQueryResult (Stepper2PinE _ _ _) (Stepper2PinReply st) = Just (lit st)
+parseQueryResult (Stepper4Pin _ _ _ _ _) (Stepper4PinReply st) = Just st
+parseQueryResult (Stepper4PinE _ _ _ _ _) (Stepper4PinReply st) = Just (lit st)
+parseQueryResult (StepperStepE _ _) StepperStepReply = Just ()
+parseQueryResult QueryAllTasks (QueryAllTasksReply ts) = Just ts
+parseQueryResult QueryAllTasksE (QueryAllTasksReply ts) = Just (lit ts)
+parseQueryResult (QueryTask _) (QueryTaskReply tr) = Just tr
+parseQueryResult (QueryTaskE _) (QueryTaskReply tr) = Just tr
+parseQueryResult (BootTaskE _) (BootTaskResp b) = Just (if b == 0 then lit False else lit True)
+parseQueryResult (NewRemoteRefB _) (NewReply r) = Just $ RemoteRefB $ fromIntegral r
+parseQueryResult (NewRemoteRefW8 _) (NewReply r) = Just $ RemoteRefW8 $ fromIntegral r
+parseQueryResult (NewRemoteRefW16 _) (NewReply r) = Just $ RemoteRefW16 $ fromIntegral r
+parseQueryResult (NewRemoteRefW32 _) (NewReply r) = Just $ RemoteRefW32 $ fromIntegral r
+parseQueryResult (NewRemoteRefI8 _) (NewReply r) = Just $ RemoteRefI8 $ fromIntegral r
+parseQueryResult (NewRemoteRefI16 _) (NewReply r) = Just $ RemoteRefI16 $ fromIntegral r
+parseQueryResult (NewRemoteRefI32 _) (NewReply r) = Just $ RemoteRefI32 $ fromIntegral r
+parseQueryResult (NewRemoteRefL8 _) (NewReply r) = Just $ RemoteRefL8 $ fromIntegral r
+parseQueryResult (NewRemoteRefFloat _) (NewReply r) = Just $ RemoteRefFloat$ fromIntegral r
+parseQueryResult (ReadRemoteRefB _) (ReadRefBReply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefW8 _) (ReadRefW8Reply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefW16 _) (ReadRefW16Reply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefW32 _) (ReadRefW32Reply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefI8 _) (ReadRefI8Reply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefI16 _) (ReadRefI16Reply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefI32 _) (ReadRefI32Reply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefL8 _) (ReadRefL8Reply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefFloat _) (ReadRefFloatReply r) = Just $ lit r
 parseQueryResult q r = Nothing

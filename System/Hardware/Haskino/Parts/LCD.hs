@@ -141,11 +141,11 @@ pulseEnableDig :: LCDController -> Arduino ()
 pulseEnableDig Hitachi44780{lcdEN} = do
   debug "Sending LCD pulseEnable"
   digitalWrite lcdEN False
-  delayMillis 1
+  delayMicros 1
   digitalWrite lcdEN True
-  delayMillis 1
+  delayMicros 1
   digitalWrite lcdEN False
-  delayMillis 1
+  delayMillis 2
 
 -- | Transmit data down to the LCD
 transmit :: Bool -> LCD -> LCDController -> Word8 -> Arduino ()
@@ -198,9 +198,9 @@ transmitI2C mode lcd c@I2CHitachi44780{address} val = do
 pulseEnableI2C :: LCDController -> Word8 -> Arduino ()
 pulseEnableI2C c@I2CHitachi44780{address} d = do
     i2cWrite address [d .|. en]
-    delayMillis 1
+    delayMicros 1
     i2cWrite address [d .&. (complement en)]
-    delayMillis 1
+    delayMillis 2
   where
     en = lcdI2CBitsToVal LCD_I2C_ENABLE
 
@@ -283,13 +283,13 @@ lcdWriteChar lcd w = withLCD lcd ("Writing " ++ show w ++ " to LCD") $ \c -> sen
 lcdClear :: LCD -> Arduino ()
 lcdClear lcd = withLCD lcd "Sending clearLCD" $ \c ->
                  do sendCmd lcd c LCD_CLEARDISPLAY
-                    delayMillis 2 -- give some time to make sure LCD is really cleared
+                    delayMicros 200 -- give some time to make sure LCD is really cleared
 
 -- | Send the cursor to home position
 lcdHome :: LCD -> Arduino ()
 lcdHome lcd = withLCD lcd "Sending the cursor home" $ \c ->
                  do sendCmd lcd c LCD_RETURNHOME
-                    delayMillis 2
+                    delayMicros 200
 
 -- | Set the cursor location. The pair of arguments is the new column and row numbers
 -- respectively:
