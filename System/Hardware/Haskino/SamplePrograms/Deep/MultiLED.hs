@@ -44,7 +44,7 @@ initExample = do
     scheduleTaskE 2 2000
     scheduleTaskE 3 4000
 
--- Execute this function to run prgoram with firmware interpreter
+-- Execute this function to run program with firmware interpreter
 ledExample :: IO ()
 ledExample = withArduino True "/dev/cu.usbmodem1421" $ do
     initExample
