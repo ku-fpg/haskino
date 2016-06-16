@@ -1,15 +1,15 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.Deep.LCDCounterE
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Deep.LCDCounterTaskE
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Simple LCD counter application
+-- Simple LCD counter application with multitasking
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.Deep.LCDCounterE where
+module System.Hardware.Haskino.SamplePrograms.Deep.LCDCounterTaskE where
 
 import System.Hardware.Haskino
 import System.Hardware.Haskino.Expr
@@ -61,15 +61,11 @@ keyTask ref button = do
             readButton ref
             delayMillisE 50
         giveSemE semId
-        delayMillisE 0
-        debugE $ lit $ stringToBytes "After give"
         writeRemoteRef bounceRef 0
         -- wait for key release
         while bounceRef (\x -> x <* 760) id $ do
             readButton bounceRef
-            debugE $ lit $ stringToBytes "In Loop"
             delayMillisE 50
-        delayMillisE 50
 
 -- | Program which maintains an integer counter, and displays the counter value 
 --   on the LCD.  Pressing the Up button increments the counter, pressing the 
@@ -84,9 +80,7 @@ mainTask ref = do
     lcdBacklightOnE lcd
     lcdWriteE lcd $ showE zero
     loopE $ do
-        debugE $ lit $ stringToBytes "Wait"
         takeSemE semId
-        debugE $ lit $ stringToBytes "Go"
         key <- readRemoteRef ref
         debugE $ showE key
         ifThenElse (key >=* 30 &&* key <* 150)
@@ -98,18 +92,21 @@ mainTask ref = do
         lcdHomeE lcd
         lcdWriteE lcd $ showE count
 
-lcdCounterInit :: Arduino ()
-lcdCounterInit =  do
+lcdCounterTaskInit :: Arduino ()
+lcdCounterTaskInit =  do
       let button = 0
       setPinModeE button INPUT
       taskRef <- newRemoteRef $ lit (0::Word16)
       createTaskE 1 $ mainTask taskRef
       createTaskE 2 $ keyTask taskRef button
-      -- Schedule the task to start immediately
+      -- Schedule the tasks to start immediately
       scheduleTaskE 1 0
       scheduleTaskE 2 0
-      debugListen
 
-lcdCounterE :: IO ()
-lcdCounterE = withArduino True "/dev/cu.usbmodem1421" $ do
-      lcdCounterInit
+lcdCounterTaskE :: IO ()
+lcdCounterTaskE = withArduino True "/dev/cu.usbmodem1421" $ do
+      lcdCounterTaskInit
+
+-- Execute this function to generate C code to be used with the runtime.
+compile :: IO ()
+compile = compileProgram lcdCounterTaskInit "lcdCounterTask.ino"
