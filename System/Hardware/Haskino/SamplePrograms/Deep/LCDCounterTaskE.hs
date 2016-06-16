@@ -53,7 +53,7 @@ keyTask ref button = do
         readButton r = do
             val <- analogReadE button
             writeRemoteRef r val
-    bounceRef <- newRemoteRef $ lit (0::Word16)
+    releaseRef <- newRemoteRef $ lit (0::Word16)
     loopE $ do
         writeRemoteRef ref 760
         -- wait for key press
@@ -61,10 +61,10 @@ keyTask ref button = do
             readButton ref
             delayMillisE 50
         giveSemE semId
-        writeRemoteRef bounceRef 0
+        writeRemoteRef releaseRef 0
         -- wait for key release
-        while bounceRef (\x -> x <* 760) id $ do
-            readButton bounceRef
+        while releaseRef (\x -> x <* 760) id $ do
+            readButton releaseRef
             delayMillisE 50
 
 -- | Program which maintains an integer counter, and displays the counter value 
