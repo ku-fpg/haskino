@@ -591,7 +591,9 @@ compileProcedure (BootTaskE _) = do
 compileProcedure (Debug s) = do
     return ()
 compileProcedure (DebugE s) = do
-    compile1ExprCommand "debug" s
+    compileLine ("debug((uint8_t *)" ++ compileExpr s ++ ");")
+    return ()
+compileProcedure DebugListen = do
     return ()
 compileProcedure (Die _ _) = do
     compileUnsupportedError "die"
