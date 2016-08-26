@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies, FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies, FlexibleContexts, ConstrainedClassMethods #-}
 
 -----------------------------------------------------------------------------
 -- |
