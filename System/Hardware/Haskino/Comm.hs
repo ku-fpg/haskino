@@ -17,6 +17,7 @@
 module System.Hardware.Haskino.Comm where
 
 import Control.Monad        (when, forever)
+import Control.Monad.State  (runState)
 import Control.Concurrent   (Chan, MVar, ThreadId, newChan, newMVar, 
                              newEmptyMVar, putMVar, takeMVar, writeChan, 
                              readChan, forkIO, modifyMVar_, tryTakeMVar, 
@@ -264,7 +265,7 @@ sendProcedureCmds c (LiftIO m) cmds = do
     sendToArduino c cmds
     m
 sendProcedureCmds c procedure cmds = do
-    let pc = packageProcedure procedure 0
+    let (pc, _) = runState (packageProcedure procedure) (CommandState 0 0 B.empty [])
     checkPackageLength c pc
     sendToArduino c (B.append cmds (framePackage pc))
     qr <- waitResponse c (procDelay procedure) procedure
@@ -273,7 +274,7 @@ sendProcedureCmds c procedure cmds = do
 sendRemoteBindingCmds :: ArduinoConnection -> ArduinoProcedure a -> B.ByteString -> IO a
 sendRemoteBindingCmds c b cmds = do
     ix <- takeMVar (refIndex c)
-    let prb = packageRemoteBinding b ix 0
+    let (prb, _) = runState (packageRemoteBinding b) (CommandState ix 0 B.empty [])
     checkPackageLength c prb
     putMVar (refIndex c) (ix+1)
     sendToArduino c (B.append cmds (framePackage prb))
@@ -282,9 +283,9 @@ sendRemoteBindingCmds c b cmds = do
 
 packageCommandIndex :: ArduinoConnection -> ArduinoCommand -> IO B.ByteString
 packageCommandIndex c cmd = do
-    ix <- takeMVar (refIndex c)
-    let (pc, ix') = packageCommand cmd ix 0
-    putMVar (refIndex c) ix'
+    index <- takeMVar (refIndex c)
+    let (pc, st) = runState (packageCommand cmd) (CommandState index 0 B.empty [])
+    putMVar (refIndex c) (ix st)
     return pc
 
 checkPackageLength :: ArduinoConnection -> B.ByteString -> IO ()

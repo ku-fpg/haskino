@@ -222,7 +222,7 @@ decodeErr bs = ("Decode Error, remaining=" ++ show (encode bs), B.empty)
 
 decodeCodeBlock :: B.ByteString -> String -> String
 decodeCodeBlock bs desc = 
-  "*** Start of " ++ desc ++ " body:\n" ++ 
+  "*** Start of " ++ desc ++ " body (Size: " ++ (show $ B.length bs) ++ " bytes) :\n" ++ 
   (decodeCmds $ decodeCodeBlock' bs []) ++ 
   "*** End of " ++ desc ++ " body\n"
     where
