@@ -212,15 +212,6 @@ packageWhileCommand rr i bf uf cb = do
   where
     ufe = packageExpr $ uf rr
 
-{-
-packageCommand (WhileRemoteRefB (RemoteRefB i) bf uf cb) = do
-    w <- addCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf (RefB i)) ++ [fromIntegral $ length ufe] ++ ufe)
-    p <- packageCodeBlock cb
-    return $ B.append w p
-  where
-    ufe = packageExpr (uf (RefB i))
--}
-
 -- The package code block takes the monad code block to package, an
 -- an integer with the current remote reference index, an integer with the
 -- current remote bind index, and returns a tuple of the packaged block,
