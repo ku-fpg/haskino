@@ -66,22 +66,6 @@ addCommand cmd bs = return $ buildCommand cmd bs
 buildCommand :: FirmwareCmd -> [Word8] -> B.ByteString
 buildCommand cmd bs = B.pack $ firmwareCmdVal cmd : bs
 
-addToBlock :: B.ByteString -> State CommandState ()
-addToBlock bs = do
-  s <- get
-  put s {block = B.append (block s) bs}
-
-startNewBlock :: State CommandState ()
-startNewBlock = do
-    s <- get
-    put s {block = B.empty, blocks = (block s) : (blocks s)}
-
-endCurrentBlock :: State CommandState B.ByteString
-endCurrentBlock = do
-    s <- get
-    put s {blocks = tail $ blocks s}
-    return $ block s
-
 -- | Package a request as a sequence of bytes to be sent to the board
 -- using the Haskino Firmware protocol.
 packageCommand :: ArduinoCommand -> State CommandState B.ByteString
@@ -206,7 +190,7 @@ packageCommand (WhileRemoteRefL8 (RemoteRefL8 i) bf uf cb) =
 packageCommand (LoopE cb) = do
     p <- packageCodeBlock cb
     l <- addCommand BC_CMD_LOOP (B.unpack p)
-    return $ B.append l p
+    return l
 packageCommand (ForInE ws f) = do
     s <- get
     p <- packageCodeBlock $ f $ RemBindW8 $ ib s
@@ -247,6 +231,22 @@ packageCodeBlock (Arduino commands) = do
     packMonad commands
     endCurrentBlock
   where
+      startNewBlock :: State CommandState ()
+      startNewBlock = do
+          s <- get
+          put s {block = B.empty, blocks = (block s) : (blocks s)}
+
+      endCurrentBlock :: State CommandState B.ByteString
+      endCurrentBlock = do
+          s <- get
+          put s {block = head $ blocks s, blocks = tail $ blocks s}
+          return $ block s
+
+      addToBlock :: B.ByteString -> State CommandState ()
+      addToBlock bs = do
+          s <- get
+          put s {block = B.append (block s) bs}
+
       packShallowProcedure :: ArduinoProcedure a -> a -> State CommandState a
       packShallowProcedure p r = do
           pp <- packageProcedure p
