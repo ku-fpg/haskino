@@ -753,8 +753,8 @@ unpackageResponse (cmdWord:args)
       (BS_RESP_DEBUG, [])               -> DebugResp
       (BS_RESP_VERSION, [majV, minV])   -> Firmware (bytesToWord16 (majV,minV))
       (BS_RESP_TYPE, [p])               -> ProcessorType p
-      (BS_RESP_MICROS, [l,m0,m1,m2,m3]) -> MicrosReply (bytesToWord32 (m0,m1,m2,m3))
-      (BS_RESP_MILLIS, [l,m0,m1,m2,m3]) -> MillisReply (bytesToWord32 (m0,m1,m2,m3))
+      (BS_RESP_MICROS, [m0,m1,m2,m3]) -> MicrosReply (bytesToWord32 (m0,m1,m2,m3))
+      (BS_RESP_MILLIS, [m0,m1,m2,m3]) -> MillisReply (bytesToWord32 (m0,m1,m2,m3))
       (BS_RESP_STRING, rest)            -> StringMessage (getString rest)
       (DIG_RESP_READ_PIN, [l,b])        -> DigitalReply b
       (DIG_RESP_READ_PORT, [l,b])       -> DigitalPortReply b
