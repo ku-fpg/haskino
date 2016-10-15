@@ -42,72 +42,50 @@ showArduino a = as
     (as, _) = runState (showCodeBlock a) (ShowState 0 0 "" [] 0)
 
 showCommand :: ArduinoCommand -> State ShowState String
-showCommand SystemReset = return "SystemReset"
-showCommand (SetPinModeE p m) = 
-    return $ "SetPinModeE " ++ show p ++ " " ++ show m
-showCommand (DigitalWriteE p b) =
-    return $ "DigitalWriteE " ++ show p ++ " " ++ show b
-showCommand (DigitalPortWriteE p b m) =
-    return $ "DigitalPortWriteE " ++ show p ++ " " ++ show b ++ " " ++ show m
-showCommand (AnalogWriteE p w) =
-    return $ "AnalogWriteE " ++ show p ++ " " ++ show w
-showCommand (ToneE p f (Just d)) =
-    return $ "ToneE " ++ show p ++ " " ++ show f ++ " " ++ show d
-showCommand (ToneE p f Nothing) =
-    showCommand (ToneE p f (Just 0))
-showCommand (NoToneE p) =
-    return $ "NoToneE " ++ show p
-showCommand (I2CWrite sa w8s) = 
-    return $ "I2CWrite " ++ show sa ++ " " ++ show w8s
-showCommand I2CConfig = 
-    return $ "I2CConfig "
-showCommand (StepperSetSpeedE st sp) = 
-    return $ "StepperSetSpeedE " ++ show st ++ " " ++ show sp
-showCommand (ServoDetachE sv) = 
-    return $ "ServoDetachE " ++ show sv
-showCommand (ServoWriteE sv w) = 
-    return $ "ServoWriteE " ++ show sv ++ " " ++ show w
-showCommand (ServoWriteMicrosE sv w) = 
-    return $ "ServoWriteMicrosE " ++ show sv ++ " " ++ show w
-showCommand (DeleteTaskE tid) =
-    return $ "DeleteTaskE " ++ show tid
-showCommand (ScheduleTaskE tid tt) =
-    return $ "ScheduleTaskE " ++ show tid ++ " " ++ show tt
-showCommand ScheduleReset =
-    return "ScheduleReset"
-showCommand (AttachIntE p t m) =
-    return $ "AttachIntE " ++ show p ++ " " ++ show t ++ " " ++ show m
-showCommand (DetachIntE p) =
-    return $ "DetachIntE " ++ show p
-showCommand (Interrupts) =
-    return "Interrupts"
-showCommand (NoInterrupts) =
-    return "NoInterrupts"
-showCommand (GiveSemE id) =
-    return $ "GiveSemE " ++ show id
-showCommand (TakeSemE id) =
-    return $ "TakeSemE " ++ show id
+showCommand SystemReset = showCommand0 "SystemReset"
+showCommand (SetPinModeE p m) = showCommand2 "SetPinModeE" p m
+showCommand (DigitalWriteE p b) = showCommand2 "DigitalWriteE" p b
+showCommand (DigitalPortWriteE p b m) = showCommand3 "DigitalPortWriteE" p b m
+showCommand (AnalogWriteE p w) = showCommand2 "AnalogWriteE" p w
+showCommand (ToneE p f (Just d)) = showCommand3 "ToneE" p f d
+showCommand (ToneE p f Nothing) = showCommand (ToneE p f (Just 0))
+showCommand (NoToneE p) = showCommand1 "NoToneE" p
+showCommand (I2CWrite sa w8s) = showCommand2 "I2CWrite" sa w8s
+showCommand I2CConfig = showCommand0 "I2CConfig"
+showCommand (StepperSetSpeedE st sp) = showCommand2 "StepperSetSpeedE" st sp
+showCommand (ServoDetachE sv) = showCommand1 "ServoDetachE" sv
+showCommand (ServoWriteE sv w) = showCommand2 "ServoWriteE " sv w
+showCommand (ServoWriteMicrosE sv w) = showCommand2 "ServoWriteMicrosE" sv w
+showCommand (DeleteTaskE tid) = showCommand1 "DeleteTaskE" tid
+showCommand (ScheduleTaskE tid tt) = showCommand2 "ScheduleTaskE" tid tt
+showCommand ScheduleReset = showCommand0 "ScheduleReset"
+showCommand (AttachIntE p t m) = showCommand3 "AttachIntE" p t m
+showCommand (DetachIntE p) = showCommand1 "DetachIntE " p
+showCommand (Interrupts) = showCommand0 "Interrupts"
+showCommand (NoInterrupts) = showCommand0 "NoInterrupts"
+showCommand (GiveSemE id) = showCommand1 "GiveSemE"  id
+showCommand (TakeSemE id) = showCommand1 "TakeSemE" id
 showCommand (CreateTaskE tid m) = do
     ts <- showCodeBlock m
     return $ "CreateTaskE " ++ show tid ++ "\n" ++ ts
 showCommand (WriteRemoteRefB (RemoteRefB i) e) =
-    return $ "WriteRemoteRefB " ++ show i ++ " " ++ show e
+    showCommand2 "WriteRemoteRefB" i e
 showCommand (WriteRemoteRefW8 (RemoteRefW8 i) e) =
-    return $ "WriteRemoteRefW8 " ++ show i ++ " " ++ show e
+    showCommand2 "WriteRemoteRefW8" i e
 showCommand (WriteRemoteRefW16 (RemoteRefW16 i) e) =
-    return $ "WriteRemoteRefW16 " ++ show i ++ " " ++ show e
+    showCommand2 "WriteRemoteRefW16" i e
 showCommand (WriteRemoteRefW32 (RemoteRefW32 i) e) =
-    return $ "WriteRemoteRefW32 " ++ show i ++ " " ++ show e
+    showCommand2 "WriteRemoteRefW32" i e
 showCommand (WriteRemoteRefI8 (RemoteRefI8 i) e) =
-    return $ "WriteRemoteRefI8 " ++ show i ++ " " ++ show e
+    showCommand2 "WriteRemoteRefI8" i e
 showCommand (WriteRemoteRefI16 (RemoteRefI16 i) e) =
-    return $ "WriteRemoteRefI16 " ++ show i ++ " " ++ show e
+    showCommand2 "WriteRemoteRefI16" i e
 showCommand (WriteRemoteRefI32 (RemoteRefI32 i) e) =
-    return $ "WriteRemoteRefI32 " ++ show i ++ " " ++ show e
+    showCommand2 "WriteRemoteRefI32" i e
 showCommand (WriteRemoteRefL8 (RemoteRefL8 i) e) =
-    return $ "WriteRemoteRefL8 " ++ show i ++ " " ++ show e
+    showCommand2 "WriteRemoteRefL8" i e
 showCommand (WriteRemoteRefFloat (RemoteRefFloat i) e) =
-    return $ "WriteRemoteRefFloat " ++ show i ++ " " ++ show e
+    showCommand2 "WriteRemoteRefFloat" i e
 showCommand (ModifyRemoteRefB (RemoteRefB i) f) =
     return $ "ModifyRemoteRefB " ++ show i ++ " " ++ show (f (RefB i))
 showCommand (ModifyRemoteRefW8 (RemoteRefW8 i) f) =
@@ -161,10 +139,35 @@ showCommand (IfThenElse e cb1 cb2) = do
     s <- get
     return $ "If " ++ show e ++ " Then\n" ++ cs1 ++ replicate (indent s) ' ' ++ "Else\n" ++ cs2
 
+showCommandAndArgs :: [String] -> State ShowState String
+showCommandAndArgs ss = do
+    let c = head ss
+    let as = tail ss
+    let cmdAndArgs = c ++ " (" ++ intercalate ") (" as ++ ")"
+    addToBlock cmdAndArgs 
+    return cmdAndArgs
+
+showCommand0 :: String -> State ShowState String
+showCommand0 p = showCommandAndArgs [p]
+
+showCommand1 :: (Show a) => String -> a -> State ShowState String
+showCommand1 p e1 = showCommandAndArgs [p, show e1]
+
+showCommand2 :: (Show a, Show b) => String -> a -> b -> State ShowState String
+showCommand2 p e1 e2 = showCommandAndArgs [p, show e1, show e2]
+
+showCommand3 :: (Show a, Show b, Show c) => String -> a -> b -> c -> State ShowState String
+showCommand3 p e1 e2 e3 = showCommandAndArgs [p, show e1, show e2, show e3]
+
 showWhileCommand :: Show a => Expr a -> Int -> (Expr a -> Expr Bool) -> (Expr a -> Expr a) -> Arduino () -> State ShowState String
 showWhileCommand rr i bf uf cb = do
     sc <- showCodeBlock cb
     return $ "While " ++ show rr ++ " " ++ show i ++ " (" ++ show (bf rr) ++ ") (" ++ show (uf rr) ++ ")\n" ++ sc
+
+addToBlock :: String -> State ShowState ()
+addToBlock bs = do
+    s <- get
+    put s {block = (block s) ++ replicate (indent s) ' ' ++ bs ++ "\n"}
 
 showCodeBlock :: Arduino a -> State ShowState String
 showCodeBlock (Arduino commands) = do
@@ -185,20 +188,19 @@ showCodeBlock (Arduino commands) = do
                  indent = indent s - 2}
           return $ block s
 
-      addToBlock :: String -> State ShowState ()
-      addToBlock bs = do
-          s <- get
-          put s {block = (block s) ++ replicate (indent s) ' ' ++ bs ++ "\n"}
-
       showShallowProcedure :: [String] -> b -> State ShowState b
       showShallowProcedure ss r = do
-          addToBlock $ intercalate " " ss
+          let p = head ss
+          let as = tail ss
+          addToBlock $ p ++ " (" ++ intercalate ") (" as ++ ")"
           return r
 
       showDeepProcedure :: [String] -> State ShowState Int
       showDeepProcedure ss = do
+          let p = head ss
+          let as = tail ss
           s <- get
-          addToBlock $ "RemBind " ++ show (ib s) ++ " <- " ++ intercalate " " ss
+          addToBlock $ "RemBind " ++ show (ib s) ++ " <- " ++ p ++ " (" ++ intercalate "} (" as ++ ")"
           s <- get
           put s {ib = (ib s) + 1}
           return $ ib s
