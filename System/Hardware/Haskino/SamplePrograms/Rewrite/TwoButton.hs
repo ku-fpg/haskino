@@ -38,9 +38,11 @@ twoButtonProg = do
 twoButton :: IO ()
 twoButton = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
 
+{-# NOINLINE rep8 #-}
 rep8 :: Expr Word8 -> Arduino Word8
 rep8 _ = error "Internal error: rep8 called"
 
+{-# NOINLINE abs8 #-}
 abs8 :: Word8 -> Expr Word8
 abs8 w = lit w
 
@@ -79,7 +81,7 @@ absB w = lit w
     loopE m
   #-}
 
-{-# RULES "lit-push"
+{-# RULES "abs-push-or"
     forall (b1 :: Bool) (b2 :: Bool).
     absB (b1 || b2)
       =
