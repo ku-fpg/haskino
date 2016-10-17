@@ -152,23 +152,23 @@ packageCommand (WriteRemoteRefL8 (RemoteRefL8 i) e) =
 packageCommand (WriteRemoteRefFloat (RemoteRefFloat i) e) =
     addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_FLOAT, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e)
 packageCommand (ModifyRemoteRefB (RemoteRefB i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_BOOL, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefB i)))
+    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_BOOL, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
 packageCommand (ModifyRemoteRefW8 (RemoteRefW8 i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD8, exprCmdVal EXPR_WORD8 EXPR_LIT,fromIntegral i] ++ packageExpr (f (RefW8 i)))
+    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD8, exprCmdVal EXPR_WORD8 EXPR_LIT,fromIntegral i] ++ packageExpr f)
 packageCommand (ModifyRemoteRefW16 (RemoteRefW16 i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD16, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefW16 i)))
+    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD16, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
 packageCommand (ModifyRemoteRefW32 (RemoteRefW32 i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD32, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefW32 i)))
+    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD32, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
 packageCommand (ModifyRemoteRefI8 (RemoteRefI8 i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT8, exprCmdVal EXPR_WORD8 EXPR_LIT,fromIntegral i] ++ packageExpr (f (RefI8 i)))
+    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT8, exprCmdVal EXPR_WORD8 EXPR_LIT,fromIntegral i] ++ packageExpr f)
 packageCommand (ModifyRemoteRefI16 (RemoteRefI16 i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT16, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefI16 i)))
+    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT16, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
 packageCommand (ModifyRemoteRefI32 (RemoteRefI32 i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT32, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefI32 i)))
+    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT32, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
 packageCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_LIST8, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefList8 i)))
+    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_LIST8, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
 packageCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_FLOAT, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefFloat i)))
+    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_FLOAT, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
 packageCommand (WhileRemoteRefB (RemoteRefB i) bf uf cb) =
     packageWhileCommand (RefB i) i bf uf cb
 packageCommand (WhileRemoteRefW8 (RemoteRefW8 i) bf uf cb) =
@@ -204,13 +204,13 @@ packageCommand (IfThenElse e cb1 cb2) = do
     i <- addCommand BC_CMD_IF_THEN_ELSE (thenSize ++ (packageExpr e))
     return $ B.append i (B.append pc1 pc2)
 
-packageWhileCommand :: Expr a -> Int -> (Expr a -> Expr Bool) -> (Expr a -> Expr a) -> Arduino () -> State CommandState B.ByteString
+packageWhileCommand :: Expr a -> Int -> Expr Bool -> Expr a -> Arduino () -> State CommandState B.ByteString
 packageWhileCommand rr i bf uf cb = do
-    w <- addCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf rr) ++ [fromIntegral $ length ufe] ++ ufe)
+    w <- addCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr bf ++ [fromIntegral $ length ufe] ++ ufe)
     p <- packageCodeBlock cb
     return $ B.append w p
   where
-    ufe = packageExpr $ uf rr
+    ufe = packageExpr uf
 
 -- The package code block takes the monad code block to package, an
 -- an integer with the current remote reference index, an integer with the

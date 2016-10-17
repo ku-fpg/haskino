@@ -87,23 +87,23 @@ showCommand (WriteRemoteRefL8 (RemoteRefL8 i) e) =
 showCommand (WriteRemoteRefFloat (RemoteRefFloat i) e) =
     showCommand2 "WriteRemoteRefFloat" i e
 showCommand (ModifyRemoteRefB (RemoteRefB i) f) =
-    return $ "ModifyRemoteRefB " ++ show i ++ " " ++ show (f (RefB i))
+    showCommand2 "ModifyRemoteRefB" i f
 showCommand (ModifyRemoteRefW8 (RemoteRefW8 i) f) =
-    return $ "ModifyRemoteRefW8 " ++ show i ++ " " ++ show (f (RefW8 i))
+    showCommand2 "ModifyRemoteRefW8" i f
 showCommand (ModifyRemoteRefW16 (RemoteRefW16 i) f) =
-    return $ "ModifyRemoteRefW16 " ++ show i ++ " " ++ show (f (RefW16 i))
+    showCommand2 "ModifyRemoteRefW16" i f
 showCommand (ModifyRemoteRefW32 (RemoteRefW32 i) f) =
-    return $ "ModifyRemoteRefW32 " ++ show i ++ " " ++ show (f (RefW32 i))
+    showCommand2 "ModifyRemoteRefW32" i f
 showCommand (ModifyRemoteRefI8 (RemoteRefI8 i) f) =
-    return $ "ModifyRemoteRefI8 " ++ show i ++ " " ++ show (f (RefI8 i))
+    showCommand2 "ModifyRemoteRefI8" i f
 showCommand (ModifyRemoteRefI16 (RemoteRefI16 i) f) =
-    return $ "ModifyRemoteRefI16 " ++ show i ++ " " ++ show (f (RefI16 i))
+    showCommand2 "ModifyRemoteRefI16" i f
 showCommand (ModifyRemoteRefI32 (RemoteRefI32 i) f) =
-    return $ "ModifyRemoteRefI32 " ++ show i ++ " " ++ show (f (RefI32 i))
+    showCommand2 "ModifyRemoteRefI32" i f
 showCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) =
-    return $ "ModifyRemoteRefL8 " ++ show i ++ " " ++ show (f (RefList8 i))
+    showCommand2 "ModifyRemoteRefL8" i f
 showCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) =
-    return $ "ModifyRemoteRefFloat " ++ show i ++ " " ++ show (f (RefFloat i))
+    showCommand2 "ModifyRemoteRefFloat" i f
 showCommand (WhileRemoteRefB (RemoteRefB i) bf uf cb) =
     showWhileCommand (RefB i) i bf uf cb
 showCommand (WhileRemoteRefW8 (RemoteRefW8 i) bf uf cb) =
@@ -159,10 +159,10 @@ showCommand2 p e1 e2 = showCommandAndArgs [p, show e1, show e2]
 showCommand3 :: (Show a, Show b, Show c) => String -> a -> b -> c -> State ShowState String
 showCommand3 p e1 e2 e3 = showCommandAndArgs [p, show e1, show e2, show e3]
 
-showWhileCommand :: Show a => Expr a -> Int -> (Expr a -> Expr Bool) -> (Expr a -> Expr a) -> Arduino () -> State ShowState String
+showWhileCommand :: Show a => Expr a -> Int -> Expr Bool -> Expr a -> Arduino () -> State ShowState String
 showWhileCommand rr i bf uf cb = do
     sc <- showCodeBlock cb
-    return $ "While " ++ show rr ++ " " ++ show i ++ " (" ++ show (bf rr) ++ ") (" ++ show (uf rr) ++ ")\n" ++ sc
+    return $ "While " ++ show rr ++ " " ++ show i ++ " (" ++ show bf ++ ") (" ++ show uf ++ ")\n" ++ sc
 
 addToBlock :: String -> State ShowState ()
 addToBlock bs = do
