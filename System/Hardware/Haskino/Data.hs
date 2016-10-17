@@ -180,25 +180,25 @@ data ArduinoCommand =
      | WriteRemoteRefI32 (RemoteRef Int32) (Expr Int32)
      | WriteRemoteRefL8 (RemoteRef [Word8]) (Expr [Word8])
      | WriteRemoteRefFloat (RemoteRef Float) (Expr Float)
-     | ModifyRemoteRefB (RemoteRef Bool) (Expr Bool -> Expr Bool)
-     | ModifyRemoteRefW8 (RemoteRef Word8) (Expr Word8 -> Expr Word8)
-     | ModifyRemoteRefW16 (RemoteRef Word16) (Expr Word16 -> Expr Word16)
-     | ModifyRemoteRefW32 (RemoteRef Word32) (Expr Word32 -> Expr Word32)
-     | ModifyRemoteRefI8 (RemoteRef Int8) (Expr Int8 -> Expr Int8)
-     | ModifyRemoteRefI16 (RemoteRef Int16) (Expr Int16 -> Expr Int16)
-     | ModifyRemoteRefI32 (RemoteRef Int32) (Expr Int32 -> Expr Int32)
-     | ModifyRemoteRefL8 (RemoteRef [Word8]) (Expr [Word8] -> Expr [Word8])
-     | ModifyRemoteRefFloat (RemoteRef Float) (Expr Float -> Expr Float)
+     | ModifyRemoteRefB (RemoteRef Bool) (Expr Bool)
+     | ModifyRemoteRefW8 (RemoteRef Word8) (Expr Word8)
+     | ModifyRemoteRefW16 (RemoteRef Word16) (Expr Word16)
+     | ModifyRemoteRefW32 (RemoteRef Word32) (Expr Word32)
+     | ModifyRemoteRefI8 (RemoteRef Int8) (Expr Int8)
+     | ModifyRemoteRefI16 (RemoteRef Int16) (Expr Int16)
+     | ModifyRemoteRefI32 (RemoteRef Int32) (Expr Int32)
+     | ModifyRemoteRefL8 (RemoteRef [Word8]) (Expr [Word8])
+     | ModifyRemoteRefFloat (RemoteRef Float) (Expr Float)
      | Loop (Arduino ())
-     | WhileRemoteRefB (RemoteRef Bool) (Expr Bool -> Expr Bool) (Expr Bool -> Expr Bool) (Arduino ())
-     | WhileRemoteRefW8 (RemoteRef Word8) (Expr Word8 -> Expr Bool) (Expr Word8 -> Expr Word8) (Arduino ())
-     | WhileRemoteRefW16 (RemoteRef Word16) (Expr Word16 -> Expr Bool) (Expr Word16 -> Expr Word16) (Arduino ())
-     | WhileRemoteRefW32 (RemoteRef Word32) (Expr Word32 -> Expr Bool) (Expr Word32 -> Expr Word32) (Arduino ())
-     | WhileRemoteRefI8 (RemoteRef Int8) (Expr Int8 -> Expr Bool) (Expr Int8 -> Expr Int8) (Arduino ())
-     | WhileRemoteRefI16 (RemoteRef Int16) (Expr Int16 -> Expr Bool) (Expr Int16 -> Expr Int16) (Arduino ())
-     | WhileRemoteRefI32 (RemoteRef Int32) (Expr Int32 -> Expr Bool) (Expr Int32 -> Expr Int32) (Arduino ())
-     | WhileRemoteRefFloat (RemoteRef Float) (Expr Float -> Expr Bool) (Expr Float -> Expr Float) (Arduino ())
-     | WhileRemoteRefL8 (RemoteRef [Word8]) (Expr [Word8] -> Expr Bool) (Expr [Word8] -> Expr [Word8]) (Arduino ())
+     | WhileRemoteRefB (RemoteRef Bool) (Expr Bool) (Expr Bool) (Arduino ())
+     | WhileRemoteRefW8 (RemoteRef Word8) (Expr Bool) (Expr Word8) (Arduino ())
+     | WhileRemoteRefW16 (RemoteRef Word16) (Expr Bool) (Expr Word16) (Arduino ())
+     | WhileRemoteRefW32 (RemoteRef Word32) (Expr Bool) (Expr Word32) (Arduino ())
+     | WhileRemoteRefI8 (RemoteRef Int8) (Expr Bool) (Expr Int8) (Arduino ())
+     | WhileRemoteRefI16 (RemoteRef Int16) (Expr Bool) (Expr Int16) (Arduino ())
+     | WhileRemoteRefI32 (RemoteRef Int32) (Expr Bool) (Expr Int32) (Arduino ())
+     | WhileRemoteRefFloat (RemoteRef Float) (Expr Bool) (Expr Float) (Arduino ())
+     | WhileRemoteRefL8 (RemoteRef [Word8]) (Expr Bool) (Expr [Word8]) (Arduino ())
      | LoopE (Arduino ())
      | ForInE (Expr [Word8]) (Expr Word8 -> Arduino ()) 
      | IfThenElse (Expr Bool) (Arduino ()) (Arduino ())
@@ -365,58 +365,94 @@ writeRemoteRefFloat :: RemoteRef Float -> Expr Float -> Arduino ()
 writeRemoteRefFloat r e = Arduino $ command $ WriteRemoteRefFloat r e
 
 modifyRemoteRefB :: RemoteRef Bool -> (Expr Bool -> Expr Bool) -> Arduino ()
-modifyRemoteRefB r f = Arduino $ command $ ModifyRemoteRefB r f
+modifyRemoteRefB (RemoteRefB i) f = Arduino $ command $ ModifyRemoteRefB (RemoteRefB i) (f rr)
+  where
+    rr = RefB i
 
 modifyRemoteRefW8 :: RemoteRef Word8 -> (Expr Word8 -> Expr Word8) -> Arduino ()
-modifyRemoteRefW8 r f = Arduino $ command $ ModifyRemoteRefW8 r f
+modifyRemoteRefW8 (RemoteRefW8 i) f = Arduino $ command $ ModifyRemoteRefW8 (RemoteRefW8 i) (f rr)
+  where
+    rr = RefW8 i
 
 modifyRemoteRefW16 :: RemoteRef Word16 -> (Expr Word16 -> Expr Word16) -> Arduino ()
-modifyRemoteRefW16 r f = Arduino $ command $ ModifyRemoteRefW16 r f
+modifyRemoteRefW16 (RemoteRefW16 i) f = Arduino $ command $ ModifyRemoteRefW16 (RemoteRefW16 i) (f rr)
+  where
+    rr = RefW16 i
 
 modifyRemoteRefW32 :: RemoteRef Word32 -> (Expr Word32 -> Expr Word32) -> Arduino ()
-modifyRemoteRefW32 r f = Arduino $ command $ ModifyRemoteRefW32 r f
+modifyRemoteRefW32 (RemoteRefW32 i) f = Arduino $ command $ ModifyRemoteRefW32 (RemoteRefW32 i) (f rr)
+  where
+    rr = RefW32 i
 
 modifyRemoteRefI8 :: RemoteRef Int8 -> (Expr Int8 -> Expr Int8) -> Arduino ()
-modifyRemoteRefI8 r f = Arduino $ command $ ModifyRemoteRefI8 r f
+modifyRemoteRefI8 (RemoteRefI8 i) f = Arduino $ command $ ModifyRemoteRefI8 (RemoteRefI8 i) (f rr)
+  where
+    rr = RefI8 i
 
 modifyRemoteRefI16 :: RemoteRef Int16 -> (Expr Int16 -> Expr Int16) -> Arduino ()
-modifyRemoteRefI16 r f = Arduino $ command $ ModifyRemoteRefI16 r f
+modifyRemoteRefI16 (RemoteRefI16 i) f = Arduino $ command $ ModifyRemoteRefI16 (RemoteRefI16 i) (f rr)
+  where
+    rr = RefI16 i
 
 modifyRemoteRefI32 :: RemoteRef Int32 -> (Expr Int32 -> Expr Int32) -> Arduino ()
-modifyRemoteRefI32 r f = Arduino $ command $ ModifyRemoteRefI32 r f
+modifyRemoteRefI32 (RemoteRefI32 i) f = Arduino $ command $ ModifyRemoteRefI32 (RemoteRefI32 i) (f rr)
+  where
+    rr = RefI32 i
 
 modifyRemoteRefL8 :: RemoteRef [Word8] -> (Expr [Word8] -> Expr [Word8]) -> Arduino ()
-modifyRemoteRefL8 r f = Arduino $ command $ ModifyRemoteRefL8 r f
+modifyRemoteRefL8 (RemoteRefL8 i) f = Arduino $ command $ ModifyRemoteRefL8 (RemoteRefL8 i) (f rr)
+  where
+    rr = RefList8 i
 
 modifyRemoteRefFloat :: RemoteRef Float -> (Expr Float -> Expr Float) -> Arduino ()
-modifyRemoteRefFloat r f = Arduino $ command $ ModifyRemoteRefFloat r f
+modifyRemoteRefFloat (RemoteRefFloat i) f = Arduino $ command $ ModifyRemoteRefFloat (RemoteRefFloat i) (f rr)
+  where
+    rr = RefFloat i
 
 whileRemoteRefB :: RemoteRef Bool -> (Expr Bool -> Expr Bool) -> (Expr Bool -> Expr Bool) -> Arduino () -> Arduino ()
-whileRemoteRefB r bf uf cb  = Arduino $ command $ WhileRemoteRefB r bf uf cb
+whileRemoteRefB (RemoteRefB i) bf uf cb  = Arduino $ command $ WhileRemoteRefB (RemoteRefB i) (bf rr) (uf rr) cb
+  where
+    rr = RefB i
 
 whileRemoteRefW8 :: RemoteRef Word8 -> (Expr Word8 -> Expr Bool) -> (Expr Word8 -> Expr Word8) -> Arduino () -> Arduino ()
-whileRemoteRefW8 r bf uf cb = Arduino $ command $ WhileRemoteRefW8 r bf uf cb
+whileRemoteRefW8 (RemoteRefW8 i) bf uf cb = Arduino $ command $ WhileRemoteRefW8 (RemoteRefW8 i) (bf rr) (uf rr) cb
+  where
+    rr = RefW8 i
 
 whileRemoteRefW16 :: RemoteRef Word16 -> (Expr Word16 -> Expr Bool) -> (Expr Word16 -> Expr Word16) -> Arduino () -> Arduino ()
-whileRemoteRefW16 r bf uf cb = Arduino $ command $ WhileRemoteRefW16 r bf uf cb
+whileRemoteRefW16 (RemoteRefW16 i) bf uf cb = Arduino $ command $ WhileRemoteRefW16 (RemoteRefW16 i) (bf rr) (uf rr) cb
+  where
+    rr = RefW16 i
 
 whileRemoteRefW32 :: RemoteRef Word32 -> (Expr Word32 -> Expr Bool) -> (Expr Word32 -> Expr Word32) -> Arduino () -> Arduino ()
-whileRemoteRefW32 r bf uf cb = Arduino $ command $ WhileRemoteRefW32 r bf uf cb
+whileRemoteRefW32 (RemoteRefW32 i) bf uf cb = Arduino $ command $ WhileRemoteRefW32 (RemoteRefW32 i) (bf rr) (uf rr) cb
+  where
+    rr = RefW32 i
 
 whileRemoteRefI8 :: RemoteRef Int8 -> (Expr Int8 -> Expr Bool) -> (Expr Int8 -> Expr Int8) -> Arduino () -> Arduino ()
-whileRemoteRefI8 r bf uf cb = Arduino $ command $ WhileRemoteRefI8 r bf uf cb
+whileRemoteRefI8 (RemoteRefI8 i) bf uf cb = Arduino $ command $ WhileRemoteRefI8 (RemoteRefI8 i) (bf rr) (uf rr) cb
+  where
+    rr = RefI8 i
 
 whileRemoteRefI16 :: RemoteRef Int16 -> (Expr Int16 -> Expr Bool) -> (Expr Int16 -> Expr Int16) -> Arduino () -> Arduino ()
-whileRemoteRefI16 r bf uf cb = Arduino $ command $ WhileRemoteRefI16 r bf uf cb
+whileRemoteRefI16 (RemoteRefI16 i) bf uf cb = Arduino $ command $ WhileRemoteRefI16 (RemoteRefI16 i) (bf rr) (uf rr) cb
+  where
+    rr = RefI16 i
 
 whileRemoteRefI32 :: RemoteRef Int32 -> (Expr Int32 -> Expr Bool) -> (Expr Int32 -> Expr Int32) -> Arduino () -> Arduino ()
-whileRemoteRefI32 r bf uf cb = Arduino $ command $ WhileRemoteRefI32 r bf uf cb
+whileRemoteRefI32 (RemoteRefI32 i) bf uf cb = Arduino $ command $ WhileRemoteRefI32 (RemoteRefI32 i) (bf rr) (uf rr) cb
+  where
+    rr = RefI32 i
 
 whileRemoteRefL8 :: RemoteRef [Word8] -> (Expr [Word8] -> Expr Bool) -> (Expr [Word8] -> Expr [Word8]) -> Arduino () -> Arduino ()
-whileRemoteRefL8 r bf uf cb = Arduino $ command $ WhileRemoteRefL8 r bf uf cb
+whileRemoteRefL8 (RemoteRefL8 i) bf uf cb = Arduino $ command $ WhileRemoteRefL8 (RemoteRefL8 i) (bf rr) (uf rr) cb
+  where
+    rr = RefList8 i
 
 whileRemoteRefFloat :: RemoteRef Float -> (Expr Float -> Expr Bool) -> (Expr Float -> Expr Float) -> Arduino () -> Arduino ()
-whileRemoteRefFloat r bf uf cb = Arduino $ command $ WhileRemoteRefFloat r bf uf cb
+whileRemoteRefFloat (RemoteRefFloat i) bf uf cb = Arduino $ command $ WhileRemoteRefFloat (RemoteRefFloat i) (bf rr) (uf rr) cb
+  where
+    rr = RefFloat i
 
 class RemoteReference a where
     newRemoteRef          :: Expr a -> Arduino (RemoteRef a)
