@@ -98,6 +98,20 @@ absB w = lit w
     (digitalReadE p) >>= k . repB
   #-}
 
+{-# RULES "repB-absB-fusion-digitalWriteE-r"
+    forall (p :: Expr Word8) (eb1 :: Expr Bool).
+    (\b -> digitalWriteE p (eb1 ||* absB(b))).repB 
+      =
+    (\b -> digitalWriteE p (eb1 ||* b))
+  #-}
+
+{-# RULES "repB-absB-fusion-digitalWriteE-l"
+    forall (p :: Expr Word8) (eb2 :: Expr Bool).
+    (\b -> digitalWriteE p (absB(b) ||* eb2)).repB 
+      =
+    (\b -> digitalWriteE p (b ||* eb2))
+  #-}
+
 --{-# RULES "elimM-repB-absB"
 --    forall (x :: Expr Bool).
 --    (liftM(absB))(liftM(repB)) x = x
