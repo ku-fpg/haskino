@@ -17,7 +17,8 @@ module System.Hardware.Haskino.SamplePrograms.Strong.TwoButton where
 import Prelude hiding (abs)
 
 import System.Hardware.Haskino
-import System.Hardware.Haskino.Rules
+-- import System.Hardware.Haskino.Rules
+import Control.Monad
 import Data.Word
 import Data.Boolean
 
@@ -47,7 +48,7 @@ abs8 :: Word8 -> Expr Word8
 abs8 w = lit w
 
 {-# NOINLINE repB #-}
-repB :: Expr Bool -> Arduino Bool
+repB :: Expr Bool -> Bool
 repB _ = error "Internal error: repB called"
 
 {-# NOINLINE absB #-}
@@ -57,7 +58,7 @@ absB w = lit w
 {-# RULES 
     "digitalRead"
     forall (p :: Word8).
-    digitalRead p = (digitalReadE $ abs8 p)  >>= repB
+    digitalRead p = repB <$> (digitalReadE $ abs8 p) 
   #-}
 
 {-# RULES "digitalWrite"
@@ -88,6 +89,18 @@ absB w = lit w
     (absB b1) ||* (absB b2)
   #-}
 
+{-# RULES "repB-3rd-monad"
+    forall (p :: Expr Word8) (k :: Bool -> Arduino b).
+    repB <$> digitalReadE p >>= k 
+      =
+    digitalReadE p >>= k . repB
+  #-}
+
+--{-# RULES "elimM-repB-absB"
+--    forall (x :: Expr Bool).
+--    (liftM(absB))(liftM(repB)) x = x
+--  #-}
+--
 --{-# RULES "+-intro"
 --    forall (x :: Word32) (y :: Word32) .
 --    x + y
@@ -95,7 +108,3 @@ absB w = lit w
 --    lit x + lit y
 --  #-}
 
---{-# RULES "abs-rep-elim" [~]
---    forall x.
---    lit (repe x) = x
---  #-}
