@@ -34,7 +34,9 @@ twoButtonProg = do
         a <- digitalRead button1
         b <- digitalRead button2
         digitalWrite led (a || b)
-
+--    loopE $ digitalReadE(abs8(button1)) >>= 
+--            (\a -> digitalReadE(abs8(button2)) >>=
+--                (\b -> digitalWriteE (abs8(led)) ((absB(a) ||* absB(b)))).repB).repB
 
 twoButton :: IO ()
 twoButton = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
@@ -90,10 +92,10 @@ absB w = lit w
   #-}
 
 {-# RULES "repB-3rd-monad"
-    forall (p :: Expr Word8) (k :: Bool -> Arduino b).
-    repB <$> digitalReadE p >>= k 
+    forall (p :: Expr Word8) (k :: Bool -> Arduino a).
+    (repB <$> (digitalReadE p)) >>= k 
       =
-    digitalReadE p >>= k . repB
+    (digitalReadE p) >>= k . repB
   #-}
 
 --{-# RULES "elimM-repB-absB"
