@@ -1,21 +1,41 @@
 [18 of 18] Compiling System.Hardware.Haskino.SamplePrograms.Strong.TwoButton ( System/Hardware/Haskino/SamplePrograms/Rewrite/TwoButton.hs, System/Hardware/Haskino/SamplePrograms/Rewrite/TwoButton.o )
 
 ==================== Tidy Core ====================
-Result size of Tidy Core = {terms: 139, types: 74, coercions: 8}
+Result size of Tidy Core = {terms: 116, types: 82, coercions: 4}
 
 Rec {
--- RHS size: {terms: 4, types: 2, coercions: 0}
-absB [InlPrag=NOINLINE, Occ=LoopBreaker!] :: Bool -> Expr Bool
-[GblId, Arity=1, Str=DmdType]
-absB =
-  \ (w_a77I :: Bool) ->
-    lit @ Bool System.Hardware.Haskino.Expr.$fExprBBool w_a77I
+-- RHS size: {terms: 6, types: 6, coercions: 0}
+abs [InlPrag=NOINLINE, Occ=LoopBreaker!]
+  :: forall a_a77A. ExprB a_a77A => a_a77A -> Expr a_a77A
+[GblId, Arity=2, Caf=NoCafRefs, Str=DmdType]
+abs =
+  \ (@ a_a7fj) ($dExprB_a7mZ :: ExprB a_a7fj) (w_a77H :: a_a7fj) ->
+    lit @ a_a7fj $dExprB_a7mZ w_a77H
 end Rec }
 
+-- RHS size: {terms: 2, types: 0, coercions: 0}
+$trModule1_r7Aa :: GHC.Types.TrName
+[GblId, Caf=NoCafRefs, Str=DmdType]
+$trModule1_r7Aa = GHC.Types.TrNameS "main"#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0}
+$trModule2_r7Ai :: GHC.Types.TrName
+[GblId, Caf=NoCafRefs, Str=DmdType]
+$trModule2_r7Ai =
+  GHC.Types.TrNameS
+    "System.Hardware.Haskino.SamplePrograms.Strong.TwoButton"#
+
+-- RHS size: {terms: 3, types: 0, coercions: 0}
+System.Hardware.Haskino.SamplePrograms.Strong.TwoButton.$trModule
+  :: GHC.Types.Module
+[GblId, Caf=NoCafRefs, Str=DmdType]
+System.Hardware.Haskino.SamplePrograms.Strong.TwoButton.$trModule =
+  GHC.Types.Module $trModule1_r7Aa $trModule2_r7Ai
+
 -- RHS size: {terms: 20, types: 3, coercions: 0}
-$dIP_r7sA :: GHC.Stack.Types.CallStack
+$dIP_r7Aj :: GHC.Stack.Types.CallStack
 [GblId, Str=DmdType]
-$dIP_r7sA =
+$dIP_r7Aj =
   GHC.Stack.Types.pushCallStack
     (GHC.CString.unpackCString# "error"#,
      GHC.Stack.Types.SrcLoc
@@ -24,85 +44,47 @@ $dIP_r7sA =
           "System.Hardware.Haskino.SamplePrograms.Strong.TwoButton"#)
        (GHC.CString.unpackCString#
           "System/Hardware/Haskino/SamplePrograms/Rewrite/TwoButton.hs"#)
-       (GHC.Types.I# 52#)
-       (GHC.Types.I# 10#)
-       (GHC.Types.I# 52#)
-       (GHC.Types.I# 45#))
+       (GHC.Types.I# 46#)
+       (GHC.Types.I# 9#)
+       (GHC.Types.I# 46#)
+       (GHC.Types.I# 44#))
     GHC.Stack.Types.emptyCallStack
 
--- RHS size: {terms: 5, types: 4, coercions: 4}
-repB [InlPrag=NOINLINE] :: Expr Bool -> Bool
+Rec {
+-- RHS size: {terms: 6, types: 6, coercions: 4}
+rep [InlPrag=NOINLINE, Occ=LoopBreaker!]
+  :: forall a_a77B. Expr a_a77B -> a_a77B
 [GblId, Arity=1, Str=DmdType]
-repB =
-  \ _ [Occ=Dead] ->
+rep =
+  \ (@ a_a7ft) _ [Occ=Dead] ->
     error
       @ 'GHC.Types.PtrRepLifted
-      @ Bool
-      ($dIP_r7sA
+      @ a_a7ft
+      ($dIP_r7Aj
        `cast` (Sym
                  (GHC.Classes.N:IP[0] <"callStack">_N <GHC.Stack.Types.CallStack>_N)
                :: (GHC.Stack.Types.CallStack :: *)
                   ~R#
                   ((?callStack::GHC.Stack.Types.CallStack) :: Constraint)))
       (GHC.CString.unpackCString# "Internal error: repB called"#)
-
--- RHS size: {terms: 4, types: 2, coercions: 0}
-abs8 [InlPrag=NOINLINE] :: Word8 -> Expr Word8
-[GblId, Arity=1, Str=DmdType]
-abs8 =
-  \ (w_a77H :: Word8) ->
-    lit @ Word8 System.Hardware.Haskino.Expr.$fExprBWord8 w_a77H
-
--- RHS size: {terms: 20, types: 3, coercions: 0}
-$dIP1_r7sI :: GHC.Stack.Types.CallStack
-[GblId, Str=DmdType]
-$dIP1_r7sI =
-  GHC.Stack.Types.pushCallStack
-    (GHC.CString.unpackCString# "error"#,
-     GHC.Stack.Types.SrcLoc
-       (GHC.CString.unpackCString# "main"#)
-       (GHC.CString.unpackCString#
-          "System.Hardware.Haskino.SamplePrograms.Strong.TwoButton"#)
-       (GHC.CString.unpackCString#
-          "System/Hardware/Haskino/SamplePrograms/Rewrite/TwoButton.hs"#)
-       (GHC.Types.I# 44#)
-       (GHC.Types.I# 10#)
-       (GHC.Types.I# 44#)
-       (GHC.Types.I# 45#))
-    GHC.Stack.Types.emptyCallStack
-
--- RHS size: {terms: 5, types: 5, coercions: 4}
-rep8 [InlPrag=NOINLINE] :: Expr Word8 -> Arduino Word8
-[GblId, Arity=1, Str=DmdType]
-rep8 =
-  \ _ [Occ=Dead] ->
-    error
-      @ 'GHC.Types.PtrRepLifted
-      @ (Arduino Word8)
-      ($dIP1_r7sI
-       `cast` (Sym
-                 (GHC.Classes.N:IP[0] <"callStack">_N <GHC.Stack.Types.CallStack>_N)
-               :: (GHC.Stack.Types.CallStack :: *)
-                  ~R#
-                  ((?callStack::GHC.Stack.Types.CallStack) :: Constraint)))
-      (GHC.CString.unpackCString# "Internal error: rep8 called"#)
+end Rec }
 
 -- RHS size: {terms: 3, types: 1, coercions: 0}
-button2_r7sJ :: Pin
+led_r7Ak :: Pin
 [GblId, Str=DmdType]
-button2_r7sJ = fromInteger @ Pin GHC.Word.$fNumWord8 3
+led_r7Ak = fromInteger @ Pin GHC.Word.$fNumWord8 13
 
 -- RHS size: {terms: 3, types: 1, coercions: 0}
-button1_r7sK :: Pin
+button1_r7Al :: Pin
 [GblId, Str=DmdType]
-button1_r7sK = fromInteger @ Pin GHC.Word.$fNumWord8 2
+button1_r7Al = fromInteger @ Pin GHC.Word.$fNumWord8 2
 
 -- RHS size: {terms: 3, types: 1, coercions: 0}
-led_r7sL :: Pin
+button2_r7Am :: Pin
 [GblId, Str=DmdType]
-led_r7sL = fromInteger @ Pin GHC.Word.$fNumWord8 13
+button2_r7Am = fromInteger @ Pin GHC.Word.$fNumWord8 3
 
--- RHS size: {terms: 46, types: 27, coercions: 0}
+-- RHS size: {terms: 52, types: 41, coercions: 0}
 twoButtonProg :: Arduino ()
 [GblId, Str=DmdType]
 twoButtonProg =
@@ -111,55 +93,61 @@ twoButtonProg =
     System.Hardware.Haskino.Data.$fMonadArduino
     @ ()
     @ ()
-    (setPinModeE (abs8 led_r7sL) System.Hardware.Haskino.Data.OUTPUT)
+    (setPinModeE
+       (abs @ Word8 System.Hardware.Haskino.Expr.$fExprBWord8 led_r7Ak)
+       System.Hardware.Haskino.Data.OUTPUT)
     (>>
        @ Arduino
        System.Hardware.Haskino.Data.$fMonadArduino
        @ ()
        @ ()
        (setPinModeE
-          (abs8 button1_r7sK) System.Hardware.Haskino.Data.INPUT)
+          (abs
+             @ Word8 System.Hardware.Haskino.Expr.$fExprBWord8 button1_r7Al)
+          System.Hardware.Haskino.Data.INPUT)
        (>>
           @ Arduino
           System.Hardware.Haskino.Data.$fMonadArduino
           @ ()
           @ ()
           (setPinModeE
-             (abs8 button2_r7sJ) System.Hardware.Haskino.Data.INPUT)
+             (abs
+                @ Word8 System.Hardware.Haskino.Expr.$fExprBWord8 button2_r7Am)
+             System.Hardware.Haskino.Data.INPUT)
           (loopE
              (>>=
                 @ Arduino
                 System.Hardware.Haskino.Data.$fMonadArduino
-                @ Bool
+                @ (Expr Bool)
                 @ ()
-                (liftM
-                   @ Arduino
+                (digitalReadE
+                   (abs
+                      @ Word8 System.Hardware.Haskino.Expr.$fExprBWord8 button1_r7Al))
+                (. @ Bool
+                   @ (Arduino ())
                    @ (Expr Bool)
-                   @ Bool
-                   System.Hardware.Haskino.Data.$fMonadArduino
-                   repB
-                   (digitalReadE (abs8 button1_r7sK)))
-                (\ (a_a77F :: Bool) ->
-                   >>=
-                     @ Arduino
-                     System.Hardware.Haskino.Data.$fMonadArduino
-                     @ Bool
-                     @ ()
-                     (liftM
+                   (\ (a_a77F :: Bool) ->
+                      >>=
                         @ Arduino
-                        @ (Expr Bool)
-                        @ Bool
                         System.Hardware.Haskino.Data.$fMonadArduino
-                        repB
-                        (digitalReadE (abs8 button2_r7sJ)))
-                     (\ (b_a77G :: Bool) ->
-                        digitalWriteE
-                          (abs8 led_r7sL)
-                          (||*
-                             @ (Expr Bool)
-                             System.Hardware.Haskino.Expr.$fBooleanExpr
-                             (absB a_a77F)
-                             (absB b_a77G))))))))
+                        @ (Expr Bool)
+                        @ ()
+                        (digitalReadE
+                           (abs
+                              @ Word8 System.Hardware.Haskino.Expr.$fExprBWord8 button2_r7Am))
+                        (. @ Bool
+                           @ (Arduino ())
+                           @ (Expr Bool)
+                           (\ (b_a77G :: Bool) ->
+                              digitalWriteE
+                                (abs @ Word8 System.Hardware.Haskino.Expr.$fExprBWord8 led_r7Ak)
+                                (||*
+                                   @ (Expr Bool)
+                                   System.Hardware.Haskino.Expr.$fBooleanExpr
+                                   (abs @ Bool System.Hardware.Haskino.Expr.$fExprBBool a_a77F)
+                                   (abs @ Bool System.Hardware.Haskino.Expr.$fExprBBool b_a77G)))
+                           (rep @ Bool)))
+                   (rep @ Bool))))))
 
 -- RHS size: {terms: 5, types: 0, coercions: 0}
 twoButton :: IO ()
@@ -169,25 +157,6 @@ twoButton =
     GHC.Types.True
     (GHC.CString.unpackCString# "/dev/cu.usbmodem1421"#)
     twoButtonProg
-
--- RHS size: {terms: 2, types: 0, coercions: 0}
-$trModule1_r7sM :: GHC.Types.TrName
-[GblId, Caf=NoCafRefs, Str=DmdType]
-$trModule1_r7sM =
-  GHC.Types.TrNameS
-    "System.Hardware.Haskino.SamplePrograms.Strong.TwoButton"#
-
--- RHS size: {terms: 2, types: 0, coercions: 0}
-$trModule2_r7sN :: GHC.Types.TrName
-[GblId, Caf=NoCafRefs, Str=DmdType]
-$trModule2_r7sN = GHC.Types.TrNameS "main"#
-
--- RHS size: {terms: 3, types: 0, coercions: 0}
-System.Hardware.Haskino.SamplePrograms.Strong.TwoButton.$trModule
-  :: GHC.Types.Module
-[GblId, Caf=NoCafRefs, Str=DmdType]
-System.Hardware.Haskino.SamplePrograms.Strong.TwoButton.$trModule =
-  GHC.Types.Module $trModule2_r7sN $trModule1_r7sM
 
 
 

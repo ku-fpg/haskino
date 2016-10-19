@@ -17,32 +17,45 @@ Apply "loop":
 
 Apply "digitalRead":
 
-    loopE $ rep <$> digitalReadE(abs8(button1)) >>= 
-            (\a -> rep <$> digitalReadE(abs8(button2)) >>=
+    loopE $ rep <$> digitalReadE(abs(button1)) >>= 
+            (\a -> rep <$> digitalReadE(abs(button2)) >>=
                 (\b -> digitalWrite led (a || b)))
 
 Apply "digitalWrite":
 
-    loopE $ rep <$> digitalReadE(abs8(button1)) >>= 
-            (\a -> rep <$> digitalReadE(abs8(button2)) >>=
-                (\b -> digitalWriteE (abs8(led)) (absB(a || b))))
+    loopE $ rep <$> digitalReadE(abs(button1)) >>= 
+            (\a -> rep <$> digitalReadE(abs(button2)) >>=
+                (\b -> digitalWriteE (abs(led)) (abs(a || b))))
 
 Apply "abs-push-or"
 
-    loopE $ rep <$> digitalReadE(abs8(button1)) >>= 
-            (\a -> rep <$> digitalReadE(abs8(button2)) >>=
-                (\b -> digitalWriteE (abs8(led)) ((absB(a) || absB(b)))))
+    loopE $ rep <$> digitalReadE(abs(button1)) >>= 
+            (\a -> rep <$> digitalReadE(abs(button2)) >>=
+                (\b -> digitalWriteE (abs(led)) ((abs(a) || abs(b)))))
 
 Apply "rep-3rd-monad":
 
-    loopE $ digitalReadE(abs8(button1)) >>= 
-            (\a -> digitalReadE(abs8(button2)) >>=
-                (\b -> digitalWriteE (abs8(led)) ((absB(a) ||* absB(b)))).rep).rep
+    loopE $ digitalReadE(abs(button1)) >>= 
+            (\a -> digitalReadE(abs(button2)) >>=
+                (\b -> digitalWriteE (abs(led)) ((abs(a) ||* abs(b)))).rep).rep
 
-Somehow fuse
+Apply "????-1":
+
+    loopE $ digitalReadE(abs(button1)) >>= 
+            (\a' -> let a=rep(a') in digitalReadE(abs(button2)) >>=
+                (\b' -> let b=rep(b') in digitalWriteE (abs(led)) ((abs(a) ||* abs(b)))))
+
+Apply "????-2":
+
+    loopE $ digitalReadE(abs(button1)) >>= 
+            (\a' -> digitalReadE(abs(button2)) >>=
+                (\b' -> digitalWriteE (abs(led)) ((abs(rep(a')) ||* abs(rep(b'))))))
+
+Apply "abs-rep-fuse"
 
     loopE $ digitalReadE button1 >>= 
-            \a -> digitalReadE button2 >>=
-                \b -> digitalWriteE abs8(led) (a ||* b)
+            \a' -> digitalReadE button2 >>=
+                \b' -> digitalWriteE abs(led) (a' ||* b')
+
 
 

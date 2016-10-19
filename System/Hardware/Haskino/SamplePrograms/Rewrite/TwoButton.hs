@@ -34,9 +34,6 @@ twoButtonProg = do
         a <- digitalRead button1
         b <- digitalRead button2
         digitalWrite led (a || b)
---    loopE $ digitalReadE(abs8(button1)) >>= 
---            (\a -> digitalReadE(abs8(button2)) >>=
---                (\b -> digitalWriteE (abs8(led)) ((absB(a) ||* absB(b)))).repB).repB
 
 twoButton :: IO ()
 twoButton = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
@@ -83,24 +80,24 @@ abs w = lit w
     (abs b1) ||* (abs b2)
   #-}
 
-{-# RULES "repB-3rd-monad"
-    forall (p :: Expr Word8) (k :: Bool -> Arduino a).
-    (rep <$> (digitalReadE p)) >>= k 
+{-# RULES "rep-3rd-monad"
+    forall (f :: Arduino (Expr a)) (k :: a -> Arduino b).
+    rep <$> f >>= k 
       =
-    (digitalReadE p) >>= k . rep
+    f >>= k . rep
   #-}
 
-{-# RULES "repB-absB-fusion-digitalWriteE-r"
-    forall (p :: Expr Word8) (eb1 :: Expr Bool) (f :: Expr Word8 -> Expr Bool -> Arduino ()).
-    (\b -> f p (eb1 ||* abs(b))).rep 
+{-# RULES "rep-let"
+    forall (f :: Arduino a).
+    (\x -> f ).rep
       =
-    (\b -> f p (eb1 ||* b))
+    (\x' -> let x=rep(x') in f)
   #-}
 
-{-# RULES "repB-absB-fusion-digitalWriteE-l"
-    forall (p :: Expr Word8) (eb2 :: Expr Bool).
-    (\b -> digitalWriteE p (abs(b) ||* eb2)).rep 
+{-# RULES "abs-rep-fuse"
+    forall x.
+    abs(rep(x))
       =
-    (\b -> digitalWriteE p (b ||* eb2))
+    x
   #-}
 
