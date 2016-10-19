@@ -41,40 +41,32 @@ twoButtonProg = do
 twoButton :: IO ()
 twoButton = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
 
-{-# NOINLINE rep8 #-}
-rep8 :: Expr Word8 -> Arduino Word8
-rep8 _ = error "Internal error: rep8 called"
+{-# NOINLINE rep #-}
+rep :: Expr a -> a
+rep _ = error "Internal error: repB called"
 
-{-# NOINLINE abs8 #-}
-abs8 :: Word8 -> Expr Word8
-abs8 w = lit w
-
-{-# NOINLINE repB #-}
-repB :: Expr Bool -> Bool
-repB _ = error "Internal error: repB called"
-
-{-# NOINLINE absB #-}
-absB :: Bool -> Expr Bool
-absB w = lit w
+{-# NOINLINE abs #-}
+abs :: ExprB a => a -> Expr a
+abs w = lit w
 
 {-# RULES 
     "digitalRead"
     forall (p :: Word8).
-    digitalRead p = repB <$> (digitalReadE $ abs8 p) 
+    digitalRead p = rep <$> (digitalReadE $ abs p) 
   #-}
 
 {-# RULES "digitalWrite"
     forall (p :: Word8) (b :: Bool).
     digitalWrite p b
       =
-    digitalWriteE (abs8 p) (absB b)
+    digitalWriteE (abs p) (abs b)
   #-}
 
 {-# RULES "pinMode"
     forall (p :: Word8) m.
     setPinMode p m
       =
-    setPinModeE (abs8 p) m
+    setPinModeE (abs p) m
   #-}
 
 {-# RULES "loop"
@@ -86,41 +78,29 @@ absB w = lit w
 
 {-# RULES "abs-push-or"
     forall (b1 :: Bool) (b2 :: Bool).
-    absB (b1 || b2)
+    abs (b1 || b2)
       =
-    (absB b1) ||* (absB b2)
+    (abs b1) ||* (abs b2)
   #-}
 
 {-# RULES "repB-3rd-monad"
     forall (p :: Expr Word8) (k :: Bool -> Arduino a).
-    (repB <$> (digitalReadE p)) >>= k 
+    (rep <$> (digitalReadE p)) >>= k 
       =
-    (digitalReadE p) >>= k . repB
+    (digitalReadE p) >>= k . rep
   #-}
 
 {-# RULES "repB-absB-fusion-digitalWriteE-r"
-    forall (p :: Expr Word8) (eb1 :: Expr Bool).
-    (\b -> digitalWriteE p (eb1 ||* absB(b))).repB 
+    forall (p :: Expr Word8) (eb1 :: Expr Bool) (f :: Expr Word8 -> Expr Bool -> Arduino ()).
+    (\b -> f p (eb1 ||* abs(b))).rep 
       =
-    (\b -> digitalWriteE p (eb1 ||* b))
+    (\b -> f p (eb1 ||* b))
   #-}
 
 {-# RULES "repB-absB-fusion-digitalWriteE-l"
     forall (p :: Expr Word8) (eb2 :: Expr Bool).
-    (\b -> digitalWriteE p (absB(b) ||* eb2)).repB 
+    (\b -> digitalWriteE p (abs(b) ||* eb2)).rep 
       =
     (\b -> digitalWriteE p (b ||* eb2))
   #-}
-
---{-# RULES "elimM-repB-absB"
---    forall (x :: Expr Bool).
---    (liftM(absB))(liftM(repB)) x = x
---  #-}
---
---{-# RULES "+-intro"
---    forall (x :: Word32) (y :: Word32) .
---    x + y
---      =
---    lit x + lit y
---  #-}
 
