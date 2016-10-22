@@ -110,7 +110,7 @@ decodeCmdArgs BC_CMD_DELAY_MICROS _ xs = decodeExprProc 1 xs
 decodeCmdArgs BC_CMD_LOOP _ xs = ("\n" ++ (decodeCodeBlock xs "Loop"), B.empty)
 decodeCmdArgs BC_CMD_WHILE _ xs = (dec ++ dec' ++ "\n" ++ dec'', B.empty)
   where
-    (dec, xs') = decodeExprCmd 2 xs
+    (dec, xs') = decodeExprCmd 3 xs
     (dec', xs'') = decodeExprCmd 1 (B.tail xs')
     dec'' = decodeCodeBlock xs'' "While"
 decodeCmdArgs BC_CMD_IF_THEN_ELSE _ Empty = decodeErr B.empty

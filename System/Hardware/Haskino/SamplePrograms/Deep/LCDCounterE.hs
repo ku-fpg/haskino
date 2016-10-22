@@ -79,11 +79,11 @@ initOSepp = do lcd <- lcdRegisterE osepp
                                    return $ valToKey val
                    getKey = do writeRemoteRef keyRef (keyValue KeyNone)
                                -- wait for key press
-                               while keyRef (\x -> x ==* (keyValue KeyNone)) id $ do
+                               while keyRef (keyValue KeyNone) (\x -> x ==* (keyValue KeyNone)) id $ do
                                    readButton >>= writeRemoteRef keyRef
                                key <- readRemoteRef keyRef
                                -- wait for key release
-                               while keyRef (\x -> x ==* key) id $ do
+                               while keyRef (key) (\x -> x ==* key) id $ do
                                    readButton >>= writeRemoteRef keyRef
                                delayMillisE 100
                                return key
