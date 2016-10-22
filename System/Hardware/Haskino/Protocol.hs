@@ -169,24 +169,24 @@ packageCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) =
     addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_LIST8, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
 packageCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) =
     addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_FLOAT, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
-packageCommand (WhileRemoteRefB (RemoteRefB i) bf uf cb) =
-    packageWhileCommand (RefB i) i bf uf cb
-packageCommand (WhileRemoteRefW8 (RemoteRefW8 i) bf uf cb) =
-    packageWhileCommand (RefW8 i) i bf uf cb
-packageCommand (WhileRemoteRefW16 (RemoteRefW16 i) bf uf cb) =
-    packageWhileCommand (RefW16 i) i bf uf cb
-packageCommand (WhileRemoteRefW32 (RemoteRefW32 i) bf uf cb) =
-    packageWhileCommand (RefW32 i) i bf uf cb
-packageCommand (WhileRemoteRefI8 (RemoteRefI8 i) bf uf cb) =
-    packageWhileCommand (RefI8 i) i bf uf cb
-packageCommand (WhileRemoteRefI16 (RemoteRefI16 i) bf uf cb) =
-    packageWhileCommand (RefI16 i) i bf uf cb
-packageCommand (WhileRemoteRefI32 (RemoteRefI32 i) bf uf cb) =
-    packageWhileCommand (RefI32 i) i bf uf cb
-packageCommand (WhileRemoteRefFloat (RemoteRefFloat i) bf uf cb) =
-    packageWhileCommand (RefFloat i) i bf uf cb
-packageCommand (WhileRemoteRefL8 (RemoteRefL8 i) bf uf cb) = 
-    packageWhileCommand (RefList8 i) i bf uf cb
+packageCommand (WhileRemoteRefB (RemoteRefB i) iv bf uf cb) =
+    packageWhileCommand (RefB i) i iv bf uf cb
+packageCommand (WhileRemoteRefW8 (RemoteRefW8 i) iv bf uf cb) =
+    packageWhileCommand (RefW8 i) i iv bf uf cb
+packageCommand (WhileRemoteRefW16 (RemoteRefW16 i) iv bf uf cb) =
+    packageWhileCommand (RefW16 i) i iv bf uf cb
+packageCommand (WhileRemoteRefW32 (RemoteRefW32 i) iv bf uf cb) =
+    packageWhileCommand (RefW32 i) i iv bf uf cb
+packageCommand (WhileRemoteRefI8 (RemoteRefI8 i) iv bf uf cb) =
+    packageWhileCommand (RefI8 i) i iv bf uf cb
+packageCommand (WhileRemoteRefI16 (RemoteRefI16 i) iv bf uf cb) =
+    packageWhileCommand (RefI16 i) i iv bf uf cb
+packageCommand (WhileRemoteRefI32 (RemoteRefI32 i) iv bf uf cb) =
+    packageWhileCommand (RefI32 i) i iv bf uf cb
+packageCommand (WhileRemoteRefFloat (RemoteRefFloat i) iv bf uf cb) =
+    packageWhileCommand (RefFloat i) i iv bf uf cb
+packageCommand (WhileRemoteRefL8 (RemoteRefL8 i) iv bf uf cb) = 
+    packageWhileCommand (RefList8 i) i iv bf uf cb
 packageCommand (LoopE cb) = do
     p <- packageCodeBlock cb
     l <- addCommand BC_CMD_LOOP (B.unpack p)
@@ -204,9 +204,9 @@ packageCommand (IfThenElse e cb1 cb2) = do
     i <- addCommand BC_CMD_IF_THEN_ELSE (thenSize ++ (packageExpr e))
     return $ B.append i (B.append pc1 pc2)
 
-packageWhileCommand :: Expr a -> Int -> Expr Bool -> Expr a -> Arduino () -> State CommandState B.ByteString
-packageWhileCommand rr i bf uf cb = do
-    w <- addCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr bf ++ [fromIntegral $ length ufe] ++ ufe)
+packageWhileCommand :: Expr a -> Int -> Expr a -> Expr Bool -> Expr a -> Arduino () -> State CommandState B.ByteString
+packageWhileCommand rr i iv bf uf cb = do
+    w <- addCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr iv ++ packageExpr bf ++ [fromIntegral $ length ufe] ++ ufe)
     p <- packageCodeBlock cb
     return $ B.append w p
   where
