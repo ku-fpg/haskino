@@ -36,7 +36,8 @@ myTask1 led = do
     i <- newRemoteRef $ lit (0::Word8)
     loopE $ do
         takeSemE semId
-        while i 0 (\x -> x <* 3) (\x -> x + 1) $ do 
+        writeRemoteRef i 0
+        while i (\x -> x <* 3) (\x -> x + 1) $ do 
             digitalWriteE led true
             delayMillisE blinkDelay
             digitalWriteE led false

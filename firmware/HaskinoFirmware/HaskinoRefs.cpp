@@ -174,71 +174,63 @@ static int typeToSize(int type)
         }
     } 
 
-byte *storeBoolRef(byte *expr, CONTEXT *context, byte refIndex)
+void storeBoolRef(byte *expr, CONTEXT *context, byte refIndex)
     {
     bool bVal = evalBoolExpr(&expr, context);
 
     *((bool *) haskinoRefs[refIndex].ref) = bVal;
-    return expr;
     }
 
-byte *storeWord8Ref(byte *expr, CONTEXT *context, byte refIndex)
+void storeWord8Ref(byte *expr, CONTEXT *context, byte refIndex)
     {
     uint8_t w8Val = evalWord8Expr(&expr, context);
 
     *((uint8_t *) haskinoRefs[refIndex].ref) = w8Val;
-    return expr;
     }
 
-byte *storeWord16Ref(byte *expr, CONTEXT *context, byte refIndex)
+void storeWord16Ref(byte *expr, CONTEXT *context, byte refIndex)
     {
     uint16_t w16Val = evalWord16Expr(&expr, context);
 
     *((uint16_t *) haskinoRefs[refIndex].ref) = w16Val;
-    return expr;
     }
 
-byte *storeWord32Ref(byte *expr, CONTEXT *context, byte refIndex)
+void storeWord32Ref(byte *expr, CONTEXT *context, byte refIndex)
     {
     uint32_t w32Val = evalWord32Expr(&expr, context);
 
     *((uint32_t *) haskinoRefs[refIndex].ref) = w32Val;
-    return expr;
     }
 
-byte *storeInt8Ref(byte *expr, CONTEXT *context, byte refIndex)
+void storeInt8Ref(byte *expr, CONTEXT *context, byte refIndex)
     {
     int8_t i8Val = evalInt8Expr(&expr, context);
 
     *((int8_t *) haskinoRefs[refIndex].ref) = i8Val;
-    return expr;
     }
 
-byte *storeInt16Ref(byte *expr, CONTEXT *context, byte refIndex)
+void storeInt16Ref(byte *expr, CONTEXT *context, byte refIndex)
     {
     int16_t i16Val = evalInt16Expr(&expr, context);
 
     *((int16_t *) haskinoRefs[refIndex].ref) = i16Val;
-    return expr;
     }
 
-byte *storeInt32Ref(byte *expr, CONTEXT *context, byte refIndex)
+void storeInt32Ref(byte *expr, CONTEXT *context, byte refIndex)
     {
     int32_t i32Val = evalInt32Expr(&expr, context);
 
     *((int32_t *) haskinoRefs[refIndex].ref) = i32Val;
-    return expr;
     }
 
-byte *storeFloatRef(byte *expr, CONTEXT *context, byte refIndex)
+void storeFloatRef(byte *expr, CONTEXT *context, byte refIndex)
     {
     float fVal = evalFloatExpr(&expr, context);
 
     *((float *) haskinoRefs[refIndex].ref) = fVal;
-    return expr;
     }
 
-byte *storeList8Ref(byte *expr, CONTEXT *context, byte refIndex)
+void storeList8Ref(byte *expr, CONTEXT *context, byte refIndex)
     {
     bool alloc;
     byte *lVal = evalList8Expr(&expr, context, &alloc);
@@ -261,7 +253,6 @@ byte *storeList8Ref(byte *expr, CONTEXT *context, byte refIndex)
             haskinoRefs[refIndex].ref = newLVal;
             }
         }    
-    return expr;
     }
 
 static bool handleNewRef(int type, int size, const byte *msg, CONTEXT *context)

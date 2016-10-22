@@ -104,24 +104,24 @@ showCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) =
     showCommand2 "ModifyRemoteRefL8" i f
 showCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) =
     showCommand2 "ModifyRemoteRefFloat" i f
-showCommand (WhileRemoteRefB (RemoteRefB i) iv bf uf cb) =
-    showWhileCommand (RefB i) i iv bf uf cb
-showCommand (WhileRemoteRefW8 (RemoteRefW8 i) iv bf uf cb) =
-    showWhileCommand (RefW8 i) i iv bf uf cb
-showCommand (WhileRemoteRefW16 (RemoteRefW16 i) iv bf uf cb) =
-    showWhileCommand (RefW16 i) i iv bf uf cb
-showCommand (WhileRemoteRefW32 (RemoteRefW32 i) iv bf uf cb) =
-    showWhileCommand (RefW32 i) i iv bf uf cb
-showCommand (WhileRemoteRefI8 (RemoteRefI8 i) iv bf uf cb) =
-    showWhileCommand (RefI8 i) i iv bf uf cb
-showCommand (WhileRemoteRefI16 (RemoteRefI16 i) iv bf uf cb) =
-    showWhileCommand (RefI16 i) i iv bf uf cb
-showCommand (WhileRemoteRefI32 (RemoteRefI32 i) iv bf uf cb) =
-    showWhileCommand (RefI32 i) i iv bf uf cb
-showCommand (WhileRemoteRefFloat (RemoteRefFloat i) iv bf uf cb) =
-    showWhileCommand (RefFloat i) i iv bf uf cb
-showCommand (WhileRemoteRefL8 (RemoteRefL8 i) iv bf uf cb) = 
-    showWhileCommand (RefList8 i) i iv bf uf cb
+showCommand (WhileRemoteRefB (RemoteRefB i) bf uf cb) =
+    showWhileCommand (RefB i) i bf uf cb
+showCommand (WhileRemoteRefW8 (RemoteRefW8 i) bf uf cb) =
+    showWhileCommand (RefW8 i) i bf uf cb
+showCommand (WhileRemoteRefW16 (RemoteRefW16 i) bf uf cb) =
+    showWhileCommand (RefW16 i) i bf uf cb
+showCommand (WhileRemoteRefW32 (RemoteRefW32 i) bf uf cb) =
+    showWhileCommand (RefW32 i) i bf uf cb
+showCommand (WhileRemoteRefI8 (RemoteRefI8 i) bf uf cb) =
+    showWhileCommand (RefI8 i) i bf uf cb
+showCommand (WhileRemoteRefI16 (RemoteRefI16 i) bf uf cb) =
+    showWhileCommand (RefI16 i) i bf uf cb
+showCommand (WhileRemoteRefI32 (RemoteRefI32 i) bf uf cb) =
+    showWhileCommand (RefI32 i) i bf uf cb
+showCommand (WhileRemoteRefFloat (RemoteRefFloat i) bf uf cb) =
+    showWhileCommand (RefFloat i) i bf uf cb
+showCommand (WhileRemoteRefL8 (RemoteRefL8 i) bf uf cb) = 
+    showWhileCommand (RefList8 i) i bf uf cb
 showCommand (Loop cb) = do
     c <- showCodeBlock cb
     return $ "Loop\n" ++ c
@@ -159,10 +159,10 @@ showCommand2 p e1 e2 = showCommandAndArgs [p, show e1, show e2]
 showCommand3 :: (Show a, Show b, Show c) => String -> a -> b -> c -> State ShowState String
 showCommand3 p e1 e2 e3 = showCommandAndArgs [p, show e1, show e2, show e3]
 
-showWhileCommand :: Show a => Expr a -> Int -> Expr a -> Expr Bool -> Expr a -> Arduino () -> State ShowState String
-showWhileCommand rr i iv bf uf cb = do
+showWhileCommand :: Show a => Expr a -> Int -> Expr Bool -> Expr a -> Arduino () -> State ShowState String
+showWhileCommand rr i bf uf cb = do
     sc <- showCodeBlock cb
-    return $ "While " ++ show rr ++ " " ++ show i ++ " (" ++ show iv ++ ") (" ++ show bf ++ ") (" ++ show uf ++ ")\n" ++ sc
+    return $ "While " ++ show rr ++ " " ++ show i ++ " (" ++ show bf ++ ") (" ++ show uf ++ ")\n" ++ sc
 
 addToBlock :: String -> State ShowState ()
 addToBlock bs = do

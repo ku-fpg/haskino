@@ -152,54 +152,16 @@ static bool handleForIn(int size, const byte *msg, CONTEXT *context)
 static bool handleWhile(int size, const byte *msg, CONTEXT *context)
     {
     byte *expr = (byte *) &msg[1];
+    byte refIndex = evalWord8Expr(&expr, context);
+    byte *condExpr = expr;
+    bool condition = evalBoolExpr(&expr, context);
+    byte updateLength = *expr++;
+    byte *updateExpr = expr;
+    byte exprType = *updateExpr >> EXPR_TYPE_SHFT;
+    byte *codeBlock = (expr + updateLength);
+    int whileSize = size - (expr + updateLength - msg);
     bool rescheduled = (context->task && context->task->rescheduled);
-    byte refIndex;
-    byte *condExpr;
-    bool condition;
-    byte updateLength;
-    byte *updateExpr;
-    byte exprType;
-    byte *codeBlock;
-    int whileSize;
     
-    refIndex = evalWord8Expr(&expr, context);
-
-    exprType = *expr >> EXPR_TYPE_SHFT;
-    switch (exprType)
-        {
-        case REF_BOOL:
-            expr = storeBoolRef(expr, context, refIndex);
-            break;
-        case REF_WORD8:
-            expr = storeWord8Ref(expr, context, refIndex);
-            break;
-        case REF_WORD16:
-            expr = storeWord16Ref(expr, context, refIndex);
-            break;
-        case REF_WORD32:
-            expr = storeWord32Ref(expr, context, refIndex);
-            break;
-        case REF_INT8:
-            expr = storeInt8Ref(expr, context, refIndex);
-            break;
-        case REF_INT16:
-            expr = storeInt16Ref(expr, context, refIndex);
-            break;
-        case REF_INT32:
-            expr = storeInt32Ref(expr, context, refIndex);
-            break;
-        case EXPR_LIST8:
-            expr = storeList8Ref(expr, context, refIndex);
-            break;
-        }
-
-    condExpr = expr;
-    condition = evalBoolExpr(&expr, context);
-    updateLength = *expr++;
-    updateExpr = expr;
-    codeBlock = (expr + updateLength);
-    whileSize = size - (expr + updateLength - msg);
-
     // If we were rescheduled, always enter the loop to rerun code block
     while (condition || rescheduled)
         {

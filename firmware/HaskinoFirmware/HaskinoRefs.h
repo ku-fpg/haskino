@@ -23,14 +23,14 @@ int8_t readRefInt8(int refIndex);
 int16_t readRefInt16(int refIndex);
 int32_t readRefInt32(int refIndex);
 float readRefFloat(int refIndex);
-byte *storeBoolRef(byte *expr, CONTEXT *context, byte refIndex);
-byte *storeWord8Ref(byte *expr, CONTEXT *context, byte refIndex);
-byte *storeWord16Ref(byte *expr, CONTEXT *context, byte refIndex);
-byte *storeWord32Ref(byte *expr, CONTEXT *context, byte refIndex);
-byte *storeList8Ref(byte *expr, CONTEXT *context, byte refIndex);
-byte *storeInt8Ref(byte *expr, CONTEXT *context, byte refIndex);
-byte *storeInt16Ref(byte *expr, CONTEXT *context, byte refIndex);
-byte *storeInt32Ref(byte *expr, CONTEXT *context, byte refIndex);
-byte *storeFloatRef(byte *expr, CONTEXT *context, byte refIndex);
+void storeBoolRef(byte *expr, CONTEXT *context, byte refIndex);
+void storeWord8Ref(byte *expr, CONTEXT *context, byte refIndex);
+void storeWord16Ref(byte *expr, CONTEXT *context, byte refIndex);
+void storeWord32Ref(byte *expr, CONTEXT *context, byte refIndex);
+void storeList8Ref(byte *expr, CONTEXT *context, byte refIndex);
+void storeInt8Ref(byte *expr, CONTEXT *context, byte refIndex);
+void storeInt16Ref(byte *expr, CONTEXT *context, byte refIndex);
+void storeInt32Ref(byte *expr, CONTEXT *context, byte refIndex);
+void storeFloatRef(byte *expr, CONTEXT *context, byte refIndex);
 
 #endif /* HaskinoRefsH */
