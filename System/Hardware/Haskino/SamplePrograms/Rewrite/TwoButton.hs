@@ -87,12 +87,30 @@ abs w = lit w
     f >>= k . rep
   #-}
 
+{-
 {-# RULES "rep-let"
-    forall (f :: Arduino a).
+    forall f.
     (\x -> f ).rep
       =
     (\x' -> let x=rep(x') in f)
   #-}
+-}
+
+{-# RULES "rep-let"
+    forall p s.
+    (\x -> digitalWriteE p (s ||* abs(x))).rep
+      =
+    let x=rep(x') in (\x' -> digitalWriteE p (s ||* abs(x)))
+  #-}
+
+{-
+{-# RULES "rep-let"
+    forall led a.
+    (\x -> digitalWriteE (abs(led)) ((abs(a) ||* abs(x)))).rep
+      =
+    (\x' -> let x=rep(x') in digitalWriteE (abs(led)) ((abs(a) ||* abs(x))))
+  #-}
+-}
 
 {-# RULES "abs-rep-fuse"
     forall x.
