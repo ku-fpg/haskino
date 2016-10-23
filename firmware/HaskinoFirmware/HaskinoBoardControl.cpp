@@ -168,28 +168,28 @@ static bool handleWhile(int size, const byte *msg, CONTEXT *context)
     switch (exprType)
         {
         case REF_BOOL:
-            expr = storeBoolRef(expr, context, refIndex);
+            expr = storeBoolRef(expr, context, refIndex, !rescheduled);
             break;
         case REF_WORD8:
-            expr = storeWord8Ref(expr, context, refIndex);
+            expr = storeWord8Ref(expr, context, refIndex, !rescheduled);
             break;
         case REF_WORD16:
-            expr = storeWord16Ref(expr, context, refIndex);
+            expr = storeWord16Ref(expr, context, refIndex, !rescheduled);
             break;
         case REF_WORD32:
-            expr = storeWord32Ref(expr, context, refIndex);
+            expr = storeWord32Ref(expr, context, refIndex, !rescheduled);
             break;
         case REF_INT8:
-            expr = storeInt8Ref(expr, context, refIndex);
+            expr = storeInt8Ref(expr, context, refIndex, !rescheduled);
             break;
         case REF_INT16:
-            expr = storeInt16Ref(expr, context, refIndex);
+            expr = storeInt16Ref(expr, context, refIndex, !rescheduled);
             break;
         case REF_INT32:
-            expr = storeInt32Ref(expr, context, refIndex);
+            expr = storeInt32Ref(expr, context, refIndex, !rescheduled);
             break;
         case EXPR_LIST8:
-            expr = storeList8Ref(expr, context, refIndex);
+            expr = storeList8Ref(expr, context, refIndex, !rescheduled);
             break;
         }
 
@@ -212,28 +212,28 @@ static bool handleWhile(int size, const byte *msg, CONTEXT *context)
         switch (exprType)
             {
             case REF_BOOL:
-                storeBoolRef(expr, context, refIndex);
+                storeBoolRef(expr, context, refIndex, true);
                 break;
             case REF_WORD8:
-                storeWord8Ref(expr, context, refIndex);
+                storeWord8Ref(expr, context, refIndex, true);
                 break;
             case REF_WORD16:
-                storeWord16Ref(expr, context, refIndex);
+                storeWord16Ref(expr, context, refIndex, true);
                 break;
             case REF_WORD32:
-                storeWord32Ref(expr, context, refIndex);
+                storeWord32Ref(expr, context, refIndex, true);
                 break;
             case REF_INT8:
-                storeInt8Ref(expr, context, refIndex);
+                storeInt8Ref(expr, context, refIndex, true);
                 break;
             case REF_INT16:
-                storeInt16Ref(expr, context, refIndex);
+                storeInt16Ref(expr, context, refIndex, true);
                 break;
             case REF_INT32:
-                storeInt32Ref(expr, context, refIndex);
+                storeInt32Ref(expr, context, refIndex, true);
                 break;
             case EXPR_LIST8:
-                storeList8Ref(expr, context, refIndex);
+                storeList8Ref(expr, context, refIndex, true);
                 break;
             }
         expr = condExpr;
