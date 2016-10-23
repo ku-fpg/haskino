@@ -1,5 +1,5 @@
 Name:          Haskino
-Version:       0.4
+Version:       0.5
 Category:      Hardware
 Synopsis:      Control your Arduino board from Haskell using Deep Embedding
 Description:   Haskino allows Haskell programs to control Arduino boards
