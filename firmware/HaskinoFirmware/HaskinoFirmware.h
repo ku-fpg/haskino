@@ -2,6 +2,6 @@
 #define HaskinoFirmwareH
 
 #define FIRMWARE_MAJOR      0
-#define FIRMWARE_MINOR      4
+#define FIRMWARE_MINOR      5
 
 #endif /* HaskinoFirmwareH */

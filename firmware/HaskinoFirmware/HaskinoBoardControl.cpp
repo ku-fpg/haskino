@@ -152,16 +152,62 @@ static bool handleForIn(int size, const byte *msg, CONTEXT *context)
 static bool handleWhile(int size, const byte *msg, CONTEXT *context)
     {
     byte *expr = (byte *) &msg[1];
-    byte refIndex = evalWord8Expr(&expr, context);
-    byte *condExpr = expr;
-    bool condition = evalBoolExpr(&expr, context);
-    byte updateLength = *expr++;
-    byte *updateExpr = expr;
-    byte exprType = *updateExpr >> EXPR_TYPE_SHFT;
-    byte *codeBlock = (expr + updateLength);
-    int whileSize = size - (expr + updateLength - msg);
     bool rescheduled = (context->task && context->task->rescheduled);
+    byte refIndex;
+    byte initLength;
+    byte *initExpr;
+    byte *condExpr;
+    bool condition;
+    byte updateLength;
+    byte *updateExpr;
+    byte exprType;
+    byte *codeBlock;
+    int whileSize;
     
+    refIndex = evalWord8Expr(&expr, context);
+    initLength = *expr++;
+    initExpr = expr;
+    exprType = *initExpr >> EXPR_TYPE_SHFT;
+    expr += initLength;
+    condExpr = expr;
+
+    if (!rescheduled)
+        {
+        switch (exprType)
+            {
+            case REF_BOOL:
+                storeBoolRef(initExpr, context, refIndex);
+                break;
+            case REF_WORD8:
+                storeWord8Ref(initExpr, context, refIndex);
+                break;
+            case REF_WORD16:
+                storeWord16Ref(initExpr, context, refIndex);
+                break;
+            case REF_WORD32:
+                storeWord32Ref(initExpr, context, refIndex);
+                break;
+            case REF_INT8:
+                storeInt8Ref(initExpr, context, refIndex);
+                break;
+            case REF_INT16:
+                storeInt16Ref(initExpr, context, refIndex);
+                break;
+            case REF_INT32:
+                storeInt32Ref(initExpr, context, refIndex);
+                break;
+            case EXPR_LIST8:
+                storeList8Ref(initExpr, context, refIndex);
+                break;
+            }
+        }
+
+    condition = evalBoolExpr(&expr, context);
+    updateLength = *expr++;
+    updateExpr = expr;
+    codeBlock = (expr + updateLength);
+    whileSize = size - (expr + updateLength - msg);
+
     // If we were rescheduled, always enter the loop to rerun code block
     while (condition || rescheduled)
         {
