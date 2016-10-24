@@ -108,11 +108,12 @@ decodeCmdArgs BC_CMD_SET_PIN_MODE _ xs = decodeExprCmd 1 xs
 decodeCmdArgs BC_CMD_DELAY_MILLIS _ xs = decodeExprProc 1 xs
 decodeCmdArgs BC_CMD_DELAY_MICROS _ xs = decodeExprProc 1 xs
 decodeCmdArgs BC_CMD_LOOP _ xs = ("\n" ++ (decodeCodeBlock xs "Loop"), B.empty)
-decodeCmdArgs BC_CMD_WHILE _ xs = (dec ++ dec' ++ "\n" ++ dec'', B.empty)
+decodeCmdArgs BC_CMD_WHILE _ xs = (dec ++ dec' ++ "\n" ++ dec'' ++ dec''', B.empty)
   where
-    (dec, xs') = decodeExprCmd 3 xs
-    (dec', xs'') = decodeExprCmd 1 (B.tail xs')
-    dec'' = decodeCodeBlock xs'' "While"
+    (dec, xs') = decodeExprCmd 1 xs
+    (dec', xs'') = decodeExprCmd 2 (B.tail xs')
+    (dec'', xs''') = decodeExprCmd 1 (B.tail xs'')
+    dec''' = decodeCodeBlock xs''' "While"
 decodeCmdArgs BC_CMD_IF_THEN_ELSE _ Empty = decodeErr B.empty
 decodeCmdArgs BC_CMD_IF_THEN_ELSE _ (x :< Empty) = decodeErr (B.singleton x)
 decodeCmdArgs BC_CMD_IF_THEN_ELSE _ xs = (dec ++ "\n" ++ dec' ++ dec'', B.empty)

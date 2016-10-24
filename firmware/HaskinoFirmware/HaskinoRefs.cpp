@@ -174,104 +174,93 @@ static int typeToSize(int type)
         }
     } 
 
-byte *storeBoolRef(byte *expr, CONTEXT *context, byte refIndex, bool store)
+byte *storeBoolRef(byte *expr, CONTEXT *context, byte refIndex)
     {
     bool bVal = evalBoolExpr(&expr, context);
 
-    if (store)
-        *((bool *) haskinoRefs[refIndex].ref) = bVal;
+    *((bool *) haskinoRefs[refIndex].ref) = bVal;
     return expr;
     }
 
-byte *storeWord8Ref(byte *expr, CONTEXT *context, byte refIndex, bool store)
+byte *storeWord8Ref(byte *expr, CONTEXT *context, byte refIndex)
     {
     uint8_t w8Val = evalWord8Expr(&expr, context);
 
-    if (store)
-        *((uint8_t *) haskinoRefs[refIndex].ref) = w8Val;
+    *((uint8_t *) haskinoRefs[refIndex].ref) = w8Val;
     return expr;
     }
 
-byte *storeWord16Ref(byte *expr, CONTEXT *context, byte refIndex, bool store)
+byte *storeWord16Ref(byte *expr, CONTEXT *context, byte refIndex)
     {
     uint16_t w16Val = evalWord16Expr(&expr, context);
 
-    if (store)
-        *((uint16_t *) haskinoRefs[refIndex].ref) = w16Val;
+    *((uint16_t *) haskinoRefs[refIndex].ref) = w16Val;
     return expr;
     }
 
-byte *storeWord32Ref(byte *expr, CONTEXT *context, byte refIndex, bool store)
+byte *storeWord32Ref(byte *expr, CONTEXT *context, byte refIndex)
     {
     uint32_t w32Val = evalWord32Expr(&expr, context);
 
-    if (store)
-        *((uint32_t *) haskinoRefs[refIndex].ref) = w32Val;
+    *((uint32_t *) haskinoRefs[refIndex].ref) = w32Val;
     return expr;
     }
 
-byte *storeInt8Ref(byte *expr, CONTEXT *context, byte refIndex, bool store)
+byte *storeInt8Ref(byte *expr, CONTEXT *context, byte refIndex)
     {
     int8_t i8Val = evalInt8Expr(&expr, context);
 
-    if (store)
-        *((int8_t *) haskinoRefs[refIndex].ref) = i8Val;
+    *((int8_t *) haskinoRefs[refIndex].ref) = i8Val;
     return expr;
     }
 
-byte *storeInt16Ref(byte *expr, CONTEXT *context, byte refIndex, bool store)
+byte *storeInt16Ref(byte *expr, CONTEXT *context, byte refIndex)
     {
     int16_t i16Val = evalInt16Expr(&expr, context);
 
-    if (store)
     *((int16_t *) haskinoRefs[refIndex].ref) = i16Val;
     return expr;
     }
 
-byte *storeInt32Ref(byte *expr, CONTEXT *context, byte refIndex, bool store)
+byte *storeInt32Ref(byte *expr, CONTEXT *context, byte refIndex)
     {
     int32_t i32Val = evalInt32Expr(&expr, context);
 
-    if (store)
-        *((int32_t *) haskinoRefs[refIndex].ref) = i32Val;
+    *((int32_t *) haskinoRefs[refIndex].ref) = i32Val;
     return expr;
     }
 
-byte *storeFloatRef(byte *expr, CONTEXT *context, byte refIndex, bool store)
+byte *storeFloatRef(byte *expr, CONTEXT *context, byte refIndex)
     {
     float fVal = evalFloatExpr(&expr, context);
 
-    if (store)
-        *((float *) haskinoRefs[refIndex].ref) = fVal;
+    *((float *) haskinoRefs[refIndex].ref) = fVal;
     return expr;
     }
 
-byte *storeList8Ref(byte *expr, CONTEXT *context, byte refIndex, bool store)
+byte *storeList8Ref(byte *expr, CONTEXT *context, byte refIndex)
     {
     bool alloc;
     byte *lVal = evalList8Expr(&expr, context, &alloc);
 
-    if (store)
+    if (haskinoRefs[refIndex].ref != NULL)
         {
-        if (haskinoRefs[refIndex].ref != NULL)
-            {
-            free(haskinoRefs[refIndex].ref);
-            haskinoRefs[refIndex].ref = NULL;
-            }
-
-        if (alloc)
-            haskinoRefs[refIndex].ref = lVal;
-        else
-            {
-            // Need to copy expression
-            byte *newLVal = (byte *) malloc(lVal[1]+2);
-            if (newLVal)
-                {
-                memcpy(newLVal, lVal, lVal[1]+2);
-                haskinoRefs[refIndex].ref = newLVal;
-                }
-            }    
+        free(haskinoRefs[refIndex].ref);
+        haskinoRefs[refIndex].ref = NULL;
         }
+
+    if (alloc)
+        haskinoRefs[refIndex].ref = lVal;
+    else
+        {
+        // Need to copy expression
+        byte *newLVal = (byte *) malloc(lVal[1]+2);
+        if (newLVal)
+            {
+            memcpy(newLVal, lVal, lVal[1]+2);
+            haskinoRefs[refIndex].ref = newLVal;
+            }
+        }    
     return expr;
     }
 
@@ -308,39 +297,39 @@ static bool handleNewRef(int type, int size, const byte *msg, CONTEXT *context)
             {
             case REF_BOOL:
                 newReply[0] = EXPR(EXPR_BOOL, EXPR_LIT);
-                storeBoolRef(expr, context, refIndex, true);
+                storeBoolRef(expr, context, refIndex);
                 break;
             case REF_WORD8:
                 newReply[0] = EXPR(EXPR_WORD8, EXPR_LIT);
-                storeWord8Ref(expr, context, refIndex, true);
+                storeWord8Ref(expr, context, refIndex);
                 break;
             case REF_WORD16:
                 newReply[0] = EXPR(EXPR_WORD16, EXPR_LIT);
-                storeWord16Ref(expr, context, refIndex, true);
+                storeWord16Ref(expr, context, refIndex);
                 break;
             case REF_WORD32:
                 newReply[0] = EXPR(EXPR_WORD32, EXPR_LIT);
-                storeWord32Ref(expr, context, refIndex, true);
+                storeWord32Ref(expr, context, refIndex);
                 break;
             case REF_LIST8:
                 newReply[0] = EXPR_L(EXPR_LIT);
-                storeList8Ref(expr, context, refIndex, true);
+                storeList8Ref(expr, context, refIndex);
                 break;
             case REF_INT8:
                 newReply[0] = EXPR(EXPR_INT8, EXPR_LIT);
-                storeInt8Ref(expr, context, refIndex, true);
+                storeInt8Ref(expr, context, refIndex);
                 break;
             case REF_INT16:
                 newReply[0] = EXPR(EXPR_INT16, EXPR_LIT);
-                storeInt16Ref(expr, context, refIndex, true);
+                storeInt16Ref(expr, context, refIndex);
                 break;
             case REF_INT32:
                 newReply[0] = EXPR(EXPR_INT32, EXPR_LIT);
-                storeInt32Ref(expr, context, refIndex, true);
+                storeInt32Ref(expr, context, refIndex);
                 break;
             case REF_FLOAT:
                 newReply[0] = EXPR_F(EXPR_LIT);
-                storeFloatRef(expr, context, refIndex, true);
+                storeFloatRef(expr, context, refIndex);
                 break;
             }
         newReply[1] = refIndex;
@@ -418,31 +407,31 @@ static bool handleWriteRef(int type, int size, const byte *msg, CONTEXT *context
     switch (type)
         {
         case REF_BOOL:
-            storeBoolRef(expr, context, refIndex, true);
+            storeBoolRef(expr, context, refIndex);
             break;
         case REF_WORD8:
-            storeWord8Ref(expr, context, refIndex, true);
+            storeWord8Ref(expr, context, refIndex);
             break;
         case REF_WORD16:
-            storeWord16Ref(expr, context, refIndex, true);
+            storeWord16Ref(expr, context, refIndex);
             break;
         case REF_WORD32:
-            storeWord32Ref(expr, context, refIndex, true);
+            storeWord32Ref(expr, context, refIndex);
             break;
         case REF_INT8:
-            storeInt8Ref(expr, context, refIndex, true);
+            storeInt8Ref(expr, context, refIndex);
             break;
         case REF_INT16:
-            storeInt16Ref(expr, context, refIndex, true);
+            storeInt16Ref(expr, context, refIndex);
             break;
         case REF_INT32:
-            storeInt32Ref(expr, context, refIndex, true);
+            storeInt32Ref(expr, context, refIndex);
             break;
         case REF_LIST8:
-            storeList8Ref(expr, context, refIndex, true);
+            storeList8Ref(expr, context, refIndex);
             break;
         case REF_FLOAT:
-            storeFloatRef(expr, context, refIndex, true);
+            storeFloatRef(expr, context, refIndex);
             break;
         }
     return false;

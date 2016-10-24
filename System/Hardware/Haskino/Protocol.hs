@@ -206,10 +206,11 @@ packageCommand (IfThenElse e cb1 cb2) = do
 
 packageWhileCommand :: Expr a -> Int -> Expr a -> Expr Bool -> Expr a -> Arduino () -> State CommandState B.ByteString
 packageWhileCommand rr i iv bf uf cb = do
-    w <- addCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr iv ++ packageExpr bf ++ [fromIntegral $ length ufe] ++ ufe)
+    w <- addCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ [fromIntegral $ length ive] ++ ive ++ packageExpr bf ++ [fromIntegral $ length ufe] ++ ufe)
     p <- packageCodeBlock cb
     return $ B.append w p
   where
+    ive = packageExpr iv
     ufe = packageExpr uf
 
 -- The package code block takes the monad code block to package, an

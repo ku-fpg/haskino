@@ -154,6 +154,8 @@ static bool handleWhile(int size, const byte *msg, CONTEXT *context)
     byte *expr = (byte *) &msg[1];
     bool rescheduled = (context->task && context->task->rescheduled);
     byte refIndex;
+    byte initLength;
+    byte *initExpr;
     byte *condExpr;
     bool condition;
     byte updateLength;
@@ -163,37 +165,43 @@ static bool handleWhile(int size, const byte *msg, CONTEXT *context)
     int whileSize;
     
     refIndex = evalWord8Expr(&expr, context);
+    initLength = *expr++;
+    initExpr = expr;
+    exprType = *initExpr >> EXPR_TYPE_SHFT;
+    expr += initLength;
+    condExpr = expr;
 
-    exprType = *expr >> EXPR_TYPE_SHFT;
-    switch (exprType)
+    if (!rescheduled)
         {
-        case REF_BOOL:
-            expr = storeBoolRef(expr, context, refIndex, !rescheduled);
-            break;
-        case REF_WORD8:
-            expr = storeWord8Ref(expr, context, refIndex, !rescheduled);
-            break;
-        case REF_WORD16:
-            expr = storeWord16Ref(expr, context, refIndex, !rescheduled);
-            break;
-        case REF_WORD32:
-            expr = storeWord32Ref(expr, context, refIndex, !rescheduled);
-            break;
-        case REF_INT8:
-            expr = storeInt8Ref(expr, context, refIndex, !rescheduled);
-            break;
-        case REF_INT16:
-            expr = storeInt16Ref(expr, context, refIndex, !rescheduled);
-            break;
-        case REF_INT32:
-            expr = storeInt32Ref(expr, context, refIndex, !rescheduled);
-            break;
-        case EXPR_LIST8:
-            expr = storeList8Ref(expr, context, refIndex, !rescheduled);
-            break;
+        switch (exprType)
+            {
+            case REF_BOOL:
+                storeBoolRef(initExpr, context, refIndex);
+                break;
+            case REF_WORD8:
+                storeWord8Ref(initExpr, context, refIndex);
+                break;
+            case REF_WORD16:
+                storeWord16Ref(initExpr, context, refIndex);
+                break;
+            case REF_WORD32:
+                storeWord32Ref(initExpr, context, refIndex);
+                break;
+            case REF_INT8:
+                storeInt8Ref(initExpr, context, refIndex);
+                break;
+            case REF_INT16:
+                storeInt16Ref(initExpr, context, refIndex);
+                break;
+            case REF_INT32:
+                storeInt32Ref(initExpr, context, refIndex);
+                break;
+            case EXPR_LIST8:
+                storeList8Ref(initExpr, context, refIndex);
+                break;
+            }
         }
 
-    condExpr = expr;
     condition = evalBoolExpr(&expr, context);
     updateLength = *expr++;
     updateExpr = expr;
@@ -212,28 +220,28 @@ static bool handleWhile(int size, const byte *msg, CONTEXT *context)
         switch (exprType)
             {
             case REF_BOOL:
-                storeBoolRef(expr, context, refIndex, true);
+                storeBoolRef(expr, context, refIndex);
                 break;
             case REF_WORD8:
-                storeWord8Ref(expr, context, refIndex, true);
+                storeWord8Ref(expr, context, refIndex);
                 break;
             case REF_WORD16:
-                storeWord16Ref(expr, context, refIndex, true);
+                storeWord16Ref(expr, context, refIndex);
                 break;
             case REF_WORD32:
-                storeWord32Ref(expr, context, refIndex, true);
+                storeWord32Ref(expr, context, refIndex);
                 break;
             case REF_INT8:
-                storeInt8Ref(expr, context, refIndex, true);
+                storeInt8Ref(expr, context, refIndex);
                 break;
             case REF_INT16:
-                storeInt16Ref(expr, context, refIndex, true);
+                storeInt16Ref(expr, context, refIndex);
                 break;
             case REF_INT32:
-                storeInt32Ref(expr, context, refIndex, true);
+                storeInt32Ref(expr, context, refIndex);
                 break;
             case EXPR_LIST8:
-                storeList8Ref(expr, context, refIndex, true);
+                storeList8Ref(expr, context, refIndex);
                 break;
             }
         expr = condExpr;
