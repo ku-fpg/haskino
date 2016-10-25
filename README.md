@@ -18,7 +18,7 @@ Also, a pretty printer for the Arduino monad has been added for debugging.
 
 # Version 0.4
 
-Version 0.4 is a major upgrade to the Haskino framework.  It includes a micro kernel in the interpreter which enables multitasking, as well as a trans-compiler which may be used to generate C code for flashing to the Arduino.  This version corresponds to the talk given at PADL 2016.
+Version 0.4 is a major upgrade to the Haskino framework.  It includes a micro kernel in the interpreter which enables multitasking, as well as a trans-compiler which may be used to generate C code for flashing to the Arduino.  This version corresponds to the talk given at TFP 2016.
 
 # Version 0.3
 
