@@ -22,6 +22,8 @@ import Control.Monad
 import Data.Word
 import Data.Boolean
 
+bstuff = abs_ (True || False)
+
 twoButtonProg :: Arduino ()
 twoButtonProg = do
     let led = 13
@@ -38,6 +40,7 @@ twoButtonProg = do
 twoButton :: IO ()
 twoButton = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
 
+{-
 {-# NOINLINE rep #-}
 rep :: Expr a -> a
 rep _ = error "Internal error: repB called"
@@ -45,6 +48,7 @@ rep _ = error "Internal error: repB called"
 {-# NOINLINE abs #-}
 abs :: ExprB a => a -> Expr a
 abs w = lit w
+-}
 
 {-# RULES 
     "digitalRead" [~]
@@ -81,7 +85,7 @@ abs w = lit w
   #-}
 
 {-# RULES "rep-3rd-monad" [~]
-    forall (f :: Arduino (Expr a)) (k :: a -> Arduino b).
+    forall (f :: Arduino (Expr Bool)) (k :: Bool -> Arduino b).
     rep_ <$> f >>= k 
       =
     f >>= k . rep_
@@ -110,7 +114,6 @@ abs w = lit w
       =
     (\x' -> let x=rep(x') in digitalWriteE (abs(led)) ((abs(a) ||* abs(x))))
   #-}
--}
 
 {-# RULES "abs-rep-fuse" [~]
     forall x.
@@ -118,4 +121,5 @@ abs w = lit w
       =
     x
   #-}
+-}
 

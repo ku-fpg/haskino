@@ -825,19 +825,40 @@ rep_ _ = error "Internal error: repB called"
 abs_ :: ExprB a => a -> Expr a
 abs_ w = lit w
 
-{-# RULES "abs-push-or" [~]
+{-# RULES "absB-push-or" [~]
     forall (b1 :: Bool) (b2 :: Bool).
     abs_ (b1 || b2)
       =
     (abs_ b1) ||* (abs_ b2)
   #-}
 
-{-# RULES "abs-rep-fuse" [~]
+{-# RULES "absB-repB-fuse" [~]
     forall x.
     abs_(rep_(x))
       =
     x
   #-}
 
-abs_b :: Bool -> Expr Bool
-abs_b w = lit w
+{-# RULES "abs8-rep8-fuse" [~]
+    forall x.
+    abs_(rep_(x))
+      =
+    x
+  #-}
+{-
+{-# NOINLINE repB_ #-}
+repB_ :: Expr Bool -> Bool
+repB_ _ = error "Internal error: repB called"
+
+{-# NOINLINE absB_ #-}
+absB_ :: Bool -> Expr Bool
+absB_ w = lit w
+
+{-# NOINLINE rep8_ #-}
+rep8_ :: Expr Word8 -> Word8
+rep8_ _ = error "Internal error: repB called"
+
+{-# NOINLINE abs8_ #-}
+abs8_ :: Word8 -> Expr Word8
+abs8_ w = lit w
+-}

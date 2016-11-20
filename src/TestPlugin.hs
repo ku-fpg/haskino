@@ -11,7 +11,8 @@ import SimplUtils
 import Data.Data
 import Data.Typeable
 import IOEnv 
-import Control.Monad 
+import Control.Monad
+import Data.List 
 
 data SomeAnn = SomeAnn deriving (Data, Typeable)
 
@@ -35,7 +36,7 @@ install _ todo = do
   reinitializeGlobals
   putMsgS $ "Currently Compiler has " ++ (show $ length todo) ++ " passes."
   -- return (todo ++ [(CoreDoPluginPass "Say name" pass)])
-  return $ ((CoreDoPluginPass "Say name" pass) : todo) ++ [CoreDoPluginPass "Say name" pass]
+  return $ ((CoreDoPluginPass "Say name" pass) : todo) ++ [CoreDoPluginPass "Say name" pass] ++ todo ++ [CoreDoPluginPass "Say name" pass]
 
 pass :: ModGuts -> CoreM ModGuts
 pass guts = do
@@ -56,7 +57,8 @@ pass guts = do
   where procBind :: DynFlags -> SimplEnv -> [CoreRule] -> CoreBind -> CoreM CoreBind
         procBind dflags env rules bndr@(NonRec b e) = do
           putMsgS $ "Non-Recursive Bind " ++ (showSDoc dflags (ppr bndr))
-          e' <- tryRules dflags env rules e
+          let env' = addNewInScopeIds env [b]
+          e' <- tryRules dflags env' rules e
           putMsgS $ "New expr " ++ (showSDoc dflags (ppr e'))
           return (NonRec b e')
         procBind dflags env rules bndr@(Rec bs) = do
@@ -87,17 +89,19 @@ pass guts = do
                       e1' <- tryRules dflags env rules e1
                       e2' <- tryRules dflags env rules e2
                       return $ App e1' e2'
-                    Just (fn, args) -> 
-                      let m = lookupRule dflags (getUnfoldingInRuleMatch (addNewInScopeIds env [fn])) (\x -> True) fn args rules 
+                    Just (fn, args) ->
+                      let env' = addNewInScopeIds env [fn]
+                          m = lookupRule dflags (getUnfoldingInRuleMatch env') (\x -> True) fn args rules 
                       in case m of
                          Nothing -> do
                            tryInsideArgs dflags env rules fn (reverse args)
                          Just (r, e') -> do
                            putMsgS $ "Applied Rule: "
                            putMsg $ pprRulesForUser [r] 
-                           return e'
+                           tryRules dflags env (removeRule r rules) e'
               Lam tb e -> do
-                e' <- tryRules dflags env rules e
+                let env' = addNewInScopeIds env [tb]
+                e' <- tryRules dflags env' rules e
                 return $ Lam tb e'
               Let bind body -> do
                 body' <- tryRules dflags env rules body
@@ -153,3 +157,10 @@ pass guts = do
             a' <- tryRules dflags env rules a
             e <- tryInsideArgs dflags env rules fn as
             return $ App e a'
+
+
+removeRule :: CoreRule -> [CoreRule] -> [CoreRule]
+removeRule rd [] = []
+removeRule rd (r:rs) = if ruleName rd == ruleName r
+                       then removeRule rd rs
+                       else r : removeRule rd rs
