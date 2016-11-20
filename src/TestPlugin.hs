@@ -56,8 +56,7 @@ rulePass guts = do
   where procBind :: DynFlags -> SimplEnv -> [CoreRule] -> CoreBind -> CoreM CoreBind
         procBind dflags env rules bndr@(NonRec b e) = do
           putMsgS $ "Non-Recursive Bind " ++ (showSDoc dflags (ppr bndr))
-          let env' = addNewInScopeIds env [b]
-          e' <- tryRules dflags env' rules e
+          e' <- tryRules dflags env rules e
           putMsgS $ "New expr " ++ (showSDoc dflags (ppr e'))
           return (NonRec b e')
         procBind dflags env rules bndr@(Rec bs) = do
@@ -69,9 +68,8 @@ rulePass guts = do
         procBind' :: DynFlags -> SimplEnv -> [CoreRule] -> [(Id, CoreExpr)] -> CoreM [(Id, CoreExpr)]
         procBind' dflags env rules [] = return []
         procBind' dflags env rules ((b, e) : bs) = do
-          let env' = addNewInScopeIds env [b]
-          e' <- tryRules dflags env' rules e
-          bs' <- procBind' dflags env' rules bs
+          e' <- tryRules dflags env rules e
+          bs' <- procBind' dflags env rules bs
           return $ (b, e') : bs'
 
         tryRules :: DynFlags -> SimplEnv -> [CoreRule] -> CoreExpr -> CoreM CoreExpr
@@ -89,8 +87,7 @@ rulePass guts = do
                       e2' <- tryRules dflags env rules e2
                       return $ App e1' e2'
                     Just (fn, args) ->
-                      let env' = addNewInScopeIds env [fn]
-                          m = lookupRule dflags (getUnfoldingInRuleMatch env') (\x -> True) fn args rules 
+                      let m = lookupRule dflags (getUnfoldingInRuleMatch env) (\x -> True) fn args rules 
                       in case m of
                          Nothing -> do
                            tryInsideArgs dflags env rules fn (reverse args)
@@ -100,14 +97,13 @@ rulePass guts = do
                            -- Try other rules after this one worked
                            tryRules dflags env (removeRule r rules) e'
               Lam tb e -> do
-                let env' = addNewInScopeIds env [tb]
-                e' <- tryRules dflags env' rules e
+                e' <- tryRules dflags env rules e
                 return $ Lam tb e'
               Let bind body -> do
                 body' <- tryRules dflags env rules body
                 bind' <- case bind of 
                             (NonRec v e) -> do
-                              e' <- tryRules dflags (addNewInScopeIds env [v]) rules e
+                              e' <- tryRules dflags env rules e
                               return $ NonRec v e'
                             (Rec rbs) -> do
                               rbs' <- procBind' dflags env rules rbs
