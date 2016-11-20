@@ -817,3 +817,27 @@ exprFCmdVal o = (exprExtTypeVal EXPR_FLOAT) DB..|. (fromIntegral $ fromEnum o)
 exprFMathCmdVals :: ExprFloatMathOp -> [Word8]
 exprFMathCmdVals o = [(fromIntegral $ fromEnum EXPRF_MATH), (fromIntegral $ fromEnum o)]
 
+{-# NOINLINE rep_ #-}
+rep_ :: Expr a -> a
+rep_ _ = error "Internal error: repB called"
+
+{-# NOINLINE abs_ #-}
+abs_ :: ExprB a => a -> Expr a
+abs_ w = lit w
+
+{-# RULES "abs-push-or" [~]
+    forall (b1 :: Bool) (b2 :: Bool).
+    abs_ (b1 || b2)
+      =
+    (abs_ b1) ||* (abs_ b2)
+  #-}
+
+{-# RULES "abs-rep-fuse" [~]
+    forall x.
+    abs_(rep_(x))
+      =
+    x
+  #-}
+
+abs_b :: Bool -> Expr Bool
+abs_b w = lit w

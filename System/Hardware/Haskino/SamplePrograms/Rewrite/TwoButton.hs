@@ -47,44 +47,44 @@ abs :: ExprB a => a -> Expr a
 abs w = lit w
 
 {-# RULES 
-    "digitalRead"
+    "digitalRead" [~]
     forall (p :: Word8).
-    digitalRead p = rep <$> (digitalReadE $ abs p) 
+    digitalRead p = rep_ <$> (digitalReadE $ abs_ p) 
   #-}
 
-{-# RULES "digitalWrite"
+{-# RULES "digitalWrite" [~]
     forall (p :: Word8) (b :: Bool).
     digitalWrite p b
       =
-    digitalWriteE (abs p) (abs b)
+    digitalWriteE (abs_ p) (abs_ b)
   #-}
 
-{-# RULES "pinMode"
+{-# RULES "pinMode" [~]
     forall (p :: Word8) m.
     setPinMode p m
       =
-    setPinModeE (abs p) m
+    setPinModeE (abs_ p) m
   #-}
 
-{-# RULES "loop"
+{-# RULES "loop" [~]
     forall (m :: Arduino ()).
     loop m
       =
     loopE m
   #-}
 
-{-# RULES "abs-push-or"
+{-# RULES "abs-push-or" [~]
     forall (b1 :: Bool) (b2 :: Bool).
-    abs (b1 || b2)
+    abs_ (b1 || b2)
       =
-    (abs b1) ||* (abs b2)
+    (abs_ b1) ||* (abs_ b2)
   #-}
 
-{-# RULES "rep-3rd-monad"
+{-# RULES "rep-3rd-monad" [~]
     forall (f :: Arduino (Expr a)) (k :: a -> Arduino b).
-    rep <$> f >>= k 
+    rep_ <$> f >>= k 
       =
-    f >>= k . rep
+    f >>= k . rep_
   #-}
 
 {-
@@ -95,14 +95,14 @@ abs w = lit w
     (\x' -> let x=rep(x') in f)
   #-}
 -}
-
+{-
 {-# RULES "rep-let"
     forall p s.
     (\x -> digitalWriteE p (s ||* abs(x))).rep
       =
     let x=rep(x') in (\x' -> digitalWriteE p (s ||* abs(x)))
   #-}
-
+-}
 {-
 {-# RULES "rep-let"
     forall led a.
@@ -112,9 +112,9 @@ abs w = lit w
   #-}
 -}
 
-{-# RULES "abs-rep-fuse"
+{-# RULES "abs-rep-fuse" [~]
     forall x.
-    abs(rep(x))
+    abs_(rep_(x))
       =
     x
   #-}
