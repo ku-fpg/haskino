@@ -12,6 +12,7 @@ import Data.Data
 import Data.Typeable
 import IOEnv 
 import Control.Monad
+import Control.Monad.Writer
 import Data.List 
 
 data SomeAnn = SomeAnn deriving (Data, Typeable)
@@ -52,27 +53,29 @@ rulePass guts = do
           vars = getVars (mg_binds guts)
           inScopeSet = extendInScopeSetList emptyInScopeSet vars
           env = setInScopeSet (mkSimplEnv ourMode) inScopeSet
-      bindsOnlyPass (mapM (procBind dflags env rules)) guts
-  where procBind :: DynFlags -> SimplEnv -> [CoreRule] -> CoreBind -> CoreM CoreBind
+      (mgbs, rs) <- runWriterT $ mapM (procBind dflags env rules) (mg_binds guts)
+      putMsgS $ "Rules I applied: " ++ (showSDoc dflags (pprRulesForUser rs))
+      return guts {mg_binds = mgbs}
+  where procBind :: DynFlags -> SimplEnv -> [CoreRule] -> CoreBind -> WriterT [CoreRule] CoreM CoreBind
         procBind dflags env rules bndr@(NonRec b e) = do
-          putMsgS $ "Non-Recursive Bind " ++ (showSDoc dflags (ppr bndr))
+          lift $ putMsgS $ "Non-Recursive Bind " ++ (showSDoc dflags (ppr bndr))
           e' <- tryRules dflags env rules e
-          putMsgS $ "New expr " ++ (showSDoc dflags (ppr e'))
+          lift $ putMsgS $ "New expr " ++ (showSDoc dflags (ppr e'))
           return (NonRec b e')
         procBind dflags env rules bndr@(Rec bs) = do
-          putMsgS $ "Recursive Bind " ++ (showSDoc dflags (ppr bndr))
+          lift $ putMsgS $ "Recursive Bind " ++ (showSDoc dflags (ppr bndr))
           bs' <- procBind' dflags env rules bs
-          putMsgS $ "New bind " ++ (showSDoc dflags (ppr bs'))
+          lift $ putMsgS $ "New bind " ++ (showSDoc dflags (ppr bs'))
           return $ Rec bs'
 
-        procBind' :: DynFlags -> SimplEnv -> [CoreRule] -> [(Id, CoreExpr)] -> CoreM [(Id, CoreExpr)]
+        procBind' :: DynFlags -> SimplEnv -> [CoreRule] -> [(Id, CoreExpr)] -> WriterT [CoreRule] CoreM [(Id, CoreExpr)]
         procBind' dflags env rules [] = return []
         procBind' dflags env rules ((b, e) : bs) = do
           e' <- tryRules dflags env rules e
           bs' <- procBind' dflags env rules bs
           return $ (b, e') : bs'
 
-        tryRules :: DynFlags -> SimplEnv -> [CoreRule] -> CoreExpr -> CoreM CoreExpr
+        tryRules :: DynFlags -> SimplEnv -> [CoreRule] -> CoreExpr -> WriterT [CoreRule] CoreM CoreExpr
         tryRules dflags env rules e = do
             case e of
               Var v -> return $ Var v
@@ -92,8 +95,9 @@ rulePass guts = do
                          Nothing -> do
                            tryInsideArgs dflags env rules fn (reverse args)
                          Just (r, e') -> do
-                           putMsgS $ "Applied Rule: "
-                           putMsg $ pprRulesForUser [r]
+                           lift $ putMsgS $ "Applied Rule: "
+                           lift $ putMsg $ pprRulesForUser [r]
+                           tell [r]
                            -- Try other rules after this one worked
                            tryRules dflags env (removeRule r rules) e'
               Lam tb e -> do
@@ -120,7 +124,7 @@ rulePass guts = do
                 e' <- tryRules dflags env rules e
                 return $ Cast e' co
 
-        procAlts :: DynFlags -> SimplEnv -> [CoreRule] -> [Alt CoreBndr] -> CoreM [Alt CoreBndr]
+        procAlts :: DynFlags -> SimplEnv -> [CoreRule] -> [GhcPlugins.Alt CoreBndr] -> WriterT [CoreRule] CoreM [GhcPlugins.Alt CoreBndr]
         procAlts dflags env rules [] = return []
         procAlts dflags env rules ((ac, b, a) : as) = do
           a' <- tryRules dflags env rules a
@@ -145,7 +149,7 @@ rulePass guts = do
               e -> Nothing
 
         -- Note, args are passed in a reverse order list for efficiency
-        tryInsideArgs :: DynFlags -> SimplEnv -> [CoreRule] -> Id -> [CoreExpr] -> CoreM CoreExpr
+        tryInsideArgs :: DynFlags -> SimplEnv -> [CoreRule] -> Id -> [CoreExpr] -> WriterT [CoreRule] CoreM CoreExpr
         tryInsideArgs dflags env rules fn [a] = do
             a' <- tryRules dflags env rules a
             return $ App (Var fn) a'
