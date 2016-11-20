@@ -36,10 +36,10 @@ install _ todo = do
   reinitializeGlobals
   putMsgS $ "Currently Compiler has " ++ (show $ length todo) ++ " passes."
   -- return (todo ++ [(CoreDoPluginPass "Say name" pass)])
-  return $ ((CoreDoPluginPass "Say name" pass) : todo) ++ [CoreDoPluginPass "Say name" pass] ++ todo ++ [CoreDoPluginPass "Say name" pass]
+  return $ ((CoreDoPluginPass "Rules" rulePass) : todo) ++ [CoreDoPluginPass "Rules" rulePass] ++ todo ++ [CoreDoPluginPass "Rules" rulePass]
 
-pass :: ModGuts -> CoreM ModGuts
-pass guts = do
+rulePass :: ModGuts -> CoreM ModGuts
+rulePass guts = do
       dflags <- getDynFlags
       rb <- getRuleBase
       -- hscEnv  <- getHscEnv
@@ -52,7 +52,6 @@ pass guts = do
           vars = getVars (mg_binds guts)
           inScopeSet = extendInScopeSetList emptyInScopeSet vars
           env = setInScopeSet (mkSimplEnv ourMode) inScopeSet
-      -- putMsg $ ruleCheckProgram (Phase 0) "" ruleEnv (mg_binds guts)
       bindsOnlyPass (mapM (procBind dflags env rules)) guts
   where procBind :: DynFlags -> SimplEnv -> [CoreRule] -> CoreBind -> CoreM CoreBind
         procBind dflags env rules bndr@(NonRec b e) = do
@@ -97,7 +96,8 @@ pass guts = do
                            tryInsideArgs dflags env rules fn (reverse args)
                          Just (r, e') -> do
                            putMsgS $ "Applied Rule: "
-                           putMsg $ pprRulesForUser [r] 
+                           putMsg $ pprRulesForUser [r]
+                           -- Try other rules after this one worked
                            tryRules dflags env (removeRule r rules) e'
               Lam tb e -> do
                 let env' = addNewInScopeIds env [tb]
