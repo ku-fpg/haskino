@@ -11,6 +11,7 @@ import SimplUtils
 import Data.Data
 import Data.Typeable
 import IOEnv 
+import Var
 import Control.Monad
 import Control.Monad.Writer
 import Data.List 
@@ -41,8 +42,18 @@ install _ todo = do
     CoreDoSimplify i sm -> do
       putMsgS $ "CoreDoSimplify " ++ show i ++ (showSDoc dflags (ppr sm))
   -- return (todo ++ [(CoreDoPluginPass "Say name" pass)])
-  return $ ((CoreDoPluginPass "Rules" rulePass) : todo) ++ [CoreDoPluginPass "Rules" rulePass] ++ todo 
+  return $ ((CoreDoPluginPass "Rules" rulePass) : todo) ++ [CoreDoPluginPass "Rules" rulePass] ++ todo ++ [CoreDoPluginPass "RepLambda" repLambdaPass]
   -- return $ ((CoreDoPluginPass "Rules" rulePass) : todo)
+
+simplifierPass :: CoreToDo
+simplifierPass = CoreDoSimplify 4 SimplMode {
+            sm_names = [],
+            sm_phase = Phase 0,
+            sm_rules = False,
+            sm_inline = True,
+            sm_case_case = True,
+            sm_eta_expand = True
+            }
 
 rulePass :: ModGuts -> CoreM ModGuts
 rulePass guts = do
@@ -58,18 +69,20 @@ rulePass guts = do
           vars = getVars (mg_binds guts)
           inScopeSet = extendInScopeSetList emptyInScopeSet vars
           env = setInScopeSet (mkSimplEnv ourMode) inScopeSet
-      mgbs <- ruleSubPass dflags env rules (mg_binds guts)
-      return guts {mg_binds = mgbs}
+      ruleSubPass dflags env rules guts
+      -- return guts {mg_binds = mgbs}
 
-ruleSubPass :: DynFlags -> SimplEnv -> [CoreRule] -> CoreProgram -> CoreM CoreProgram
-ruleSubPass dflags env rules prog = do
-  (mgbs, rs) <- runWriterT $ mapM (procBind dflags env rules) prog
+ruleSubPass :: DynFlags -> SimplEnv -> [CoreRule] -> ModGuts -> CoreM ModGuts
+ruleSubPass dflags env rules guts = do
+  (mgbs, rs) <- runWriterT $ mapM (procBind dflags env rules) (mg_binds guts)
   case rs of
-    []  -> return mgbs
+    []  -> return guts {mg_binds = mgbs}
     rss -> do
         putMsgS $ "Rules Applied: " ++ intercalate ", " (map (unpackFS . ruleName) rs)
-        -- ruleSubPass dflags env (removeRules rs rules) mgbs
-        return mgbs
+        return guts {mg_binds = mgbs}
+        --guts' <- doCorePass simplifierPass (guts {mg_binds = mgbs})
+        -- ruleSubPass dflags env rules guts'
+        -- return mgbs
 
 procBind :: DynFlags -> SimplEnv -> [CoreRule] -> CoreBind -> WriterT [CoreRule] CoreM CoreBind
 procBind dflags env rules bndr@(NonRec b e) = do
@@ -182,3 +195,77 @@ removeRule rd [] = []
 removeRule rd (r:rs) = if ruleName rd == ruleName r
                        then removeRule rd rs
                        else r : removeRule rd rs
+
+repLambdaPass :: ModGuts -> CoreM ModGuts
+repLambdaPass guts = do
+      dflags <- getDynFlags
+      bindsOnlyPass (mapM (repBind dflags)) guts
+
+repBind :: DynFlags -> CoreBind -> CoreM CoreBind
+repBind dflags bndr@(NonRec b e) = do
+  e' <- repExpr dflags e
+  return (NonRec b e')
+repBind dflags (Rec bs) = do
+  bs' <- repBind' dflags bs
+  return $ Rec bs'
+
+repBind' :: DynFlags -> [(Id, CoreExpr)] -> CoreM [(Id, CoreExpr)]
+repBind' dflags [] = return []
+repBind' dflags ((b, e) : bs) = do
+  e' <- repExpr dflags e
+  bs' <- repBind' dflags bs
+  return $ (b, e') : bs'
+
+repExpr :: DynFlags -> CoreExpr -> CoreM CoreExpr
+repExpr dflags e = 
+    case e of
+      Var v -> return $ Var v
+      Lit l -> return $ Lit l
+      Type ty -> return $ Type ty
+      Coercion co -> return $ Coercion co
+      App (App (App (App (App (Var f) (Type t1)) (Type t2)) (Type t3)) (Lam b bd)) (App (Var f2) (Type t4)) | 
+        (occNameString $ nameOccName $ varName f) == "." -> do
+        putMsgS "5 Function:"
+        putMsg $ ppr f
+        putMsg $ ppr t1
+        putMsg $ ppr t2
+        putMsg $ ppr t3
+        putMsg $ ppr b
+        putMsg $ ppr bd
+        putMsg $ ppr f2
+        putMsg $ ppr t4
+        return $ App (App (App (App (App (Var f) (Type t1)) (Type t2)) (Type t3)) (Lam b bd)) (App (Var f2) (Type t4)) 
+      App e1 e2 -> do
+        e1' <- repExpr dflags e1
+        e2' <- repExpr dflags e2
+        return $ App e1' e2'
+      Lam tb e -> do
+        e' <- repExpr dflags e
+        return $ Lam tb e'
+      Let bind body -> do
+        body' <- repExpr dflags body
+        bind' <- case bind of 
+                    (NonRec v e) -> do
+                      e' <- repExpr dflags e
+                      return $ NonRec v e'
+                    (Rec rbs) -> do
+                      rbs' <- repBind' dflags rbs
+                      return $ Rec rbs
+        return $ Let bind' body' 
+      Case e tb ty alts -> do
+        e' <- repExpr dflags e
+        alts' <- procRepAlts dflags alts
+        return $ Case e' tb ty alts'
+      Tick t e -> do
+        e' <- repExpr dflags e
+        return $ Tick t e'
+      Cast e co -> do
+        e' <- repExpr dflags e
+        return $ Cast e' co
+
+procRepAlts :: DynFlags -> [GhcPlugins.Alt CoreBndr] -> CoreM [GhcPlugins.Alt CoreBndr]
+procRepAlts dflags [] = return []
+procRepAlts dflags ((ac, b, a) : as) = do
+  a' <- repExpr dflags a
+  bs' <- procRepAlts dflags as
+  return $ (ac, b, a') : bs'
