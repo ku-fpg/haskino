@@ -15,8 +15,6 @@ import Control.Monad
 import Control.Monad.Writer
 import Data.List 
 
-data SomeAnn = SomeAnn deriving (Data, Typeable)
-
 ourMode :: SimplifierMode
 ourMode = SimplMode {
             sm_names = [],
@@ -36,8 +34,15 @@ install :: [CommandLineOption] -> [CoreToDo] -> CoreM [CoreToDo]
 install _ todo = do
   reinitializeGlobals
   putMsgS $ "Currently Compiler has " ++ (show $ length todo) ++ " passes."
+  let todoPass = head todo
+  putMsg $ ppr todoPass
+  dflags <- getDynFlags
+  case todoPass of
+    CoreDoSimplify i sm -> do
+      putMsgS $ "CoreDoSimplify " ++ show i ++ (showSDoc dflags (ppr sm))
   -- return (todo ++ [(CoreDoPluginPass "Say name" pass)])
-  return $ ((CoreDoPluginPass "Rules" rulePass) : todo) ++ [CoreDoPluginPass "Rules" rulePass] ++ todo ++ [CoreDoPluginPass "Rules" rulePass]
+  return $ ((CoreDoPluginPass "Rules" rulePass) : todo) ++ [CoreDoPluginPass "Rules" rulePass] ++ todo 
+  -- return $ ((CoreDoPluginPass "Rules" rulePass) : todo)
 
 rulePass :: ModGuts -> CoreM ModGuts
 rulePass guts = do
@@ -46,27 +51,36 @@ rulePass guts = do
       -- hscEnv  <- getHscEnv
       -- rb' <- liftM eps_rule_base $ liftIO $ runIOEnv () $ readMutVar (hsc_EPS hscEnv)
       let rules = (mg_rules guts) ++ concat (nameEnvElts rb) -- ++ concat (nameEnvElts rb')
-      putMsgS "Rules:"
-      putMsg $ pprRulesForUser rules
+      -- putMsgS "Rules:"
+      -- putMsg $ pprRulesForUser rules
       let ruleBse = mkRuleBase rules
           ruleEnv = mkRuleEnv rb [(mg_module guts)]
           vars = getVars (mg_binds guts)
           inScopeSet = extendInScopeSetList emptyInScopeSet vars
           env = setInScopeSet (mkSimplEnv ourMode) inScopeSet
-      (mgbs, rs) <- runWriterT $ mapM (procBind dflags env rules) (mg_binds guts)
-      putMsgS $ "Rules Applied: " ++ intercalate ", " (map (unpackFS . ruleName) rs)
+      mgbs <- ruleSubPass dflags env rules (mg_binds guts)
       return guts {mg_binds = mgbs}
+
+ruleSubPass :: DynFlags -> SimplEnv -> [CoreRule] -> CoreProgram -> CoreM CoreProgram
+ruleSubPass dflags env rules prog = do
+  (mgbs, rs) <- runWriterT $ mapM (procBind dflags env rules) prog
+  case rs of
+    []  -> return mgbs
+    rss -> do
+        putMsgS $ "Rules Applied: " ++ intercalate ", " (map (unpackFS . ruleName) rs)
+        -- ruleSubPass dflags env (removeRules rs rules) mgbs
+        return mgbs
 
 procBind :: DynFlags -> SimplEnv -> [CoreRule] -> CoreBind -> WriterT [CoreRule] CoreM CoreBind
 procBind dflags env rules bndr@(NonRec b e) = do
-  lift $ putMsgS $ "Non-Recursive Bind " ++ (showSDoc dflags (ppr bndr))
+  --lift $ putMsgS $ "Non-Recursive Bind " ++ (showSDoc dflags (ppr bndr))
   e' <- tryRules dflags env rules e
-  lift $ putMsgS $ "New expr " ++ (showSDoc dflags (ppr e'))
+  --lift $ putMsgS $ "New expr " ++ (showSDoc dflags (ppr e'))
   return (NonRec b e')
 procBind dflags env rules bndr@(Rec bs) = do
-  lift $ putMsgS $ "Recursive Bind " ++ (showSDoc dflags (ppr bndr))
+  --lift $ putMsgS $ "Recursive Bind " ++ (showSDoc dflags (ppr bndr))
   bs' <- procBind' dflags env rules bs
-  lift $ putMsgS $ "New bind " ++ (showSDoc dflags (ppr bs'))
+  --lift $ putMsgS $ "New bind " ++ (showSDoc dflags (ppr bs'))
   return $ Rec bs'
 
 procBind' :: DynFlags -> SimplEnv -> [CoreRule] -> [(Id, CoreExpr)] -> WriterT [CoreRule] CoreM [(Id, CoreExpr)]
@@ -96,8 +110,8 @@ tryRules dflags env rules e = do
                  Nothing -> do
                    tryInsideArgs dflags env rules fn (reverse args)
                  Just (r, e') -> do
-                   lift $ putMsgS $ "Applied Rule: "
-                   lift $ putMsg $ pprRulesForUser [r]
+                   --lift $ putMsgS $ "Applied Rule: "
+                   --lift $ putMsg $ pprRulesForUser [r]
                    tell [r]
                    -- Try other rules after this one worked
                    tryRules dflags env (removeRule r rules) e'
@@ -158,6 +172,10 @@ tryInsideArgs dflags env rules fn (a : as) = do
     a' <- tryRules dflags env rules a
     e <- tryInsideArgs dflags env rules fn as
     return $ App e a'
+
+removeRules :: [CoreRule] -> [CoreRule] -> [CoreRule]
+removeRules [] rs = rs
+removeRules (rr : rrs) rs = removeRules rrs (removeRule rr rs) 
 
 removeRule :: CoreRule -> [CoreRule] -> [CoreRule]
 removeRule rd [] = []
