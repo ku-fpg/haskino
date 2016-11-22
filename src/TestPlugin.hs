@@ -34,25 +34,21 @@ plugin = defaultPlugin {
 install :: [CommandLineOption] -> [CoreToDo] -> CoreM [CoreToDo]
 install _ todo = do
   reinitializeGlobals
-  putMsgS $ "Currently Compiler has " ++ (show $ length todo) ++ " passes."
-  let todoPass = head todo
-  putMsg $ ppr todoPass
+  -- putMsgS $ "Currently Compiler has " ++ (show $ length todo) ++ " passes."
   dflags <- getDynFlags
-  case todoPass of
-    CoreDoSimplify i sm -> do
-      putMsgS $ "CoreDoSimplify " ++ show i ++ (showSDoc dflags (ppr sm))
-  -- return (todo ++ [(CoreDoPluginPass "Say name" pass)])
-  return $ ((CoreDoPluginPass "Rules" rulePass) : todo) ++ [CoreDoPluginPass "Rules" rulePass] ++ todo ++ [CoreDoPluginPass "RepLambda" repLambdaPass]
-  -- return $ ((CoreDoPluginPass "Rules" rulePass) : todo)
+  let ruleToDo = [CoreDoPluginPass "Rules" rulePass]
+  let ruleSimplifierToDo = ruleToDo ++ [simplifierPass]
+  let repLambdaToDo = [CoreDoPluginPass "RepLambda" repLambdaPass]
+  return $ ruleSimplifierToDo ++ ruleSimplifierToDo ++ repLambdaToDo ++ todo
 
 simplifierPass :: CoreToDo
-simplifierPass = CoreDoSimplify 4 SimplMode {
+simplifierPass = CoreDoSimplify 1 SimplMode {
             sm_names = [],
             sm_phase = Phase 0,
             sm_rules = False,
-            sm_inline = True,
-            sm_case_case = True,
-            sm_eta_expand = True
+            sm_inline = False,
+            sm_case_case = False,
+            sm_eta_expand = False
             }
 
 rulePass :: ModGuts -> CoreM ModGuts
@@ -81,14 +77,14 @@ ruleSubPass dflags env rules guts = do
         putMsgS $ "Rules Applied: " ++ intercalate ", " (map (unpackFS . ruleName) rs)
         return guts {mg_binds = mgbs}
         --guts' <- doCorePass simplifierPass (guts {mg_binds = mgbs})
-        -- ruleSubPass dflags env rules guts'
+        -- ruleSubPass dflags env rules guts {mg_binds = mgbs}
         -- return mgbs
 
 procBind :: DynFlags -> SimplEnv -> [CoreRule] -> CoreBind -> WriterT [CoreRule] CoreM CoreBind
 procBind dflags env rules bndr@(NonRec b e) = do
   --lift $ putMsgS $ "Non-Recursive Bind " ++ (showSDoc dflags (ppr bndr))
   e' <- tryRules dflags env rules e
-  --lift $ putMsgS $ "New expr " ++ (showSDoc dflags (ppr e'))
+  -- lift $ putMsgS $ "New expr " ++ (showSDoc dflags (ppr e'))
   return (NonRec b e')
 procBind dflags env rules bndr@(Rec bs) = do
   --lift $ putMsgS $ "Recursive Bind " ++ (showSDoc dflags (ppr bndr))
@@ -127,7 +123,13 @@ tryRules dflags env rules e = do
                    --lift $ putMsg $ pprRulesForUser [r]
                    tell [r]
                    -- Try other rules after this one worked
-                   tryRules dflags env (removeRule r rules) e'
+                   -- tryRules dflags env (removeRule r rules) e'
+                   case e' of 
+                      App (Var v) be -> do
+                        be' <- tryRules dflags env rules e'
+                        return $ App (Var v) be'
+                      e''       -> tryRules dflags env rules e''
+                   -- tryRules dflags env rules e'
       Lam tb e -> do
         e' <- tryRules dflags env rules e
         return $ Lam tb e'
@@ -224,7 +226,8 @@ repExpr dflags e =
       Type ty -> return $ Type ty
       Coercion co -> return $ Coercion co
       App (App (App (App (App (Var f) (Type t1)) (Type t2)) (Type t3)) (Lam b bd)) (App (Var f2) (Type t4)) | 
-        (occNameString $ nameOccName $ varName f) == "." -> do
+        varString f == "." && varString f2 == "rep_" -> do
+        bd' <- repExpr dflags bd
         putMsgS "5 Function:"
         putMsg $ ppr f
         putMsg $ ppr t1
@@ -234,7 +237,7 @@ repExpr dflags e =
         putMsg $ ppr bd
         putMsg $ ppr f2
         putMsg $ ppr t4
-        return $ App (App (App (App (App (Var f) (Type t1)) (Type t2)) (Type t3)) (Lam b bd)) (App (Var f2) (Type t4)) 
+        return $ App (App (App (App (App (Var f) (Type t1)) (Type t2)) (Type t3)) (Lam b bd')) (App (Var f2) (Type t4)) 
       App e1 e2 -> do
         e1' <- repExpr dflags e1
         e2' <- repExpr dflags e2
@@ -262,6 +265,9 @@ repExpr dflags e =
       Cast e co -> do
         e' <- repExpr dflags e
         return $ Cast e' co
+
+varString :: Id -> String 
+varString = occNameString . nameOccName . varName
 
 procRepAlts :: DynFlags -> [GhcPlugins.Alt CoreBndr] -> CoreM [GhcPlugins.Alt CoreBndr]
 procRepAlts dflags [] = return []
