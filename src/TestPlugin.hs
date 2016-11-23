@@ -20,10 +20,10 @@ ourMode :: SimplifierMode
 ourMode = SimplMode {
             sm_names = [],
             sm_phase = Phase 0,
-            sm_rules = True,
-            sm_inline = True,
-            sm_case_case = True,
-            sm_eta_expand = True
+            sm_rules = False,
+            sm_inline = False,
+            sm_case_case = False,
+            sm_eta_expand = False
             }
 
 plugin :: Plugin
@@ -39,14 +39,14 @@ install _ todo = do
   let ruleToDo = [CoreDoPluginPass "Rules" rulePass]
   let ruleSimplifierToDo = ruleToDo ++ [simplifierPass]
   let repLambdaToDo = [CoreDoPluginPass "RepLambda" repLambdaPass]
-  return $ ruleSimplifierToDo ++ ruleSimplifierToDo ++ repLambdaToDo ++ todo
+  return $ [simplifierPass] ++ ruleSimplifierToDo -- ++ ruleSimplifierToDo ++ todo-- ++ ruleSimplifierToDo ++ repLambdaToDo ++ todo
 
 simplifierPass :: CoreToDo
 simplifierPass = CoreDoSimplify 1 SimplMode {
             sm_names = [],
             sm_phase = Phase 0,
-            sm_rules = False,
-            sm_inline = False,
+            sm_rules = True,
+            sm_inline = True,
             sm_case_case = False,
             sm_eta_expand = False
             }
@@ -82,7 +82,7 @@ ruleSubPass dflags env rules guts = do
 
 procBind :: DynFlags -> SimplEnv -> [CoreRule] -> CoreBind -> WriterT [CoreRule] CoreM CoreBind
 procBind dflags env rules bndr@(NonRec b e) = do
-  --lift $ putMsgS $ "Non-Recursive Bind " ++ (showSDoc dflags (ppr bndr))
+  lift $ putMsgS $ "Non-Recursive Bind " ++ (showSDoc dflags (ppr bndr))
   e' <- tryRules dflags env rules e
   -- lift $ putMsgS $ "New expr " ++ (showSDoc dflags (ppr e'))
   return (NonRec b e')
@@ -128,7 +128,7 @@ tryRules dflags env rules e = do
                       App (Var v) be -> do
                         be' <- tryRules dflags env rules e'
                         return $ App (Var v) be'
-                      e''       -> tryRules dflags env rules e''
+                      e'' -> tryRules dflags env rules e''
                    -- tryRules dflags env rules e'
       Lam tb e -> do
         e' <- tryRules dflags env rules e
@@ -175,28 +175,34 @@ getArgs :: CoreExpr -> CoreExpr -> [CoreExpr] -> Maybe (Id, [CoreExpr])
 getArgs e1 e2 args =
    case e1 of
       App e3 e4 -> getArgs e3 e4 (e2 : args)
+      Var v | varString v == "$" -> Just (v, e2 : args)
       Var v -> Just (v, e2 : args)
       e -> Nothing
+
+{-
+dollarArgs :: [CoreExpr] -> (Id, [CoreExpr])
+dollarArgs as = (fn, fr ++ [x])
+  where
+    len = length as
+    fr = take (len - 2) as
+    bk = drop (len - 2) as
+    f = head bk
+    x = head $ tail bk
+    fn = case f of 
+           Var a -> a
+-}
 
 -- Note, args are passed in a reverse order list for efficiency
 tryInsideArgs :: DynFlags -> SimplEnv -> [CoreRule] -> Id -> [CoreExpr] -> WriterT [CoreRule] CoreM CoreExpr
 tryInsideArgs dflags env rules fn [a] = do
+    -- lift $ putMsgS $ "In S Arg " ++ (showSDoc dflags (ppr a))
     a' <- tryRules dflags env rules a
     return $ App (Var fn) a'
 tryInsideArgs dflags env rules fn (a : as) = do
+    -- lift $ putMsgS $ "In Arg " ++ (showSDoc dflags (ppr a))
     a' <- tryRules dflags env rules a
     e <- tryInsideArgs dflags env rules fn as
     return $ App e a'
-
-removeRules :: [CoreRule] -> [CoreRule] -> [CoreRule]
-removeRules [] rs = rs
-removeRules (rr : rrs) rs = removeRules rrs (removeRule rr rs) 
-
-removeRule :: CoreRule -> [CoreRule] -> [CoreRule]
-removeRule rd [] = []
-removeRule rd (r:rs) = if ruleName rd == ruleName r
-                       then removeRule rd rs
-                       else r : removeRule rd rs
 
 repLambdaPass :: ModGuts -> CoreM ModGuts
 repLambdaPass guts = do
