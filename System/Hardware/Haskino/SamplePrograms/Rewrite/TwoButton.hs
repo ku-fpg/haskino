@@ -22,8 +22,6 @@ import Control.Monad
 import Data.Word
 import Data.Boolean
 
-bstuff = abs_ (True || False)
-
 twoButtonProg :: Arduino ()
 twoButtonProg = do
     let led = 13
@@ -51,44 +49,51 @@ abs w = lit w
 -}
 
 {-# RULES 
-    "digitalRead" [~]
+    "digitalRead" [0]
     forall (p :: Word8).
     digitalRead p = rep_ <$> (digitalReadE $ abs_ p) 
   #-}
 
-{-# RULES "digitalWrite" [~]
+{-# RULES "digitalWrite" [0]
     forall (p :: Word8) (b :: Bool).
     digitalWrite p b
       =
     digitalWriteE (abs_ p) (abs_ b)
   #-}
 
-{-# RULES "pinMode" [~]
+{-# RULES "pinMode" [0]
     forall (p :: Word8) m.
     setPinMode p m
       =
     setPinModeE (abs_ p) m
   #-}
 
-{-# RULES "loop" [~]
-    forall (m :: Arduino ()).
+{-# RULES "loop" [0]
+    forall m.
     loop m
       =
     loopE m
   #-}
 
-{-# RULES "abs-push-or" [~]
+{-# RULES "abs-push-or" [0]
     forall (b1 :: Bool) (b2 :: Bool).
     abs_ (b1 || b2)
       =
     (abs_ b1) ||* (abs_ b2)
   #-}
 
-{-# RULES "rep-3rd-monad" [~]
+{-# RULES "rep-3rd-monad" [0]
     forall (f :: Arduino (Expr Bool)) (k :: Bool -> Arduino b).
     rep_ <$> f >>= k 
       =
     f >>= k . rep_
+  #-}
+
+{-# RULES "abs-rep-fuse" [1]
+    forall x.
+    abs_(rep_(x))
+      =
+    x
   #-}
 
 {-
@@ -115,11 +120,5 @@ abs w = lit w
     (\x' -> let x=rep(x') in digitalWriteE (abs(led)) ((abs(a) ||* abs(x))))
   #-}
 
-{-# RULES "abs-rep-fuse" [~]
-    forall x.
-    abs_(rep_(x))
-      =
-    x
-  #-}
 -}
 

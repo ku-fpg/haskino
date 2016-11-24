@@ -11,6 +11,7 @@ import SimplUtils
 import Data.Data
 import Data.Typeable
 import IOEnv 
+import OccName
 import TysPrim
 import Unique
 import Var
@@ -28,13 +29,23 @@ install _ todo = do
   reinitializeGlobals
   dflags <- getDynFlags
   let repLambdaToDo = [CoreDoPluginPass "RepLambda" repLambdaPass]
-  return $ [rules0Pass] ++ repLambdaToDo ++ todo
+  return $ [rules0Pass] ++ repLambdaToDo ++ [CoreDoFloatInwards] ++ todo -- [rules1Pass] ++ [rules1Pass] ++ todo
 
 rules0Pass :: CoreToDo
 rules0Pass = CoreDoSimplify 1 SimplMode {
             sm_names = [],
             sm_phase = Phase 0,
             sm_rules = True,
+            sm_inline = True,
+            sm_case_case = False,
+            sm_eta_expand = False
+            }
+
+rules1Pass :: CoreToDo
+rules1Pass = CoreDoSimplify 4 SimplMode {
+            sm_names = [],
+            sm_phase = Phase 1,
+            sm_rules = False,
             sm_inline = True,
             sm_case_case = False,
             sm_eta_expand = False
@@ -79,7 +90,8 @@ repExpr dflags e =
         putMsg $ ppr bd
         putMsg $ ppr f2
         putMsg $ ppr t4
-        let newb = buildId ((varString b) ++ "_rec") t1
+        -- let newb = buildId ((varString b) ++ "_rec") t3
+        let newb = buildId ((varString b) ++ "_rec") t3
         let newe = Lam newb (Let (NonRec b (App (App (Var f2) (Type t4)) (Var newb))) bd')
         putMsgS "New Expr:"
         putMsg $ ppr newe
@@ -114,16 +126,13 @@ repExpr dflags e =
         return $ Cast e' co
 
 varString :: Id -> String 
-varString = occNameString . nameOccName . varName
+varString = occNameString . nameOccName . Var.varName
 
-buildId :: String -> Kind -> Id
-buildId varName kind = mkGlobalVar VanillaId name typ vanillaIdInfo
+buildId :: String -> Type -> Id
+buildId varName typ = mkLocalVar VanillaId name typ vanillaIdInfo
   where
-    name           = mkInternalName dunique (varOccName varName) noSrcSpan
+    name           = mkInternalName dunique (mkOccName OccName.varName varName) noSrcSpan
     dunique        = mkUnique '_' 0
-    varOccName var = mkVarOcc var
-    typ            = mkTyVarTy tyvar
-    tyvar          = mkTyVar name kind
 
 procRepAlts :: DynFlags -> [GhcPlugins.Alt CoreBndr] -> CoreM [GhcPlugins.Alt CoreBndr]
 procRepAlts dflags [] = return []
