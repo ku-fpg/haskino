@@ -11,7 +11,7 @@
 -- The /hello world/ of the arduino world, blinking the led.
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.Strong.TwoButton where
+module Main where
 
 import Prelude hiding (abs)
 
@@ -32,9 +32,10 @@ twoButtonProg = do
         a <- digitalRead button1
         b <- digitalRead button2
         digitalWrite led (a || b)
+        delayMillis 1000
 
-twoButton :: IO ()
-twoButton = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
+main :: IO ()
+main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
 
 {-
 {-# NOINLINE rep #-}
@@ -64,6 +65,13 @@ abs w = lit w
     setPinMode p m
       =
     setPinModeE (abs_ p) m
+  #-}
+
+{-# RULES "delayMillis" [0]
+    forall (d :: Word32).
+    delayMillis d
+      =
+    delayMillisE (abs_ d)
   #-}
 
 {-# RULES "loop" [0]
