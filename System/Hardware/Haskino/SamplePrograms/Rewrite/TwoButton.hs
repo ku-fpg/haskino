@@ -69,7 +69,7 @@ abs w = lit w
   #-}
 
 {-# RULES "loop" [0]
-    forall m.
+    forall (m :: Arduino ()).
     loop m
       =
     loopE m
