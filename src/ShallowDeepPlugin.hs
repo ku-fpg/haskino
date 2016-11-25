@@ -1,5 +1,3 @@
---{-# LANGUAGE CPP #-}
---{-# LANGUAGE DeriveDataTypeable #-}
 module ShallowDeepPlugin (plugin) where
 
 import CoreMonad
@@ -86,10 +84,10 @@ repExpr dflags e =
     Lit l -> return $ Lit l
     Type ty -> return $ Type ty
     Coercion co -> return $ Coercion co
-    App (App (App (App (App (Var f) (Type t1)) (Type t2)) (Type t3)) (Lam b bd)) (App (Var f2) (Type t4)) | 
+    App (App (App (App (App (Var f) (Type _)) (Type _)) (Type t3)) (Lam b bd)) (App (Var f2) (Type t4)) | 
       varString f == "." && varString f2 == "rep_" -> do
       bd' <- repExpr dflags bd
-      newb <- buildId ((varString b) ++ "_rec") t3
+      newb <- buildId ((varString b) ++ "_rep") t3
       bd'' <- subVarExpr dflags b (App (App (Var f2) (Type t4)) (Var newb)) bd'
       return $ Lam newb bd''
       -- The below was the initial attempt to insert a let inside the lambda
@@ -139,7 +137,7 @@ buildId varName typ = do
   return $ mkLocalVar VanillaId name typ vanillaIdInfo
 
 procRepAlts :: DynFlags -> [GhcPlugins.Alt CoreBndr] -> CoreM [GhcPlugins.Alt CoreBndr]
-procRepAlts dflags [] = return []
+procRepAlts _ [] = return []
 procRepAlts dflags ((ac, b, a) : as) = do
   a' <- repExpr dflags a
   bs' <- procRepAlts dflags as
