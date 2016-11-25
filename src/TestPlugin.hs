@@ -29,7 +29,7 @@ install _ todo = do
   reinitializeGlobals
   dflags <- getDynFlags
   let repLambdaToDo = [CoreDoPluginPass "RepLambda" repLambdaPass]
-  return $ rules0Pass : repLambdaToDo ++ todo
+  return $ rules0Pass : repLambdaToDo ++ [rules1Pass] ++ todo ++ [CoreDoPluginPass "dumpPass" dumpPass]
 
 rules0Pass :: CoreToDo
 rules0Pass = CoreDoSimplify 1 SimplMode {
@@ -41,10 +41,27 @@ rules0Pass = CoreDoSimplify 1 SimplMode {
             sm_eta_expand = False
             }
 
+rules1Pass :: CoreToDo
+rules1Pass = CoreDoSimplify 1 SimplMode {
+            sm_names = [],
+            sm_phase = Phase 1,
+            sm_rules = True,
+            sm_inline = True,
+            sm_case_case = False,
+            sm_eta_expand = False
+            }
+
 repLambdaPass :: ModGuts -> CoreM ModGuts
 repLambdaPass guts = do
       dflags <- getDynFlags
       bindsOnlyPass (mapM (repBind dflags)) guts
+
+dumpPass :: ModGuts -> CoreM ModGuts
+dumpPass guts = do
+      dflags <- getDynFlags
+      putMsgS "In dumpPass"
+      putMsg $ ppr (mg_binds guts)
+      return guts      
 
 repBind :: DynFlags -> CoreBind -> CoreM CoreBind
 repBind dflags bndr@(NonRec b e) = do
@@ -73,12 +90,7 @@ repExpr dflags e =
         bd' <- repExpr dflags bd
         newb <- buildId ((varString b) ++ "_rec") t3
         bd'' <- subVarExpr dflags b (App (App (Var f2) (Type t4)) (Var newb)) bd'
-        -- let newe = Lam newb bd''  
-        --let newe = Lam newb (Let (NonRec b (App (App (Var f2) (Type t4)) (Var newb))) bd')
-        --putMsgS "New Expr:"
-        --putMsg $ ppr newe
         return $ Lam newb bd''
-        -- return $ App (App (App (App (App (Var f) (Type t1)) (Type t2)) (Type t3)) (Lam b bd')) (App (Var f2) (Type t4)) 
       App e1 e2 -> do
         e1' <- repExpr dflags e1
         e2' <- repExpr dflags e2

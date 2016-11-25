@@ -1,5 +1,4 @@
-{-# OPTIONS_GHC -fenable-rewrite-rules #-}
-{-# LANGUAGE GADTs #-}
+--{-# OPTIONS_GHC -fenable-rewrite-rules #-}
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  System.Hardware.Haskino.SamplePrograms.Strong.Blink
@@ -17,7 +16,6 @@ module System.Hardware.Haskino.SamplePrograms.Strong.TwoButton where
 import Prelude hiding (abs)
 
 import System.Hardware.Haskino
--- import System.Hardware.Haskino.Rules
 import Control.Monad
 import Data.Word
 import Data.Boolean
@@ -95,30 +93,3 @@ abs w = lit w
       =
     x
   #-}
-
-{-
-{-# RULES "rep-let"
-    forall f.
-    (\x -> f ).rep
-      =
-    (\x' -> let x=rep(x') in f)
-  #-}
--}
-{-
-{-# RULES "rep-let"
-    forall p s.
-    (\x -> digitalWriteE p (s ||* abs(x))).rep
-      =
-    let x=rep(x') in (\x' -> digitalWriteE p (s ||* abs(x)))
-  #-}
--}
-{-
-{-# RULES "rep-let"
-    forall led a.
-    (\x -> digitalWriteE (abs(led)) ((abs(a) ||* abs(x)))).rep
-      =
-    (\x' -> let x=rep(x') in digitalWriteE (abs(led)) ((abs(a) ||* abs(x))))
-  #-}
-
--}
-
