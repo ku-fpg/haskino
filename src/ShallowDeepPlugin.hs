@@ -25,7 +25,6 @@ plugin = defaultPlugin {
 install :: [CommandLineOption] -> [CoreToDo] -> CoreM [CoreToDo]
 install _ todo = do
   reinitializeGlobals
-  dflags <- getDynFlags
   let repLambdaToDo = [CoreDoPluginPass "RepLambda" repLambdaPass]
   let dumpTodo = [CoreDoPluginPass "DumpPass" dumpPass]
   return $ rules0Pass : repLambdaToDo ++ [rules1Pass] ++ todo ++ dumpTodo
@@ -51,34 +50,31 @@ rules1Pass = CoreDoSimplify 1 SimplMode {
             }
 
 repLambdaPass :: ModGuts -> CoreM ModGuts
-repLambdaPass guts = do
-  dflags <- getDynFlags
-  bindsOnlyPass (mapM (repBind dflags)) guts
+repLambdaPass guts = bindsOnlyPass (mapM repBind) guts
 
 dumpPass :: ModGuts -> CoreM ModGuts
 dumpPass guts = do
-  dflags <- getDynFlags
   putMsgS "In dumpPass"
   putMsg $ ppr (mg_binds guts)
   return guts      
 
-repBind :: DynFlags -> CoreBind -> CoreM CoreBind
-repBind dflags bndr@(NonRec b e) = do
-  e' <- repExpr dflags e
+repBind :: CoreBind -> CoreM CoreBind
+repBind bndr@(NonRec b e) = do
+  e' <- repExpr e
   return (NonRec b e')
-repBind dflags (Rec bs) = do
-  bs' <- repBind' dflags bs
+repBind (Rec bs) = do
+  bs' <- repBind' bs
   return $ Rec bs'
 
-repBind' :: DynFlags -> [(Id, CoreExpr)] -> CoreM [(Id, CoreExpr)]
-repBind' dflags [] = return []
-repBind' dflags ((b, e) : bs) = do
-  e' <- repExpr dflags e
-  bs' <- repBind' dflags bs
+repBind' :: [(Id, CoreExpr)] -> CoreM [(Id, CoreExpr)]
+repBind' [] = return []
+repBind' ((b, e) : bs) = do
+  e' <- repExpr e
+  bs' <- repBind' bs
   return $ (b, e') : bs'
 
-repExpr :: DynFlags -> CoreExpr -> CoreM CoreExpr
-repExpr dflags e = 
+repExpr :: CoreExpr -> CoreM CoreExpr
+repExpr e = 
   case e of
     Var v -> return $ Var v
     Lit l -> return $ Lit l
@@ -86,9 +82,9 @@ repExpr dflags e =
     Coercion co -> return $ Coercion co
     App (App (App (App (App (Var f) (Type _)) (Type _)) (Type t3)) (Lam b bd)) (App (Var f2) (Type t4)) | 
       varString f == "." && varString f2 == "rep_" -> do
-      bd' <- repExpr dflags bd
+      bd' <- repExpr bd
       newb <- buildId ((varString b) ++ "_rep") t3
-      bd'' <- subVarExpr dflags b (App (App (Var f2) (Type t4)) (Var newb)) bd'
+      bd'' <- subVarExpr b (App (App (Var f2) (Type t4)) (Var newb)) bd'
       return $ Lam newb bd''
       -- The below was the initial attempt to insert a let inside the lambda
       -- The thought was the the simplifier would do the substitution from the
@@ -100,31 +96,31 @@ repExpr dflags e =
       -- let newe = Lam newb (Let (NonRec b (App (App (Var f2) (Type t4)) (Var newb))) bd')
       -- return newe
     App e1 e2 -> do
-      e1' <- repExpr dflags e1
-      e2' <- repExpr dflags e2
+      e1' <- repExpr e1
+      e2' <- repExpr e2
       return $ App e1' e2'
     Lam tb e -> do
-      e' <- repExpr dflags e
+      e' <- repExpr e
       return $ Lam tb e'
     Let bind body -> do
-      body' <- repExpr dflags body
+      body' <- repExpr body
       bind' <- case bind of 
                   (NonRec v e) -> do
-                    e' <- repExpr dflags e
+                    e' <- repExpr e
                     return $ NonRec v e'
                   (Rec rbs) -> do
-                    rbs' <- repBind' dflags rbs
+                    rbs' <- repBind' rbs
                     return $ Rec rbs'
       return $ Let bind' body' 
     Case e tb ty alts -> do
-      e' <- repExpr dflags e
-      alts' <- procRepAlts dflags alts
+      e' <- repExpr e
+      alts' <- procRepAlts alts
       return $ Case e' tb ty alts'
     Tick t e -> do
-      e' <- repExpr dflags e
+      e' <- repExpr e
       return $ Tick t e'
     Cast e co -> do
-      e' <- repExpr dflags e
+      e' <- repExpr e
       return $ Cast e' co
 
 varString :: Id -> String 
@@ -136,15 +132,15 @@ buildId varName typ = do
   let name = mkInternalName dunique (mkOccName OccName.varName varName) noSrcSpan
   return $ mkLocalVar VanillaId name typ vanillaIdInfo
 
-procRepAlts :: DynFlags -> [GhcPlugins.Alt CoreBndr] -> CoreM [GhcPlugins.Alt CoreBndr]
-procRepAlts _ [] = return []
-procRepAlts dflags ((ac, b, a) : as) = do
-  a' <- repExpr dflags a
-  bs' <- procRepAlts dflags as
+procRepAlts :: [GhcPlugins.Alt CoreBndr] -> CoreM [GhcPlugins.Alt CoreBndr]
+procRepAlts [] = return []
+procRepAlts ((ac, b, a) : as) = do
+  a' <- repExpr a
+  bs' <- procRepAlts as
   return $ (ac, b, a') : bs'
 
-subVarExpr :: DynFlags -> Id -> CoreExpr -> CoreExpr -> CoreM CoreExpr
-subVarExpr dflags id esub e = 
+subVarExpr :: Id -> CoreExpr -> CoreExpr -> CoreM CoreExpr
+subVarExpr id esub e = 
   case e of
     Var v -> do
       if v == id
@@ -154,43 +150,43 @@ subVarExpr dflags id esub e =
     Type ty -> return $ Type ty
     Coercion co -> return $ Coercion co
     App e1 e2 -> do
-      e1' <- subVarExpr dflags id esub e1
-      e2' <- subVarExpr dflags id esub e2
+      e1' <- subVarExpr id esub e1
+      e2' <- subVarExpr id esub e2
       return $ App e1' e2'
     Lam tb e -> do
-      e' <- subVarExpr dflags id esub e
+      e' <- subVarExpr id esub e
       return $ Lam tb e'
     Let bind body -> do
-      body' <- subVarExpr dflags id esub body
+      body' <- subVarExpr id esub body
       bind' <- case bind of 
                   (NonRec v e) -> do
-                    e' <- subVarExpr dflags id esub e
+                    e' <- subVarExpr id esub e
                     return $ NonRec v e'
                   (Rec rbs) -> do
-                    rbs' <- subVarExpr' dflags id esub rbs
+                    rbs' <- subVarExpr' id esub rbs
                     return $ Rec rbs'
       return $ Let bind' body' 
     Case e tb ty alts -> do
-      e' <- subVarExpr dflags id esub e
-      alts' <- subVarExprAlts dflags id esub alts
+      e' <- subVarExpr id esub e
+      alts' <- subVarExprAlts id esub alts
       return $ Case e' tb ty alts'
     Tick t e -> do
-      e' <- subVarExpr dflags id esub e
+      e' <- subVarExpr id esub e
       return $ Tick t e'
     Cast e co -> do
-      e' <- subVarExpr dflags id esub e
+      e' <- subVarExpr id esub e
       return $ Cast e' co
 
-subVarExpr' :: DynFlags -> Id -> CoreExpr -> [(Id, CoreExpr)] -> CoreM [(Id, CoreExpr)]
-subVarExpr' _ _ _ [] = return []
-subVarExpr' dflags id esub ((b, e) : bs) = do
-  e' <- subVarExpr dflags id esub e
-  bs' <- subVarExpr' dflags id esub bs
+subVarExpr' :: Id -> CoreExpr -> [(Id, CoreExpr)] -> CoreM [(Id, CoreExpr)]
+subVarExpr' _ _ [] = return []
+subVarExpr' id esub ((b, e) : bs) = do
+  e' <- subVarExpr id esub e
+  bs' <- subVarExpr' id esub bs
   return $ (b, e') : bs'
 
-subVarExprAlts :: DynFlags -> Id -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CoreM [GhcPlugins.Alt CoreBndr]
-subVarExprAlts _ _ _ [] = return []
-subVarExprAlts dflags id esub ((ac, b, a) : as) = do
-  a' <- subVarExpr dflags id esub a
-  bs' <- subVarExprAlts dflags id esub as
+subVarExprAlts :: Id -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CoreM [GhcPlugins.Alt CoreBndr]
+subVarExprAlts _ _ [] = return []
+subVarExprAlts id esub ((ac, b, a) : as) = do
+  a' <- subVarExpr id esub a
+  bs' <- subVarExprAlts id esub as
   return $ (ac, b, a') : bs'
