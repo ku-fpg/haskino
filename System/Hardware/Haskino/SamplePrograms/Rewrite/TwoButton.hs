@@ -1,4 +1,4 @@
---{-# OPTIONS_GHC -fenable-rewrite-rules #-}
+{-# OPTIONS_GHC -fplugin=ShallowDeepPlugin #-}
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  System.Hardware.Haskino.SamplePrograms.Strong.Blink
