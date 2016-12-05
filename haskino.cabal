@@ -35,6 +35,7 @@ Library
                     , Boolean
                     , cereal
                     , transformers
+                    , ghc >= 8.0.1
   Exposed-modules   : System.Hardware.Haskino
                     , System.Hardware.Haskino.Parts.Eeprom
                     , System.Hardware.Haskino.Parts.LCD
@@ -42,6 +43,7 @@ Library
                     , System.Hardware.Haskino.Parts.Piezo
                     , System.Hardware.Haskino.Parts.SevenSegmentCodes
                     , System.Hardware.Haskino.Parts.ShiftRegisters
+                    , System.Hardware.Haskino.ShallowDeepPlugin
   Other-modules     : System.Hardware.Haskino.Comm
                     , System.Hardware.Haskino.Data
                     , System.Hardware.Haskino.Expr
