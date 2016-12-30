@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -fplugin=ShallowDeepPlugin #-}
+{-# OPTIONS_GHC -fplugin=System.Hardware.Haskino.ShallowDeepPlugin #-}
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  System.Hardware.Haskino.SamplePrograms.Strong.Blink

@@ -3,6 +3,9 @@
 *.ko
 *.obj
 *.elf
+*.hi
+*.dyn_hi
+*.dyn_o
 
 # Precompiled Headers
 *.gch
@@ -45,5 +48,3 @@ firmware/EEPROMErase/build-*
 
 # Mac Files
 .DS_Store
-
-*.hi
