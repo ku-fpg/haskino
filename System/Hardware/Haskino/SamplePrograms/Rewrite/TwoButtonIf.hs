@@ -88,6 +88,7 @@ abs w = lit w
       =
     loopE m
   #-}
+
 {-
 {-# RULES "if-then-else" [0]
     forall (b :: Bool) (m1 :: Arduino ()) (m2 :: Arduino ()).
@@ -96,6 +97,7 @@ abs w = lit w
     ifThenElse (abs_ b) m1 m2
   #-}
 -}
+
 {-# RULES "abs-push-or" [0]
     forall (b1 :: Bool) (b2 :: Bool).
     abs_ (b1 || b2)
@@ -116,3 +118,4 @@ abs w = lit w
       =
     x
   #-}
+

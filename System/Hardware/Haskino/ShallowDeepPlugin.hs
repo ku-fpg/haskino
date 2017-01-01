@@ -59,9 +59,7 @@ repLambdaPass guts = bindsOnlyPass (mapM repBind) guts
 
 condPass :: ModGuts -> CoreM ModGuts
 condPass guts = do
-  Just ifThenElseName <- thNameToGhcName 'System.Hardware.Haskino.ifThenElse
-  ifThenElseId <- lookupId ifThenElseName
-  bindsOnlyPass (mapM (condBind ifThenElseId)) guts
+  bindsOnlyPass (mapM condBind) guts
 
 dumpPass :: ModGuts -> CoreM ModGuts
 dumpPass guts = do
@@ -205,95 +203,93 @@ subVarExprAlts id esub ((ac, b, a) : as) = do
   bs' <- subVarExprAlts id esub as
   return $ (ac, b, a') : bs'
 
-condBind :: Id -> CoreBind -> CoreM CoreBind
-condBind ifid bndr@(NonRec b e) = do
-  e' <- condExpr ifid e
+condBind :: CoreBind -> CoreM CoreBind
+condBind bndr@(NonRec b e) = do
+  e' <- condExpr e
   return (NonRec b e')
-condBind ifid (Rec bs) = do
-  bs' <- condExpr' ifid bs
+condBind (Rec bs) = do
+  bs' <- condExpr' bs
   return $ Rec bs'
 
-condBind' :: Id -> [(Id, CoreExpr)] -> CoreM [(Id, CoreExpr)]
-condBind' _ [] = return []
-condBind' ifid ((b, e) : bs) = do
-  e' <- condExpr ifid e
-  bs' <- condBind' ifid bs
+condBind' :: [(Id, CoreExpr)] -> CoreM [(Id, CoreExpr)]
+condBind' [] = return []
+condBind' ((b, e) : bs) = do
+  e' <- condExpr e
+  bs' <- condBind' bs
   return $ (b, e') : bs'
 
-condExpr :: Id -> CoreExpr -> CoreM CoreExpr
-condExpr ifid e = do
+condExpr :: CoreExpr -> CoreM CoreExpr
+condExpr e = do
   case e of
     Var v -> return $ Var v
     Lit l -> return $ Lit l
     Type ty -> return $ Type ty
     Coercion co -> return $ Coercion co
     App e1 e2 -> do
-      e1' <- condExpr ifid e1
-      e2' <- condExpr ifid e2
+      e1' <- condExpr e1
+      e2' <- condExpr e2
       return $ App e1' e2'
     Lam tb e -> do
-      e' <- condExpr ifid e
+      e' <- condExpr e
       return $ Lam tb e'
     Let bind body -> do
-      body' <- condExpr ifid body
+      body' <- condExpr body
       bind' <- case bind of 
                   (NonRec v e) -> do
-                    e' <- condExpr ifid e
+                    e' <- condExpr e
                     return $ NonRec v e'
                   (Rec rbs) -> do
-                    rbs' <- condExpr' ifid rbs
+                    rbs' <- condExpr' rbs
                     return $ Rec rbs'
       return $ Let bind' body' 
-{-
-    Case e tb ty alts | show (typeOf ty) == "Arduino ()" -> do
-      e' <- condExpr ifid e
-      alts' <- condExprAlts ifid alts
-      if nameString (getName (exprType e)) == "Bool"
-      then condTransform ifid e' alts'
-      else return $ Case e' tb ty alts'
--}
-    Case e tb ty alts | show (typeOf ty) == "Arduino ()" -> do
-      e' <- condExpr ifid e
-      alts' <- condExprAlts ifid alts
+    -- Case e tb ty alts | (ppr ty) == (text "Arduino ()") -> do
+    Case e tb ty alts -> do
+      e' <- condExpr e
+      alts' <- condExprAlts alts
       if length alts' == 2 
       then case alts' of
         [(ac1, _, _), _] -> do
           case ac1 of 
             DataAlt d -> do
               if nameString (getName d) == "False"
-              then condTransform ifid e' alts'
+              then condTransform e' alts'
               else return $ Case e' tb ty alts'
             _ -> return $ Case e' tb ty alts'
       else return $ Case e' tb ty alts'
     Case e tb ty alts -> do
-      e' <- condExpr ifid e
-      alts' <- condExprAlts ifid alts
+      e' <- condExpr e
+      alts' <- condExprAlts alts
       return $ Case e' tb ty alts'
     Tick t e -> do
-      e' <- condExpr ifid e
+      e' <- condExpr e
       return $ Tick t e'
     Cast e co -> do
-      e' <- condExpr ifid e
+      e' <- condExpr e
       return $ Cast e' co
 
-condExpr' :: Id -> [(Id, CoreExpr)] -> CoreM [(Id, CoreExpr)]
-condExpr' _ [] = return []
-condExpr' ifid ((b, e) : bs) = do
-  e' <- condExpr ifid e
-  bs' <- condExpr' ifid bs
+condExpr' :: [(Id, CoreExpr)] -> CoreM [(Id, CoreExpr)]
+condExpr' [] = return []
+condExpr' ((b, e) : bs) = do
+  e' <- condExpr e
+  bs' <- condExpr' bs
   return $ (b, e') : bs'
 
-condExprAlts :: Id -> [GhcPlugins.Alt CoreBndr] -> CoreM [GhcPlugins.Alt CoreBndr]
-condExprAlts _ [] = return []
-condExprAlts ifid ((ac, b, a) : as) = do
-  a' <- condExpr ifid a
-  bs' <- condExprAlts ifid as
+condExprAlts :: [GhcPlugins.Alt CoreBndr] -> CoreM [GhcPlugins.Alt CoreBndr]
+condExprAlts [] = return []
+condExprAlts ((ac, b, a) : as) = do
+  a' <- condExpr a
+  bs' <- condExprAlts as
   return $ (ac, b, a') : bs'
 
-condTransform :: Id -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CoreM CoreExpr
-condTransform ifid e alts = do
+condTransform :: CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CoreM CoreExpr
+condTransform e alts = do
   case alts of
     [(_, _, e1),(_, _, e2)] -> do
-      return $ mkCoreApps (Var ifid) [e, e1, e2]
+      Just ifThenElseName <- thNameToGhcName 'System.Hardware.Haskino.ifThenElse
+      ifThenElseId <- lookupId ifThenElseName
+      Just absName <- thNameToGhcName 'System.Hardware.Haskino.abs_
+      absId <- lookupId absName
+      return $ mkCoreApps (Var ifThenElseId) [ e, e1, e2]
+      -- return $ mkCoreApps (Var ifid) [ App (Var absid) e, e1, e2]
       -- App (App (App (Var ifid) e) e1) e2
 
