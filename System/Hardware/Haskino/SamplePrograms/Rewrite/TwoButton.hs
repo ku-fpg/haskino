@@ -37,16 +37,6 @@ twoButtonProg = do
 main :: IO ()
 main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
 
-{-
-{-# NOINLINE rep #-}
-rep :: Expr a -> a
-rep _ = error "Internal error: repB called"
-
-{-# NOINLINE abs #-}
-abs :: ExprB a => a -> Expr a
-abs w = lit w
--}
-
 {-# RULES 
     "digitalRead" [0]
     forall (p :: Word8).

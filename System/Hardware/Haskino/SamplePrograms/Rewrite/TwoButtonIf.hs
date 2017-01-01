@@ -45,16 +45,6 @@ twoButtonProg = do
 main :: IO ()
 main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
 
-{-
-{-# NOINLINE rep #-}
-rep :: Expr a -> a
-rep _ = error "Internal error: repB called"
-
-{-# NOINLINE abs #-}
-abs :: ExprB a => a -> Expr a
-abs w = lit w
--}
-
 {-# RULES 
     "digitalRead" [0]
     forall (p :: Word8).
@@ -89,20 +79,25 @@ abs w = lit w
     loopE m
   #-}
 
-{-
 {-# RULES "if-then-else" [0]
-    forall (b :: Bool) (m1 :: Arduino ()) (m2 :: Arduino ()).
-    if b then m1 else m2
+    forall (b :: Bool) (t :: Arduino ()) (e :: Arduino ()).
+    ifThenElseS b t e
       =
-    ifThenElse (abs_ b) m1 m2
+    ifThenElse (abs_ b) t e
   #-}
--}
 
 {-# RULES "abs-push-or" [0]
     forall (b1 :: Bool) (b2 :: Bool).
     abs_ (b1 || b2)
       =
     (abs_ b1) ||* (abs_ b2)
+  #-}
+
+{-# RULES "abs-push-not" [0]
+    forall (b :: Bool).
+    abs_ (not b)
+      =
+    notB (abs_ b)
   #-}
 
 {-# RULES "rep-3rd-monad" [0]
@@ -118,4 +113,3 @@ abs w = lit w
       =
     x
   #-}
-
