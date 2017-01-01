@@ -252,7 +252,7 @@ condExpr e = do
           case ac1 of 
             DataAlt d -> do
               if nameString (getName d) == "False"
-              then condTransform e' alts'
+              then condTransform ty e' alts'
               else return $ Case e' tb ty alts'
             _ -> return $ Case e' tb ty alts'
       else return $ Case e' tb ty alts'
@@ -281,15 +281,16 @@ condExprAlts ((ac, b, a) : as) = do
   bs' <- condExprAlts as
   return $ (ac, b, a') : bs'
 
-condTransform :: CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CoreM CoreExpr
-condTransform e alts = do
+condTransform :: Type -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CoreM CoreExpr
+condTransform ty e alts = do
   case alts of
     [(_, _, e1),(_, _, e2)] -> do
       Just ifThenElseName <- thNameToGhcName 'System.Hardware.Haskino.ifThenElse
       ifThenElseId <- lookupId ifThenElseName
       Just absName <- thNameToGhcName 'System.Hardware.Haskino.abs_
       absId <- lookupId absName
-      return $ mkCoreApps (Var ifThenElseId) [ e, e1, e2]
-      -- return $ mkCoreApps (Var ifid) [ App (Var absid) e, e1, e2]
-      -- App (App (App (Var ifid) e) e1) e2
+      Just boolName <- thNameToGhcName ''Bool
+      boolTyCon <- lookupTyCon boolName
+      let e' = mkCoreApps (Var absId) [ Type $ mkTyConTy boolTyCon, e ]
+      return $ mkCoreApps (Var ifThenElseId) [ e', e1, e2]
 
