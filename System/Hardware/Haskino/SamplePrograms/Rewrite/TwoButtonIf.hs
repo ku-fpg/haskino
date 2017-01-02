@@ -22,7 +22,7 @@ import Data.Boolean
 
 twoButtonProg :: Arduino ()
 twoButtonProg = do
-    let led1 = 13
+    let led1 = 12
     let led2 = 13
     let button1 = 2
     let button2 = 3
