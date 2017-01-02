@@ -239,6 +239,12 @@ frameCommand :: ArduinoConnection -> ArduinoCommand -> B.ByteString -> IO B.Byte
 frameCommand c (Loop m) cmds = do
     sendToArduino c cmds
     forever $ send c m
+frameCommand c (IfThenElse b m1 m2) cmds = do
+    sendToArduino c cmds
+    if b
+    then send c m1
+    else send c m2
+    return B.empty
 frameCommand c (CreateTaskE tid as) cmds= do
     pc <- packageCommandIndex c (CreateTaskE tid as)  
     return $ B.append cmds pc 
