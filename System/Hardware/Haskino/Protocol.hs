@@ -197,7 +197,7 @@ packageCommand (ForInE ws f) = do
     fc <- addCommand BC_CMD_FORIN ((packageExpr ws) ++ (packageExpr (RemBindW8 (ib s))))
     put s {ib = (ib s) + 1}
     return $ B.append fc p
-packageCommand (IfThenElse e cb1 cb2) = do
+packageCommand (IfThenElseE e cb1 cb2) = do
     pc1 <- packageCodeBlock cb1
     pc2 <- packageCodeBlock cb2
     let thenSize = word16ToBytes $ fromIntegral (B.length pc1)

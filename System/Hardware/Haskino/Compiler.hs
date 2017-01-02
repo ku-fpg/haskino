@@ -337,7 +337,7 @@ compileCommand (LoopE cb) = do
     compileLine "while (1)"
     compileCodeBlock cb
     return ()
-compileCommand (IfThenElse e cb1 cb2) = do
+compileCommand (IfThenElseE e cb1 cb2) = do
     compileLine $ "if (" ++ compileExpr e ++ ")"
     compileCodeBlock cb1
     compileLine "else"

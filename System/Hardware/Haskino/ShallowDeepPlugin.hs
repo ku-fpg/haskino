@@ -285,11 +285,11 @@ condTransform :: Type -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CoreM CoreExpr
 condTransform ty e alts = do
   case alts of
     [(_, _, e1),(_, _, e2)] -> do
-      Just ifThenElseSName <- thNameToGhcName 'System.Hardware.Haskino.ifThenElseS
-      ifThenElseSId <- lookupId ifThenElseSName
+      Just ifThenElseName <- thNameToGhcName 'System.Hardware.Haskino.ifThenElse
+      ifThenElseId <- lookupId ifThenElseName
       --Just absName <- thNameToGhcName 'System.Hardware.Haskino.abs_
       --absId <- lookupId absName
       --Just dictName <- thNameToGhcName 'System.Hardware.Haskino.Expr.ExprBBool
       --let e' = mkCoreApps (Var absId) [ Type $ exprType e, e ]
-      return $ mkCoreApps (Var ifThenElseSId) [ e, e1, e2]
+      return $ mkCoreApps (Var ifThenElseId) [ e, e1, e2]
 

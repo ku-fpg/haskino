@@ -81,9 +81,9 @@ main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
 
 {-# RULES "if-then-else" [0]
     forall (b :: Bool) (t :: Arduino ()) (e :: Arduino ()).
-    ifThenElseS b t e
+    ifThenElse b t e
       =
-    ifThenElse (abs_ b) t e
+    ifThenElseE (abs_ b) t e
   #-}
 
 {-# RULES "abs-push-or" [0]

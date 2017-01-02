@@ -35,7 +35,7 @@ myTask :: Expr Word8 -> Arduino ()
 myTask z = do
     r <- newRemoteRef z
     q <- newRemoteRef (z+2)
-    ifThenElse (false) 
+    ifThenElseE (false) 
         (do modifyRemoteRef r (\x -> x + 1)
             delayMillis 100
             modifyRemoteRef r (\x -> x + 1)

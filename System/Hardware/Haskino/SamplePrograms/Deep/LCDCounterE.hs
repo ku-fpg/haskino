@@ -103,9 +103,9 @@ counterProg = do
       lcdWriteE lcd $ showE zero
       loopE $ do
           key <- getKey
-          ifThenElse (key ==* (keyValue KeyUp))
+          ifThenElseE (key ==* (keyValue KeyUp))
               (modifyRemoteRef cref (\x -> x + 1)) (return ())
-          ifThenElse (key ==* (keyValue KeyDown))
+          ifThenElseE (key ==* (keyValue KeyDown))
               (modifyRemoteRef cref (\x -> x - 1)) (return ())
           count <- readRemoteRef cref
           lcdClearE lcd

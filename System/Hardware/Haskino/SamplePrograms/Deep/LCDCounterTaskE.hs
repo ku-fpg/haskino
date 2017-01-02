@@ -83,9 +83,9 @@ mainTask ref = do
         takeSemE semId
         key <- readRemoteRef ref
         debugE $ showE key
-        ifThenElse (key >=* 30 &&* key <* 150)
+        ifThenElseE (key >=* 30 &&* key <* 150)
             (modifyRemoteRef cref (\x -> x + 1)) (return ())
-        ifThenElse (key >=* 150 &&* key <* 360)
+        ifThenElseE (key >=* 150 &&* key <* 360)
             (modifyRemoteRef cref (\x -> x - 1)) (return ())
         count <- readRemoteRef cref
         lcdClearE lcd

@@ -201,8 +201,8 @@ data ArduinoCommand =
      | WhileRemoteRefL8 (RemoteRef [Word8]) (Expr [Word8] -> Expr Bool) (Expr [Word8] -> Expr [Word8]) (Arduino ())
      | LoopE (Arduino ())
      | ForInE (Expr [Word8]) (Expr Word8 -> Arduino ()) 
-     | IfThenElseS (Bool) (Arduino ()) (Arduino ())
-     | IfThenElse (Expr Bool) (Arduino ()) (Arduino ())
+     | IfThenElse (Bool) (Arduino ()) (Arduino ())
+     | IfThenElseE (Expr Bool) (Arduino ()) (Arduino ())
      -- ToDo: add SPI commands
 
 systemReset :: Arduino ()
@@ -335,11 +335,11 @@ loopE ps = Arduino $ command $ LoopE ps
 forInE :: Expr [Word8] -> (Expr Word8 -> Arduino ()) -> Arduino ()
 forInE ws f = Arduino $ command $ ForInE ws f
 
-ifThenElseS :: Bool -> Arduino () -> Arduino() -> Arduino()
-ifThenElseS b tps eps = Arduino $ command $ IfThenElseS b tps eps
+ifThenElse :: Bool -> Arduino () -> Arduino() -> Arduino()
+ifThenElse b tps eps = Arduino $ command $ IfThenElse b tps eps
 
-ifThenElse :: Expr Bool -> Arduino () -> Arduino() -> Arduino()
-ifThenElse be tps eps = Arduino $ command $ IfThenElse be tps eps
+ifThenElseE :: Expr Bool -> Arduino () -> Arduino() -> Arduino()
+ifThenElseE be tps eps = Arduino $ command $ IfThenElseE be tps eps
 
 writeRemoteRefB :: RemoteRef Bool -> Expr Bool -> Arduino ()
 writeRemoteRefB r e = Arduino $ command $ WriteRemoteRefB r e
