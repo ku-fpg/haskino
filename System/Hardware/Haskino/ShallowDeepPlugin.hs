@@ -32,7 +32,7 @@ install _ todo = do
   let repLambdaToDo = [CoreDoPluginPass "RepLambda" repLambdaPass]
   let condToDo = [CoreDoPluginPass "RepLambda" condPass]
   let dumpTodo = [CoreDoPluginPass "DumpPass" dumpPass]
-  return $ condToDo ++ dumpTodo ++ [rules0Pass] ++ repLambdaToDo ++ [rules1Pass] ++ todo -- ++ dumpTodo
+  return $ condToDo ++ [rules0Pass] ++ repLambdaToDo ++ [rules1Pass] ++ todo -- ++ dumpTodo
 
 rules0Pass :: CoreToDo
 rules0Pass = CoreDoSimplify 1 SimplMode {
@@ -287,9 +287,5 @@ condTransform ty e alts = do
     [(_, _, e1),(_, _, e2)] -> do
       Just ifThenElseName <- thNameToGhcName 'System.Hardware.Haskino.ifThenElse
       ifThenElseId <- lookupId ifThenElseName
-      --Just absName <- thNameToGhcName 'System.Hardware.Haskino.abs_
-      --absId <- lookupId absName
-      --Just dictName <- thNameToGhcName 'System.Hardware.Haskino.Expr.ExprBBool
-      --let e' = mkCoreApps (Var absId) [ Type $ exprType e, e ]
       return $ mkCoreApps (Var ifThenElseId) [ e, e1, e2]
 
