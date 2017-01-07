@@ -244,10 +244,6 @@ condExpr e = do
                     return $ Rec rbs'
       return $ Let bind' body' 
     Case e tb ty alts | showSDoc df (ppr ty) == "Arduino ()" -> do
-    -- Case e tb ty alts -> do
-      putMsg $ ppr ty
-      --case ty of
-      --  Type tty -> putMsg $ ppr tty
       e' <- condExpr e
       alts' <- condExprAlts alts
       if length alts' == 2 
