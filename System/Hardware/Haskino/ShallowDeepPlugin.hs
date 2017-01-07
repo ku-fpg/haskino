@@ -220,6 +220,7 @@ condBind' ((b, e) : bs) = do
 
 condExpr :: CoreExpr -> CoreM CoreExpr
 condExpr e = do
+  df <- getDynFlags
   case e of
     Var v -> return $ Var v
     Lit l -> return $ Lit l
@@ -242,8 +243,11 @@ condExpr e = do
                     rbs' <- condExpr' rbs
                     return $ Rec rbs'
       return $ Let bind' body' 
-    -- Case e tb ty alts | (ppr ty) == (text "Arduino ()") -> do
-    Case e tb ty alts -> do
+    Case e tb ty alts | showSDoc df (ppr ty) == "Arduino ()" -> do
+    -- Case e tb ty alts -> do
+      putMsg $ ppr ty
+      --case ty of
+      --  Type tty -> putMsg $ ppr tty
       e' <- condExpr e
       alts' <- condExprAlts alts
       if length alts' == 2 
@@ -266,6 +270,10 @@ condExpr e = do
     Cast e co -> do
       e' <- condExpr e
       return $ Cast e' co
+
+compareTypeToString :: DynFlags -> Type -> String -> Bool
+compareTypeToString df t s =
+    showSDoc df (ppr t) == s
 
 condExpr' :: [(Id, CoreExpr)] -> CoreM [(Id, CoreExpr)]
 condExpr' [] = return []
