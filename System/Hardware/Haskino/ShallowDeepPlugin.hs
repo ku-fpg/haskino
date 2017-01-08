@@ -30,7 +30,7 @@ install :: [CommandLineOption] -> [CoreToDo] -> CoreM [CoreToDo]
 install _ todo = do
   reinitializeGlobals
   let repLambdaToDo = [CoreDoPluginPass "RepLambda" repLambdaPass]
-  let condToDo = [CoreDoPluginPass "RepLambda" condPass]
+  let condToDo = [CoreDoPluginPass "CondTransform" condPass]
   let dumpTodo = [CoreDoPluginPass "DumpPass" dumpPass]
   return $ condToDo ++ [rules0Pass] ++ repLambdaToDo ++ [rules1Pass] ++ todo -- ++ dumpTodo
 
@@ -266,10 +266,6 @@ condExpr e = do
     Cast e co -> do
       e' <- condExpr e
       return $ Cast e' co
-
-compareTypeToString :: DynFlags -> Type -> String -> Bool
-compareTypeToString df t s =
-    showSDoc df (ppr t) == s
 
 condExpr' :: [(Id, CoreExpr)] -> CoreM [(Id, CoreExpr)]
 condExpr' [] = return []
