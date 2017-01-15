@@ -8,6 +8,7 @@ import Outputable
 import SimplEnv
 import SimplUtils
 import Data.Data
+import Data.List
 import Data.Typeable
 import DataCon
 import IOEnv 
@@ -243,7 +244,7 @@ condExpr e = do
                     rbs' <- condExpr' rbs
                     return $ Rec rbs'
       return $ Let bind' body' 
-    Case e tb ty alts | showSDoc df (ppr ty) == "Arduino ()" -> do
+    Case e tb ty alts | isPrefixOf "Arduino " (showSDoc df (ppr ty)) -> do
       e' <- condExpr e
       alts' <- condExprAlts alts
       if length alts' == 2 
