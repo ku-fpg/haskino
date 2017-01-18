@@ -197,11 +197,11 @@ packageCommand (ForInE ws f) = do
     fc <- addCommand BC_CMD_FORIN ((packageExpr ws) ++ (packageExpr (RemBindW8 (ib s))))
     put s {ib = (ib s) + 1}
     return $ B.append fc p
-packageCommand (IfThenElseE e cb1 cb2) = do
+packageCommand (IfThenElseUnitE e cb1 cb2) = do
     pc1 <- packageCodeBlock cb1
     pc2 <- packageCodeBlock cb2
     let thenSize = word16ToBytes $ fromIntegral (B.length pc1)
-    i <- addCommand BC_CMD_IF_THEN_ELSE (thenSize ++ (packageExpr e))
+    i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum REF_UNIT, 0, 0, 0] ++ thenSize ++ (packageExpr e))
     return $ B.append i (B.append pc1 pc2)
 
 packageWhileCommand :: Expr a -> Int -> (Expr a -> Expr Bool) -> (Expr a -> Expr a) -> Arduino () -> State CommandState B.ByteString
@@ -212,10 +212,6 @@ packageWhileCommand rr i bf uf cb = do
   where
     ufe = packageExpr $ uf rr
 
--- The package code block takes the monad code block to package, an
--- an integer with the current remote reference index, an integer with the
--- current remote bind index, and returns a tuple of the packaged block,
--- final remote reference index, and final remote bind index.
 packageCodeBlock :: Arduino a -> State CommandState B.ByteString
 packageCodeBlock (Arduino commands) = do
     startNewBlock 
@@ -385,6 +381,30 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (NewRemoteRefFloat e) = do
           s <- get
           packNewRef (NewRemoteRefFloat e) (RemoteRefFloat (ix s))
+      packProcedure (IfThenElseWord8E e cb1 cb2) = do
+          i <- packDeepProcedure (IfThenElseWord8E e cb1 cb2)
+          return $ RemBindW8 i
+      packProcedure (IfThenElseWord16E e cb1 cb2) = do
+          i <- packDeepProcedure (IfThenElseWord16E e cb1 cb2)
+          return $ RemBindW16 i
+      packProcedure (IfThenElseWord32E e cb1 cb2) = do
+          i <- packDeepProcedure (IfThenElseWord32E e cb1 cb2)
+          return $ RemBindW32 i
+      packProcedure (IfThenElseInt8E e cb1 cb2) = do
+          i <- packDeepProcedure (IfThenElseInt8E e cb1 cb2)
+          return $ RemBindI8 i
+      packProcedure (IfThenElseInt16E e cb1 cb2) = do
+          i <- packDeepProcedure (IfThenElseInt16E e cb1 cb2)
+          return $ RemBindI16 i
+      packProcedure (IfThenElseInt32E e cb1 cb2) = do
+          i <- packDeepProcedure (IfThenElseInt32E e cb1 cb2)
+          return $ RemBindI32 i
+      packProcedure (IfThenElseL8E e cb1 cb2) = do
+          i <- packDeepProcedure (IfThenElseL8E e cb1 cb2)
+          return $ RemBindList8 i
+      packProcedure (IfThenElseFloatE e cb1 cb2) = do
+          i <- packDeepProcedure (IfThenElseFloatE e cb1 cb2)
+          return $ RemBindFloat i
       packProcedure (DebugE tids) = packShallowProcedure (DebugE tids) ()
       -- For sending as part of a Scheduler task, debug and die make no sense.  
       -- Instead of signalling an error, at this point they are just ignored.
@@ -481,8 +501,25 @@ packageProcedure p = do
     packageProcedure' (ReadRemoteRefL8 (RemoteRefL8 i)) ib = addCommand REF_CMD_READ [fromIntegral $ fromEnum REF_LIST8, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
     packageProcedure' (ReadRemoteRefFloat (RemoteRefFloat i)) ib = addCommand REF_CMD_READ [fromIntegral $ fromEnum REF_FLOAT, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
     packageProcedure' (DebugE s) ib = addCommand BS_CMD_DEBUG ((fromIntegral ib) : (packageExpr s))
+    packageProcedure' (IfThenElseWord8E e cb1 cb2) ib = packageIfThenElseProcedure REF_WORD8 ib e cb1 cb2
+    packageProcedure' (IfThenElseWord16E e cb1 cb2) ib = packageIfThenElseProcedure REF_WORD16 ib e cb1 cb2
+    packageProcedure' (IfThenElseWord32E e cb1 cb2) ib = packageIfThenElseProcedure REF_WORD32 ib e cb1 cb2
+    packageProcedure' (IfThenElseInt8E e cb1 cb2) ib = packageIfThenElseProcedure REF_INT8 ib e cb1 cb2
+    packageProcedure' (IfThenElseInt16E e cb1 cb2) ib = packageIfThenElseProcedure REF_INT16 ib e cb1 cb2
+    packageProcedure' (IfThenElseInt32E e cb1 cb2) ib = packageIfThenElseProcedure REF_INT32 ib e cb1 cb2
+    packageProcedure' (IfThenElseL8E e cb1 cb2) ib = packageIfThenElseProcedure REF_LIST8 ib e cb1 cb2
+    packageProcedure' (IfThenElseFloatE e cb1 cb2) ib = packageIfThenElseProcedure REF_FLOAT ib e cb1 cb2
     packageProcedure' DebugListen ib = return B.empty
 
+packageIfThenElseProcedure :: RefType -> Int -> Expr Bool -> Arduino a -> Arduino a -> State CommandState B.ByteString
+packageIfThenElseProcedure rt b e cb1 cb2 = do
+    pc1 <- packageCodeBlock cb1
+    sThen <- get
+    pc2 <- packageCodeBlock cb2
+    sElse <- get
+    let thenSize = word16ToBytes $ fromIntegral (B.length pc1)
+    i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum rt, fromIntegral b, fromIntegral $ ib sThen, fromIntegral $ ib sElse] ++ thenSize ++ (packageExpr e))
+    return $ B.append i (B.append pc1 pc2)
 
 packageRemoteBinding' :: RefType -> Expr a -> State CommandState B.ByteString
 packageRemoteBinding' rt e = do

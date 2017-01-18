@@ -133,7 +133,8 @@ showCommand (ForInE ws f) = do
     p <- showCodeBlock $ f $ RemBindW8 $ ib s
     put s {ib = (ib s) + 1}
     return $ "ForIn " ++ show ws ++ " Bind" ++ show (ib s) ++ "\n" ++ p
-showCommand (IfThenElseE e cb1 cb2) = do
+-- ToDo: Add cases for expression ifThenElse's
+showCommand (IfThenElseUnitE e cb1 cb2) = do
     cs1 <- showCodeBlock cb1
     cs2 <- showCodeBlock cb2
     s <- get

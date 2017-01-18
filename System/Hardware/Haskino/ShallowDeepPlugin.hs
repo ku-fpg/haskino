@@ -244,6 +244,19 @@ condExpr e = do
                     rbs' <- condExpr' rbs
                     return $ Rec rbs'
       return $ Let bind' body' 
+    Case e tb ty alts | showSDoc df (ppr ty) == "Arduino ()" -> do
+      e' <- condExpr e
+      alts' <- condExprAlts alts
+      if length alts' == 2 
+      then case alts' of
+        [(ac1, _, _), _] -> do
+          case ac1 of 
+            DataAlt d -> do
+              if nameString (getName d) == "False"
+              then condTransformUnit ty e' alts'
+              else return $ Case e' tb ty alts'
+            _ -> return $ Case e' tb ty alts'
+      else return $ Case e' tb ty alts'
     Case e tb ty alts | isPrefixOf "Arduino " (showSDoc df (ppr ty)) -> do
       e' <- condExpr e
       alts' <- condExprAlts alts
@@ -282,11 +295,20 @@ condExprAlts ((ac, b, a) : as) = do
   bs' <- condExprAlts as
   return $ (ac, b, a') : bs'
 
+-- ToDo: Need to transform for type class with dictionary added
 condTransform :: Type -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CoreM CoreExpr
 condTransform ty e alts = do
   case alts of
     [(_, _, e1),(_, _, e2)] -> do
-      Just ifThenElseName <- thNameToGhcName 'System.Hardware.Haskino.ifThenElse
+      Just ifThenElseName <- thNameToGhcName 'System.Hardware.Haskino.ifThenElseBool
+      ifThenElseId <- lookupId ifThenElseName
+      return $ mkCoreApps (Var ifThenElseId) [ e, e1, e2]
+
+condTransformUnit :: Type -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CoreM CoreExpr
+condTransformUnit ty e alts = do
+  case alts of
+    [(_, _, e1),(_, _, e2)] -> do
+      Just ifThenElseName <- thNameToGhcName 'System.Hardware.Haskino.ifThenElseUnit
       ifThenElseId <- lookupId ifThenElseName
       return $ mkCoreApps (Var ifThenElseId) [ e, e1, e2]
 

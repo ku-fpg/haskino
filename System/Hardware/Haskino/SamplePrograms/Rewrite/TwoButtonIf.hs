@@ -42,6 +42,28 @@ twoButtonProg = do
           digitalWrite led2 (not b)          
         delayMillis 1000
 
+
+testWait :: Arduino Bool
+testWait = do
+    let button1 = 2
+    let button1 = 3
+    a <- digitalRead button1
+    b <- digitalRead button1
+    if a || b then return $ a || b else return $ a
+
+{-
+-- This is what we want testWait to be transformed to
+-- Currently we do all but changing types at the bind
+-- level.  Perhaps another pass is needed for that?
+testWaitE :: Arduino (Expr Bool)
+testWaitE = do
+    let button1 = 2
+    let button1 = 3
+    a <- digitalReadE button1
+    b <- digitalReadE button1
+    ifThenElseE (a ||* b) (return $ (a ||* b)) testWaitE
+-}
+
 main :: IO ()
 main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
 
@@ -79,12 +101,30 @@ main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
     loopE m
   #-}
 
-{-# RULES "if-then-else" [0]
+{-# RULES "if-then-else-unit" [0]
     forall (b :: Bool) (t :: Arduino ()) (e :: Arduino ()).
+    ifThenElseUnit b t e
+      =
+    ifThenElseUnitE (abs_ b) t e
+  #-}
+
+{-# RULES "if-then-else-bool" [0]
+    forall (b :: Bool) (t :: Arduino Bool) (e :: Arduino Bool).
+    ifThenElseBool b t e
+      =
+    rep_ <$> ifThenElseBoolE (abs_ b) (abs_ <$> t) (abs_ <$> e)
+  #-}
+
+{-
+-- I expected this general rule to work, but it didn't went 
+-- with specific rule above.
+{-# RULES "if-then-else-proc" [0]
+    forall (b :: Bool) (t :: ExprB a => Arduino a) (e :: ExprB a => Arduino a).
     ifThenElse b t e
       =
-    ifThenElseE (abs_ b) t e
+    rep_ <$> ifThenElseE (abs_ b) (abs_ <$> t) (abs_ <$> e)
   #-}
+-}
 
 {-# RULES "abs-push-or" [0]
     forall (b1 :: Bool) (b2 :: Bool).
@@ -105,6 +145,13 @@ main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
     rep_ <$> f >>= k 
       =
     f >>= k . rep_
+  #-}
+
+{-# RULES "abs-return" [0]
+    forall (t :: Bool).
+    abs_ <$> return t 
+      =
+    return $ abs_ t
   #-}
 
 {-# RULES "abs-rep-fuse" [1]

@@ -35,6 +35,7 @@ data RemoteRef a where
 deriving instance Show a => Show (RemoteRef a)
 
 data Expr a where
+  LitUnit      :: Expr ()
   LitB         :: Bool -> Expr Bool
   LitW8        :: Word8 -> Expr Word8
   LitW16       :: Word16 -> Expr Word16

@@ -49,7 +49,9 @@ module System.Hardware.Haskino (
   , stepper2Pin, stepper2PinE, stepper4Pin, stepper4PinE, stepperSetSpeed
   , stepperSetSpeedE, stepperStep ,stepperStepE 
   -- ** Control structures
-  , loop, while, ifThenElse, ifThenElseE, loopE, forInE
+  -- ToDo: Cleanup IfThenElse's
+  , loop, while, ifThenElse, ifThenElseE,  ifThenElseUnit, ifThenElseUnitE, loopE, forInE
+  , ifThenElseBool, ifThenElseBoolE
   -- ** Expressions
   , Expr(..), RemoteRef, lit, newRemoteRef, readRemoteRef, writeRemoteRef
   , modifyRemoteRef, (++*), (*:), (!!*), len, pack, litString, showE, showFFloatE

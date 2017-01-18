@@ -239,7 +239,8 @@ frameCommand :: ArduinoConnection -> ArduinoCommand -> B.ByteString -> IO B.Byte
 frameCommand c (Loop m) cmds = do
     sendToArduino c cmds
     forever $ send c m
-frameCommand c (IfThenElse b m1 m2) cmds = do
+-- ToDo: Is this really needed, or smart?  What about procedure variants?
+frameCommand c (IfThenElseUnit b m1 m2) cmds = do
     sendToArduino c cmds
     if b
     then send c m1

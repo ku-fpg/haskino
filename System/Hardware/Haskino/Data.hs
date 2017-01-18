@@ -201,8 +201,8 @@ data ArduinoCommand =
      | WhileRemoteRefL8 (RemoteRef [Word8]) (Expr [Word8] -> Expr Bool) (Expr [Word8] -> Expr [Word8]) (Arduino ())
      | LoopE (Arduino ())
      | ForInE (Expr [Word8]) (Expr Word8 -> Arduino ()) 
-     | IfThenElse (Bool) (Arduino ()) (Arduino ())
-     | IfThenElseE (Expr Bool) (Arduino ()) (Arduino ())
+     | IfThenElseUnit (Bool) (Arduino ()) (Arduino ())
+     | IfThenElseUnitE (Expr Bool) (Arduino ()) (Arduino ())
      -- ToDo: add SPI commands
 
 systemReset :: Arduino ()
@@ -335,12 +335,6 @@ loopE ps = Arduino $ command $ LoopE ps
 forInE :: Expr [Word8] -> (Expr Word8 -> Arduino ()) -> Arduino ()
 forInE ws f = Arduino $ command $ ForInE ws f
 
-ifThenElse :: Bool -> Arduino () -> Arduino() -> Arduino()
-ifThenElse b tps eps = Arduino $ command $ IfThenElse b tps eps
-
-ifThenElseE :: Expr Bool -> Arduino () -> Arduino() -> Arduino()
-ifThenElseE be tps eps = Arduino $ command $ IfThenElseE be tps eps
-
 writeRemoteRefB :: RemoteRef Bool -> Expr Bool -> Arduino ()
 writeRemoteRefB r e = Arduino $ command $ WriteRemoteRefB r e
 
@@ -421,6 +415,12 @@ whileRemoteRefL8 r bf uf cb = Arduino $ command $ WhileRemoteRefL8 r bf uf cb
 
 whileRemoteRefFloat :: RemoteRef Float -> (Expr Float -> Expr Bool) -> (Expr Float -> Expr Float) -> Arduino () -> Arduino ()
 whileRemoteRefFloat r bf uf cb = Arduino $ command $ WhileRemoteRefFloat r bf uf cb
+
+ifThenElseUnit :: Bool -> Arduino () -> Arduino () -> Arduino ()
+ifThenElseUnit b tps eps = Arduino $ command $ IfThenElseUnit b tps eps
+
+ifThenElseUnitE :: Expr Bool -> Arduino () -> Arduino () -> Arduino ()
+ifThenElseUnitE be tps eps = Arduino $ command $ IfThenElseUnitE be tps eps
 
 class RemoteReference a where
     newRemoteRef          :: Expr a -> Arduino (RemoteRef a)
@@ -554,6 +554,24 @@ data ArduinoProcedure :: * -> * where
      NewRemoteRefI32  :: Expr Int32 -> ArduinoProcedure (RemoteRef Int32)
      NewRemoteRefL8   :: Expr [Word8] -> ArduinoProcedure (RemoteRef [Word8])
      NewRemoteRefFloat :: Expr Float -> ArduinoProcedure (RemoteRef Float)
+     IfThenElseBool    :: Bool -> Arduino Bool -> Arduino Bool -> ArduinoProcedure Bool
+     IfThenElseBoolE   :: Expr Bool -> Arduino (Expr Bool) -> Arduino (Expr Bool) -> ArduinoProcedure (Expr Bool)
+     IfThenElseWord8   :: Bool -> Arduino Word8 -> Arduino Word8 -> ArduinoProcedure Word8
+     IfThenElseWord8E  :: Expr Bool -> Arduino (Expr Word8) -> Arduino (Expr Word8) -> ArduinoProcedure (Expr Word8)
+     IfThenElseWord16  :: Bool -> Arduino Word16 -> Arduino Word16 -> ArduinoProcedure Word16
+     IfThenElseWord16E :: Expr Bool -> Arduino (Expr Word16) -> Arduino (Expr Word16) -> ArduinoProcedure (Expr Word16)
+     IfThenElseWord32  :: Bool -> Arduino Word32 -> Arduino Word32 -> ArduinoProcedure Word32
+     IfThenElseWord32E :: Expr Bool -> Arduino (Expr Word32) -> Arduino (Expr Word32) -> ArduinoProcedure (Expr Word32)
+     IfThenElseInt8    :: Bool -> Arduino Int8 -> Arduino Int8 -> ArduinoProcedure Int8
+     IfThenElseInt8E   :: Expr Bool -> Arduino (Expr Int8) -> Arduino (Expr Int8) -> ArduinoProcedure (Expr Int8)
+     IfThenElseInt16   :: Bool -> Arduino Int16 -> Arduino Int16 -> ArduinoProcedure Int16
+     IfThenElseInt16E  :: Expr Bool -> Arduino (Expr Int16) -> Arduino (Expr Int16) -> ArduinoProcedure (Expr Int16)
+     IfThenElseInt32   :: Bool -> Arduino Int32 -> Arduino Int32 -> ArduinoProcedure Int32
+     IfThenElseInt32E  :: Expr Bool -> Arduino (Expr Int32) -> Arduino (Expr Int32) -> ArduinoProcedure (Expr Int32)
+     IfThenElseL8      :: Bool -> Arduino [Word8] -> Arduino [Word8] -> ArduinoProcedure [Word8]
+     IfThenElseL8E     :: Expr Bool -> Arduino (Expr [Word8]) -> Arduino (Expr [Word8]) -> ArduinoProcedure (Expr [Word8])
+     IfThenElseFloat   :: Bool -> Arduino Float -> Arduino Float -> ArduinoProcedure Float
+     IfThenElseFloatE  :: Expr Bool -> Arduino (Expr Float) -> Arduino (Expr Float) -> ArduinoProcedure (Expr Float)
      LiftIO           :: IO a -> ArduinoProcedure a
      Debug            :: String -> ArduinoProcedure ()
      DebugE           :: Expr [Word8] -> ArduinoProcedure ()
@@ -745,6 +763,100 @@ debugListen = Arduino $ procedure $ DebugListen
 
 die :: String -> [String] -> Arduino ()
 die msg msgs = Arduino $ procedure $ Die msg msgs
+
+ifThenElseBool :: Bool -> Arduino Bool -> Arduino Bool -> Arduino Bool
+ifThenElseBool b tps eps = Arduino $ procedure $ IfThenElseBool b tps eps
+
+ifThenElseBoolE :: Expr Bool -> Arduino (Expr Bool) -> Arduino (Expr Bool) -> Arduino (Expr Bool)
+ifThenElseBoolE be tps eps = Arduino $ procedure $ IfThenElseBoolE be tps eps
+
+ifThenElseWord8 :: Bool -> Arduino Word8 -> Arduino Word8 -> Arduino Word8
+ifThenElseWord8 b tps eps = Arduino $ procedure $ IfThenElseWord8 b tps eps
+
+ifThenElseWord8E :: Expr Bool -> Arduino (Expr Word8) -> Arduino (Expr Word8) -> Arduino (Expr Word8)
+ifThenElseWord8E be tps eps = Arduino $ procedure $ IfThenElseWord8E be tps eps
+
+ifThenElseWord16 :: Bool -> Arduino Word16 -> Arduino Word16 -> Arduino Word16
+ifThenElseWord16 b tps eps = Arduino $ procedure $ IfThenElseWord16 b tps eps
+
+ifThenElseWord16E :: Expr Bool -> Arduino (Expr Word16) -> Arduino (Expr Word16) -> Arduino (Expr Word16)
+ifThenElseWord16E be tps eps = Arduino $ procedure $ IfThenElseWord16E be tps eps
+
+ifThenElseWord32 :: Bool -> Arduino Word32 -> Arduino Word32 -> Arduino Word32
+ifThenElseWord32 b tps eps = Arduino $ procedure $ IfThenElseWord32 b tps eps
+
+ifThenElseWord32E :: Expr Bool -> Arduino (Expr Word32) -> Arduino (Expr Word32) -> Arduino (Expr Word32)
+ifThenElseWord32E be tps eps = Arduino $ procedure $ IfThenElseWord32E be tps eps
+
+ifThenElseInt8 :: Bool -> Arduino Int8 -> Arduino Int8 -> Arduino Int8
+ifThenElseInt8 b tps eps = Arduino $ procedure $ IfThenElseInt8 b tps eps
+
+ifThenElseInt8E :: Expr Bool -> Arduino (Expr Int8) -> Arduino (Expr Int8) -> Arduino (Expr Int8)
+ifThenElseInt8E be tps eps = Arduino $ procedure $ IfThenElseInt8E be tps eps
+
+ifThenElseInt16 :: Bool -> Arduino Int16 -> Arduino Int16 -> Arduino Int16
+ifThenElseInt16 b tps eps = Arduino $ procedure $ IfThenElseInt16 b tps eps
+
+ifThenElseInt16E :: Expr Bool -> Arduino (Expr Int16) -> Arduino (Expr Int16) -> Arduino (Expr Int16)
+ifThenElseInt16E be tps eps = Arduino $ procedure $ IfThenElseInt16E be tps eps
+
+ifThenElseInt32 :: Bool -> Arduino Int32 -> Arduino Int32 -> Arduino Int32
+ifThenElseInt32 b tps eps = Arduino $ procedure $ IfThenElseInt32 b tps eps
+
+ifThenElseInt32E :: Expr Bool -> Arduino (Expr Int32) -> Arduino (Expr Int32) -> Arduino (Expr Int32)
+ifThenElseInt32E be tps eps = Arduino $ procedure $ IfThenElseInt32E be tps eps
+
+ifThenElseL8 :: Bool -> Arduino [Word8] -> Arduino [Word8] -> Arduino [Word8]
+ifThenElseL8 b tps eps = Arduino $ procedure $ IfThenElseL8 b tps eps
+
+ifThenElseL8E :: Expr Bool -> Arduino (Expr [Word8]) -> Arduino (Expr [Word8]) -> Arduino (Expr [Word8])
+ifThenElseL8E be tps eps = Arduino $ procedure $ IfThenElseL8E be tps eps
+
+ifThenElseFloat :: Bool -> Arduino Float -> Arduino Float -> Arduino Float
+ifThenElseFloat b tps eps = Arduino $ procedure $ IfThenElseFloat b tps eps
+
+ifThenElseFloatE :: Expr Bool -> Arduino (Expr Float) -> Arduino (Expr Float) -> Arduino (Expr Float)
+ifThenElseFloatE be tps eps = Arduino $ procedure $ IfThenElseFloatE be tps eps
+
+class ArduinoConditional a where
+    ifThenElse          :: Bool -> Arduino a -> Arduino a -> Arduino a
+    ifThenElseE         :: Expr Bool -> Arduino (Expr a) -> Arduino (Expr a) -> Arduino (Expr a)
+
+instance ArduinoConditional Bool where
+    ifThenElse = ifThenElseBool
+    ifThenElseE = ifThenElseBoolE
+
+instance ArduinoConditional Word8 where
+    ifThenElse = ifThenElseWord8
+    ifThenElseE = ifThenElseWord8E
+
+instance ArduinoConditional Word16 where
+    ifThenElse = ifThenElseWord16
+    ifThenElseE = ifThenElseWord16E
+
+instance ArduinoConditional Word32 where
+    ifThenElse = ifThenElseWord32
+    ifThenElseE = ifThenElseWord32E
+
+instance ArduinoConditional Int8 where
+    ifThenElse = ifThenElseInt8
+    ifThenElseE = ifThenElseInt8E
+
+instance ArduinoConditional Int16 where
+    ifThenElse = ifThenElseInt16
+    ifThenElseE = ifThenElseInt16E
+
+instance ArduinoConditional Int32 where
+    ifThenElse = ifThenElseInt32
+    ifThenElseE = ifThenElseInt32E
+
+instance ArduinoConditional [Word8] where
+    ifThenElse = ifThenElseL8
+    ifThenElseE = ifThenElseL8E
+
+instance ArduinoConditional Float where
+    ifThenElse = ifThenElseFloat
+    ifThenElseE = ifThenElseFloatE
 
 -- | A response, as returned from the Arduino
 data Response = DelayResp
@@ -957,6 +1069,7 @@ data RefType = REF_BOOL
              | REF_INT32
              | REF_LIST8
              | REF_FLOAT
+             | REF_UNIT
             deriving (Show, Enum)
 
 -- | Firmware replies, see: 
