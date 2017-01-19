@@ -51,7 +51,6 @@ testWait = do
     b <- digitalRead button1
     if a || b then return $ a || b else return $ a
 
-{-
 -- This is what we want testWait to be transformed to
 -- Currently we do all but changing types at the bind
 -- level.  Perhaps another pass is needed for that?
@@ -61,8 +60,7 @@ testWaitE = do
     let button1 = 3
     a <- digitalReadE button1
     b <- digitalReadE button1
-    ifThenElseE (a ||* b) (return $ (a ||* b)) testWaitE
--}
+    ifThenElseE (a ||* b) (return $ (a ||* b)) (return a)
 
 main :: IO ()
 main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg

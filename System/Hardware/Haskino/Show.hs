@@ -39,7 +39,7 @@ data ShowState = ShowState {ix :: Int
 showArduino :: Arduino a -> String
 showArduino a = as    
   where
-    (as, _) = runState (showCodeBlock a) (ShowState 0 0 "" [] 0)
+    ((_, as), _) = runState (showCodeBlock a) (ShowState 0 0 "" [] 0)
 
 showCommand :: ArduinoCommand -> State ShowState String
 showCommand SystemReset = showCommand0 "SystemReset"
@@ -66,7 +66,7 @@ showCommand (NoInterrupts) = showCommand0 "NoInterrupts"
 showCommand (GiveSemE id) = showCommand1 "GiveSemE"  id
 showCommand (TakeSemE id) = showCommand1 "TakeSemE" id
 showCommand (CreateTaskE tid m) = do
-    ts <- showCodeBlock m
+    (_, ts) <- showCodeBlock m
     return $ "CreateTaskE " ++ show tid ++ "\n" ++ ts
 showCommand (WriteRemoteRefB (RemoteRefB i) e) =
     showCommand2 "WriteRemoteRefB" i e
@@ -123,20 +123,19 @@ showCommand (WhileRemoteRefFloat (RemoteRefFloat i) bf uf cb) =
 showCommand (WhileRemoteRefL8 (RemoteRefL8 i) bf uf cb) = 
     showWhileCommand (RefList8 i) i bf uf cb
 showCommand (Loop cb) = do
-    c <- showCodeBlock cb
+    (_, c) <- showCodeBlock cb
     return $ "Loop\n" ++ c
 showCommand (LoopE cb) = do
-    c <- showCodeBlock cb
+    (_, c) <- showCodeBlock cb
     return $ "LoopE\n" ++ c
 showCommand (ForInE ws f) = do
     s <- get
-    p <- showCodeBlock $ f $ RemBindW8 $ ib s
+    (_, p) <- showCodeBlock $ f $ RemBindW8 $ ib s
     put s {ib = (ib s) + 1}
     return $ "ForIn " ++ show ws ++ " Bind" ++ show (ib s) ++ "\n" ++ p
--- ToDo: Add cases for expression ifThenElse's
 showCommand (IfThenElseUnitE e cb1 cb2) = do
-    cs1 <- showCodeBlock cb1
-    cs2 <- showCodeBlock cb2
+    (_, cs1) <- showCodeBlock cb1
+    (_, cs2) <- showCodeBlock cb2
     s <- get
     return $ "If " ++ show e ++ " Then\n" ++ cs1 ++ replicate (indent s) ' ' ++ "Else\n" ++ cs2
 
@@ -162,7 +161,7 @@ showCommand3 p e1 e2 e3 = showCommandAndArgs [p, show e1, show e2, show e3]
 
 showWhileCommand :: Show a => Expr a -> Int -> (Expr a -> Expr Bool) -> (Expr a -> Expr a) -> Arduino () -> State ShowState String
 showWhileCommand rr i bf uf cb = do
-    sc <- showCodeBlock cb
+    (_, sc) <- showCodeBlock cb
     return $ "While " ++ show rr ++ " " ++ show i ++ " (" ++ show (bf rr) ++ ") (" ++ show (uf rr) ++ ")\n" ++ sc
 
 addToBlock :: String -> State ShowState ()
@@ -170,11 +169,12 @@ addToBlock bs = do
     s <- get
     put s {block = (block s) ++ replicate (indent s) ' ' ++ bs ++ "\n"}
 
-showCodeBlock :: Arduino a -> State ShowState String
+showCodeBlock :: Arduino a -> State ShowState (a, String)
 showCodeBlock (Arduino commands) = do
     startNewBlock 
-    showMonad commands
-    endCurrentBlock
+    ret <- showMonad commands
+    str <- endCurrentBlock
+    return (ret, str)
   where
       startNewBlock :: State ShowState ()
       startNewBlock = do
@@ -243,6 +243,18 @@ showCodeBlock (Arduino commands) = do
       showDeep5Procedure :: (Show a, Show b, Show c, Show d, Show e) => String -> Expr a -> Expr b -> Expr c -> Expr d -> Expr e -> State ShowState Int
       showDeep5Procedure p e1 e2 e3 e4 e5 = 
         showDeepProcedure [p, show e1, show e2, show e3, show e4, show e5]
+
+      showIfThenElseProcedure :: Show a => Expr Bool -> Arduino a -> Arduino a -> State ShowState Int
+      showIfThenElseProcedure b cb1 cb2 = do
+          s <- get
+          put s {ib = (ib s) + 1}
+          (r1, cs1) <- showCodeBlock cb1
+          let cs1' = cs1 ++ "\nreturn " ++ show r1 ++ "\n"
+          (r2, cs2) <- showCodeBlock cb2
+          let cs2' = cs2 ++ "\nreturn " ++ show r2 ++ "\n"
+          s <- get
+          addToBlock $ "RemBind " ++ show (ib s) ++ " <- " ++ "If " ++ show b ++ " Then\n" ++ cs1' ++ replicate (indent s) ' ' ++ "Else\n" ++ cs2'
+          return $ ib s
 
       showNewRef :: String -> Expr a -> b -> State ShowState b
       showNewRef p e r = do
@@ -376,6 +388,11 @@ showCodeBlock (Arduino commands) = do
       showProcedure (NewRemoteRefFloat e) = do
           s <- get
           showNewRef "NewRemoteRefFloat" e (RemoteRefFloat (ix s))
+      -- ToDo: Add cases for expression ifThenElse's
+      showProcedure (IfThenElseBoolE e cb1 cb2) = do
+          i <- showIfThenElseProcedure e cb1 cb2
+          return $ RemBindB i
+
       showProcedure (DebugE ws) = showShallow1Procedure "DebugE" ws ()
       showProcedure (Debug s) = showShallow1Procedure "Debug" s ()
       showProcedure DebugListen = showShallow0Procedure "DebugListen" ()
