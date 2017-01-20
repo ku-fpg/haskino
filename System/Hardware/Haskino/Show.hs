@@ -249,9 +249,9 @@ showCodeBlock (Arduino commands) = do
           s <- get
           put s {ib = (ib s) + 1}
           (r1, cs1) <- showCodeBlock cb1
-          let cs1' = cs1 ++ "\nreturn " ++ show r1 ++ "\n"
+          let cs1' = cs1 ++ replicate (indent s + 2) ' ' ++ "return " ++ show r1 ++ "\n"
           (r2, cs2) <- showCodeBlock cb2
-          let cs2' = cs2 ++ "\nreturn " ++ show r2 ++ "\n"
+          let cs2' = cs2 ++ replicate (indent s + 2) ' ' ++ "return " ++ show r2 ++ "\n"
           s <- get
           addToBlock $ "RemBind " ++ show (ib s) ++ " <- " ++ "If " ++ show b ++ " Then\n" ++ cs1' ++ replicate (indent s) ' ' ++ "Else\n" ++ cs2'
           return $ ib s

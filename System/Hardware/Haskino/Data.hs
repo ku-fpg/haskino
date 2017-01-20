@@ -948,6 +948,7 @@ data FirmwareCmd = BC_CMD_SYSTEM_RESET
                  | REF_CMD_NEW
                  | REF_CMD_READ
                  | REF_CMD_WRITE
+                 | EXPR_CMD_RET
                  | UNKNOWN_COMMAND
                 deriving Show
 
@@ -1004,6 +1005,7 @@ firmwareCmdVal SCHED_CMD_NOINTERRUPTS   = 0xAD
 firmwareCmdVal REF_CMD_NEW              = 0xC0
 firmwareCmdVal REF_CMD_READ             = 0xC1
 firmwareCmdVal REF_CMD_WRITE            = 0xC2
+firmwareCmdVal EXPR_CMD_RET             = 0xD0
 
 -- | Compute the numeric value of a command
 firmwareValCmd :: Word8 -> FirmwareCmd
@@ -1058,6 +1060,7 @@ firmwareValCmd 0xAD = SCHED_CMD_NOINTERRUPTS
 firmwareValCmd 0xC0 = REF_CMD_NEW            
 firmwareValCmd 0xC1 = REF_CMD_READ           
 firmwareValCmd 0xC2 = REF_CMD_WRITE 
+firmwareValCmd 0xD0 = EXPR_CMD_RET 
 firmwareValCmd _    = UNKNOWN_COMMAND        
 
 data RefType = REF_BOOL
@@ -1096,6 +1099,7 @@ data FirmwareReply =  BC_RESP_DELAY
                    |  SCHED_RESP_BOOT
                    |  REF_RESP_NEW
                    |  REF_RESP_READ
+                   |  EXPR_RESP_RET
                 deriving Show
 
 getFirmwareReply :: Word8 -> Either Word8 FirmwareReply
@@ -1121,6 +1125,7 @@ getFirmwareReply 0xB1 = Right SCHED_RESP_QUERY_ALL
 getFirmwareReply 0xB2 = Right SCHED_RESP_BOOT
 getFirmwareReply 0xC8 = Right REF_RESP_NEW
 getFirmwareReply 0xC9 = Right REF_RESP_READ
+getFirmwareReply 0xD8 = Right EXPR_RESP_RET
 getFirmwareReply n    = Left n
 
 data Processor = ATMEGA8

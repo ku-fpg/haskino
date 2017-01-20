@@ -12,6 +12,7 @@
 #define REF_INT32  0x06
 #define REF_LIST8  0x07
 #define REF_FLOAT  0x08
+#define REF_UNIT   0x09
 
 bool parseRefMessage(int size, const byte *msg, CONTEXT *context);
 bool readRefBool(int refIndex);

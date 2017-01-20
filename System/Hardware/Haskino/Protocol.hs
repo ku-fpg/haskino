@@ -116,7 +116,7 @@ packageCommand (GiveSemE id) =
 packageCommand (TakeSemE id) =
     addCommand SCHED_CMD_TAKE_SEM (packageExpr id)
 packageCommand (CreateTaskE tid m) = do
-    td <- packageCodeBlock m
+    (_, td) <- packageCodeBlock m
     s <- get
     let taskSize = fromIntegral (B.length td)
     cmd <- addCommand SCHED_CMD_CREATE_TASK ((packageExpr tid) ++ (packageExpr (LitW16 taskSize)) ++ (packageExpr (LitW16 (fromIntegral (ib s)))))                                   
@@ -188,35 +188,36 @@ packageCommand (WhileRemoteRefFloat (RemoteRefFloat i) bf uf cb) =
 packageCommand (WhileRemoteRefL8 (RemoteRefL8 i) bf uf cb) = 
     packageWhileCommand (RefList8 i) i bf uf cb
 packageCommand (LoopE cb) = do
-    p <- packageCodeBlock cb
+    (_, p) <- packageCodeBlock cb
     l <- addCommand BC_CMD_LOOP (B.unpack p)
     return l
 packageCommand (ForInE ws f) = do
     s <- get
-    p <- packageCodeBlock $ f $ RemBindW8 $ ib s
+    (_, p) <- packageCodeBlock $ f $ RemBindW8 $ ib s
     fc <- addCommand BC_CMD_FORIN ((packageExpr ws) ++ (packageExpr (RemBindW8 (ib s))))
     put s {ib = (ib s) + 1}
     return $ B.append fc p
 packageCommand (IfThenElseUnitE e cb1 cb2) = do
-    pc1 <- packageCodeBlock cb1
-    pc2 <- packageCodeBlock cb2
+    (_, pc1) <- packageCodeBlock cb1
+    (_, pc2) <- packageCodeBlock cb2
     let thenSize = word16ToBytes $ fromIntegral (B.length pc1)
-    i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum REF_UNIT, 0, 0, 0] ++ thenSize ++ (packageExpr e))
+    i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum REF_UNIT, 0] ++ thenSize ++ (packageExpr e))
     return $ B.append i (B.append pc1 pc2)
 
 packageWhileCommand :: Expr a -> Int -> (Expr a -> Expr Bool) -> (Expr a -> Expr a) -> Arduino () -> State CommandState B.ByteString
 packageWhileCommand rr i bf uf cb = do
     w <- addCommand BC_CMD_WHILE ([exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (bf rr) ++ [fromIntegral $ length ufe] ++ ufe)
-    p <- packageCodeBlock cb
+    (_, p) <- packageCodeBlock cb
     return $ B.append w p
   where
     ufe = packageExpr $ uf rr
 
-packageCodeBlock :: Arduino a -> State CommandState B.ByteString
+packageCodeBlock :: Arduino a -> State CommandState (a, B.ByteString)
 packageCodeBlock (Arduino commands) = do
     startNewBlock 
-    packMonad commands
-    endCurrentBlock
+    ret <- packMonad commands
+    str <- endCurrentBlock
+    return (ret, str)
   where
       startNewBlock :: State CommandState ()
       startNewBlock = do
@@ -511,15 +512,15 @@ packageProcedure p = do
     packageProcedure' (IfThenElseFloatE e cb1 cb2) ib = packageIfThenElseProcedure REF_FLOAT ib e cb1 cb2
     packageProcedure' DebugListen ib = return B.empty
 
-packageIfThenElseProcedure :: RefType -> Int -> Expr Bool -> Arduino a -> Arduino a -> State CommandState B.ByteString
+packageIfThenElseProcedure :: RefType -> Int -> Expr Bool -> Arduino (Expr a) -> Arduino (Expr a) -> State CommandState B.ByteString
 packageIfThenElseProcedure rt b e cb1 cb2 = do
-    pc1 <- packageCodeBlock cb1
-    sThen <- get
-    pc2 <- packageCodeBlock cb2
-    sElse <- get
-    let thenSize = word16ToBytes $ fromIntegral (B.length pc1)
-    i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum rt, fromIntegral b, fromIntegral $ ib sThen, fromIntegral $ ib sElse] ++ thenSize ++ (packageExpr e))
-    return $ B.append i (B.append pc1 pc2)
+    (r1, pc1) <- packageCodeBlock cb1
+    let pc1' = B.append pc1 $ buildCommand EXPR_CMD_RET $ (fromIntegral b) : packageExpr r1
+    (r2, pc2) <- packageCodeBlock cb2
+    let pc2' = B.append pc2 $ buildCommand EXPR_CMD_RET $ (fromIntegral b) : packageExpr r2
+    let thenSize = word16ToBytes $ fromIntegral (B.length pc1')
+    i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum rt, fromIntegral b] ++ thenSize ++ (packageExpr e))
+    return $ B.append i (B.append pc1' pc2')
 
 packageRemoteBinding' :: RefType -> Expr a -> State CommandState B.ByteString
 packageRemoteBinding' rt e = do

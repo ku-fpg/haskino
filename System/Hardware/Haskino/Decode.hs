@@ -114,8 +114,8 @@ decodeCmdArgs BC_CMD_WHILE _ xs = (dec ++ dec' ++ "\n" ++ dec'', B.empty)
     (dec', xs'') = decodeExprCmd 1 (B.tail xs')
     dec'' = decodeCodeBlock xs'' "While"
 decodeCmdArgs BC_CMD_IF_THEN_ELSE _ Empty = decodeErr B.empty
-decodeCmdArgs BC_CMD_IF_THEN_ELSE _ (x :< Empty) = decodeErr (B.singleton x)
-decodeCmdArgs BC_CMD_IF_THEN_ELSE _ xs = (dec ++ "\n" ++ dec' ++ dec'', B.empty)
+decodeCmdArgs BC_CMD_IF_THEN_ELSE _ xs | B.length xs < 5 = decodeErr xs
+decodeCmdArgs BC_CMD_IF_THEN_ELSE _ (rt :< b :< xs) = (dec ++ "\n" ++ dec' ++ dec'', B.empty)
   where
     thenSize = bytesToWord16 (B.head xs, B.head (B.tail xs))
     (dec, xs') = decodeExprCmd 1 (B.drop 2 xs)

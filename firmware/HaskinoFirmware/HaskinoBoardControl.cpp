@@ -207,13 +207,18 @@ static bool handleWhile(int size, const byte *msg, CONTEXT *context)
 
 static bool handleIfThenElse(int size, const byte *msg, CONTEXT *context)
     {
+    byte type = msg[1];
+    byte bind = msg[2];
     uint16_t thenSize, elseSize;
-    memcpy(&thenSize, &msg[1], sizeof(thenSize));
-    byte *expr = (byte *) &msg[3];
+    memcpy(&thenSize, &msg[3], sizeof(thenSize));
+    byte *expr = (byte *) &msg[4];
     bool condition = evalBoolExpr(&expr, context);
     byte *codeBlock = expr;
     bool test;
     bool rescheduled = context->task && context->task->rescheduled;
+    byte ifReply[2];
+    void *resultPtr;
+    byte *lVal;
 
     if (rescheduled)
         {
@@ -235,6 +240,58 @@ static bool handleIfThenElse(int size, const byte *msg, CONTEXT *context)
         {
         elseSize = size - (thenSize + (codeBlock - msg));
         rescheduled = runCodeBlock(elseSize, codeBlock + thenSize, context);
+        }
+
+    resultPtr = &context->bind[bind * BIND_SPACING];
+
+    switch (type)
+        {
+        case REF_BOOL:
+            ifReply[0] = EXPR(EXPR_BOOL, EXPR_LIT);
+            ifReply[1] = *((bool *) resultPtr);
+            sendReply(sizeof(bool)+1, EXPR_RESP_RET, ifReply, context, bind);
+            break;
+        case REF_WORD8:
+            ifReply[0] = EXPR(EXPR_WORD8, EXPR_LIT);
+            ifReply[1] = *((uint8_t *) resultPtr);
+            sendReply(sizeof(uint8_t)+1, EXPR_RESP_RET, ifReply, context, bind);
+            break;
+        case REF_WORD16:
+            ifReply[0] = EXPR(EXPR_WORD16, EXPR_LIT);
+            memcpy(&ifReply[1], (byte *) resultPtr, sizeof(uint16_t));
+            sendReply(sizeof(uint16_t)+1, EXPR_RESP_RET, ifReply, context, bind);
+            break;
+        case REF_WORD32:
+            ifReply[0] = EXPR(EXPR_WORD32, EXPR_LIT);
+            memcpy(&ifReply[1], (byte *) resultPtr, sizeof(uint32_t));
+            sendReply(sizeof(uint32_t)+1, EXPR_RESP_RET, ifReply, context, bind);
+            break;
+        case REF_INT8:
+            ifReply[0] = EXPR(EXPR_INT8, EXPR_LIT);
+            ifReply[1] = *((int8_t *) resultPtr);
+            sendReply(sizeof(int8_t)+1, EXPR_RESP_RET, ifReply, context, bind);
+            break;
+        case REF_INT16:
+            ifReply[0] = EXPR(EXPR_INT16, EXPR_LIT);
+            memcpy(&ifReply[1], (byte *) resultPtr, sizeof(int16_t));
+            sendReply(sizeof(int16_t)+1, EXPR_RESP_RET, ifReply, context, bind);
+            break;
+        case REF_INT32:
+            ifReply[0] = EXPR(EXPR_INT32, EXPR_LIT);
+            memcpy(&ifReply[1], (byte *) resultPtr, sizeof(int32_t));
+            sendReply(sizeof(int32_t)+1, EXPR_RESP_RET, ifReply, context, bind);
+            break;
+        case REF_LIST8:
+            lVal = (byte *) resultPtr;
+            sendReply(lVal[1]+2, EXPR_RESP_RET, lVal, context, bind);
+            break;
+        case REF_FLOAT:
+            ifReply[0] = EXPR_F(EXPR_LIT);
+            memcpy(&ifReply[1], (byte *) resultPtr, sizeof(float));
+            sendReply(sizeof(float)+1, EXPR_RESP_RET, ifReply, context, bind);
+            break;
+        default:
+            break;
         }
 
     return rescheduled;
