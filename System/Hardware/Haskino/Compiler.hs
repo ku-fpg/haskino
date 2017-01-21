@@ -139,7 +139,10 @@ compileTask t name int = do
     compileLine $ "void " ++ name ++ "()"
     compileForward $ "void " ++ name ++ "();"
     compileCodeBlock t
-    compileLine "" 
+    if not int
+    then compileLineIndent "taskComplete();"
+    else return ()
+    compileLineIndent "}"
     s <- get
     let defineStr = (map toUpper name) ++ stackSizeStr
     compileForward $ "#define " ++ defineStr ++ " " ++ 
@@ -154,6 +157,12 @@ compileLine :: String -> State CompileState ()
 compileLine s = do
     st <- get 
     put st { cmds = cmds st ++ (indent $ level st) ++ s ++ "\n"}
+    return ()
+
+compileLineIndent :: String -> State CompileState ()
+compileLineIndent s = do
+    st <- get 
+    put st { cmds = cmds st ++ (indent (level st + 1)) ++ s ++ "\n"}
     return ()
 
 compileAllocBind :: String -> State CompileState ()
@@ -225,6 +234,7 @@ compileWhileCommand i be ue cb = do
     compileLine $ "for (;" ++ compileExpr be ++ ";" ++ 
                   refName ++ show i ++ " = " ++ compileExpr ue ++ ")"
     compileCodeBlock cb
+    compileLineIndent "}"
     return ()
 
 compileCommand :: ArduinoCommand -> State CompileState ()
@@ -336,13 +346,15 @@ compileCommand (WhileRemoteRefFloat (RemoteRefFloat i) bf uf cb) =
 compileCommand (LoopE cb) = do
     compileLine "while (1)"
     compileCodeBlock cb
+    compileLineIndent "}"
     return ()
--- ToDo: Add compiles for the expression IfThenElse's
 compileCommand (IfThenElseUnitE e cb1 cb2) = do
     compileLine $ "if (" ++ compileExpr e ++ ")"
     compileCodeBlock cb1
+    compileLineIndent "}"
     compileLine "else"
     compileCodeBlock cb2
+    compileLineIndent "}"
     return ()
 compileCommand (ForInE ws f) = do
     s <- get
@@ -367,6 +379,7 @@ compileCommand (ForInE ws f) = do
                              belemName ++ " = list8Elem(" ++ blistName ++ ", " ++ 
                              bloopName ++ "))"
     compileCodeBlock (f (RemBindW8 belem))
+    compileLineIndent "}"
     return ()
 
 compileSimpleProcedure :: CompileType -> String -> State CompileState Int
@@ -653,6 +666,67 @@ compileProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) = do
 compileProcedure (ReadRemoteRefFloat (RemoteRefFloat i)) = do
     b <- compileReadRef FloatType i
     return $ remBind b
+compileProcedure (IfThenElseBool e cb1 cb2) = do
+    compileUnsupportedError "IfThenElseBool"
+    return False
+compileProcedure (IfThenElseWord8 e cb1 cb2) = do
+    compileUnsupportedError "IfThenElseWord8"
+    return 0
+compileProcedure (IfThenElseWord16 e cb1 cb2) = do
+    compileUnsupportedError "IfThenElseWord16"
+    return 0
+compileProcedure (IfThenElseWord32 e cb1 cb2) = do
+    compileUnsupportedError "IfThenElseWord32"
+    return 0
+compileProcedure (IfThenElseInt8 e cb1 cb2) = do
+    compileUnsupportedError "IfThenElseInt8"
+    return 0
+compileProcedure (IfThenElseInt16 e cb1 cb2) = do
+    compileUnsupportedError "IfThenElseInt16"
+    return 0
+compileProcedure (IfThenElseInt32 e cb1 cb2) = do
+    compileUnsupportedError "IfThenElseInt32"
+    return 0
+compileProcedure (IfThenElseL8 e cb1 cb2) = do
+    compileUnsupportedError "IfThenElseL8"
+    return []
+compileProcedure (IfThenElseFloat e cb1 cb2) = do
+    compileUnsupportedError "IfThenElseFloat"
+    return 0
+compileProcedure (IfThenElseBoolE e cb1 cb2) = 
+    compileIfThenElseProcedure BoolType e cb1 cb2
+compileProcedure (IfThenElseWord8E e cb1 cb2) = 
+    compileIfThenElseProcedure Word8Type e cb1 cb2
+compileProcedure (IfThenElseWord16E e cb1 cb2) = 
+    compileIfThenElseProcedure Word16Type e cb1 cb2
+compileProcedure (IfThenElseWord32E e cb1 cb2) = 
+    compileIfThenElseProcedure Word32Type e cb1 cb2
+compileProcedure (IfThenElseInt8E e cb1 cb2) = 
+    compileIfThenElseProcedure Int8Type e cb1 cb2
+compileProcedure (IfThenElseInt16E e cb1 cb2) = 
+    compileIfThenElseProcedure Int16Type e cb1 cb2
+compileProcedure (IfThenElseInt32E e cb1 cb2) = 
+    compileIfThenElseProcedure Int32Type e cb1 cb2
+compileProcedure (IfThenElseL8E e cb1 cb2) = 
+    compileIfThenElseProcedure List8Type e cb1 cb2
+compileProcedure (IfThenElseFloatE e cb1 cb2) = 
+    compileIfThenElseProcedure FloatType e cb1 cb2
+
+compileIfThenElseProcedure :: ExprB a => CompileType -> Expr Bool -> Arduino (Expr a) -> Arduino (Expr a) -> State CompileState (Expr a)
+compileIfThenElseProcedure t e cb1 cb2 = do
+    s <- get
+    let b = ib s
+    put s {ib = b + 1}
+    compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
+    compileLine $ "if (" ++ compileExpr e ++ ")"
+    r1 <- compileCodeBlock cb1
+    compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r1 ++ ";"
+    compileLineIndent "}"
+    compileLine "else"
+    r2 <- compileCodeBlock cb2
+    compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r2 ++ ";"
+    compileLineIndent "}"
+    return $ remBind b
 
 compileCodeBlock :: Arduino a -> State CompileState a
 compileCodeBlock (Arduino commands) = do
@@ -668,19 +742,13 @@ compileCodeBlock (Arduino commands) = do
            cmdList = tail $ cmdList s,
            binds = head $ bindList s,
            cmds = (head $ cmdList s) ++ (indent $ level s) ++ "{\n" ++ 
-                  body (binds s) (cmds s) ++ (taskComplete (level s) (intTask s)) ++ 
-                  (indent $ level s) ++ "}\n",
+                  body (binds s) (cmds s),
            level = level s - 1 }
     return r
   where
       body :: String -> String -> String
       body [] cs = cs
       body bs cs = bs ++ "\n" ++ cs
-
-      taskComplete :: Int -> Bool -> String
-      taskComplete l i = if ((not i) && (l==1)) 
-                       then indent 1 ++ "taskComplete();\n"
-                       else ""
 
       compileMonad :: RemoteMonad ArduinoCommand ArduinoProcedure a -> 
                       State CompileState a
