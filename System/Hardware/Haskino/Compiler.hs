@@ -93,6 +93,12 @@ contextTaskStackSize = 36
 taskStackSize :: Int -> Int
 taskStackSize binds = binds * 4 + defaultTaskStackSize + contextTaskStackSize;
 
+nextBind :: State CompileState Int
+nextBind = do
+    s <- get
+    put s {ib = (ib s) + 1}
+    return (ib s)
+
 compileProgram :: Arduino () -> FilePath -> IO ()
 compileProgram p f = do
     writeFile f prog
@@ -325,24 +331,6 @@ compileCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) =
     compileWriteListRef i (f (RefList8 i))
 compileCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) = 
     compileWriteRef i (f (RefFloat i))
-compileCommand (WhileRemoteRefB (RemoteRefB i) bf uf cb) = 
-    compileWhileCommand i (bf (RefB i)) (uf (RefB i)) cb
-compileCommand (WhileRemoteRefW8 (RemoteRefW8 i) bf uf cb) = 
-    compileWhileCommand i (bf (RefW8 i)) (uf (RefW8 i)) cb
-compileCommand (WhileRemoteRefW16 (RemoteRefW16 i) bf uf cb) = 
-    compileWhileCommand i (bf (RefW16 i)) (uf (RefW16 i)) cb
-compileCommand (WhileRemoteRefW32 (RemoteRefW32 i) bf uf cb) = 
-    compileWhileCommand i (bf (RefW32 i)) (uf (RefW32 i)) cb
-compileCommand (WhileRemoteRefI8 (RemoteRefI8 i) bf uf cb) = 
-    compileWhileCommand i (bf (RefI8 i)) (uf (RefI8 i)) cb
-compileCommand (WhileRemoteRefI16 (RemoteRefI16 i) bf uf cb) = 
-    compileWhileCommand i (bf (RefI16 i)) (uf (RefI16 i)) cb
-compileCommand (WhileRemoteRefI32 (RemoteRefI32 i) bf uf cb) = 
-    compileWhileCommand i (bf (RefI32 i)) (uf (RefI32 i)) cb
-compileCommand (WhileRemoteRefL8 (RemoteRefL8 i) bf uf cb) = 
-    compileWhileCommand i (bf (RefList8 i)) (uf (RefList8 i)) cb
-compileCommand (WhileRemoteRefFloat (RemoteRefFloat i) bf uf cb) = 
-    compileWhileCommand i (bf (RefFloat i)) (uf (RefFloat i)) cb
 compileCommand (LoopE cb) = do
     compileLine "while (1)"
     compileCodeBlock cb
@@ -711,6 +699,51 @@ compileProcedure (IfThenElseL8E e cb1 cb2) =
     compileIfThenElseProcedure List8Type e cb1 cb2
 compileProcedure (IfThenElseFloatE e cb1 cb2) = 
     compileIfThenElseProcedure FloatType e cb1 cb2
+compileProcedure (WhileBoolE iv bf bdf) = do
+    i <- nextBind
+    let bi = RemBindB i 
+    compileWhileProcedure BoolType i bi iv bf bdf
+    return bi
+compileProcedure (WhileWord8E iv bf bdf) = do
+    i <- nextBind
+    let bi = RemBindW8 i 
+    compileWhileProcedure Word8Type i bi iv bf bdf
+    return bi
+compileProcedure (WhileWord16E iv bf bdf) = do
+    i <- nextBind
+    let bi = RemBindW16 i 
+    compileWhileProcedure Word16Type i bi iv bf bdf
+    return bi
+compileProcedure (WhileWord32E iv bf bdf) = do
+    i <- nextBind
+    let bi = RemBindW32 i 
+    compileWhileProcedure Word32Type i bi iv bf bdf
+    return bi
+compileProcedure (WhileInt8E iv bf bdf) = do
+    i <- nextBind
+    let bi = RemBindI8 i 
+    compileWhileProcedure Int8Type i bi iv bf bdf
+    return bi
+compileProcedure (WhileInt16E iv bf bdf) = do
+    i <- nextBind
+    let bi = RemBindI16 i 
+    compileWhileProcedure Int16Type i bi iv bf bdf
+    return bi
+compileProcedure (WhileInt32E iv bf bdf) = do
+    i <- nextBind
+    let bi = RemBindI32 i 
+    compileWhileProcedure Int32Type i bi iv bf bdf
+    return bi
+compileProcedure (WhileL8E iv bf bdf) = do
+    i <- nextBind
+    let bi = RemBindList8 i 
+    compileWhileProcedure List8Type i bi iv bf bdf
+    return bi
+compileProcedure (WhileFloatE iv bf bdf) = do
+    i <- nextBind
+    let bi = RemBindFloat i 
+    compileWhileProcedure FloatType i bi iv bf bdf
+    return bi
 
 compileIfThenElseProcedure :: ExprB a => CompileType -> Expr Bool -> Arduino (Expr a) -> Arduino (Expr a) -> State CompileState (Expr a)
 compileIfThenElseProcedure t e cb1 cb2 = do
@@ -727,6 +760,16 @@ compileIfThenElseProcedure t e cb1 cb2 = do
     compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r2 ++ ";"
     compileLineIndent "}"
     return $ remBind b
+
+compileWhileProcedure :: ExprB a => CompileType -> Int -> Expr a -> Expr a -> (Expr a -> Expr Bool) -> (Expr a -> Arduino (Expr a)) -> State CompileState (Expr a)
+compileWhileProcedure t b be iv bf bdf = do
+    compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
+    compileLine $ bindName ++ show b ++ " = " ++ compileExpr iv
+    compileLine $ "while (" ++ compileExpr (bf be) ++ ")"
+    r <- compileCodeBlock $ bdf be
+    compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r ++ ";"
+    compileLineIndent "}"
+    return be
 
 compileCodeBlock :: Arduino a -> State CompileState a
 compileCodeBlock (Arduino commands) = do

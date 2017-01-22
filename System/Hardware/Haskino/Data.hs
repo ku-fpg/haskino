@@ -190,15 +190,6 @@ data ArduinoCommand =
      | ModifyRemoteRefL8 (RemoteRef [Word8]) (Expr [Word8] -> Expr [Word8])
      | ModifyRemoteRefFloat (RemoteRef Float) (Expr Float -> Expr Float)
      | Loop (Arduino ())
-     | WhileRemoteRefB (RemoteRef Bool) (Expr Bool -> Expr Bool) (Expr Bool -> Expr Bool) (Arduino ())
-     | WhileRemoteRefW8 (RemoteRef Word8) (Expr Word8 -> Expr Bool) (Expr Word8 -> Expr Word8) (Arduino ())
-     | WhileRemoteRefW16 (RemoteRef Word16) (Expr Word16 -> Expr Bool) (Expr Word16 -> Expr Word16) (Arduino ())
-     | WhileRemoteRefW32 (RemoteRef Word32) (Expr Word32 -> Expr Bool) (Expr Word32 -> Expr Word32) (Arduino ())
-     | WhileRemoteRefI8 (RemoteRef Int8) (Expr Int8 -> Expr Bool) (Expr Int8 -> Expr Int8) (Arduino ())
-     | WhileRemoteRefI16 (RemoteRef Int16) (Expr Int16 -> Expr Bool) (Expr Int16 -> Expr Int16) (Arduino ())
-     | WhileRemoteRefI32 (RemoteRef Int32) (Expr Int32 -> Expr Bool) (Expr Int32 -> Expr Int32) (Arduino ())
-     | WhileRemoteRefFloat (RemoteRef Float) (Expr Float -> Expr Bool) (Expr Float -> Expr Float) (Arduino ())
-     | WhileRemoteRefL8 (RemoteRef [Word8]) (Expr [Word8] -> Expr Bool) (Expr [Word8] -> Expr [Word8]) (Arduino ())
      | LoopE (Arduino ())
      | ForInE (Expr [Word8]) (Expr Word8 -> Arduino ()) 
      | IfThenElseUnit (Bool) (Arduino ()) (Arduino ())
@@ -389,110 +380,72 @@ modifyRemoteRefL8 r f = Arduino $ command $ ModifyRemoteRefL8 r f
 modifyRemoteRefFloat :: RemoteRef Float -> (Expr Float -> Expr Float) -> Arduino ()
 modifyRemoteRefFloat r f = Arduino $ command $ ModifyRemoteRefFloat r f
 
-whileRemoteRefB :: RemoteRef Bool -> (Expr Bool -> Expr Bool) -> (Expr Bool -> Expr Bool) -> Arduino () -> Arduino ()
-whileRemoteRefB r bf uf cb  = Arduino $ command $ WhileRemoteRefB r bf uf cb
-
-whileRemoteRefW8 :: RemoteRef Word8 -> (Expr Word8 -> Expr Bool) -> (Expr Word8 -> Expr Word8) -> Arduino () -> Arduino ()
-whileRemoteRefW8 r bf uf cb = Arduino $ command $ WhileRemoteRefW8 r bf uf cb
-
-whileRemoteRefW16 :: RemoteRef Word16 -> (Expr Word16 -> Expr Bool) -> (Expr Word16 -> Expr Word16) -> Arduino () -> Arduino ()
-whileRemoteRefW16 r bf uf cb = Arduino $ command $ WhileRemoteRefW16 r bf uf cb
-
-whileRemoteRefW32 :: RemoteRef Word32 -> (Expr Word32 -> Expr Bool) -> (Expr Word32 -> Expr Word32) -> Arduino () -> Arduino ()
-whileRemoteRefW32 r bf uf cb = Arduino $ command $ WhileRemoteRefW32 r bf uf cb
-
-whileRemoteRefI8 :: RemoteRef Int8 -> (Expr Int8 -> Expr Bool) -> (Expr Int8 -> Expr Int8) -> Arduino () -> Arduino ()
-whileRemoteRefI8 r bf uf cb = Arduino $ command $ WhileRemoteRefI8 r bf uf cb
-
-whileRemoteRefI16 :: RemoteRef Int16 -> (Expr Int16 -> Expr Bool) -> (Expr Int16 -> Expr Int16) -> Arduino () -> Arduino ()
-whileRemoteRefI16 r bf uf cb = Arduino $ command $ WhileRemoteRefI16 r bf uf cb
-
-whileRemoteRefI32 :: RemoteRef Int32 -> (Expr Int32 -> Expr Bool) -> (Expr Int32 -> Expr Int32) -> Arduino () -> Arduino ()
-whileRemoteRefI32 r bf uf cb = Arduino $ command $ WhileRemoteRefI32 r bf uf cb
-
-whileRemoteRefL8 :: RemoteRef [Word8] -> (Expr [Word8] -> Expr Bool) -> (Expr [Word8] -> Expr [Word8]) -> Arduino () -> Arduino ()
-whileRemoteRefL8 r bf uf cb = Arduino $ command $ WhileRemoteRefL8 r bf uf cb
-
-whileRemoteRefFloat :: RemoteRef Float -> (Expr Float -> Expr Bool) -> (Expr Float -> Expr Float) -> Arduino () -> Arduino ()
-whileRemoteRefFloat r bf uf cb = Arduino $ command $ WhileRemoteRefFloat r bf uf cb
-
 ifThenElseUnit :: Bool -> Arduino () -> Arduino () -> Arduino ()
 ifThenElseUnit b tps eps = Arduino $ command $ IfThenElseUnit b tps eps
 
 ifThenElseUnitE :: Expr Bool -> Arduino () -> Arduino () -> Arduino ()
 ifThenElseUnitE be tps eps = Arduino $ command $ IfThenElseUnitE be tps eps
 
-class RemoteReference a where
+class ExprB a => RemoteReference a where
     newRemoteRef          :: Expr a -> Arduino (RemoteRef a)
     readRemoteRef         :: RemoteRef a -> Arduino (Expr a)
     writeRemoteRef        :: RemoteRef a -> Expr a -> Arduino ()
     modifyRemoteRef       :: RemoteRef a -> (Expr a -> Expr a) -> 
                              Arduino ()
-    while                 :: RemoteRef a -> (Expr a -> Expr Bool) -> 
-                             (Expr a -> Expr a) -> Arduino () -> Arduino ()
 
 instance RemoteReference Bool where
     newRemoteRef = newRemoteRefB
     readRemoteRef = readRemoteRefB
     writeRemoteRef = writeRemoteRefB
     modifyRemoteRef = modifyRemoteRefB
-    while = whileRemoteRefB
 
 instance RemoteReference Word8 where
     newRemoteRef = newRemoteRefW8
     readRemoteRef = readRemoteRefW8
     writeRemoteRef = writeRemoteRefW8
     modifyRemoteRef = modifyRemoteRefW8
-    while = whileRemoteRefW8
-
+ 
 instance RemoteReference Word16 where
     newRemoteRef = newRemoteRefW16
     readRemoteRef = readRemoteRefW16
     writeRemoteRef = writeRemoteRefW16
     modifyRemoteRef = modifyRemoteRefW16
-    while = whileRemoteRefW16
 
 instance RemoteReference Word32 where
     newRemoteRef = newRemoteRefW32
     readRemoteRef = readRemoteRefW32
     writeRemoteRef = writeRemoteRefW32
     modifyRemoteRef = modifyRemoteRefW32
-    while = whileRemoteRefW32
 
 instance RemoteReference Int8 where
     newRemoteRef = newRemoteRefI8
     readRemoteRef = readRemoteRefI8
     writeRemoteRef = writeRemoteRefI8
     modifyRemoteRef = modifyRemoteRefI8
-    while = whileRemoteRefI8
 
 instance RemoteReference Int16 where
     newRemoteRef = newRemoteRefI16
     readRemoteRef = readRemoteRefI16
     writeRemoteRef = writeRemoteRefI16
     modifyRemoteRef = modifyRemoteRefI16
-    while = whileRemoteRefI16
 
 instance RemoteReference Int32 where
     newRemoteRef = newRemoteRefI32
     readRemoteRef = readRemoteRefI32
     writeRemoteRef = writeRemoteRefI32
     modifyRemoteRef = modifyRemoteRefI32
-    while = whileRemoteRefI32
 
 instance RemoteReference [Word8] where
     newRemoteRef = newRemoteRefL8
     readRemoteRef = readRemoteRefL8
     writeRemoteRef = writeRemoteRefL8
     modifyRemoteRef = modifyRemoteRefL8
-    while = whileRemoteRefL8
 
 instance RemoteReference Float where
     newRemoteRef = newRemoteRefFloat
     readRemoteRef = readRemoteRefFloat
     writeRemoteRef = writeRemoteRefFloat
     modifyRemoteRef = modifyRemoteRefFloat
-    while = whileRemoteRefFloat
 
 loop :: Arduino () -> Arduino ()
 loop m = Arduino $ command $ Loop m
@@ -572,11 +525,20 @@ data ArduinoProcedure :: * -> * where
      IfThenElseL8E     :: Expr Bool -> Arduino (Expr [Word8]) -> Arduino (Expr [Word8]) -> ArduinoProcedure (Expr [Word8])
      IfThenElseFloat   :: Bool -> Arduino Float -> Arduino Float -> ArduinoProcedure Float
      IfThenElseFloatE  :: Expr Bool -> Arduino (Expr Float) -> Arduino (Expr Float) -> ArduinoProcedure (Expr Float)
-     LiftIO           :: IO a -> ArduinoProcedure a
-     Debug            :: String -> ArduinoProcedure ()
-     DebugE           :: Expr [Word8] -> ArduinoProcedure ()
-     DebugListen      :: ArduinoProcedure ()
-     Die              :: String -> [String] -> ArduinoProcedure ()
+     WhileBoolE        :: (Expr Bool) -> (Expr Bool -> Expr Bool) -> (Expr Bool -> Arduino (Expr Bool)) -> ArduinoProcedure (Expr Bool)
+     WhileWord8E       :: (Expr Word8) -> (Expr Word8 -> Expr Bool) -> (Expr Word8 -> Arduino (Expr Word8)) -> ArduinoProcedure (Expr Word8)
+     WhileWord16E      :: (Expr Word16) -> (Expr Word16 -> Expr Bool) -> (Expr Word16 -> Arduino (Expr Word16)) -> ArduinoProcedure (Expr Word16)
+     WhileWord32E      :: (Expr Word32) -> (Expr Word32 -> Expr Bool) -> (Expr Word32 -> Arduino (Expr Word32)) -> ArduinoProcedure (Expr Word32)
+     WhileInt8E        :: (Expr Int8) -> (Expr Int8 -> Expr Bool) -> (Expr Int8 -> Arduino (Expr Int8)) -> ArduinoProcedure (Expr Int8)
+     WhileInt16E       :: (Expr Int16) -> (Expr Int16 -> Expr Bool) -> (Expr Int16 -> Arduino (Expr Int16)) -> ArduinoProcedure (Expr Int16)
+     WhileInt32E       :: (Expr Int32) -> (Expr Int32 -> Expr Bool) -> (Expr Int32 -> Arduino (Expr Int32)) -> ArduinoProcedure (Expr Int32)
+     WhileFloatE       :: (Expr Float) -> (Expr Float -> Expr Bool) -> (Expr Float -> Arduino (Expr Float)) -> ArduinoProcedure (Expr Float)
+     WhileL8E          :: (Expr [Word8]) -> (Expr [Word8] -> Expr Bool) -> (Expr [Word8] -> Arduino (Expr [Word8])) -> ArduinoProcedure (Expr [Word8])
+     LiftIO            :: IO a -> ArduinoProcedure a
+     Debug             :: String -> ArduinoProcedure ()
+     DebugE            :: Expr [Word8] -> ArduinoProcedure ()
+     DebugListen       :: ArduinoProcedure ()
+     Die               :: String -> [String] -> ArduinoProcedure ()
      -- ToDo: add SPI procedures
 
 -- deriving instance Show a => Show (Procedure a)
@@ -818,45 +780,83 @@ ifThenElseFloat b tps eps = Arduino $ procedure $ IfThenElseFloat b tps eps
 ifThenElseFloatE :: Expr Bool -> Arduino (Expr Float) -> Arduino (Expr Float) -> Arduino (Expr Float)
 ifThenElseFloatE be tps eps = Arduino $ procedure $ IfThenElseFloatE be tps eps
 
-class ArduinoConditional a where
+whileBoolE :: Expr Bool -> (Expr Bool -> Expr Bool) -> (Expr Bool -> Arduino (Expr Bool)) -> Arduino (Expr Bool)
+whileBoolE iv bf bdf  = Arduino $ procedure $ WhileBoolE iv bf bdf
+
+whileWord8E :: Expr Word8 -> (Expr Word8 -> Expr Bool) -> (Expr Word8 -> Arduino (Expr Word8)) -> Arduino (Expr Word8)
+whileWord8E iv bf bdf = Arduino $ procedure $ WhileWord8E iv bf bdf
+
+whileWord16E :: Expr Word16 -> (Expr Word16 -> Expr Bool) -> (Expr Word16 -> Arduino (Expr Word16)) -> Arduino (Expr Word16)
+whileWord16E iv bf bdf = Arduino $ procedure $ WhileWord16E iv bf bdf
+
+whileWord32E :: Expr Word32 -> (Expr Word32 -> Expr Bool) -> (Expr Word32 -> Arduino (Expr Word32)) -> Arduino (Expr Word32)
+whileWord32E iv bf bdf = Arduino $ procedure $ WhileWord32E iv bf bdf
+
+whileInt8E :: Expr Int8 -> (Expr Int8 -> Expr Bool) -> (Expr Int8 -> Arduino (Expr Int8)) -> Arduino (Expr Int8)
+whileInt8E iv bf bdf = Arduino $ procedure $ WhileInt8E iv bf bdf
+
+whileInt16E :: Expr Int16 -> (Expr Int16 -> Expr Bool) -> (Expr Int16 -> Arduino (Expr Int16)) -> Arduino (Expr Int16)
+whileInt16E iv bf bdf = Arduino $ procedure $ WhileInt16E iv bf bdf
+
+whileInt32E :: Expr Int32 -> (Expr Int32 -> Expr Bool) -> (Expr Int32 -> Arduino (Expr Int32)) -> Arduino (Expr Int32)
+whileInt32E iv bf bdf = Arduino $ procedure $ WhileInt32E iv bf bdf
+
+whileL8E :: Expr [Word8] -> (Expr [Word8] -> Expr Bool) -> (Expr [Word8] -> Arduino (Expr [Word8])) -> Arduino (Expr [Word8])
+whileL8E iv bf bdf = Arduino $ procedure $ WhileL8E iv bf bdf
+
+whileFloatE :: Expr Float -> (Expr Float -> Expr Bool) -> (Expr Float -> Arduino (Expr Float)) -> Arduino (Expr Float)
+whileFloatE iv bf bdf = Arduino $ procedure $ WhileFloatE iv bf bdf
+
+class ExprB a => ArduinoConditional a where
     ifThenElse          :: Bool -> Arduino a -> Arduino a -> Arduino a
     ifThenElseE         :: Expr Bool -> Arduino (Expr a) -> Arduino (Expr a) -> Arduino (Expr a)
+    whileE              :: Expr a -> (Expr a -> Expr Bool) -> 
+                             (Expr a -> Arduino (Expr a)) -> Arduino (Expr a)
 
 instance ArduinoConditional Bool where
     ifThenElse = ifThenElseBool
     ifThenElseE = ifThenElseBoolE
+    whileE = whileBoolE
 
 instance ArduinoConditional Word8 where
     ifThenElse = ifThenElseWord8
     ifThenElseE = ifThenElseWord8E
+    whileE = whileWord8E
 
 instance ArduinoConditional Word16 where
     ifThenElse = ifThenElseWord16
     ifThenElseE = ifThenElseWord16E
+    whileE = whileWord16E
 
 instance ArduinoConditional Word32 where
     ifThenElse = ifThenElseWord32
     ifThenElseE = ifThenElseWord32E
+    whileE = whileWord32E
 
 instance ArduinoConditional Int8 where
     ifThenElse = ifThenElseInt8
     ifThenElseE = ifThenElseInt8E
+    whileE = whileInt8E
 
 instance ArduinoConditional Int16 where
     ifThenElse = ifThenElseInt16
     ifThenElseE = ifThenElseInt16E
+    whileE = whileInt16E
 
 instance ArduinoConditional Int32 where
     ifThenElse = ifThenElseInt32
     ifThenElseE = ifThenElseInt32E
+    whileE = whileInt32E
 
 instance ArduinoConditional [Word8] where
     ifThenElse = ifThenElseL8
     ifThenElseE = ifThenElseL8E
+    whileE = whileL8E
 
 instance ArduinoConditional Float where
     ifThenElse = ifThenElseFloat
     ifThenElseE = ifThenElseFloatE
+    whileE = whileFloatE
 
 -- | A response, as returned from the Arduino
 data Response = DelayResp

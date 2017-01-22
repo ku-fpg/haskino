@@ -41,6 +41,12 @@ showArduino a = as
   where
     ((_, as), _) = runState (showCodeBlock a) (ShowState 0 0 "" [] 0)
 
+nextBind :: State ShowState Int
+nextBind = do
+    s <- get
+    put s {ib = (ib s) + 1}
+    return (ib s)
+
 showCommand :: ArduinoCommand -> State ShowState String
 showCommand SystemReset = showCommand0 "SystemReset"
 showCommand (SetPinModeE p m) = showCommand2 "SetPinModeE" p m
@@ -104,24 +110,6 @@ showCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) =
     return $ "ModifyRemoteRefL8 " ++ show i ++ " " ++ show (f (RefList8 i))
 showCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) =
     return $ "ModifyRemoteRefFloat " ++ show i ++ " " ++ show (f (RefFloat i))
-showCommand (WhileRemoteRefB (RemoteRefB i) bf uf cb) =
-    showWhileCommand (RefB i) i bf uf cb
-showCommand (WhileRemoteRefW8 (RemoteRefW8 i) bf uf cb) =
-    showWhileCommand (RefW8 i) i bf uf cb
-showCommand (WhileRemoteRefW16 (RemoteRefW16 i) bf uf cb) =
-    showWhileCommand (RefW16 i) i bf uf cb
-showCommand (WhileRemoteRefW32 (RemoteRefW32 i) bf uf cb) =
-    showWhileCommand (RefW32 i) i bf uf cb
-showCommand (WhileRemoteRefI8 (RemoteRefI8 i) bf uf cb) =
-    showWhileCommand (RefI8 i) i bf uf cb
-showCommand (WhileRemoteRefI16 (RemoteRefI16 i) bf uf cb) =
-    showWhileCommand (RefI16 i) i bf uf cb
-showCommand (WhileRemoteRefI32 (RemoteRefI32 i) bf uf cb) =
-    showWhileCommand (RefI32 i) i bf uf cb
-showCommand (WhileRemoteRefFloat (RemoteRefFloat i) bf uf cb) =
-    showWhileCommand (RefFloat i) i bf uf cb
-showCommand (WhileRemoteRefL8 (RemoteRefL8 i) bf uf cb) = 
-    showWhileCommand (RefList8 i) i bf uf cb
 showCommand (Loop cb) = do
     (_, c) <- showCodeBlock cb
     return $ "Loop\n" ++ c
@@ -158,11 +146,6 @@ showCommand2 p e1 e2 = showCommandAndArgs [p, show e1, show e2]
 
 showCommand3 :: (Show a, Show b, Show c) => String -> a -> b -> c -> State ShowState String
 showCommand3 p e1 e2 e3 = showCommandAndArgs [p, show e1, show e2, show e3]
-
-showWhileCommand :: Show a => Expr a -> Int -> (Expr a -> Expr Bool) -> (Expr a -> Expr a) -> Arduino () -> State ShowState String
-showWhileCommand rr i bf uf cb = do
-    (_, sc) <- showCodeBlock cb
-    return $ "While " ++ show rr ++ " " ++ show i ++ " (" ++ show (bf rr) ++ ") (" ++ show (uf rr) ++ ")\n" ++ sc
 
 addToBlock :: String -> State ShowState ()
 addToBlock bs = do
@@ -255,6 +238,13 @@ showCodeBlock (Arduino commands) = do
           s <- get
           addToBlock $ "RemBind " ++ show (ib s) ++ " <- " ++ "If " ++ show b ++ " Then\n" ++ cs1' ++ replicate (indent s) ' ' ++ "Else\n" ++ cs2'
           return $ ib s
+
+      showWhileProcedure :: Show a => Int -> Expr a -> Expr a -> (Expr a -> Expr Bool) -> (Expr a -> Arduino (Expr a)) -> State ShowState ()
+      showWhileProcedure b be iv bf bdf = do
+          s <- get
+          (r, cs) <- showCodeBlock (bdf be)
+          let cs' = cs ++ replicate (indent s + 2) ' ' ++ "return " ++ show r ++ "\n"
+          addToBlock $ "RemBind " ++ show b ++ " <- " ++ "While (" ++ show iv ++ ") (" ++ show (bf be) ++ ")\n" ++ cs'
 
       showNewRef :: String -> Expr a -> b -> State ShowState b
       showNewRef p e r = do
@@ -388,11 +378,78 @@ showCodeBlock (Arduino commands) = do
       showProcedure (NewRemoteRefFloat e) = do
           s <- get
           showNewRef "NewRemoteRefFloat" e (RemoteRefFloat (ix s))
-      -- ToDo: Add cases for expression ifThenElse's
       showProcedure (IfThenElseBoolE e cb1 cb2) = do
           i <- showIfThenElseProcedure e cb1 cb2
           return $ RemBindB i
-
+      showProcedure (IfThenElseWord8E e cb1 cb2) = do
+          i <- showIfThenElseProcedure e cb1 cb2
+          return $ RemBindW8 i
+      showProcedure (IfThenElseWord16E e cb1 cb2) = do
+          i <- showIfThenElseProcedure e cb1 cb2
+          return $ RemBindW16 i
+      showProcedure (IfThenElseWord32E e cb1 cb2) = do
+          i <- showIfThenElseProcedure e cb1 cb2
+          return $ RemBindW32 i
+      showProcedure (IfThenElseInt8E e cb1 cb2) = do
+          i <- showIfThenElseProcedure e cb1 cb2
+          return $ RemBindI8 i
+      showProcedure (IfThenElseInt16E e cb1 cb2) = do
+          i <- showIfThenElseProcedure e cb1 cb2
+          return $ RemBindI16 i
+      showProcedure (IfThenElseInt32E e cb1 cb2) = do
+          i <- showIfThenElseProcedure e cb1 cb2
+          return $ RemBindI32 i
+      showProcedure (IfThenElseL8E e cb1 cb2) = do
+          i <- showIfThenElseProcedure e cb1 cb2
+          return $ RemBindList8 i
+      showProcedure (IfThenElseFloatE e cb1 cb2) = do
+          i <- showIfThenElseProcedure e cb1 cb2
+          return $ RemBindFloat i
+      showProcedure (WhileBoolE iv bf bdf) = do
+          i <- nextBind
+          let bi = RemBindB i 
+          showWhileProcedure i bi iv bf bdf
+          return bi
+      showProcedure (WhileWord8E iv bf bdf) = do
+          i <- nextBind
+          let bi = RemBindW8 i 
+          showWhileProcedure i bi iv bf bdf
+          return bi
+      showProcedure (WhileWord16E iv bf bdf) = do
+          i <- nextBind
+          let bi = RemBindW16 i 
+          showWhileProcedure i bi iv bf bdf
+          return bi
+      showProcedure (WhileWord32E iv bf bdf) = do
+          i <- nextBind
+          let bi = RemBindW32 i 
+          showWhileProcedure i bi iv bf bdf
+          return bi
+      showProcedure (WhileInt8E iv bf bdf) = do
+          i <- nextBind
+          let bi = RemBindI8 i 
+          showWhileProcedure i bi iv bf bdf
+          return bi
+      showProcedure (WhileInt16E iv bf bdf) = do
+          i <- nextBind
+          let bi = RemBindI16 i 
+          showWhileProcedure i bi iv bf bdf
+          return bi
+      showProcedure (WhileInt32E iv bf bdf) = do
+          i <- nextBind
+          let bi = RemBindI32 i 
+          showWhileProcedure i bi iv bf bdf
+          return bi
+      showProcedure (WhileL8E iv bf bdf) = do
+          i <- nextBind
+          let bi = RemBindList8 i 
+          showWhileProcedure i bi iv bf bdf
+          return bi
+      showProcedure (WhileFloatE iv bf bdf) = do
+          i <- nextBind
+          let bi = RemBindFloat i 
+          showWhileProcedure i bi iv bf bdf
+          return bi
       showProcedure (DebugE ws) = showShallow1Procedure "DebugE" ws ()
       showProcedure (Debug s) = showShallow1Procedure "Debug" s ()
       showProcedure DebugListen = showShallow0Procedure "DebugListen" ()

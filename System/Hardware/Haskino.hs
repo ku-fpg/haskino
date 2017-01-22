@@ -50,7 +50,7 @@ module System.Hardware.Haskino (
   , stepperSetSpeedE, stepperStep ,stepperStepE 
   -- ** Control structures
   -- ToDo: Cleanup IfThenElse's
-  , loop, while, ifThenElse, ifThenElseE,  ifThenElseUnit, ifThenElseUnitE, loopE, forInE
+  , loop, whileE, ifThenElse, ifThenElseE,  ifThenElseUnit, ifThenElseUnitE, loopE, forInE
   , ifThenElseBool, ifThenElseBoolE
   -- ** Expressions
   , Expr(..), RemoteRef, lit, newRemoteRef, readRemoteRef, writeRemoteRef
