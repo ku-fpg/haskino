@@ -540,8 +540,10 @@ packageWhileProcedure :: RefType -> Int -> Expr a -> Expr a -> (Expr a -> Expr B
 packageWhileProcedure rt ib be iv bf bdf = do
     (r, pc) <- packageCodeBlock $ (bdf be)
     let pc' = B.append pc $ buildCommand EXPR_CMD_RET $ (fromIntegral ib) : packageExpr r
-    w <- addCommand BC_CMD_WHILE ([fromIntegral $ fromEnum rt, fromIntegral ib] ++ (packageExpr iv) ++ (packageExpr (bf be)))
+    w <- addCommand BC_CMD_WHILE ([fromIntegral ib, fromIntegral $ length ive] ++ ive ++ (packageExpr (bf be)))
     return $ B.append w pc'
+  where
+    ive = packageExpr iv
 
 packageRemoteBinding' :: RefType -> Expr a -> State CommandState B.ByteString
 packageRemoteBinding' rt e = do
@@ -809,6 +811,24 @@ unpackageResponse (cmdWord:args)
   | Right cmd <- getFirmwareReply cmdWord
   = case (cmd, args) of
       (BC_RESP_DELAY, [])               -> DelayResp
+      (BC_RESP_IF_THEN_ELSE , [l,b]) | l == exprCmdVal EXPR_BOOL EXPR_LIT
+                                      -> IfThenElseBReply (if b == 0 then False else True)
+      (BC_RESP_IF_THEN_ELSE , [l,b]) | l == exprCmdVal EXPR_WORD8 EXPR_LIT
+                                      -> IfThenElseW8Reply b
+      (BC_RESP_IF_THEN_ELSE , [l,b1,b2]) | l == exprCmdVal EXPR_WORD16 EXPR_LIT
+                                      -> IfThenElseW16Reply (bytesToWord16 (b1, b2))
+      (BC_RESP_IF_THEN_ELSE , [l,b1,b2,b3,b4]) | l == exprCmdVal EXPR_WORD32 EXPR_LIT
+                                      -> IfThenElseW32Reply (bytesToWord32 (b1, b2, b3, b4))
+      (BC_RESP_IF_THEN_ELSE , [l,b]) | l == exprCmdVal EXPR_INT8 EXPR_LIT
+                                      -> IfThenElseI8Reply $ fromIntegral b
+      (BC_RESP_IF_THEN_ELSE , [l,b1,b2]) | l == exprCmdVal EXPR_INT16 EXPR_LIT
+                                      -> IfThenElseI16Reply $ fromIntegral (bytesToWord16 (b1, b2))
+      (BC_RESP_IF_THEN_ELSE , [l,b1,b2,b3,b4]) | l == exprCmdVal EXPR_INT32 EXPR_LIT
+                                      -> IfThenElseI32Reply $ fromIntegral (bytesToWord32 (b1, b2, b3, b4))
+      (BC_RESP_IF_THEN_ELSE , l:_:bs) | l == exprLCmdVal EXPRL_LIT
+                                      -> IfThenElseL8Reply bs
+      (BC_RESP_IF_THEN_ELSE , [l,b1,b2,b3,b4]) | l == exprFCmdVal EXPRF_LIT
+                                      -> IfThenElseFloatReply $ bytesToFloat (b1, b2, b3, b4)
       (BS_RESP_DEBUG, [])               -> DebugResp
       (BS_RESP_VERSION, [majV, minV])   -> Firmware (bytesToWord16 (majV,minV))
       (BS_RESP_TYPE, [p])               -> ProcessorType p
@@ -910,4 +930,13 @@ parseQueryResult (ReadRemoteRefI16 _) (ReadRefI16Reply r) = Just $ lit r
 parseQueryResult (ReadRemoteRefI32 _) (ReadRefI32Reply r) = Just $ lit r
 parseQueryResult (ReadRemoteRefL8 _) (ReadRefL8Reply r) = Just $ lit r
 parseQueryResult (ReadRemoteRefFloat _) (ReadRefFloatReply r) = Just $ lit r
+parseQueryResult (IfThenElseBoolE _ _ _) (IfThenElseBReply r) = Just $ lit r
+parseQueryResult (IfThenElseWord8E _ _ _) (IfThenElseW8Reply r) = Just $ lit r
+parseQueryResult (IfThenElseWord16E _ _ _) (IfThenElseW16Reply r) = Just $ lit r
+parseQueryResult (IfThenElseWord32E _ _ _) (IfThenElseW32Reply r) = Just $ lit r
+parseQueryResult (IfThenElseInt8E _ _ _) (IfThenElseI8Reply r) = Just $ lit r
+parseQueryResult (IfThenElseInt16E _ _ _) (IfThenElseI16Reply r) = Just $ lit r
+parseQueryResult (IfThenElseInt32E _ _ _) (IfThenElseI32Reply r) = Just $ lit r
+parseQueryResult (IfThenElseL8E _ _ _) (IfThenElseL8Reply r) = Just $ lit r
+parseQueryResult (IfThenElseFloatE _ _ _) (IfThenElseFloatReply r) = Just $ lit r
 parseQueryResult q r = Nothing

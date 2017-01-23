@@ -888,6 +888,15 @@ data Response = DelayResp
               | ReadRefI32Reply Int32
               | ReadRefL8Reply [Word8]
               | ReadRefFloatReply Float
+              | IfThenElseBReply Bool
+              | IfThenElseW8Reply Word8
+              | IfThenElseW16Reply Word16
+              | IfThenElseW32Reply Word32
+              | IfThenElseI8Reply Int8
+              | IfThenElseI16Reply Int16
+              | IfThenElseI32Reply Int32
+              | IfThenElseL8Reply [Word8]
+              | IfThenElseFloatReply Float
               | DebugResp
               | FailedNewRef
               | Unimplemented (Maybe String) [Word8] -- ^ Represents messages currently unsupported
@@ -1078,6 +1087,8 @@ data RefType = REF_BOOL
 -- | Firmware replies, see: 
 -- | https://github.com/ku-fpg/haskino/wiki/Haskino-Firmware-Protocol-Definition
 data FirmwareReply =  BC_RESP_DELAY
+                   |  BC_RESP_IF_THEN_ELSE
+                   |  BC_RESP_WHILE
                    |  BS_RESP_VERSION
                    |  BS_RESP_TYPE
                    |  BS_RESP_MICROS
@@ -1104,6 +1115,8 @@ data FirmwareReply =  BC_RESP_DELAY
 
 getFirmwareReply :: Word8 -> Either Word8 FirmwareReply
 getFirmwareReply 0x18 = Right BC_RESP_DELAY
+getFirmwareReply 0x19 = Right BC_RESP_IF_THEN_ELSE
+getFirmwareReply 0x1A = Right BC_RESP_WHILE
 getFirmwareReply 0x28 = Right BS_RESP_VERSION
 getFirmwareReply 0x29 = Right BS_RESP_TYPE
 getFirmwareReply 0x2A = Right BS_RESP_MICROS

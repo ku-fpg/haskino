@@ -18,6 +18,15 @@ static bool handleLoop(int size, const byte *msg, CONTEXT *context);
 static bool handleWhile(int size, const byte *msg, CONTEXT *context);
 static bool handleIfThenElse(int size, const byte *msg, CONTEXT *context);
 static bool handleForIn(int size, const byte *msg, CONTEXT *context);
+static void storeBoolBind(byte *expr, CONTEXT *context, byte bind);
+static void storeWord8Bind(byte *expr, CONTEXT *context, byte bind);
+static void storeWord16Bind(byte *expr, CONTEXT *context, byte bind);
+static void storeWord32Bind(byte *expr, CONTEXT *context, byte bind);
+static void storeInt8Bind(byte *expr, CONTEXT *context, byte bind);
+static void storeInt16Bind(byte *expr, CONTEXT *context, byte bind);
+static void storeInt32Bind(byte *expr, CONTEXT *context, byte bind);
+static void storeFloatBind(byte *expr, CONTEXT *context, byte bind);
+static void storeList8Bind(byte *expr, CONTEXT *context, byte bind);
 
 bool parseBoardControlMessage(int size, const byte *msg, CONTEXT *context)
     {
@@ -151,17 +160,62 @@ static bool handleForIn(int size, const byte *msg, CONTEXT *context)
 
 static bool handleWhile(int size, const byte *msg, CONTEXT *context)
     {
-    byte *expr = (byte *) &msg[1];
-    byte refIndex = evalWord8Expr(&expr, context);
-    byte *condExpr = expr;
-    bool condition = evalBoolExpr(&expr, context);
-    byte updateLength = *expr++;
-    byte *updateExpr = expr;
-    byte exprType = *updateExpr >> EXPR_TYPE_SHFT;
-    byte *codeBlock = (expr + updateLength);
-    int whileSize = size - (expr + updateLength - msg);
+    byte bind = msg[1];
+    byte *expr = (byte *) &msg[2];
     bool rescheduled = (context->task && context->task->rescheduled);
+    byte initLength;
+    byte *initExpr;
+    byte *condExpr;
+    bool condition;
+    byte exprType;
+    byte *codeBlock;
+    int whileSize;
+    byte whileReply[5];
     
+    initLength = *expr++;
+    initExpr = expr;
+    exprType = *initExpr >> EXPR_TYPE_SHFT;
+    expr += initLength;
+    condExpr = expr;
+
+    if (!rescheduled)
+        {
+        switch (exprType)
+            {
+            case REF_BOOL:
+                storeBoolBind(initExpr, context, bind);
+                break;
+            case REF_WORD8:
+                storeWord8Bind(initExpr, context, bind);
+                break;
+            case REF_WORD16:
+                storeWord16Bind(initExpr, context, bind);
+                break;
+            case REF_WORD32:
+                storeWord32Bind(initExpr, context, bind);
+                break;
+            case REF_INT8:
+                storeInt8Bind(initExpr, context, bind);
+                break;
+            case REF_INT16:
+                storeInt16Bind(initExpr, context, bind);
+                break;
+            case REF_INT32:
+                storeInt32Bind(initExpr, context, bind);
+                break;
+            case REF_LIST8:
+                storeList8Bind(initExpr, context, bind);
+                break;
+            case REF_FLOAT:
+                storeFloatBind(initExpr, context, bind);
+                break;
+            }
+        }
+
+    condition = evalBoolExpr(&expr, context);
+    codeBlock = expr;
+    whileSize = size - (expr - msg);
+
     // If we were rescheduled, always enter the loop to rerun code block
     while (condition || rescheduled)
         {
@@ -170,40 +224,15 @@ static bool handleWhile(int size, const byte *msg, CONTEXT *context)
              return true;
         }
 
-        expr = updateExpr;
-        switch (exprType)
-            {
-            case REF_BOOL:
-                storeBoolRef(expr, context, refIndex);
-                break;
-            case REF_WORD8:
-                storeWord8Ref(expr, context, refIndex);
-                break;
-            case REF_WORD16:
-                storeWord16Ref(expr, context, refIndex);
-                break;
-            case REF_WORD32:
-                storeWord32Ref(expr, context, refIndex);
-                break;
-            case REF_INT8:
-                storeInt8Ref(expr, context, refIndex);
-                break;
-            case REF_INT16:
-                storeInt16Ref(expr, context, refIndex);
-                break;
-            case REF_INT32:
-                storeInt32Ref(expr, context, refIndex);
-                break;
-            case EXPR_LIST8:
-                storeList8Ref(expr, context, refIndex);
-                break;
-            }
         expr = condExpr;
         condition = evalBoolExpr(&expr, context);
         }
 
+    sendTypeReply(exprType, &context->bind[bind * BIND_SPACING], whileReply, 
+                  BC_RESP_WHILE, context, bind);
+
     return false;
-    }
+}
 
 static bool handleIfThenElse(int size, const byte *msg, CONTEXT *context)
     {
@@ -216,9 +245,7 @@ static bool handleIfThenElse(int size, const byte *msg, CONTEXT *context)
     byte *codeBlock = expr;
     bool test;
     bool rescheduled = context->task && context->task->rescheduled;
-    byte ifReply[2];
-    void *resultPtr;
-    byte *lVal;
+    byte ifReply[5];
 
     if (rescheduled)
         {
@@ -242,58 +269,92 @@ static bool handleIfThenElse(int size, const byte *msg, CONTEXT *context)
         rescheduled = runCodeBlock(elseSize, codeBlock + thenSize, context);
         }
 
-    resultPtr = &context->bind[bind * BIND_SPACING];
-
-    switch (type)
-        {
-        case REF_BOOL:
-            ifReply[0] = EXPR(EXPR_BOOL, EXPR_LIT);
-            ifReply[1] = *((bool *) resultPtr);
-            sendReply(sizeof(bool)+1, EXPR_RESP_RET, ifReply, context, bind);
-            break;
-        case REF_WORD8:
-            ifReply[0] = EXPR(EXPR_WORD8, EXPR_LIT);
-            ifReply[1] = *((uint8_t *) resultPtr);
-            sendReply(sizeof(uint8_t)+1, EXPR_RESP_RET, ifReply, context, bind);
-            break;
-        case REF_WORD16:
-            ifReply[0] = EXPR(EXPR_WORD16, EXPR_LIT);
-            memcpy(&ifReply[1], (byte *) resultPtr, sizeof(uint16_t));
-            sendReply(sizeof(uint16_t)+1, EXPR_RESP_RET, ifReply, context, bind);
-            break;
-        case REF_WORD32:
-            ifReply[0] = EXPR(EXPR_WORD32, EXPR_LIT);
-            memcpy(&ifReply[1], (byte *) resultPtr, sizeof(uint32_t));
-            sendReply(sizeof(uint32_t)+1, EXPR_RESP_RET, ifReply, context, bind);
-            break;
-        case REF_INT8:
-            ifReply[0] = EXPR(EXPR_INT8, EXPR_LIT);
-            ifReply[1] = *((int8_t *) resultPtr);
-            sendReply(sizeof(int8_t)+1, EXPR_RESP_RET, ifReply, context, bind);
-            break;
-        case REF_INT16:
-            ifReply[0] = EXPR(EXPR_INT16, EXPR_LIT);
-            memcpy(&ifReply[1], (byte *) resultPtr, sizeof(int16_t));
-            sendReply(sizeof(int16_t)+1, EXPR_RESP_RET, ifReply, context, bind);
-            break;
-        case REF_INT32:
-            ifReply[0] = EXPR(EXPR_INT32, EXPR_LIT);
-            memcpy(&ifReply[1], (byte *) resultPtr, sizeof(int32_t));
-            sendReply(sizeof(int32_t)+1, EXPR_RESP_RET, ifReply, context, bind);
-            break;
-        case REF_LIST8:
-            lVal = (byte *) resultPtr;
-            sendReply(lVal[1]+2, EXPR_RESP_RET, lVal, context, bind);
-            break;
-        case REF_FLOAT:
-            ifReply[0] = EXPR_F(EXPR_LIT);
-            memcpy(&ifReply[1], (byte *) resultPtr, sizeof(float));
-            sendReply(sizeof(float)+1, EXPR_RESP_RET, ifReply, context, bind);
-            break;
-        default:
-            break;
-        }
+    sendTypeReply(type, &context->bind[bind * BIND_SPACING], ifReply, 
+                  BC_RESP_IF_THEN_ELSE, context, bind);
 
     return rescheduled;
     }
+
+static void storeBoolBind(byte *expr, CONTEXT *context, byte bind)
+    {
+    bool bVal = evalBoolExpr(&expr, context);
+
+    *((bool *) &context->bind[bind * BIND_SPACING]) = bVal;
+    }
+
+static void storeWord8Bind(byte *expr, CONTEXT *context, byte bind)
+    {
+    uint8_t w8Val = evalWord8Expr(&expr, context);
+
+    *((uint8_t *) &context->bind[bind * BIND_SPACING]) = w8Val;
+    }
+
+static void storeWord16Bind(byte *expr, CONTEXT *context, byte bind)
+    {
+    uint16_t w16Val = evalWord16Expr(&expr, context);
+
+    *((uint16_t *) &context->bind[bind * BIND_SPACING]) = w16Val;
+    }
+
+static void storeWord32Bind(byte *expr, CONTEXT *context, byte bind)
+    {
+    uint32_t w32Val = evalWord32Expr(&expr, context);
+
+    *((uint32_t *) &context->bind[bind * BIND_SPACING]) = w32Val;
+    }
+
+static void storeInt8Bind(byte *expr, CONTEXT *context, byte bind)
+    {
+    int8_t i8Val = evalInt8Expr(&expr, context);
+
+    *((int8_t *) &context->bind[bind * BIND_SPACING]) = i8Val;
+    }
+
+static void storeInt16Bind(byte *expr, CONTEXT *context, byte bind)
+    {
+    int16_t i16Val = evalInt16Expr(&expr, context);
+
+    *((int16_t *) &context->bind[bind * BIND_SPACING]) = i16Val;
+    }
+
+static void storeInt32Bind(byte *expr, CONTEXT *context, byte bind)
+    {
+    int32_t i32Val = evalInt32Expr(&expr, context);
+
+    *((int32_t *) &context->bind[bind * BIND_SPACING]) = i32Val;
+    }
+
+static void storeFloatBind(byte *expr, CONTEXT *context, byte bind)
+    {
+    float fVal = evalFloatExpr(&expr, context);
+
+    *((float *) &context->bind[bind * BIND_SPACING]) = fVal;
+    }
+
+static void storeList8Bind(byte *expr, CONTEXT *context, byte bind)
+    {
+    bool alloc;
+    byte *lVal = evalList8Expr(&expr, context, &alloc);
+    byte **bindPtr = (byte **) &context->bind[bind * BIND_SPACING];
+
+    if (*bindPtr != NULL)
+        {
+        free(*bindPtr);
+        *bindPtr = NULL;
+        }
+
+    if (alloc)
+        *bindPtr = lVal;
+    else
+        {
+        // Need to copy expression
+        byte *newLVal = (byte *) malloc(lVal[1]+2);
+        if (newLVal)
+            {
+            memcpy(newLVal, lVal, lVal[1]+2);
+            *bindPtr = newLVal;
+            }
+        }    
+    }
+
 

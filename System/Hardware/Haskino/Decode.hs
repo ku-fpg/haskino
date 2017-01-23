@@ -108,15 +108,18 @@ decodeCmdArgs BC_CMD_SET_PIN_MODE _ xs = decodeExprCmd 1 xs
 decodeCmdArgs BC_CMD_DELAY_MILLIS _ xs = decodeExprProc 1 xs
 decodeCmdArgs BC_CMD_DELAY_MICROS _ xs = decodeExprProc 1 xs
 decodeCmdArgs BC_CMD_LOOP _ xs = ("\n" ++ (decodeCodeBlock xs "Loop"), B.empty)
-decodeCmdArgs BC_CMD_WHILE _ xs = (dec ++ dec' ++ "\n" ++ dec'', B.empty)
+decodeCmdArgs BC_CMD_WHILE _ Empty = decodeErr B.empty
+decodeCmdArgs BC_CMD_WHILE _ xs | B.length xs < 5 = decodeErr xs
+decodeCmdArgs BC_CMD_WHILE _ (b :< sz :< xs) = (prc ++ dec ++ "\n" ++ dec', B.empty)
   where
+    prc = " (Bind " ++ show b ++ ") <-"
     (dec, xs') = decodeExprCmd 2 xs
-    (dec', xs'') = decodeExprCmd 1 (B.tail xs')
-    dec'' = decodeCodeBlock xs'' "While"
+    dec' = decodeCodeBlock xs' "While"
 decodeCmdArgs BC_CMD_IF_THEN_ELSE _ Empty = decodeErr B.empty
 decodeCmdArgs BC_CMD_IF_THEN_ELSE _ xs | B.length xs < 5 = decodeErr xs
-decodeCmdArgs BC_CMD_IF_THEN_ELSE _ (rt :< b :< xs) = (dec ++ "\n" ++ dec' ++ dec'', B.empty)
+decodeCmdArgs BC_CMD_IF_THEN_ELSE _ (rt :< b :< xs) = (cmd ++ dec ++ "\n" ++ dec' ++ dec'', B.empty)
   where
+    cmd = "-" ++ (show ((toEnum (fromIntegral rt))::RefType)) ++ " (Bind " ++ show b ++ ") <-"
     thenSize = bytesToWord16 (B.head xs, B.head (B.tail xs))
     (dec, xs') = decodeExprCmd 1 (B.drop 2 xs)
     dec' = decodeCodeBlock (B.take (fromIntegral thenSize) xs') "Then"
