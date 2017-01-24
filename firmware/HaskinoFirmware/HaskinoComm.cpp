@@ -76,6 +76,9 @@ bool parseMessage(int size, const byte *msg, CONTEXT *context)
         case REF_CMD_TYPE:
             return parseRefMessage(size, msg, context);
             break;
+        case EXPR_CMD_TYPE:
+            return parseExprMessage(size, msg, context);
+            break;
         }
         return false;
     }

@@ -897,6 +897,15 @@ data Response = DelayResp
               | IfThenElseI32Reply Int32
               | IfThenElseL8Reply [Word8]
               | IfThenElseFloatReply Float
+              | WhileBReply Bool
+              | WhileW8Reply Word8
+              | WhileW16Reply Word16
+              | WhileW32Reply Word32
+              | WhileI8Reply Int8
+              | WhileI16Reply Int16
+              | WhileI32Reply Int32
+              | WhileL8Reply [Word8]
+              | WhileFloatReply Float
               | DebugResp
               | FailedNewRef
               | Unimplemented (Maybe String) [Word8] -- ^ Represents messages currently unsupported

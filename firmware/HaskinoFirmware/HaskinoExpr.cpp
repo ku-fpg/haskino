@@ -1,8 +1,24 @@
 #include <Arduino.h>
 #include "HaskinoConfig.h"
 #include "HaskinoComm.h"
+#include "HaskinoCommands.h"
 #include "HaskinoExpr.h"
 #include "HaskinoRefs.h"
+
+static bool handleExprRet(int size, const byte *msg, CONTEXT *context);
+
+bool parseExprMessage(int size, const byte *msg, CONTEXT *context)
+    {
+    byte cmd = msg[0];
+
+    switch (cmd) 
+        {
+        case EXPR_CMD_RET:
+            handleExprRet(size, msg, context);
+            break;
+        }
+    return false;
+    }
 
 bool evalBoolExpr(byte **ppExpr, CONTEXT *context) 
     {
@@ -1905,3 +1921,124 @@ uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc)
     return listMem;
     }
 
+static bool handleExprRet(int size, const byte *msg, CONTEXT *context)
+    {
+    byte bind = msg[1];
+    byte *expr = (byte *) &msg[2];
+    byte exprType = *expr >> EXPR_TYPE_SHFT;
+ 
+    switch (exprType)
+        {
+        case REF_BOOL:
+            storeBoolBind(expr, context, bind);
+            break;
+        case REF_WORD8:
+            storeWord8Bind(expr, context, bind);
+            break;
+        case REF_WORD16:
+            storeWord16Bind(expr, context, bind);
+            break;
+        case REF_WORD32:
+            storeWord32Bind(expr, context, bind);
+            break;
+        case REF_INT8:
+            storeInt8Bind(expr, context, bind);
+            break;
+        case REF_INT16:
+            storeInt16Bind(expr, context, bind);
+            break;
+        case REF_INT32:
+            storeInt32Bind(expr, context, bind);
+            break;
+        case REF_LIST8:
+            storeList8Bind(expr, context, bind);
+            break;
+        case REF_FLOAT:
+            storeFloatBind(expr, context, bind);
+            break;
+        }
+
+    return false;
+    }
+
+ void storeBoolBind(byte *expr, CONTEXT *context, byte bind)
+    {
+    bool bVal = evalBoolExpr(&expr, context);
+
+    *((bool *) &context->bind[bind * BIND_SPACING]) = bVal;
+    }
+
+ void storeWord8Bind(byte *expr, CONTEXT *context, byte bind)
+    {
+    uint8_t w8Val = evalWord8Expr(&expr, context);
+
+    *((uint8_t *) &context->bind[bind * BIND_SPACING]) = w8Val;
+    }
+
+ void storeWord16Bind(byte *expr, CONTEXT *context, byte bind)
+    {
+    uint16_t w16Val = evalWord16Expr(&expr, context);
+
+    *((uint16_t *) &context->bind[bind * BIND_SPACING]) = w16Val;
+    }
+
+ void storeWord32Bind(byte *expr, CONTEXT *context, byte bind)
+    {
+    uint32_t w32Val = evalWord32Expr(&expr, context);
+
+    *((uint32_t *) &context->bind[bind * BIND_SPACING]) = w32Val;
+    }
+
+ void storeInt8Bind(byte *expr, CONTEXT *context, byte bind)
+    {
+    int8_t i8Val = evalInt8Expr(&expr, context);
+
+    *((int8_t *) &context->bind[bind * BIND_SPACING]) = i8Val;
+    }
+
+ void storeInt16Bind(byte *expr, CONTEXT *context, byte bind)
+    {
+    int16_t i16Val = evalInt16Expr(&expr, context);
+
+    *((int16_t *) &context->bind[bind * BIND_SPACING]) = i16Val;
+    }
+
+ void storeInt32Bind(byte *expr, CONTEXT *context, byte bind)
+    {
+    int32_t i32Val = evalInt32Expr(&expr, context);
+
+    *((int32_t *) &context->bind[bind * BIND_SPACING]) = i32Val;
+    }
+
+ void storeFloatBind(byte *expr, CONTEXT *context, byte bind)
+    {
+    float fVal = evalFloatExpr(&expr, context);
+
+    *((float *) &context->bind[bind * BIND_SPACING]) = fVal;
+    }
+
+ void storeList8Bind(byte *expr, CONTEXT *context, byte bind)
+    {
+    bool alloc;
+    byte *lVal = evalList8Expr(&expr, context, &alloc);
+    byte **bindPtr = (byte **) &context->bind[bind * BIND_SPACING];
+
+    if (*bindPtr != NULL)
+        {
+        free(*bindPtr);
+        *bindPtr = NULL;
+        }
+
+    if (alloc)
+        *bindPtr = lVal;
+    else
+        {
+        // Need to copy expression
+        byte *newLVal = (byte *) malloc(lVal[1]+2);
+        if (newLVal)
+            {
+            memcpy(newLVal, lVal, lVal[1]+2);
+            *bindPtr = newLVal;
+            }
+        }    
+    }

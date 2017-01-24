@@ -829,6 +829,24 @@ unpackageResponse (cmdWord:args)
                                       -> IfThenElseL8Reply bs
       (BC_RESP_IF_THEN_ELSE , [l,b1,b2,b3,b4]) | l == exprFCmdVal EXPRF_LIT
                                       -> IfThenElseFloatReply $ bytesToFloat (b1, b2, b3, b4)
+      (BC_RESP_WHILE , [l,b]) | l == exprCmdVal EXPR_BOOL EXPR_LIT
+                                      -> WhileBReply (if b == 0 then False else True)
+      (BC_RESP_WHILE , [l,b]) | l == exprCmdVal EXPR_WORD8 EXPR_LIT
+                                      -> WhileW8Reply b
+      (BC_RESP_WHILE , [l,b1,b2]) | l == exprCmdVal EXPR_WORD16 EXPR_LIT
+                                      -> WhileW16Reply (bytesToWord16 (b1, b2))
+      (BC_RESP_WHILE , [l,b1,b2,b3,b4]) | l == exprCmdVal EXPR_WORD32 EXPR_LIT
+                                      -> WhileW32Reply (bytesToWord32 (b1, b2, b3, b4))
+      (BC_RESP_WHILE , [l,b]) | l == exprCmdVal EXPR_INT8 EXPR_LIT
+                                      -> WhileI8Reply $ fromIntegral b
+      (BC_RESP_WHILE , [l,b1,b2]) | l == exprCmdVal EXPR_INT16 EXPR_LIT
+                                      -> WhileI16Reply $ fromIntegral (bytesToWord16 (b1, b2))
+      (BC_RESP_WHILE , [l,b1,b2,b3,b4]) | l == exprCmdVal EXPR_INT32 EXPR_LIT
+                                      -> WhileI32Reply $ fromIntegral (bytesToWord32 (b1, b2, b3, b4))
+      (BC_RESP_WHILE , l:_:bs) | l == exprLCmdVal EXPRL_LIT
+                                      -> WhileL8Reply bs
+      (BC_RESP_WHILE , [l,b1,b2,b3,b4]) | l == exprFCmdVal EXPRF_LIT
+                                      -> WhileFloatReply $ bytesToFloat (b1, b2, b3, b4)
       (BS_RESP_DEBUG, [])               -> DebugResp
       (BS_RESP_VERSION, [majV, minV])   -> Firmware (bytesToWord16 (majV,minV))
       (BS_RESP_TYPE, [p])               -> ProcessorType p
@@ -939,4 +957,13 @@ parseQueryResult (IfThenElseInt16E _ _ _) (IfThenElseI16Reply r) = Just $ lit r
 parseQueryResult (IfThenElseInt32E _ _ _) (IfThenElseI32Reply r) = Just $ lit r
 parseQueryResult (IfThenElseL8E _ _ _) (IfThenElseL8Reply r) = Just $ lit r
 parseQueryResult (IfThenElseFloatE _ _ _) (IfThenElseFloatReply r) = Just $ lit r
+parseQueryResult (WhileBoolE _ _ _) (WhileBReply r) = Just $ lit r
+parseQueryResult (WhileWord8E _ _ _) (WhileW8Reply r) = Just $ lit r
+parseQueryResult (WhileWord16E _ _ _) (WhileW16Reply r) = Just $ lit r
+parseQueryResult (WhileWord32E _ _ _) (WhileW32Reply r) = Just $ lit r
+parseQueryResult (WhileInt8E _ _ _) (WhileI8Reply r) = Just $ lit r
+parseQueryResult (WhileInt16E _ _ _) (WhileI16Reply r) = Just $ lit r
+parseQueryResult (WhileInt32E _ _ _) (WhileI32Reply r) = Just $ lit r
+parseQueryResult (WhileL8E _ _ _) (WhileL8Reply r) = Just $ lit r
+parseQueryResult (WhileFloatE _ _ _) (WhileFloatReply r) = Just $ lit r
 parseQueryResult q r = Nothing
