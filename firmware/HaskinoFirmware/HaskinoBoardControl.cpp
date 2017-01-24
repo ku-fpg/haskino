@@ -231,7 +231,7 @@ static bool handleIfThenElse(int size, const byte *msg, CONTEXT *context)
     byte bind = msg[2];
     uint16_t thenSize, elseSize;
     memcpy(&thenSize, &msg[3], sizeof(thenSize));
-    byte *expr = (byte *) &msg[4];
+    byte *expr = (byte *) &msg[5];
     bool condition = evalBoolExpr(&expr, context);
     byte *codeBlock = expr;
     bool test;
