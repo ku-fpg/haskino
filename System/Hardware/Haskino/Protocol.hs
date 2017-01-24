@@ -439,18 +439,18 @@ packageCodeBlock (Arduino commands) = do
           g <- packMonad m2
           return $ f g
 
-      lenPackage :: B.ByteString -> B.ByteString
-      lenPackage package = B.append (lenEncode $ B.length package) package      
+lenPackage :: B.ByteString -> B.ByteString
+lenPackage package = B.append (lenEncode $ B.length package) package      
 
-      -- Length of the code block is encoded with a 1 or 3 byte sequence.
-      -- If the length is 0-254, the length is sent as a one byte value.
-      -- If the length is greater than 255, it is sent as a zero byte,
-      -- following by a 16 bit little endian length.
-      -- (Zero is not a valid length, as it would be an empty command)
-      lenEncode :: Int -> B.ByteString
-      lenEncode l = if l < 255
-                    then B.singleton $ fromIntegral l 
-                    else B.pack $ 0xFF : (word16ToBytes $ fromIntegral l)
+-- Length of the code block is encoded with a 1 or 3 byte sequence.
+-- If the length is 0-254, the length is sent as a one byte value.
+-- If the length is greater than 255, it is sent as a zero byte,
+-- following by a 16 bit little endian length.
+-- (Zero is not a valid length, as it would be an empty command)
+lenEncode :: Int -> B.ByteString
+lenEncode l = if l < 255
+              then B.singleton $ fromIntegral l 
+              else B.pack $ 0xFF : (word16ToBytes $ fromIntegral l)
 
 packageProcedure :: ArduinoProcedure a -> State CommandState B.ByteString
 packageProcedure p = do
@@ -529,9 +529,11 @@ packageProcedure p = do
 packageIfThenElseProcedure :: RefType -> Int -> Expr Bool -> Arduino (Expr a) -> Arduino (Expr a) -> State CommandState B.ByteString
 packageIfThenElseProcedure rt b e cb1 cb2 = do
     (r1, pc1) <- packageCodeBlock cb1
-    let pc1' = B.append pc1 $ buildCommand EXPR_CMD_RET $ (fromIntegral b) : packageExpr r1
+    let rc1 = buildCommand EXPR_CMD_RET $ (fromIntegral b) : packageExpr r1
+    let pc1'  = B.append pc1 $ lenPackage rc1
     (r2, pc2) <- packageCodeBlock cb2
-    let pc2' = B.append pc2 $ buildCommand EXPR_CMD_RET $ (fromIntegral b) : packageExpr r2
+    let rc2 = buildCommand EXPR_CMD_RET $ (fromIntegral b) : packageExpr r2
+    let pc2'  = B.append pc2 $ lenPackage rc2
     let thenSize = word16ToBytes $ fromIntegral (B.length pc1')
     i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum rt, fromIntegral b] ++ thenSize ++ (packageExpr e))
     return $ B.append i (B.append pc1' pc2')
@@ -539,7 +541,8 @@ packageIfThenElseProcedure rt b e cb1 cb2 = do
 packageWhileProcedure :: RefType -> Int -> Expr a -> Expr a -> (Expr a -> Expr Bool) -> (Expr a -> Arduino (Expr a)) -> State CommandState B.ByteString
 packageWhileProcedure rt ib be iv bf bdf = do
     (r, pc) <- packageCodeBlock $ (bdf be)
-    let pc' = B.append pc $ buildCommand EXPR_CMD_RET $ (fromIntegral ib) : packageExpr r
+    let rc = buildCommand EXPR_CMD_RET $ (fromIntegral ib) : packageExpr r
+    let pc' = B.append pc $ lenPackage rc
     w <- addCommand BC_CMD_WHILE ([fromIntegral ib, fromIntegral $ length ive] ++ ive ++ (packageExpr (bf be)))
     return $ B.append w pc'
   where

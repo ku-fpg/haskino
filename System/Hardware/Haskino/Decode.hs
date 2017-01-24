@@ -172,6 +172,7 @@ decodeCmdArgs SCHED_CMD_TAKE_SEM _ xs = decodeExprCmd 1 xs
 decodeCmdArgs REF_CMD_NEW _ xs = decodeRefNew 1 xs
 decodeCmdArgs REF_CMD_READ _ xs =  decodeRefProc 1 xs
 decodeCmdArgs REF_CMD_WRITE _ xs = decodeRefCmd 2 xs
+decodeCmdArgs EXPR_CMD_RET _ xs = decodeExprProc 1 xs
 decodeCmdArgs UNKNOWN_COMMAND x xs = ("-" ++ show x, xs)
 
 decodeExprCmd :: Int -> B.ByteString -> (String, B.ByteString)
