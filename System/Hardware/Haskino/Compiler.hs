@@ -764,7 +764,7 @@ compileIfThenElseProcedure t e cb1 cb2 = do
 compileWhileProcedure :: ExprB a => CompileType -> Int -> Expr a -> Expr a -> (Expr a -> Expr Bool) -> (Expr a -> Arduino (Expr a)) -> State CompileState (Expr a)
 compileWhileProcedure t b be iv bf bdf = do
     compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
-    compileLine $ bindName ++ show b ++ " = " ++ compileExpr iv
+    compileLine $ bindName ++ show b ++ " = " ++ compileExpr iv ++ ";"
     compileLine $ "while (" ++ compileExpr (bf be) ++ ")"
     r <- compileCodeBlock $ bdf be
     compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r ++ ";"

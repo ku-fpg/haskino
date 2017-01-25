@@ -1,11 +1,11 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.Test.ExprWord8
+-- Module      :  System.Hardware.Haskino.Test.WhileWord8
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Quick Check tests for Expressions returning a Expr Word8
+-- Quick Check tests for Whiles returning a Expr Word8
 -------------------------------------------------------------------------------
 
 {-# LANGUAGE GADTs #-}
@@ -27,17 +27,17 @@ import Test.QuickCheck.Monadic
 litEval8 :: Expr Word8 -> Word8
 litEval8 (LitW8 w) = w
 
-prop_ifthenelse :: ArduinoConnection -> Word8 -> Word8 -> Property
-prop_ifthenelse c x y = monadicIO $ do
-    let local = x + y
+prop_while :: ArduinoConnection -> NonZero Word8 -> Property
+prop_while c (NonZero x) = monadicIO $ do
+    let local = x
     remote <- run $ send c $ do
-        v <- whileE (lit x) (\z -> z <* lit y) (\x -> return $ x + 1)
+        v <- whileE (lit 0) (\z -> z <* lit x) (\z -> return $ z + 1)
         return v
     assert (local == litEval8 remote)
 
 main :: IO ()
 main = do
     conn <- openArduino True "/dev/cu.usbmodem1421"
-    print "IfThenElse Tests:"
-    quickCheck (prop_ifthenelse conn)
+    print "While Tests:"
+    quickCheck (prop_while conn)
     closeArduino conn

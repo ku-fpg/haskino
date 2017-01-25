@@ -66,7 +66,6 @@ initOSepp :: Arduino (LCDE, Arduino (Expr Word8))
 initOSepp = do lcd <- lcdRegisterE osepp
                let button = 0
                setPinModeE button INPUT
-               keyRef <- newRemoteRef (keyValue KeyNone)
                -- Analog values obtained from OSEPP site, seems reliable
                let valToKey :: Expr Word16 -> Expr Word8
                    valToKey v = ifB (v <* 30)  (keyValue KeyRight)
@@ -77,16 +76,19 @@ initOSepp = do lcd <- lcdRegisterE osepp
                                           (keyValue KeyNone)))))
                    readButton = do val <- analogReadE button
                                    return $ valToKey val
-                   getKey = do writeRemoteRef keyRef (keyValue KeyNone)
-                               -- wait for key press
-                               while keyRef (\x -> x ==* (keyValue KeyNone)) id $ do
-                                   readButton >>= writeRemoteRef keyRef
-                               key <- readRemoteRef keyRef
-                               -- wait for key release
-                               while keyRef (\x -> x ==* key) id $ do
-                                   readButton >>= writeRemoteRef keyRef
-                               delayMillisE 100
-                               return key
+                   getKey = do
+                         -- wait for key press
+                         key <- whileE (keyValue KeyNone) (\x -> x ==* (keyValue KeyNone)) $ do
+                                  (\x -> do
+                                      bu <- readButton 
+                                      return bu)
+                         -- wait for key release
+                         key' <- whileE key (\x -> x /=* (keyValue KeyNone)) $ do
+                                   (\x -> do
+                                      bu <- readButton
+                                      return bu)
+                         delayMillisE 100
+                         return key'
                return (lcd, getKey)
 
 -- | Program which maintains an integer counter, and displays the counter value 
@@ -103,9 +105,9 @@ counterProg = do
       lcdWriteE lcd $ showE zero
       loopE $ do
           key <- getKey
-          ifThenElseE (key ==* (keyValue KeyUp))
+          ifThenElseUnitE (key ==* (keyValue KeyUp))
               (modifyRemoteRef cref (\x -> x + 1)) (return ())
-          ifThenElseE (key ==* (keyValue KeyDown))
+          ifThenElseUnitE (key ==* (keyValue KeyDown))
               (modifyRemoteRef cref (\x -> x - 1)) (return ())
           count <- readRemoteRef cref
           lcdClearE lcd

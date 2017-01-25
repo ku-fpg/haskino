@@ -149,6 +149,27 @@ static bool handleForIn(int size, const byte *msg, CONTEXT *context)
     return false;
     }
 
+static int typeToSize(int type, byte *src)
+    {
+    switch(type)
+        {
+        case REF_BOOL:
+        case REF_WORD16:
+        case REF_INT16:
+            return 3;
+        case REF_WORD8:
+        case REF_INT8:
+            return 2;
+        case REF_LIST8:
+            return src[1] + 2;
+        case REF_WORD32:
+        case REF_INT32:
+        case REF_FLOAT:
+        default:
+            return 5;
+        }
+    } 
+
 static bool handleWhile(int size, const byte *msg, CONTEXT *context)
     {
     byte bind = msg[1];
@@ -219,8 +240,9 @@ static bool handleWhile(int size, const byte *msg, CONTEXT *context)
         condition = evalBoolExpr(&expr, context);
         }
 
-    sendTypeReply(exprType, &context->bind[bind * BIND_SPACING], whileReply, 
-                  BC_RESP_WHILE, context, bind);
+    sendReply( typeToSize(exprType, &context->bind[bind * BIND_SPACING]),
+               BC_RESP_WHILE, &context->bind[bind * BIND_SPACING],
+               context, bind);
 
     return false;
 }

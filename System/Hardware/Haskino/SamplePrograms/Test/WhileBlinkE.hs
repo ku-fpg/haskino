@@ -13,6 +13,7 @@
 
 module System.Hardware.Haskino.SamplePrograms.Test.WhileBlinkE where
 
+import Prelude hiding ((<*))
 import System.Hardware.Haskino
 import Data.Boolean
 import Data.Word
@@ -22,9 +23,11 @@ whileBlinkE = withArduino True "/dev/cu.usbmodem1421" $ do
               let led = 13
               let delay = 1000
               setPinModeE led OUTPUT
-              i <- newRemoteRef (0 :: Expr Word8)
-              while i (\x -> x <* 3) (\x -> x + 1) $ do 
-                  digitalWriteE led true
-                  delayMillisE delay
-                  digitalWriteE led false
-                  delayMillisE delay
+              whileE (lit (0::Word8)) (\x -> x <* 3)
+                  (\x -> do
+                      digitalWriteE led true
+                      delayMillisE delay
+                      digitalWriteE led false
+                      delayMillisE delay
+                      return $ x + 1)
+              return ()

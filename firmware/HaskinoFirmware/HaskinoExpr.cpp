@@ -1926,7 +1926,8 @@ static bool handleExprRet(int size, const byte *msg, CONTEXT *context)
     byte bind = msg[1];
     byte *expr = (byte *) &msg[2];
     byte exprType = *expr >> EXPR_TYPE_SHFT;
- 
+    byte retReply[5];
+
     switch (exprType)
         {
         case REF_BOOL:
@@ -1957,6 +1958,9 @@ static bool handleExprRet(int size, const byte *msg, CONTEXT *context)
             storeFloatBind(expr, context, bind);
             break;
         }
+
+    sendTypeReply(exprType, &context->bind[bind * BIND_SPACING], retReply, 
+                  EXPR_RESP_RET, context, bind);
 
     return false;
     }
