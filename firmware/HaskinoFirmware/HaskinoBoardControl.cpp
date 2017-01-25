@@ -283,8 +283,10 @@ static bool handleIfThenElse(int size, const byte *msg, CONTEXT *context)
         }
 
     if (!rescheduled && type != REF_UNIT)
-        sendTypeReply(type, &context->bind[bind * BIND_SPACING], ifReply, 
-                      BC_RESP_IF_THEN_ELSE, context, bind);
+        sendReply( typeToSize(type, &context->bind[bind * BIND_SPACING]),
+                   BC_RESP_IF_THEN_ELSE, &context->bind[bind * BIND_SPACING],
+                   context, bind);
+
 
     return rescheduled;
     }
