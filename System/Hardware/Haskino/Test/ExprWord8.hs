@@ -338,6 +338,22 @@ prop_bind c r a b d e = monadicIO $ do
         return v
     assert (local == litEval8 remote)
 
+prop_ifthenelse :: ArduinoConnection -> Word8 -> Word8 -> Property
+prop_ifthenelse c x y = monadicIO $ do
+    let local = if (x < y) then x else y
+    remote <- run $ send c $ do
+        v <- ifThenElseE ((lit x) <* (lit y)) (return $ lit x) (return $ lit y)
+        return v
+    assert (local == litEval8 remote)
+
+prop_while :: ArduinoConnection -> NonZero Word8 -> Property
+prop_while c (NonZero x) = monadicIO $ do
+    let local = x
+    remote <- run $ send c $ do
+        v <- whileE (lit 0) (\z -> z <* lit x) (\z -> return $ z + 1)
+        return v
+    assert (local == litEval8 remote)
+
 main :: IO ()
 main = do
     conn <- openArduino False "/dev/cu.usbmodem1421"
@@ -407,4 +423,8 @@ main = do
     quickCheck (prop_arith conn refW8)
     print "Bind Tests:"
     quickCheck (prop_bind conn refW8)
+    print "IfThenElse Tests:"
+    quickCheck (prop_ifthenelse conn)
+    print "While Tests:"
+    quickCheck (prop_while conn)
     closeArduino conn
