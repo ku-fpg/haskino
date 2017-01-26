@@ -33,15 +33,16 @@ semId = 0
 myTask1 :: Expr Word8 -> Arduino ()
 myTask1 led = do
     setPinModeE led OUTPUT
-    i <- newRemoteRef $ lit (0::Word8)
     loopE $ do
         takeSemE semId
-        writeRemoteRef i 0
-        while i (\x -> x <* 3) (\x -> x + 1) $ do 
+        let count = lit (3::Word32)
+        whileE 0 (\x -> x <* count) (\x -> do 
             digitalWriteE led true
             delayMillisE blinkDelay
             digitalWriteE led false
             delayMillisE blinkDelay
+            return $ x + 1)
+        return ()
 
 myTask2 :: Arduino ()
 myTask2 = do
