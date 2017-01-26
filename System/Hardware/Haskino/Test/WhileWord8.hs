@@ -37,7 +37,7 @@ prop_while c (NonZero x) = monadicIO $ do
 
 main :: IO ()
 main = do
-    conn <- openArduino True "/dev/cu.usbmodem1421"
+    conn <- openArduino False "/dev/cu.usbmodem1421"
     print "While Tests:"
     quickCheck (prop_while conn)
     closeArduino conn

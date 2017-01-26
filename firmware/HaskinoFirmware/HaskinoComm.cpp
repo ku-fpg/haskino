@@ -177,59 +177,6 @@ void sendReply(int count, byte replyType, const byte *reply,
         }
     }
 
-void sendTypeReply(int type, const byte *src, byte *replyBuff, 
-                   byte replyType, CONTEXT *context, byte bind)
-    {
-    int size;
-
-    switch(type)
-        {
-        case REF_BOOL:
-            replyBuff[0] = EXPR(EXPR_BOOL, EXPR_LIT);
-            size = 1;
-            break;
-        case REF_WORD8:
-            replyBuff[0] = EXPR(EXPR_WORD8, EXPR_LIT);
-            size = 1;
-            break;
-        case REF_WORD16:
-            replyBuff[0] = EXPR(EXPR_WORD16, EXPR_LIT);
-            size = 2;
-            break;
-        case REF_WORD32:
-            replyBuff[0] = EXPR(EXPR_WORD32, EXPR_LIT);
-            size = 4;
-            break;
-        case REF_INT8:
-            replyBuff[0] = EXPR(EXPR_INT8, EXPR_LIT);
-            size = 1;
-            break;
-        case REF_INT16:
-            replyBuff[0] = EXPR(EXPR_INT16, EXPR_LIT);
-            size = 2;
-            break;
-        case REF_INT32:
-            replyBuff[0] = EXPR(EXPR_INT32, EXPR_LIT);
-            size = 4;
-            break;
-        case REF_LIST8:
-            size = src[1] + 2;
-            break;
-        case REF_FLOAT:
-            replyBuff[0] = EXPR_F(EXPR_LIT);
-            size = 1;
-            break;
-        }
-
-    if (type != REF_LIST8)
-        {
-        memcpy(&replyBuff[1], src, size);
-        size = size + 1;
-        }
-
-    sendReply(size, replyType, replyBuff, context, bind);
-    }
-
 void sendStringf(const char *fmt, ...)
     {
     char buffer[128];    

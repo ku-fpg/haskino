@@ -1926,7 +1926,6 @@ static bool handleExprRet(int size, const byte *msg, CONTEXT *context)
     byte bind = msg[1];
     byte *expr = (byte *) &msg[2];
     byte exprType = *expr >> EXPR_TYPE_SHFT;
-    byte retReply[5];
 
     switch (exprType)
         {
@@ -1959,82 +1958,85 @@ static bool handleExprRet(int size, const byte *msg, CONTEXT *context)
             break;
         }
 
-    sendTypeReply(exprType, &context->bind[bind * BIND_SPACING], retReply, 
-                  EXPR_RESP_RET, context, bind);
-
     return false;
     }
 
  void storeBoolBind(byte *expr, CONTEXT *context, byte bind)
     {
-    bool bVal = evalBoolExpr(&expr, context);
+    byte *bind_ptr = &context->bind[bind * BIND_SPACING];
 
-    *((bool *) &context->bind[bind * BIND_SPACING]) = bVal;
+    bind_ptr[0] = EXPR(EXPR_BOOL, EXPR_LIT);
+    bind_ptr[1] = evalBoolExpr(&expr, context);
     }
 
  void storeWord8Bind(byte *expr, CONTEXT *context, byte bind)
     {
-    uint8_t w8Val = evalWord8Expr(&expr, context);
+    byte *bind_ptr = &context->bind[bind * BIND_SPACING];
 
-    *((uint8_t *) &context->bind[bind * BIND_SPACING]) = w8Val;
+    bind_ptr[0] = EXPR(EXPR_WORD8, EXPR_LIT);
+    bind_ptr[1] = evalWord8Expr(&expr, context);
     }
 
  void storeWord16Bind(byte *expr, CONTEXT *context, byte bind)
     {
+    byte *bind_ptr = &context->bind[bind * BIND_SPACING];
     uint16_t w16Val = evalWord16Expr(&expr, context);
 
-    *((uint16_t *) &context->bind[bind * BIND_SPACING]) = w16Val;
+    bind_ptr[0] = EXPR(EXPR_WORD16, EXPR_LIT);
+    memcpy(bind_ptr+1, &w16Val, sizeof(w16Val));
     }
 
  void storeWord32Bind(byte *expr, CONTEXT *context, byte bind)
     {
+    byte *bind_ptr = &context->bind[bind * BIND_SPACING];
     uint32_t w32Val = evalWord32Expr(&expr, context);
 
-    *((uint32_t *) &context->bind[bind * BIND_SPACING]) = w32Val;
+    bind_ptr[0] = EXPR(EXPR_WORD32, EXPR_LIT);
+    memcpy(bind_ptr+1, &w32Val, sizeof(w32Val));
     }
 
  void storeInt8Bind(byte *expr, CONTEXT *context, byte bind)
     {
-    int8_t i8Val = evalInt8Expr(&expr, context);
+    byte *bind_ptr = &context->bind[bind * BIND_SPACING];
 
-    *((int8_t *) &context->bind[bind * BIND_SPACING]) = i8Val;
+    bind_ptr[0] = EXPR(EXPR_INT8, EXPR_LIT);
+    bind_ptr[1] = evalInt8Expr(&expr, context);
     }
 
  void storeInt16Bind(byte *expr, CONTEXT *context, byte bind)
     {
+    byte *bind_ptr = &context->bind[bind * BIND_SPACING];
     int16_t i16Val = evalInt16Expr(&expr, context);
 
-    *((int16_t *) &context->bind[bind * BIND_SPACING]) = i16Val;
+    bind_ptr[0] = EXPR(EXPR_INT16, EXPR_LIT);
+    memcpy(bind_ptr+1, &i16Val, sizeof(i16Val));
     }
 
  void storeInt32Bind(byte *expr, CONTEXT *context, byte bind)
     {
+    byte *bind_ptr = &context->bind[bind * BIND_SPACING];
     int32_t i32Val = evalInt32Expr(&expr, context);
 
-    *((int32_t *) &context->bind[bind * BIND_SPACING]) = i32Val;
+    bind_ptr[0] = EXPR(EXPR_INT32, EXPR_LIT);
+    memcpy(bind_ptr+1, &i32Val, sizeof(i32Val));
     }
 
  void storeFloatBind(byte *expr, CONTEXT *context, byte bind)
     {
+    byte *bind_ptr = &context->bind[bind * BIND_SPACING];
     float fVal = evalFloatExpr(&expr, context);
 
-    *((float *) &context->bind[bind * BIND_SPACING]) = fVal;
+    bind_ptr[0] = EXPR_F(EXPR_LIT);
+    memcpy(bind_ptr+1, &fVal, sizeof(fVal));
     }
 
  void storeList8Bind(byte *expr, CONTEXT *context, byte bind)
     {
     bool alloc;
     byte *lVal = evalList8Expr(&expr, context, &alloc);
-    byte **bindPtr = (byte **) &context->bind[bind * BIND_SPACING];
-
-    if (*bindPtr != NULL)
-        {
-        free(*bindPtr);
-        *bindPtr = NULL;
-        }
 
     if (alloc)
-        *bindPtr = lVal;
+        putBindListPtr(context, 0, lVal);
     else
         {
         // Need to copy expression
@@ -2042,7 +2044,7 @@ static bool handleExprRet(int size, const byte *msg, CONTEXT *context)
         if (newLVal)
             {
             memcpy(newLVal, lVal, lVal[1]+2);
-            *bindPtr = newLVal;
+            putBindListPtr(context, 0, newLVal);
             }
-        }    
+        }
     }

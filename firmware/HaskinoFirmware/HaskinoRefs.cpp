@@ -335,11 +335,56 @@ static bool handleReadRef(int type, int size, const byte *msg, CONTEXT *context)
     byte *expr = (byte *) &msg[3];
     byte refIndex = evalWord8Expr(&expr, context);
     byte readReply[5];
+    byte *lVal;
 
     // ToDo:  Check for param errors
-    sendTypeReply(type, (byte *) haskinoRefs[refIndex].ref, readReply, 
-                  REF_RESP_READ, context, bind);
-
+    switch (type)
+        {
+        case REF_BOOL:
+            readReply[0] = EXPR(EXPR_BOOL, EXPR_LIT);
+            readReply[1] = *((bool *) haskinoRefs[refIndex].ref);
+            sendReply(sizeof(bool)+1, REF_RESP_READ, readReply, context, bind);
+            break;
+        case REF_WORD8:
+            readReply[0] = EXPR(EXPR_WORD8, EXPR_LIT);
+            readReply[1] = *((uint8_t *) haskinoRefs[refIndex].ref);
+            sendReply(sizeof(uint8_t)+1, REF_RESP_READ, readReply, context, bind);
+            break;
+        case REF_WORD16:
+            readReply[0] = EXPR(EXPR_WORD16, EXPR_LIT);
+            memcpy(&readReply[1], (byte *) haskinoRefs[refIndex].ref, sizeof(uint16_t));
+            sendReply(sizeof(uint16_t)+1, REF_RESP_READ, readReply, context, bind);
+            break;
+        case REF_WORD32:
+            readReply[0] = EXPR(EXPR_WORD32, EXPR_LIT);
+            memcpy(&readReply[1], (byte *) haskinoRefs[refIndex].ref, sizeof(uint32_t));
+            sendReply(sizeof(uint32_t)+1, REF_RESP_READ, readReply, context, bind);
+            break;
+        case REF_INT8:
+            readReply[0] = EXPR(EXPR_INT8, EXPR_LIT);
+            readReply[1] = *((int8_t *) haskinoRefs[refIndex].ref);
+            sendReply(sizeof(int8_t)+1, REF_RESP_READ, readReply, context, bind);
+            break;
+        case REF_INT16:
+            readReply[0] = EXPR(EXPR_INT16, EXPR_LIT);
+            memcpy(&readReply[1], (byte *) haskinoRefs[refIndex].ref, sizeof(int16_t));
+            sendReply(sizeof(int16_t)+1, REF_RESP_READ, readReply, context, bind);
+            break;
+        case REF_INT32:
+            readReply[0] = EXPR(EXPR_INT32, EXPR_LIT);
+            memcpy(&readReply[1], (byte *) haskinoRefs[refIndex].ref, sizeof(int32_t));
+            sendReply(sizeof(int32_t)+1, REF_RESP_READ, readReply, context, bind);
+            break;
+        case REF_LIST8:
+            lVal = (byte *) haskinoRefs[refIndex].ref;
+            sendReply(lVal[1]+2, REF_RESP_READ, lVal, context, bind);
+            break;
+        case REF_FLOAT:
+            readReply[0] = EXPR_F(EXPR_LIT);
+            memcpy(&readReply[1], (byte *) haskinoRefs[refIndex].ref, sizeof(float));
+            sendReply(sizeof(float)+1, REF_RESP_READ, readReply, context, bind);
+            break;
+        }
     return false;
     }
 
