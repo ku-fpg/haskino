@@ -525,14 +525,23 @@ data ArduinoProcedure :: * -> * where
      IfThenElseL8E     :: Expr Bool -> Arduino (Expr [Word8]) -> Arduino (Expr [Word8]) -> ArduinoProcedure (Expr [Word8])
      IfThenElseFloat   :: Bool -> Arduino Float -> Arduino Float -> ArduinoProcedure Float
      IfThenElseFloatE  :: Expr Bool -> Arduino (Expr Float) -> Arduino (Expr Float) -> ArduinoProcedure (Expr Float)
+     WhileBool         :: Bool -> (Bool -> Bool) -> (Bool -> Arduino Bool) -> ArduinoProcedure Bool
      WhileBoolE        :: (Expr Bool) -> (Expr Bool -> Expr Bool) -> (Expr Bool -> Arduino (Expr Bool)) -> ArduinoProcedure (Expr Bool)
+     WhileWord8        :: Word8 -> (Word8 -> Bool) -> (Word8 -> Arduino Word8) -> ArduinoProcedure Word8
      WhileWord8E       :: (Expr Word8) -> (Expr Word8 -> Expr Bool) -> (Expr Word8 -> Arduino (Expr Word8)) -> ArduinoProcedure (Expr Word8)
+     WhileWord16       :: Word16 -> (Word16 -> Bool) -> (Word16 -> Arduino Word16) -> ArduinoProcedure Word16
      WhileWord16E      :: (Expr Word16) -> (Expr Word16 -> Expr Bool) -> (Expr Word16 -> Arduino (Expr Word16)) -> ArduinoProcedure (Expr Word16)
+     WhileWord32       :: Word32 -> (Word32 -> Bool) -> (Word32 -> Arduino Word32) -> ArduinoProcedure Word32
      WhileWord32E      :: (Expr Word32) -> (Expr Word32 -> Expr Bool) -> (Expr Word32 -> Arduino (Expr Word32)) -> ArduinoProcedure (Expr Word32)
+     WhileInt8         :: Int8 -> (Int8 -> Bool) -> (Int8 -> Arduino Int8) -> ArduinoProcedure Int8
      WhileInt8E        :: (Expr Int8) -> (Expr Int8 -> Expr Bool) -> (Expr Int8 -> Arduino (Expr Int8)) -> ArduinoProcedure (Expr Int8)
+     WhileInt16        :: Int16 -> (Int16 -> Bool) -> (Int16 -> Arduino Int16) -> ArduinoProcedure Int16
      WhileInt16E       :: (Expr Int16) -> (Expr Int16 -> Expr Bool) -> (Expr Int16 -> Arduino (Expr Int16)) -> ArduinoProcedure (Expr Int16)
+     WhileInt32        :: Int32 -> (Int32 -> Bool) -> (Int32 -> Arduino Int32) -> ArduinoProcedure Int32
      WhileInt32E       :: (Expr Int32) -> (Expr Int32 -> Expr Bool) -> (Expr Int32 -> Arduino (Expr Int32)) -> ArduinoProcedure (Expr Int32)
+     WhileFloat        :: Float -> (Float -> Bool) -> (Float -> Arduino Float) -> ArduinoProcedure Float
      WhileFloatE       :: (Expr Float) -> (Expr Float -> Expr Bool) -> (Expr Float -> Arduino (Expr Float)) -> ArduinoProcedure (Expr Float)
+     WhileL8           :: [Word8] -> ([Word8] -> Bool) -> ([Word8] -> Arduino [Word8]) -> ArduinoProcedure [Word8]
      WhileL8E          :: (Expr [Word8]) -> (Expr [Word8] -> Expr Bool) -> (Expr [Word8] -> Arduino (Expr [Word8])) -> ArduinoProcedure (Expr [Word8])
      LiftIO            :: IO a -> ArduinoProcedure a
      Debug             :: String -> ArduinoProcedure ()
@@ -780,29 +789,56 @@ ifThenElseFloat b tps eps = Arduino $ procedure $ IfThenElseFloat b tps eps
 ifThenElseFloatE :: Expr Bool -> Arduino (Expr Float) -> Arduino (Expr Float) -> Arduino (Expr Float)
 ifThenElseFloatE be tps eps = Arduino $ procedure $ IfThenElseFloatE be tps eps
 
+whileBool :: Bool -> (Bool -> Bool) -> (Bool -> Arduino Bool) -> Arduino Bool
+whileBool iv bf bdf  = Arduino $ procedure $ WhileBool iv bf bdf
+
 whileBoolE :: Expr Bool -> (Expr Bool -> Expr Bool) -> (Expr Bool -> Arduino (Expr Bool)) -> Arduino (Expr Bool)
 whileBoolE iv bf bdf  = Arduino $ procedure $ WhileBoolE iv bf bdf
+
+whileWord8 :: Word8 -> (Word8 -> Bool) -> (Word8 -> Arduino Word8) -> Arduino Word8
+whileWord8 iv bf bdf  = Arduino $ procedure $ WhileWord8 iv bf bdf
 
 whileWord8E :: Expr Word8 -> (Expr Word8 -> Expr Bool) -> (Expr Word8 -> Arduino (Expr Word8)) -> Arduino (Expr Word8)
 whileWord8E iv bf bdf = Arduino $ procedure $ WhileWord8E iv bf bdf
 
+whileWord16 :: Word16 -> (Word16 -> Bool) -> (Word16 -> Arduino Word16) -> Arduino Word16
+whileWord16 iv bf bdf  = Arduino $ procedure $ WhileWord16 iv bf bdf
+
 whileWord16E :: Expr Word16 -> (Expr Word16 -> Expr Bool) -> (Expr Word16 -> Arduino (Expr Word16)) -> Arduino (Expr Word16)
 whileWord16E iv bf bdf = Arduino $ procedure $ WhileWord16E iv bf bdf
+
+whileWord32 :: Word32 -> (Word32 -> Bool) -> (Word32 -> Arduino Word32) -> Arduino Word32
+whileWord32 iv bf bdf  = Arduino $ procedure $ WhileWord32 iv bf bdf
 
 whileWord32E :: Expr Word32 -> (Expr Word32 -> Expr Bool) -> (Expr Word32 -> Arduino (Expr Word32)) -> Arduino (Expr Word32)
 whileWord32E iv bf bdf = Arduino $ procedure $ WhileWord32E iv bf bdf
 
+whileInt8 :: Int8 -> (Int8 -> Bool) -> (Int8 -> Arduino Int8) -> Arduino Int8
+whileInt8 iv bf bdf = Arduino $ procedure $ WhileInt8 iv bf bdf
+
 whileInt8E :: Expr Int8 -> (Expr Int8 -> Expr Bool) -> (Expr Int8 -> Arduino (Expr Int8)) -> Arduino (Expr Int8)
 whileInt8E iv bf bdf = Arduino $ procedure $ WhileInt8E iv bf bdf
+
+whileInt16 :: Int16 -> (Int16 -> Bool) -> (Int16 -> Arduino Int16) -> Arduino Int16
+whileInt16 iv bf bdf = Arduino $ procedure $ WhileInt16 iv bf bdf
 
 whileInt16E :: Expr Int16 -> (Expr Int16 -> Expr Bool) -> (Expr Int16 -> Arduino (Expr Int16)) -> Arduino (Expr Int16)
 whileInt16E iv bf bdf = Arduino $ procedure $ WhileInt16E iv bf bdf
 
+whileInt32 :: Int32 -> (Int32 -> Bool) -> (Int32 -> Arduino Int32) -> Arduino Int32
+whileInt32 iv bf bdf = Arduino $ procedure $ WhileInt32 iv bf bdf
+
 whileInt32E :: Expr Int32 -> (Expr Int32 -> Expr Bool) -> (Expr Int32 -> Arduino (Expr Int32)) -> Arduino (Expr Int32)
 whileInt32E iv bf bdf = Arduino $ procedure $ WhileInt32E iv bf bdf
 
+whileL8 :: [Word8] -> ([Word8] ->Bool) -> ([Word8] -> Arduino [Word8]) -> Arduino [Word8]
+whileL8 iv bf bdf = Arduino $ procedure $ WhileL8 iv bf bdf
+
 whileL8E :: Expr [Word8] -> (Expr [Word8] -> Expr Bool) -> (Expr [Word8] -> Arduino (Expr [Word8])) -> Arduino (Expr [Word8])
 whileL8E iv bf bdf = Arduino $ procedure $ WhileL8E iv bf bdf
+
+whileFloat :: Float -> (Float -> Bool) -> (Float -> Arduino Float) -> Arduino Float
+whileFloat iv bf bdf = Arduino $ procedure $ WhileFloat iv bf bdf
 
 whileFloatE :: Expr Float -> (Expr Float -> Expr Bool) -> (Expr Float -> Arduino (Expr Float)) -> Arduino (Expr Float)
 whileFloatE iv bf bdf = Arduino $ procedure $ WhileFloatE iv bf bdf
@@ -810,52 +846,62 @@ whileFloatE iv bf bdf = Arduino $ procedure $ WhileFloatE iv bf bdf
 class ExprB a => ArduinoConditional a where
     ifThenElse          :: Bool -> Arduino a -> Arduino a -> Arduino a
     ifThenElseE         :: Expr Bool -> Arduino (Expr a) -> Arduino (Expr a) -> Arduino (Expr a)
+    while               :: a -> (a -> Bool) -> (a -> Arduino a) -> Arduino a
     whileE              :: Expr a -> (Expr a -> Expr Bool) -> 
                              (Expr a -> Arduino (Expr a)) -> Arduino (Expr a)
 
 instance ArduinoConditional Bool where
     ifThenElse = ifThenElseBool
     ifThenElseE = ifThenElseBoolE
+    while  = whileBool
     whileE = whileBoolE
 
 instance ArduinoConditional Word8 where
     ifThenElse = ifThenElseWord8
     ifThenElseE = ifThenElseWord8E
+    while  = whileWord8
     whileE = whileWord8E
 
 instance ArduinoConditional Word16 where
     ifThenElse = ifThenElseWord16
     ifThenElseE = ifThenElseWord16E
+    while  = whileWord16 
     whileE = whileWord16E
 
 instance ArduinoConditional Word32 where
     ifThenElse = ifThenElseWord32
     ifThenElseE = ifThenElseWord32E
+    while  = whileWord32 
     whileE = whileWord32E
 
 instance ArduinoConditional Int8 where
     ifThenElse = ifThenElseInt8
     ifThenElseE = ifThenElseInt8E
+    while  = whileInt8 
     whileE = whileInt8E
 
 instance ArduinoConditional Int16 where
     ifThenElse = ifThenElseInt16
     ifThenElseE = ifThenElseInt16E
+    while  = whileInt16
     whileE = whileInt16E
 
 instance ArduinoConditional Int32 where
     ifThenElse = ifThenElseInt32
     ifThenElseE = ifThenElseInt32E
+    while  = whileInt32
     whileE = whileInt32E
 
 instance ArduinoConditional [Word8] where
     ifThenElse = ifThenElseL8
     ifThenElseE = ifThenElseL8E
+    while  = whileL8 
     whileE = whileL8E
 
 instance ArduinoConditional Float where
     ifThenElse = ifThenElseFloat
     ifThenElseE = ifThenElseFloatE
+    while  = whileFloat
     whileE = whileFloatE
 
 -- | A response, as returned from the Arduino
