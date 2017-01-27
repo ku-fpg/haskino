@@ -62,6 +62,11 @@ testWaitE = do
     b <- digitalReadE button1
     ifThenElseE (a ||* b) (return $ (a ||* b)) (return a)
 
+testCompile :: Arduino ()
+testCompile = do
+    b <- testWaitE
+    return ()
+
 main :: IO ()
 main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
 
