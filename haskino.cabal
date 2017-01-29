@@ -36,6 +36,7 @@ Library
                     , cereal
                     , transformers
                     , ghc >= 8.0.1
+                    , exceptions  >= 0.8 && < 0.9
   Exposed-modules   : System.Hardware.Haskino
                     , System.Hardware.Haskino.Parts.Eeprom
                     , System.Hardware.Haskino.Parts.LCD

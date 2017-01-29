@@ -24,7 +24,7 @@ import Control.Concurrent   (Chan, MVar, ThreadId, newChan, newMVar,
                              killThread, threadDelay, withMVar)
 import Control.Exception    (tryJust, AsyncException(UserInterrupt))
 import Control.Monad.State  (liftIO)
-import Control.Natural (nat, run, (#))
+import Control.Natural (wrapNT,unwrapNT, (#))
 import Control.Remote.Monad
 import Control.Remote.Monad.Packet.Weak as WP
 import Control.Remote.Monad.Packet.Strong as SP
@@ -181,13 +181,13 @@ send :: ArduinoConnection -> Arduino a -> IO a
 send = sendApp
 
 sendWeak :: ArduinoConnection -> Arduino a -> IO a
-sendWeak c (Arduino m) = (run $ runMonad $ nat (runWP c)) m
+sendWeak c (Arduino m) = (unwrapNT $ runMonad $ wrapNT (runWP c)) m
 
 sendStrong :: ArduinoConnection -> Arduino a -> IO a
-sendStrong c (Arduino m) = (run $ runMonad $ nat (runSP c)) m
+sendStrong c (Arduino m) = (unwrapNT $ runMonad $ wrapNT (runSP c)) m
 
 sendApp :: ArduinoConnection -> Arduino a -> IO a
-sendApp c (Arduino m) = (run $ runMonad $ nat (runAP c)) m
+sendApp c (Arduino m) = (unwrapNT $ runMonad $ wrapNT (runAP c)) m
 
 runWP :: ArduinoConnection -> WeakPacket ArduinoCommand ArduinoProcedure a -> IO a 
 runWP c pkt = 
