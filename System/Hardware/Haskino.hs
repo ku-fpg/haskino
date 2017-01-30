@@ -50,8 +50,9 @@ module System.Hardware.Haskino (
   , stepperSetSpeedE, stepperStep ,stepperStepE 
   -- ** Control structures
   -- ToDo: Cleanup IfThenElse's
+  --, loop, ifThenElseUnit, ifThenElseUnitE, loopE, forInE, ArduinoConditional(..)
   , loop, whileE, ifThenElse, ifThenElseE,  ifThenElseUnit, ifThenElseUnitE, loopE, forInE
-  , ifThenElseBool, ifThenElseBoolE
+  , ifThenElseBool, ifThenElseBoolE, ArduinoConditional
   -- ** Expressions
   , Expr(..), RemoteRef, lit, newRemoteRef, readRemoteRef, writeRemoteRef
   , modifyRemoteRef, (++*), (*:), (!!*), len, pack, litString, showE, showFFloatE

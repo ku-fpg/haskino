@@ -7,6 +7,8 @@
 --
 -- Conditional Transformation Pass
 -------------------------------------------------------------------------------
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 module System.Hardware.Haskino.CondPass (condPass) where
 
@@ -16,6 +18,7 @@ import HscTypes
 import Outputable
 import SimplEnv
 import SimplUtils
+import Data.Char
 import Data.Data
 import Data.List
 import Data.Typeable
@@ -25,17 +28,49 @@ import OccName
 import TysPrim
 import Unique
 import Var
+import TcRnTypes
+import TcRnMonad
+import TcSMonad
+import TcSimplify
+import TcEvidence
+import ErrUtils
+import DsBinds
+import DsMonad (initDsTc)
+import Control.Arrow (first, second)
 import Control.Monad
 import Control.Monad.Writer
 import Data.List 
+import Encoding (zEncodeString)
+
+--import HERMIT.GHC.Typechecker (initTcFromModGuts)
+import System.Hardware.Haskino.Typechecker (initTcFromModGuts)
+-- ToDo:  Should be able to replicate this locally and remove HERMIT dependence
+import HERMIT.Monad (LiftCoreM (..))
+
+import Control.Monad.Reader
 
 import qualified System.Hardware.Haskino
 
+data CondEnv
+    = CondEnv
+      { pluginModGuts :: ModGuts
+      }
+
+newtype CondM a = CondM { runCondM :: ReaderT CondEnv CoreM a }
+    deriving (Functor, Applicative, Monad
+             ,MonadIO, MonadReader CondEnv)
+
+instance LiftCoreM CondM where
+  liftCoreM = CondM . ReaderT . const
+
+getModGuts :: CondM ModGuts
+getModGuts = CondM $ ReaderT (return . pluginModGuts)
+
 condPass :: ModGuts -> CoreM ModGuts
 condPass guts = do
-  bindsOnlyPass (mapM condBind) guts
+    bindsOnlyPass (\x -> (runReaderT (runCondM $ (mapM condBind) x) (CondEnv guts))) guts
 
-condBind :: CoreBind -> CoreM CoreBind
+condBind :: CoreBind -> CondM CoreBind
 condBind bndr@(NonRec b e) = do
   e' <- condExpr e
   return (NonRec b e')
@@ -43,16 +78,16 @@ condBind (Rec bs) = do
   bs' <- condExpr' bs
   return $ Rec bs'
 
-condBind' :: [(Id, CoreExpr)] -> CoreM [(Id, CoreExpr)]
+condBind' :: [(Id, CoreExpr)] -> CondM [(Id, CoreExpr)]
 condBind' [] = return []
 condBind' ((b, e) : bs) = do
   e' <- condExpr e
   bs' <- condBind' bs
   return $ (b, e') : bs'
 
-condExpr :: CoreExpr -> CoreM CoreExpr
+condExpr :: CoreExpr -> CondM CoreExpr
 condExpr e = do
-  df <- getDynFlags
+  df <- liftCoreM getDynFlags
   case e of
     Var v -> return $ Var v
     Lit l -> return $ Lit l
@@ -115,34 +150,91 @@ condExpr e = do
 nameString :: Name -> String 
 nameString = occNameString . nameOccName
 
-condExpr' :: [(Id, CoreExpr)] -> CoreM [(Id, CoreExpr)]
+condExpr' :: [(Id, CoreExpr)] -> CondM [(Id, CoreExpr)]
 condExpr' [] = return []
 condExpr' ((b, e) : bs) = do
   e' <- condExpr e
   bs' <- condExpr' bs
   return $ (b, e') : bs'
 
-condExprAlts :: [GhcPlugins.Alt CoreBndr] -> CoreM [GhcPlugins.Alt CoreBndr]
+condExprAlts :: [GhcPlugins.Alt CoreBndr] -> CondM [GhcPlugins.Alt CoreBndr]
 condExprAlts [] = return []
 condExprAlts ((ac, b, a) : as) = do
   a' <- condExpr a
   bs' <- condExprAlts as
   return $ (ac, b, a') : bs'
 
--- ToDo: Need to transform for type class with dictionary added
-condTransform :: Type -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CoreM CoreExpr
+condTransform :: Type -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CondM CoreExpr
 condTransform ty e alts = do
   case alts of
     [(_, _, e1),(_, _, e2)] -> do
-      Just ifThenElseName <- thNameToGhcName 'System.Hardware.Haskino.ifThenElseBool
-      ifThenElseId <- lookupId ifThenElseName
-      return $ mkCoreApps (Var ifThenElseId) [ e, e1, e2]
+      Just ifThenElseName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.ifThenElse
+      ifThenElseId <- liftCoreM $ lookupId ifThenElseName
+      Just condName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.ArduinoConditional
+      condTyCon <- liftCoreM $ lookupTyCon condName
+      let Just [ty'] = tyConAppArgs_maybe ty
+      let tyConApp = GhcPlugins.mkTyConApp condTyCon [ty']
+      liftCoreM $ GhcPlugins.putMsg $ ppr ty
+      liftCoreM $ GhcPlugins.putMsg $ ppr ty'
+      liftCoreM $ GhcPlugins.putMsg $ ppr tyConApp
+      -- dict <- buildDictionaryT tyConApp
+      dict <- buildDictionaryT tyConApp
+      return $ mkCoreApps (Var ifThenElseId) [ Type ty', dict, e, e1, e2]
 
-condTransformUnit :: Type -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CoreM CoreExpr
+condTransformUnit :: Type -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CondM CoreExpr
 condTransformUnit ty e alts = do
   case alts of
     [(_, _, e1),(_, _, e2)] -> do
-      Just ifThenElseName <- thNameToGhcName 'System.Hardware.Haskino.ifThenElseUnit
-      ifThenElseId <- lookupId ifThenElseName
+      Just ifThenElseName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.ifThenElseUnit
+      ifThenElseId <- liftCoreM $ lookupId ifThenElseName
       return $ mkCoreApps (Var ifThenElseId) [ e, e1, e2]
 
+-- Adapted from HERMIT.Monad
+runTcM :: TcM a -> CondM a
+runTcM m = do
+    env <- liftCoreM getHscEnv
+    dflags <- liftCoreM getDynFlags
+    guts <- getModGuts
+    (msgs, mr) <- liftIO $ initTcFromModGuts env guts HsSrcFile False m
+    let showMsgs (warns, errs) = showSDoc dflags $ vcat
+                                                 $    text "Errors:" : pprErrMsgBagWithLoc errs
+                                                   ++ text "Warnings:" : pprErrMsgBagWithLoc warns
+    maybe (fail $ showMsgs msgs) return mr
+
+buildDictionary :: Id -> CondM (Id, [CoreBind])
+buildDictionary evar = do
+    runTcM $ do
+#if __GLASGOW_HASKELL__ > 710
+        loc <- getCtLocM (GivenOrigin UnkSkol) Nothing
+#else
+        loc <- getCtLoc $ GivenOrigin UnkSkol
+#endif
+        let predTy = varType evar
+#if __GLASGOW_HASKELL__ > 710
+            nonC = mkNonCanonical $ CtWanted { ctev_pred = predTy, ctev_dest = EvVarDest evar, ctev_loc = loc }
+            wCs = mkSimpleWC [cc_ev nonC]
+        (_wCs', bnds) <- second evBindMapBinds <$> runTcS (solveWanteds wCs)
+#else
+            nonC = mkNonCanonical $ CtWanted { ctev_pred = predTy, ctev_evar = evar, ctev_loc = loc }
+            wCs = mkSimpleWC [nonC]
+        (_wCs', bnds) <- solveWantedsTcM wCs
+#endif
+        bnds1 <- initDsTc $ dsEvBinds bnds
+        return (evar, bnds1)
+
+newCondName :: String -> CondM Name
+newCondName nm = mkSystemVarName <$> (liftCoreM getUniqueM) <*> return (mkFastString nm)
+
+newIdH :: String -> Type -> CondM Id
+newIdH name ty = do name' <- newCondName name
+                    return $ mkLocalId name' ty
+
+buildDictionaryT :: Type -> CondM CoreExpr
+buildDictionaryT ty = do
+    dflags <- liftCoreM getDynFlags
+    binder <- newIdH ("$d" ++ zEncodeString (filter (not . isSpace) (showPpr dflags ty))) ty
+    (i,bnds) <- buildDictionary binder
+    return $ case bnds of
+                [NonRec _ e] -> e -- the common case that we would have gotten a single non-recursive let
+--                [NonRec v e] | i == v -> e -- the common case that we would have gotten a single non-recursive let
+                _ -> mkCoreLets bnds (varToCoreExpr i)

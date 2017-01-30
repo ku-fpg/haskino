@@ -31,12 +31,13 @@ Library
                     , containers
                     , time
                     , base16-bytestring
-                    , natural-transformation
+                    , natural-transformation >= 0.4
                     , Boolean
                     , cereal
                     , transformers
                     , ghc >= 8.0.1
                     , exceptions  >= 0.8 && < 0.9
+                    , hermit >= 1.0.1
   Exposed-modules   : System.Hardware.Haskino
                     , System.Hardware.Haskino.Parts.Eeprom
                     , System.Hardware.Haskino.Parts.LCD
