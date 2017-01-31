@@ -168,16 +168,17 @@ condTransform :: Type -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CondM CoreExpr
 condTransform ty e alts = do
   case alts of
     [(_, _, e1),(_, _, e2)] -> do
-      Just ifThenElseName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.ifThenElse
+      -- Get the Arduino type returned
+      let Just [ty'] = tyConAppArgs_maybe ty
+      -- Lookup the GHC ID of ifThenElse function
+      Just ifThenElseName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.ifThenElseE
       ifThenElseId <- liftCoreM $ lookupId ifThenElseName
+      -- Lookup the GHC type constructor of ArduinoConditional
       Just condName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.ArduinoConditional
       condTyCon <- liftCoreM $ lookupTyCon condName
-      let Just [ty'] = tyConAppArgs_maybe ty
+      -- Make the type of the ArduinoConditional for the specified type
       let tyConApp = GhcPlugins.mkTyConApp condTyCon [ty']
-      liftCoreM $ GhcPlugins.putMsg $ ppr ty
-      liftCoreM $ GhcPlugins.putMsg $ ppr ty'
-      liftCoreM $ GhcPlugins.putMsg $ ppr tyConApp
-      -- dict <- buildDictionaryT tyConApp
+      -- Build the dictionary argument to apply
       dict <- buildDictionaryT tyConApp
       return $ mkCoreApps (Var ifThenElseId) [ Type ty', dict, e, e1, e2]
 
@@ -201,6 +202,13 @@ runTcM m = do
                                                    ++ text "Warnings:" : pprErrMsgBagWithLoc warns
     maybe (fail $ showMsgs msgs) return mr
 
+newCondName :: String -> CondM Name
+newCondName nm = mkSystemVarName <$> (liftCoreM getUniqueM) <*> return (mkFastString nm)
+
+newIdH :: String -> Type -> CondM Id
+newIdH name ty = do name' <- newCondName name
+                    return $ mkLocalId name' ty
+
 buildDictionary :: Id -> CondM (Id, [CoreBind])
 buildDictionary evar = do
     runTcM $ do
@@ -222,19 +230,11 @@ buildDictionary evar = do
         bnds1 <- initDsTc $ dsEvBinds bnds
         return (evar, bnds1)
 
-newCondName :: String -> CondM Name
-newCondName nm = mkSystemVarName <$> (liftCoreM getUniqueM) <*> return (mkFastString nm)
-
-newIdH :: String -> Type -> CondM Id
-newIdH name ty = do name' <- newCondName name
-                    return $ mkLocalId name' ty
-
 buildDictionaryT :: Type -> CondM CoreExpr
 buildDictionaryT ty = do
     dflags <- liftCoreM getDynFlags
     binder <- newIdH ("$d" ++ zEncodeString (filter (not . isSpace) (showPpr dflags ty))) ty
     (i,bnds) <- buildDictionary binder
     return $ case bnds of
-                [NonRec _ e] -> e -- the common case that we would have gotten a single non-recursive let
---                [NonRec v e] | i == v -> e -- the common case that we would have gotten a single non-recursive let
+                [NonRec v e] | i == v -> e -- the common case that we would have gotten a single non-recursive let
                 _ -> mkCoreLets bnds (varToCoreExpr i)
