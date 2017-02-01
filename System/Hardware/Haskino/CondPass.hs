@@ -42,10 +42,7 @@ import Control.Monad.Writer
 import Data.List 
 import Encoding (zEncodeString)
 
---import HERMIT.GHC.Typechecker (initTcFromModGuts)
 import System.Hardware.Haskino.Typechecker (initTcFromModGuts)
--- ToDo:  Should be able to replicate this locally and remove HERMIT dependence
-import HERMIT.Monad (LiftCoreM (..))
 
 import Control.Monad.Reader
 
@@ -59,6 +56,10 @@ data CondEnv
 newtype CondM a = CondM { runCondM :: ReaderT CondEnv CoreM a }
     deriving (Functor, Applicative, Monad
              ,MonadIO, MonadReader CondEnv)
+
+class Monad m => LiftCoreM m where
+    -- | 'CoreM' can be lifted to this monad.
+    liftCoreM :: CoreM a -> m a
 
 instance LiftCoreM CondM where
   liftCoreM = CondM . ReaderT . const
@@ -171,7 +172,7 @@ condTransform ty e alts = do
       -- Get the Arduino type returned
       let Just [ty'] = tyConAppArgs_maybe ty
       -- Lookup the GHC ID of ifThenElse function
-      Just ifThenElseName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.ifThenElseE
+      Just ifThenElseName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.ifThenElse
       ifThenElseId <- liftCoreM $ lookupId ifThenElseName
       -- Lookup the GHC type constructor of ArduinoConditional
       Just condName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.ArduinoConditional
@@ -181,6 +182,48 @@ condTransform ty e alts = do
       -- Build the dictionary argument to apply
       dict <- buildDictionaryT tyConApp
       return $ mkCoreApps (Var ifThenElseId) [ Type ty', dict, e, e1, e2]
+{-
+      e' <- appAbs (exprType e) e
+      e1' <- appAbs ty' e1
+      e2' <- appAbs ty' e2
+      let r = mkCoreApps (Var ifThenElseId) [ Type ty', dict, e', e1', e2']
+      -- return mkCoreApps (appRep ty' r
+      appAbs ty r
+-}
+{-
+appAbs :: Type -> CoreExpr -> CondM CoreExpr
+appAbs ty e = do
+      -- Lookup the GHC ID of abs_ function
+      Just absName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.abs_
+      absId <- liftCoreM $ lookupId absName
+      -- Lookup the GHC type constructor of ExprB
+      Just exprName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.ExprB
+      exprTyCon <- liftCoreM $ lookupTyCon exprName
+      -- Make the type of the ExprB for the specified type
+      let tyConApp = GhcPlugins.mkTyConApp exprTyCon [ty]
+      -- Build the dictionary argument to apply
+      dict <- buildDictionaryT tyConApp
+      return $ mkCoreApps (Var absId) [ Type ty, dict, e]
+
+appRep :: Type -> CoreExpr -> CondM CoreExpr
+appRep ty e = do
+      -- Lookup the GHC ID of abs_ function
+      Just repName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.rep_
+      repId <- liftCoreM $ lookupId repName
+      Just appName <- liftCoreM $ thNameToGhcName '(<$>)
+      appId <- liftCoreM $ lookupId appName
+      return $ mkCoreApps (Var appId) [App (Var repId) (Type ty), e]
+{-
+      -- Lookup the GHC type constructor of ExprB
+      Just exprName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.ExprB
+      exprTyCon <- liftCoreM $ lookupTyCon exprName
+      -- Make the type of the ExprB for the specified type
+      let tyConApp = GhcPlugins.mkTyConApp exprTyCon [ty]
+      -- Build the dictionary argument to apply
+      dict <- buildDictionaryT tyConApp
+      return $ mkCoreApps (Var repId) [ Type ty, dict, e]
+-}
+-}
 
 condTransformUnit :: Type -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CondM CoreExpr
 condTransformUnit ty e alts = do
