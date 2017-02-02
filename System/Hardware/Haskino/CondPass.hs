@@ -168,6 +168,15 @@ condExprAlts ((ac, b, a) : as) = do
   bs' <- condExprAlts as
   return $ (ac, b, a') : bs'
 
+{-
+  The following performs this transform:
+
+    forall (b :: Bool) (t :: ArduinoConditional a => Arduino a) (e :: ArduinoConditional a => Arduino a).
+    if b then t else e
+      =
+    rep_ <$> ifThenElseE (abs_ b) (abs_ <$> t) (abs_ <$> e)
+
+-}
 condTransform :: Type -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CondM CoreExpr
 condTransform ty e alts = do
   case alts of
@@ -177,6 +186,7 @@ condTransform ty e alts = do
       let ty' = mkTyConTy tyCon'
       -- Get the Arduino Type Arg
       let Just [ty''] = tyConAppArgs_maybe ty
+      -- Get the conditional type
       let bTy = exprType e
 
       -- Lookup the GHC ID of ifThenElseE function
@@ -239,57 +249,41 @@ condTransform ty e alts = do
       let repIfteExpr = mkCoreApps (Var repId) [Type ty'', ifteExpr]
 
       return repIfteExpr
---      return $ mkCoreApps (Var ifThenElseId) [ Type ty', dict, e, e1, e2]
-{-
-      e' <- appAbs (exprType e) e
-      e1' <- appAbs ty' e1
-      e2' <- appAbs ty' e2
-      let r = mkCoreApps (Var ifThenElseId) [ Type ty', dict, e', e1', e2']
-      -- return mkCoreApps (appRep ty' r
-      appAbs ty r
--}
-{-
-appAbs :: Type -> CoreExpr -> CondM CoreExpr
-appAbs ty e = do
-      -- Lookup the GHC ID of abs_ function
-      Just absName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.abs_
-      absId <- liftCoreM $ lookupId absName
-      -- Lookup the GHC type constructor of ExprB
-      Just exprName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.ExprB
-      exprTyCon <- liftCoreM $ lookupTyCon exprName
-      -- Make the type of the ExprB for the specified type
-      let tyConApp = GhcPlugins.mkTyConApp exprTyCon [ty]
-      -- Build the dictionary argument to apply
-      dict <- buildDictionaryT tyConApp
-      return $ mkCoreApps (Var absId) [ Type ty, dict, e]
 
-appRep :: Type -> CoreExpr -> CondM CoreExpr
-appRep ty e = do
-      -- Lookup the GHC ID of abs_ function
-      Just repName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.rep_
-      repId <- liftCoreM $ lookupId repName
-      Just appName <- liftCoreM $ thNameToGhcName '(<$>)
-      appId <- liftCoreM $ lookupId appName
-      return $ mkCoreApps (Var appId) [App (Var repId) (Type ty), e]
 {-
-      -- Lookup the GHC type constructor of ExprB
-      Just exprName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.ExprB
-      exprTyCon <- liftCoreM $ lookupTyCon exprName
-      -- Make the type of the ExprB for the specified type
-      let tyConApp = GhcPlugins.mkTyConApp exprTyCon [ty]
-      -- Build the dictionary argument to apply
-      dict <- buildDictionaryT tyConApp
-      return $ mkCoreApps (Var repId) [ Type ty, dict, e]
--}
--}
+  The following performs this transform:
 
+    forall (b :: Bool) (t :: Arduino ()) (e :: Arduino ()).
+    if b then t else e
+      =
+    ifThenElseUnitE (abs_ b) t e
+
+-}
 condTransformUnit :: Type -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CondM CoreExpr
 condTransformUnit ty e alts = do
   case alts of
     [(_, _, e1),(_, _, e2)] -> do
-      Just ifThenElseName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.ifThenElseUnit
+      -- Get the conditional type
+      let bTy = exprType e
+
+      Just ifThenElseName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.ifThenElseUnitE
       ifThenElseId <- liftCoreM $ lookupId ifThenElseName
-      return $ mkCoreApps (Var ifThenElseId) [ e, e1, e2]
+
+      -- Lookup the GHC ID of abs_ function
+      Just absName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.abs_
+      absId <- liftCoreM $ lookupId absName
+      -- Lookup the GHC type constructor of ExprB
+      Just exprBName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.ExprB
+      exprBTyCon <- liftCoreM $ lookupTyCon exprBName
+      -- Make the type of the ExprB for the specified type
+      let absTyConApp = GhcPlugins.mkTyConApp exprBTyCon [bTy]
+      -- Build the ExprB dictionary argument to apply
+      absDict <- buildDictionaryT absTyConApp
+
+      -- Build the First Arg to ifThenElseUnitE
+      let arg1 = mkCoreApps (Var absId) [Type bTy, absDict, e]
+
+      return $ mkCoreApps (Var ifThenElseId) [ arg1, e1, e2]
 
 -- Adapted from HERMIT.Monad
 runTcM :: TcM a -> CondM a

@@ -66,7 +66,9 @@ testWait2 = do
     let button1 = 3
     a <- digitalRead button1
     b <- digitalRead button1
-    ifThenElse  (a || b) (return $ a || b) (return $ a)
+    c <- if a || b then return $ a || b else return $ a
+    digitalWrite button1 c
+    return c
 
 -- This is what we want testWait to be transformed to
 -- Currently we do all but changing types at the bind
@@ -121,6 +123,7 @@ main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
     loopE m
   #-}
 
+{-
 {-# RULES "if-then-else-unit" [0]
     forall (b :: Bool) (t :: Arduino ()) (e :: Arduino ()).
     ifThenElseUnit b t e
@@ -128,14 +131,12 @@ main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
     ifThenElseUnitE (abs_ b) t e
   #-}
 
-{-
 {-# RULES "if-then-else-bool" [0]
     forall (b :: Bool) (t :: Arduino Bool) (e :: Arduino Bool).
     ifThenElseBool b t e
       =
     rep_ <$> ifThenElseBoolE (abs_ b) (abs_ <$> t) (abs_ <$> e)
   #-}
--}
 
 -- I expected this general rule to work, but it didn't went 
 -- with specific rule above.
@@ -145,6 +146,7 @@ main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
       =
     rep_ <$> ifThenElseE (abs_ b) (abs_ <$> t) (abs_ <$> e)
   #-}
+-}
 
 {-# RULES "abs-push-or" [0]
     forall (b1 :: Bool) (b2 :: Bool).
