@@ -60,15 +60,14 @@ newtype CondM a = CondM { runCondM :: ReaderT CondEnv CoreM a }
     deriving (Functor, Applicative, Monad
              ,MonadIO, MonadReader CondEnv)
 
-class Monad m => LiftCoreM m where
+class (Monad m, MonadIO m) => PassCoreM m where
     -- | 'CoreM' can be lifted to this monad.
-    liftCoreM :: CoreM a -> m a
+    liftCoreM  :: CoreM a -> m a
+    getModGuts :: m ModGuts
 
-instance LiftCoreM CondM where
+instance PassCoreM CondM where
   liftCoreM = CondM . ReaderT . const
-
-getModGuts :: CondM ModGuts
-getModGuts = CondM $ ReaderT (return . pluginModGuts)
+  getModGuts = CondM $ ReaderT (return . pluginModGuts)
 
 condPass :: ModGuts -> CoreM ModGuts
 condPass guts = do
@@ -286,7 +285,7 @@ condTransformUnit ty e alts = do
       return $ mkCoreApps (Var ifThenElseId) [ arg1, e1, e2]
 
 -- Adapted from HERMIT.Monad
-runTcM :: TcM a -> CondM a
+runTcM :: PassCoreM m => TcM a -> m a
 runTcM m = do
     env <- liftCoreM getHscEnv
     dflags <- liftCoreM getDynFlags
@@ -297,14 +296,14 @@ runTcM m = do
                                                    ++ text "Warnings:" : pprErrMsgBagWithLoc warns
     maybe (fail $ showMsgs msgs) return mr
 
-newCondName :: String -> CondM Name
+newCondName :: PassCoreM m => String -> m Name
 newCondName nm = mkSystemVarName <$> (liftCoreM getUniqueM) <*> return (mkFastString nm)
 
-newIdH :: String -> Type -> CondM Id
+newIdH :: PassCoreM m => String -> Type -> m Id
 newIdH name ty = do name' <- newCondName name
                     return $ mkLocalId name' ty
 
-buildDictionary :: Id -> CondM (Id, [CoreBind])
+buildDictionary :: PassCoreM m => Id -> m (Id, [CoreBind])
 buildDictionary evar = do
     runTcM $ do
 #if __GLASGOW_HASKELL__ > 710
@@ -325,7 +324,7 @@ buildDictionary evar = do
         bnds1 <- initDsTc $ dsEvBinds bnds
         return (evar, bnds1)
 
-buildDictionaryT :: Type -> CondM CoreExpr
+buildDictionaryT :: PassCoreM m => Type -> m CoreExpr
 buildDictionaryT ty = do
     dflags <- liftCoreM getDynFlags
     binder <- newIdH ("$d" ++ zEncodeString (filter (not . isSpace) (showPpr dflags ty))) ty

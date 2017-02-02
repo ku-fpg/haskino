@@ -53,3 +53,4 @@ Library
                     , System.Hardware.Haskino.Utils
                     , System.Hardware.Haskino.RepLambdaPass
                     , System.Hardware.Haskino.CondPass
+                    , System.Hardware.Haskino.Typechecker
