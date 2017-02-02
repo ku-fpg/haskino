@@ -245,9 +245,7 @@ condTransform ty e alts = do
       let ifteExpr = mkCoreApps (Var ifThenElseId) [Type ty'', condDict, arg1, arg2, arg3]
 
       -- Build the rep wrapped ifThenElse
-      -- let repIfteExpr = mkCoreApps (Var repId) [Type ty'', ifteExpr]
-      -- let repIfteExpr = mkCoreApps (Var repId) [Type ty'', ifteExpr]
-      let repIfteExpr = mkCoreApps (Var functId) [Type ty', Type ty'', Type exprTyConApp, functDict, (Var repId), ifteExpr]
+      let repIfteExpr = mkCoreApps (Var functId) [Type ty', Type ty'', Type exprTyConApp, functDict, App (Var repId) (Type ty''), ifteExpr]
 
       return repIfteExpr
 
