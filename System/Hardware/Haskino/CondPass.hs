@@ -237,15 +237,17 @@ condTransform ty e alts = do
       let arg1 = mkCoreApps (Var absId) [Type bTy, absDict, e]
 
       -- Build the Second Arg to ifThenElseE
-      let arg2 = mkCoreApps (Var functId) [Type ty', Type ty'', Type exprTyConApp, functDict, e1]
+      let arg2 = mkCoreApps (Var functId) [Type ty', Type ty'', Type exprTyConApp, functDict, (Var absId), e1]
 
       -- Build the Third Arg to ifThenElseE
-      let arg3 = mkCoreApps (Var functId) [Type ty', Type ty'', Type exprTyConApp, functDict, e2]
+      let arg3 = mkCoreApps (Var functId) [Type ty', Type ty'', Type exprTyConApp, functDict, (Var absId), e2]
       -- Build the ifThenElse Expr
       let ifteExpr = mkCoreApps (Var ifThenElseId) [Type ty'', condDict, arg1, arg2, arg3]
 
       -- Build the rep wrapped ifThenElse
-      let repIfteExpr = mkCoreApps (Var repId) [Type ty'', ifteExpr]
+      -- let repIfteExpr = mkCoreApps (Var repId) [Type ty'', ifteExpr]
+      -- let repIfteExpr = mkCoreApps (Var repId) [Type ty'', ifteExpr]
+      let repIfteExpr = mkCoreApps (Var functId) [Type ty', Type ty'', Type exprTyConApp, functDict, (Var repId), ifteExpr]
 
       return repIfteExpr
 
