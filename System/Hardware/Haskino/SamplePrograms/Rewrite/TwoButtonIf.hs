@@ -37,11 +37,9 @@ twoButtonProg = do
         then do
           digitalWrite led1 a
           digitalWrite led2 b
-          return a
         else do
           digitalWrite led1 (not a)
           digitalWrite led2 (not b)
-          return b
         delayMillis 1000
 
 testWait :: Arduino Bool
