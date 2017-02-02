@@ -52,6 +52,14 @@ testWait = do
     b <- digitalRead button1
     if a || b then return $ a || b else return $ a
 
+testWaitWord8 :: Arduino Word8
+testWaitWord8 = do
+    let button1 = 2
+    let button1 = 3
+    a <- digitalRead button1
+    b <- digitalRead button1
+    if a || b then return (0::Word8) else return (1::Word8)
+
 testWait2 :: Arduino Bool
 testWait2 = do
     let button1 = 2

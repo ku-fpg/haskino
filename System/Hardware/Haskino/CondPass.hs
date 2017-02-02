@@ -177,6 +177,8 @@ condTransform ty e alts = do
       let ty' = mkTyConTy tyCon'
       -- Get the Arduino Type Arg
       let Just [ty''] = tyConAppArgs_maybe ty
+      let bTy = exprType e
+
       -- Lookup the GHC ID of ifThenElseE function
       Just ifThenElseName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.ifThenElseE
       ifThenElseId <- liftCoreM $ lookupId ifThenElseName
@@ -199,7 +201,7 @@ condTransform ty e alts = do
       Just exprBName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.ExprB
       exprBTyCon <- liftCoreM $ lookupTyCon exprBName
       -- Make the type of the ExprB for the specified type
-      let absTyConApp = GhcPlugins.mkTyConApp exprBTyCon [ty'']
+      let absTyConApp = GhcPlugins.mkTyConApp exprBTyCon [bTy]
       -- Build the ExprB dictionary argument to apply
       absDict <- buildDictionaryT absTyConApp
       -- Build the abs_ Expr
@@ -223,7 +225,7 @@ condTransform ty e alts = do
       let exprTyConApp = GhcPlugins.mkTyConApp exprTyCon [ty'']
 
       -- Build the First Arg to ifThenElseE
-      let arg1 = mkCoreApps (Var absId) [Type ty'', absDict, e]
+      let arg1 = mkCoreApps (Var absId) [Type bTy, absDict, e]
 
       -- Build the Second Arg to ifThenElseE
       let arg2 = mkCoreApps (Var functId) [Type ty', Type ty'', Type exprTyConApp, functDict, e1]
