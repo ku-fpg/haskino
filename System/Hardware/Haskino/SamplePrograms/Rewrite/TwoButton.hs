@@ -79,7 +79,7 @@ main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
   #-}
 
 {-# RULES "rep-3rd-monad" [0]
-    forall (f :: Arduino (Expr Bool)) (k :: Bool -> Arduino b).
+    forall (f :: Arduino (Expr a)) (k :: a -> Arduino b).
     rep_ <$> f >>= k 
       =
     f >>= k . rep_
