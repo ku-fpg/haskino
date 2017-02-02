@@ -43,8 +43,8 @@ install _ todo = do
   reinitializeGlobals
   let repLambdaToDo = [CoreDoPluginPass "RepLambda" repLambdaPass]
   let condToDo = [CoreDoPluginPass "CondTransform" condPass]
-  let dumpTodo = [CoreDoPluginPass "DumpPass" dumpPass]
-  return $ condToDo ++ [rules0Pass] ++ repLambdaToDo ++ [rules1Pass] ++ todo ++ dumpTodo
+  let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
+  return $ condToDo ++ [rules0Pass] ++ repLambdaToDo ++ [rules1Pass] ++ todo ++ dumpToDo
 
 rules0Pass :: CoreToDo
 rules0Pass = CoreDoSimplify 1 SimplMode {

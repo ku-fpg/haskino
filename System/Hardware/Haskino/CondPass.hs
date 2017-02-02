@@ -40,6 +40,7 @@ import Control.Arrow (first, second)
 import Control.Monad
 import Control.Monad.Writer
 import Data.List 
+import Data.Functor
 import Encoding (zEncodeString)
 
 import System.Hardware.Haskino.Typechecker (initTcFromModGuts)
@@ -47,6 +48,8 @@ import System.Hardware.Haskino.Typechecker (initTcFromModGuts)
 import Control.Monad.Reader
 
 import qualified System.Hardware.Haskino
+import qualified System.Hardware.Haskino.Data
+import qualified System.Hardware.Haskino.Expr
 
 data CondEnv
     = CondEnv
@@ -169,19 +172,72 @@ condTransform :: Type -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CondM CoreExpr
 condTransform ty e alts = do
   case alts of
     [(_, _, e1),(_, _, e2)] -> do
-      -- Get the Arduino type returned
-      let Just [ty'] = tyConAppArgs_maybe ty
-      -- Lookup the GHC ID of ifThenElse function
-      Just ifThenElseName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.ifThenElse
+      -- Get the Arduino Type Con
+      let Just tyCon'  = tyConAppTyCon_maybe ty
+      let ty' = mkTyConTy tyCon'
+      -- Get the Arduino Type Arg
+      let Just [ty''] = tyConAppArgs_maybe ty
+      -- Lookup the GHC ID of ifThenElseE function
+      Just ifThenElseName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.ifThenElseE
       ifThenElseId <- liftCoreM $ lookupId ifThenElseName
       -- Lookup the GHC type constructor of ArduinoConditional
       Just condName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.ArduinoConditional
       condTyCon <- liftCoreM $ lookupTyCon condName
       -- Make the type of the ArduinoConditional for the specified type
-      let tyConApp = GhcPlugins.mkTyConApp condTyCon [ty']
-      -- Build the dictionary argument to apply
-      dict <- buildDictionaryT tyConApp
-      return $ mkCoreApps (Var ifThenElseId) [ Type ty', dict, e, e1, e2]
+      let condTyConApp = GhcPlugins.mkTyConApp condTyCon [ty'']
+      -- Build the ArduinoConditional dictionary argument to apply
+      condDict <- buildDictionaryT condTyConApp
+
+      -- Lookup the GHC ID of rep_ function
+      Just repName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.rep_
+      repId <- liftCoreM $ lookupId repName
+
+      -- Lookup the GHC ID of abs_ function
+      Just absName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.abs_
+      absId <- liftCoreM $ lookupId absName
+      -- Lookup the GHC type constructor of ExprB
+      Just exprBName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.ExprB
+      exprBTyCon <- liftCoreM $ lookupTyCon exprBName
+      -- Make the type of the ExprB for the specified type
+      let absTyConApp = GhcPlugins.mkTyConApp exprBTyCon [ty'']
+      -- Build the ExprB dictionary argument to apply
+      absDict <- buildDictionaryT absTyConApp
+      -- Build the abs_ Expr
+      let absExpr = mkCoreApps (Var absId) [Type ty'', absDict]
+
+      -- Lookup the GHC ID of <$> function
+      Just functAppName <- liftCoreM $ thNameToGhcName '(<$>)
+      functId <- liftCoreM $ lookupId functAppName
+      -- Lookup the GHC type constructor of Functor
+      Just functName <- liftCoreM $ thNameToGhcName ''Data.Functor.Functor
+      functTyCon <- liftCoreM $ lookupTyCon functName
+      -- Make the type of the Functor for the specified type
+      let functTyConApp = GhcPlugins.mkTyConApp functTyCon [ty']
+      -- Build the Functor dictionary argument to apply
+      functDict <- buildDictionaryT functTyConApp
+
+      -- Lookup the GHC type constructor of Expr
+      Just exprName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.Expr.Expr
+      exprTyCon <- liftCoreM $ lookupTyCon exprName
+      -- Make the type of the Expr for the specified type
+      let exprTyConApp = GhcPlugins.mkTyConApp exprTyCon [ty'']
+
+      -- Build the First Arg to ifThenElseE
+      let arg1 = mkCoreApps (Var absId) [Type ty'', absDict, e]
+
+      -- Build the Second Arg to ifThenElseE
+      let arg2 = mkCoreApps (Var functId) [Type ty', Type ty'', Type exprTyConApp, functDict, e1]
+
+      -- Build the Third Arg to ifThenElseE
+      let arg3 = mkCoreApps (Var functId) [Type ty', Type ty'', Type exprTyConApp, functDict, e2]
+      -- Build the ifThenElse Expr
+      let ifteExpr = mkCoreApps (Var ifThenElseId) [Type ty'', condDict, arg1, arg2, arg3]
+
+      -- Build the rep wrapped ifThenElse
+      let repIfteExpr = mkCoreApps (Var repId) [Type ty'', ifteExpr]
+
+      return repIfteExpr
+--      return $ mkCoreApps (Var ifThenElseId) [ Type ty', dict, e, e1, e2]
 {-
       e' <- appAbs (exprType e) e
       e1' <- appAbs ty' e1

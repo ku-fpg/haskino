@@ -37,11 +37,12 @@ twoButtonProg = do
         then do
           digitalWrite led1 a
           digitalWrite led2 b
+          return a
         else do
           digitalWrite led1 (not a)
-          digitalWrite led2 (not b)          
+          digitalWrite led2 (not b)
+          return b
         delayMillis 1000
-
 
 testWait :: Arduino Bool
 testWait = do
@@ -51,16 +52,24 @@ testWait = do
     b <- digitalRead button1
     if a || b then return $ a || b else return $ a
 
+testWait2 :: Arduino Bool
+testWait2 = do
+    let button1 = 2
+    let button1 = 3
+    a <- digitalRead button1
+    b <- digitalRead button1
+    ifThenElse  (a || b) (return $ a || b) (return $ a)
+
 -- This is what we want testWait to be transformed to
 -- Currently we do all but changing types at the bind
 -- level.  Perhaps another pass is needed for that?
-testWaitE :: Arduino (Expr Bool)
+testWaitE :: Arduino Bool
 testWaitE = do
     let button1 = 2
     let button1 = 3
-    a <- digitalReadE button1
-    b <- digitalReadE button1
-    ifThenElseE (a ||* b) (return $ (a ||* b)) (return a)
+    a <- digitalRead button1
+    b <- digitalRead button1
+    rep_ <$> ifThenElseE (abs_ (a ||* b)) (abs_ <$> (return $ (a ||* b))) (abs_ <$> (return a))
 
 testCompile :: Arduino ()
 testCompile = do
@@ -111,23 +120,23 @@ main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
     ifThenElseUnitE (abs_ b) t e
   #-}
 
+{-
 {-# RULES "if-then-else-bool" [0]
     forall (b :: Bool) (t :: Arduino Bool) (e :: Arduino Bool).
     ifThenElseBool b t e
       =
     rep_ <$> ifThenElseBoolE (abs_ b) (abs_ <$> t) (abs_ <$> e)
   #-}
+-}
 
-{-
 -- I expected this general rule to work, but it didn't went 
 -- with specific rule above.
 {-# RULES "if-then-else-proc" [0]
-    forall (b :: Bool) (t :: ExprB a => Arduino a) (e :: ExprB a => Arduino a).
+    forall (b :: Bool) (t :: ArduinoConditional a => Arduino a) (e :: ArduinoConditional a => Arduino a).
     ifThenElse b t e
       =
     rep_ <$> ifThenElseE (abs_ b) (abs_ <$> t) (abs_ <$> e)
   #-}
--}
 
 {-# RULES "abs-push-or" [0]
     forall (b1 :: Bool) (b2 :: Bool).

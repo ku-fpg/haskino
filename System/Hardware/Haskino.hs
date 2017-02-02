@@ -51,8 +51,7 @@ module System.Hardware.Haskino (
   -- ** Control structures
   -- ToDo: Cleanup IfThenElse's
   --, loop, ifThenElseUnit, ifThenElseUnitE, loopE, forInE, ArduinoConditional(..)
-  , loop, whileE, ifThenElse, ifThenElseE,  ifThenElseUnit, ifThenElseUnitE, loopE, forInE
-  , ifThenElseBool, ifThenElseBoolE, ArduinoConditional
+  , loop, loopE, ArduinoConditional(..), ifThenElseUnit, ifThenElseUnitE, forInE
   -- ** Expressions
   , Expr(..), RemoteRef, lit, newRemoteRef, readRemoteRef, writeRemoteRef
   , modifyRemoteRef, (++*), (*:), (!!*), len, pack, litString, showE, showFFloatE
