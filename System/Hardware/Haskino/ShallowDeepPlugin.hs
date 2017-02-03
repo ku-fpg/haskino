@@ -28,7 +28,7 @@ import Var
 import Control.Monad
 import Control.Monad.Writer
 import Data.List
-import System.Hardware.Haskino.RepLambdaPass 
+import System.Hardware.Haskino.AbsLambdaPass 
 import System.Hardware.Haskino.CondPass 
 
 import qualified System.Hardware.Haskino
@@ -41,10 +41,10 @@ plugin = defaultPlugin {
 install :: [CommandLineOption] -> [CoreToDo] -> CoreM [CoreToDo]
 install _ todo = do
   reinitializeGlobals
-  let repLambdaToDo = [CoreDoPluginPass "RepLambda" repLambdaPass]
+  let absLambdaToDo = [CoreDoPluginPass "AbsLambda" absLambdaPass]
   let condToDo = [CoreDoPluginPass "CondTransform" condPass]
   let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
-  return $ condToDo ++ [rules0Pass] ++ repLambdaToDo ++ [rules1Pass] ++ todo ++ dumpToDo
+  return $ condToDo ++ [rules0Pass] ++ absLambdaToDo ++ [rules1Pass] ++ todo ++ dumpToDo
 
 rules0Pass :: CoreToDo
 rules0Pass = CoreDoSimplify 1 SimplMode {

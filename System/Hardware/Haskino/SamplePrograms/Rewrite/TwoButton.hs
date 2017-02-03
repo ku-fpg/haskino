@@ -13,8 +13,6 @@
 
 module Main where
 
-import Prelude hiding (abs)
-
 import System.Hardware.Haskino
 import Control.Monad
 import Data.Word
@@ -40,28 +38,28 @@ main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
 {-# RULES 
     "digitalRead" [0]
     forall (p :: Word8).
-    digitalRead p = rep_ <$> (digitalReadE $ abs_ p) 
+    digitalRead p = abs_ <$> (digitalReadE $ rep_ p) 
   #-}
 
 {-# RULES "digitalWrite" [0]
     forall (p :: Word8) (b :: Bool).
     digitalWrite p b
       =
-    digitalWriteE (abs_ p) (abs_ b)
+    digitalWriteE (rep_ p) (rep_ b)
   #-}
 
 {-# RULES "pinMode" [0]
     forall (p :: Word8) m.
     setPinMode p m
       =
-    setPinModeE (abs_ p) m
+    setPinModeE (rep_ p) m
   #-}
 
 {-# RULES "delayMillis" [0]
     forall (d :: Word32).
     delayMillis d
       =
-    delayMillisE (abs_ d)
+    delayMillisE (rep_ d)
   #-}
 
 {-# RULES "loop" [0]
@@ -71,23 +69,23 @@ main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
     loopE m
   #-}
 
-{-# RULES "abs-push-or" [0]
+{-# RULES "rep-push-or" [0]
     forall (b1 :: Bool) (b2 :: Bool).
-    abs_ (b1 || b2)
+    rep_ (b1 || b2)
       =
-    (abs_ b1) ||* (abs_ b2)
+    (rep_ b1) ||* (rep_ b2)
   #-}
 
-{-# RULES "rep-3rd-monad" [0]
+{-# RULES "abs-3rd-monad" [0]
     forall (f :: Arduino (Expr a)) (k :: a -> Arduino b).
-    rep_ <$> f >>= k 
+    abs_ <$> f >>= k 
       =
-    f >>= k . rep_
+    f >>= k . abs_
   #-}
 
-{-# RULES "abs-rep-fuse" [1]
+{-# RULES "rep-abs-fuse" [1]
     forall x.
-    abs_(rep_(x))
+    rep_(abs_(x))
       =
     x
   #-}

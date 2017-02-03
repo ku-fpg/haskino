@@ -77,7 +77,7 @@ testWaitE = do
     let button1 = 3
     a <- digitalRead button1
     b <- digitalRead button1
-    rep_ <$> ifThenElseE (abs_ (a ||* b)) (abs_ <$> (return $ (a ||* b))) (abs_ <$> (return a))
+    abs_ <$> ifThenElseE (rep_ (a ||* b)) (rep_ <$> (return $ (a ||* b))) (rep_ <$> (return a))
 
 testCompile :: Arduino ()
 testCompile = do
@@ -90,28 +90,30 @@ main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
 {-# RULES 
     "digitalRead" [0]
     forall (p :: Word8).
-    digitalRead p = rep_ <$> (digitalReadE $ abs_ p) 
+    digitalRead p
+      = 
+    abs_ <$> (digitalReadE $ rep_ p) 
   #-}
 
 {-# RULES "digitalWrite" [0]
     forall (p :: Word8) (b :: Bool).
     digitalWrite p b
       =
-    digitalWriteE (abs_ p) (abs_ b)
+    digitalWriteE (rep_ p) (rep_ b)
   #-}
 
 {-# RULES "pinMode" [0]
     forall (p :: Word8) m.
     setPinMode p m
       =
-    setPinModeE (abs_ p) m
+    setPinModeE (rep_ p) m
   #-}
 
 {-# RULES "delayMillis" [0]
     forall (d :: Word32).
     delayMillis d
       =
-    delayMillisE (abs_ d)
+    delayMillisE (rep_ d)
   #-}
 
 {-# RULES "loop" [0]
@@ -126,14 +128,14 @@ main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
     forall (b :: Bool) (t :: Arduino ()) (e :: Arduino ()).
     ifThenElseUnit b t e
       =
-    ifThenElseUnitE (abs_ b) t e
+    ifThenElseUnitE (rep_ b) t e
   #-}
 
 {-# RULES "if-then-else-bool" [0]
     forall (b :: Bool) (t :: Arduino Bool) (e :: Arduino Bool).
     ifThenElseBool b t e
       =
-    rep_ <$> ifThenElseBoolE (abs_ b) (abs_ <$> t) (abs_ <$> e)
+    abs_ <$> ifThenElseBoolE (rep_ b) (rep_ <$> t) (rep_ <$> e)
   #-}
 
 -- I expected this general rule to work, but it didn't went 
@@ -142,41 +144,41 @@ main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
     forall (b :: Bool) (t :: ArduinoConditional a => Arduino a) (e :: ArduinoConditional a => Arduino a).
     ifThenElse b t e
       =
-    rep_ <$> ifThenElseE (abs_ b) (abs_ <$> t) (abs_ <$> e)
+    abs_ <$> ifThenElseE (rep_ b) (rep_ <$> t) (rep_ <$> e)
   #-}
 -}
 
-{-# RULES "abs-push-or" [0]
+{-# RULES "rep-push-or" [0]
     forall (b1 :: Bool) (b2 :: Bool).
-    abs_ (b1 || b2)
+    rep_ (b1 || b2)
       =
-    (abs_ b1) ||* (abs_ b2)
+    (rep_ b1) ||* (rep_ b2)
   #-}
 
-{-# RULES "abs-push-not" [0]
+{-# RULES "rep-push-not" [0]
     forall (b :: Bool).
-    abs_ (not b)
+    rep_ (not b)
       =
-    notB (abs_ b)
+    notB (rep_ b)
   #-}
 
-{-# RULES "rep-3rd-monad" [0]
+{-# RULES "abs-3rd-monad" [0]
     forall (f :: Arduino (Expr Bool)) (k :: Bool -> Arduino b).
-    rep_ <$> f >>= k 
+    abs_ <$> f >>= k 
       =
-    f >>= k . rep_
+    f >>= k . abs_
   #-}
 
-{-# RULES "abs-return" [0]
+{-# RULES "rep-return" [0]
     forall (t :: Bool).
-    abs_ <$> return t 
+    rep_ <$> return t 
       =
-    return $ abs_ t
+    return $ rep_ t
   #-}
 
-{-# RULES "abs-rep-fuse" [1]
+{-# RULES "rep-abs-fuse" [1]
     forall x.
-    abs_(rep_(x))
+    rep_(abs_(x))
       =
     x
   #-}

@@ -51,6 +51,6 @@ Library
                     , System.Hardware.Haskino.Expr
                     , System.Hardware.Haskino.Protocol
                     , System.Hardware.Haskino.Utils
-                    , System.Hardware.Haskino.RepLambdaPass
+                    , System.Hardware.Haskino.AbsLambdaPass
                     , System.Hardware.Haskino.CondPass
                     , System.Hardware.Haskino.Typechecker
