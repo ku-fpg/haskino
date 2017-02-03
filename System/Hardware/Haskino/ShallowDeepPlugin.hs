@@ -12,26 +12,8 @@ module System.Hardware.Haskino.ShallowDeepPlugin (plugin) where
 
 import CoreMonad
 import GhcPlugins
-import HscTypes
-import Outputable
-import SimplEnv
-import SimplUtils
-import Data.Data
-import Data.List
-import Data.Typeable
-import DataCon
-import IOEnv 
-import OccName
-import TysPrim
-import Unique
-import Var
-import Control.Monad
-import Control.Monad.Writer
-import Data.List
 import System.Hardware.Haskino.AbsLambdaPass 
 import System.Hardware.Haskino.CondPass 
-
-import qualified System.Hardware.Haskino
 
 plugin :: Plugin
 plugin = defaultPlugin {

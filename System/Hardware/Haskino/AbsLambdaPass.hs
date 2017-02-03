@@ -12,22 +12,8 @@ module System.Hardware.Haskino.AbsLambdaPass (absLambdaPass) where
 
 import CoreMonad
 import GhcPlugins
-import HscTypes
-import Outputable
-import SimplEnv
-import SimplUtils
-import Data.Data
-import Data.List
-import Data.Typeable
-import DataCon
-import IOEnv 
 import OccName
-import TysPrim
-import Unique
 import Var
-import Control.Monad
-import Control.Monad.Writer
-import Data.List 
 
 absLambdaPass :: ModGuts -> CoreM ModGuts
 absLambdaPass guts = bindsOnlyPass (mapM absBind) guts
