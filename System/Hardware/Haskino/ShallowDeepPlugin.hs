@@ -44,7 +44,7 @@ install _ todo = do
   let absLambdaToDo = [CoreDoPluginPass "AbsLambda" absLambdaPass]
   let condToDo = [CoreDoPluginPass "CondTransform" condPass]
   let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
-  return $ condToDo ++ [rules0Pass] ++ absLambdaToDo ++ [rules1Pass] ++ todo ++ dumpToDo
+  return $ condToDo ++ [rules2Pass] ++ [rules1Pass] ++ absLambdaToDo ++ [rules0Pass] ++ todo ++ dumpToDo
 
 rules0Pass :: CoreToDo
 rules0Pass = CoreDoSimplify 1 SimplMode {
@@ -61,7 +61,17 @@ rules1Pass = CoreDoSimplify 1 SimplMode {
             sm_names = [],
             sm_phase = Phase 1,
             sm_rules = True,
-            sm_inline = True,
+            sm_inline = False,
+            sm_case_case = False,
+            sm_eta_expand = False
+            }
+
+rules2Pass :: CoreToDo
+rules2Pass = CoreDoSimplify 1 SimplMode {
+            sm_names = [],
+            sm_phase = Phase 2,
+            sm_rules = True,
+            sm_inline = False,
             sm_case_case = False,
             sm_eta_expand = False
             }

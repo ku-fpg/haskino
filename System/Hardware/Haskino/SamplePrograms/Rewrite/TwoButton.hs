@@ -36,54 +36,54 @@ main :: IO ()
 main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
 
 {-# RULES 
-    "digitalRead" [0]
+    "digitalRead" [2]
     forall (p :: Word8).
     digitalRead p = abs_ <$> (digitalReadE $ rep_ p) 
   #-}
 
-{-# RULES "digitalWrite" [0]
+{-# RULES "digitalWrite" [2]
     forall (p :: Word8) (b :: Bool).
     digitalWrite p b
       =
     digitalWriteE (rep_ p) (rep_ b)
   #-}
 
-{-# RULES "pinMode" [0]
+{-# RULES "pinMode" [2]
     forall (p :: Word8) m.
     setPinMode p m
       =
     setPinModeE (rep_ p) m
   #-}
 
-{-# RULES "delayMillis" [0]
+{-# RULES "delayMillis" [2]
     forall (d :: Word32).
     delayMillis d
       =
     delayMillisE (rep_ d)
   #-}
 
-{-# RULES "loop" [0]
+{-# RULES "loop" [2]
     forall (m :: Arduino ()).
     loop m
       =
     loopE m
   #-}
 
-{-# RULES "rep-push-or" [0]
+{-# RULES "rep-push-or" [1]
     forall (b1 :: Bool) (b2 :: Bool).
     rep_ (b1 || b2)
       =
     (rep_ b1) ||* (rep_ b2)
   #-}
 
-{-# RULES "abs-3rd-monad" [0]
+{-# RULES "abs-3rd-monad" [1]
     forall (f :: Arduino (Expr a)) (k :: a -> Arduino b).
     abs_ <$> f >>= k 
       =
     f >>= k . abs_
   #-}
 
-{-# RULES "rep-abs-fuse" [1]
+{-# RULES "rep-abs-fuse" [0]
     forall x.
     rep_(abs_(x))
       =
