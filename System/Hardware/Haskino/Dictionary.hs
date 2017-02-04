@@ -8,7 +8,6 @@
 -- GHC Dictionary Utility Functions
 -------------------------------------------------------------------------------
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 module System.Hardware.Haskino.Dictionary (buildDictionaryT, PassCoreM(..)) where
 

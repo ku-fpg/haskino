@@ -7,7 +7,6 @@
 --
 -- Conditional Transformation Pass
 -------------------------------------------------------------------------------
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 module System.Hardware.Haskino.CondPass (condPass) where
@@ -18,7 +17,6 @@ import Data.List
 import Data.Functor
 import Control.Monad.Reader
 
-import System.Hardware.Haskino.Typechecker (initTcFromModGuts)
 import System.Hardware.Haskino.Dictionary (buildDictionaryT, PassCoreM(..), )
 
 import qualified System.Hardware.Haskino
@@ -90,7 +88,8 @@ condExpr e = do
         [(ac1, _, _), _] -> do
           case ac1 of 
             DataAlt d -> do
-              if nameString (getName d) == "False"
+              Just falseName <- liftCoreM $ thNameToGhcName 'Prelude.False
+              if (getName d) == falseName
               then condTransformUnit ty e' alts'
               else return $ Case e' tb ty alts'
             _ -> return $ Case e' tb ty alts'
@@ -103,7 +102,8 @@ condExpr e = do
         [(ac1, _, _), _] -> do
           case ac1 of 
             DataAlt d -> do
-              if nameString (getName d) == "False"
+              Just falseName <- liftCoreM $ thNameToGhcName 'Prelude.False
+              if (getName d) == falseName
               then condTransform ty e' alts'
               else return $ Case e' tb ty alts'
             _ -> return $ Case e' tb ty alts'

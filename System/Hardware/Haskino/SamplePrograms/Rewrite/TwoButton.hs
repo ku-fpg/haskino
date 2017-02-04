@@ -76,11 +76,25 @@ main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
     (rep_ b1) ||* (rep_ b2)
   #-}
 
+{-# RULES "rep-push-not" [1]
+    forall (b :: Bool).
+    rep_ (not b)
+      =
+    notB (rep_ b)
+  #-}
+
 {-# RULES "abs-3rd-monad" [1]
     forall (f :: Arduino (Expr a)) (k :: a -> Arduino b).
     abs_ <$> f >>= k 
       =
     f >>= k . abs_
+  #-}
+
+{-# RULES "rep-return" [1]
+    forall (t :: Bool).
+    rep_ <$> return t 
+      =
+    return $ rep_ t
   #-}
 
 {-# RULES "rep-abs-fuse" [0]
