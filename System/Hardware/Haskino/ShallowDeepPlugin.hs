@@ -28,7 +28,8 @@ install _ todo = do
   let condToDo = [CoreDoPluginPass "CondTransform" condPass]
   let bindToDo = [CoreDoPluginPass "BindTransform" bindChangePass]
   let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
-  return $ bindToDo ++ condToDo ++ [rules2Pass] ++ [rules1Pass] ++ absLambdaToDo ++ [rules0Pass] ++ todo ++ dumpToDo
+  return $ bindToDo ++ condToDo ++ [rules3Pass] ++ [rules2Pass] ++ [rules1Pass] ++ absLambdaToDo ++ [rules0Pass] ++ todo ++ dumpToDo
+  -- return $ bindToDo ++ condToDo ++ [rules2Pass] ++ [rules1Pass] ++ absLambdaToDo ++ [rules0Pass] ++ todo ++ dumpToDo -- absLambdaToDo ++ [rules0Pass] ++ todo ++ dumpToDo
 
 rules0Pass :: CoreToDo
 rules0Pass = CoreDoSimplify 1 SimplMode {
@@ -41,7 +42,7 @@ rules0Pass = CoreDoSimplify 1 SimplMode {
             }
 
 rules1Pass :: CoreToDo
-rules1Pass = CoreDoSimplify 1 SimplMode {
+rules1Pass = CoreDoSimplify 2 SimplMode {
             sm_names = [],
             sm_phase = Phase 1,
             sm_rules = True,
@@ -54,6 +55,16 @@ rules2Pass :: CoreToDo
 rules2Pass = CoreDoSimplify 1 SimplMode {
             sm_names = [],
             sm_phase = Phase 2,
+            sm_rules = True,
+            sm_inline = False,
+            sm_case_case = False,
+            sm_eta_expand = False
+            }
+
+rules3Pass :: CoreToDo
+rules3Pass = CoreDoSimplify 2 SimplMode {
+            sm_names = [],
+            sm_phase = Phase 3,
             sm_rules = True,
             sm_inline = False,
             sm_case_case = False,

@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -fplugin=System.Hardware.Haskino.ShallowDeepPlugin #-}
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.Strong.Blink
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonIf
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 --                System.Hardware.Arduino (c) Levent Erkok
