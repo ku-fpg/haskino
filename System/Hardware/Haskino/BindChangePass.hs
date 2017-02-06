@@ -57,7 +57,32 @@ changeBind bndr@(NonRec b e) = do
                   liftCoreM $ putMsg $ ppr retTyCon'
                   let (bs, e') = collectBinders e
                   liftCoreM $ putMsg $ ppr bs
-                  return bndr
+                  -- Lookup the GHC ID of rep_ function
+                  Just repName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.rep_
+                  repId <- liftCoreM $ lookupId repName
+                  -- Lookup the GHC type constructor of Expr
+                  Just exprName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.Expr
+                  exprTyCon <- liftCoreM $ lookupTyCon exprName
+                  -- Make the type of the ExprB for the specified type
+                  let repTyConApp = GhcPlugins.mkTyConApp exprTyCon [retTy']
+                  -- Build the ExprB dictionary argument to apply
+                  repDict <- buildDictionaryT repTyConApp
+
+                  -- Lookup the GHC ID of <$> function
+                  Just functAppName <- liftCoreM $ thNameToGhcName '(<$>)
+                  functId <- liftCoreM $ lookupId functAppName
+                  -- Lookup the GHC type constructor of Functor
+                  Just functName <- liftCoreM $ thNameToGhcName ''Data.Functor.Functor
+                  functTyCon <- liftCoreM $ lookupTyCon functName
+                  -- Make the type of the Functor for the specified type
+                  let retTyConTy = mkTyConTy retTyCon
+                  let functTyConApp = GhcPlugins.mkTyConApp functTyCon [retTyConTy]
+                  -- Build the Functor dictionary argument to apply
+                  functDict <- buildDictionaryT functTyConApp
+
+                  let repApp = mkCoreApps (Var repId) [Type retTy', repDict]
+                  let functApp = mkCoreApps (Var functId) [Type retTyConTy, Type retTy', Type repTyConApp, functDict, repApp, e]
+                  return (NonRec b functApp)
               _ -> return bndr
       _ -> return bndr
 changeBind (Rec bs) = do
