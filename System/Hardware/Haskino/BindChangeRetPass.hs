@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.BindChangePass
+-- Module      :  System.Hardware.Haskino.BindChangeRetPass
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
@@ -9,7 +9,7 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
-module System.Hardware.Haskino.BindChangePass (bindChangePass) where
+module System.Hardware.Haskino.BindChangeRetPass (bindChangeRetPass) where
 
 import CoreMonad
 import GhcPlugins
@@ -33,8 +33,8 @@ instance PassCoreM BindM where
   liftCoreM = BindM . ReaderT . const
   getModGuts = BindM $ ReaderT (return . pluginModGuts)
 
-bindChangePass :: ModGuts -> CoreM ModGuts
-bindChangePass guts = 
+bindChangeRetPass :: ModGuts -> CoreM ModGuts
+bindChangeRetPass guts = 
     bindsOnlyPass (\x -> (runReaderT (runBindM $ (mapM changeBind) x) (BindEnv guts))) guts
 
 changeBind :: CoreBind -> BindM CoreBind

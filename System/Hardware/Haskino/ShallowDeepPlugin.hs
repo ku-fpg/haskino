@@ -13,7 +13,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin (plugin) where
 import CoreMonad
 import GhcPlugins
 import System.Hardware.Haskino.AbsLambdaPass 
-import System.Hardware.Haskino.BindChangePass 
+import System.Hardware.Haskino.BindChangeRetPass 
 import System.Hardware.Haskino.CondPass 
 
 plugin :: Plugin
@@ -26,7 +26,7 @@ install _ todo = do
   reinitializeGlobals
   let absLambdaToDo = [CoreDoPluginPass "AbsLambda" absLambdaPass]
   let condToDo = [CoreDoPluginPass "CondTransform" condPass]
-  let bindToDo = [CoreDoPluginPass "BindTransform" bindChangePass]
+  let bindToDo = [CoreDoPluginPass "BindTransform" bindChangeRetPass]
   let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
   -- return $ bindToDo ++ dumpToDo ++ todo
   return $ bindToDo ++ condToDo ++ [rules3Pass] ++ [rules2Pass] ++ [rules1Pass] ++ absLambdaToDo ++ [rules0Pass] ++ todo ++ dumpToDo
