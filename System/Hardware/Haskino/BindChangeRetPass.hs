@@ -51,10 +51,7 @@ changeBind bndr@(NonRec b e) = do
               -- We do not want types of Arduino (Expr a), so we look for an
               -- empty list of types, and just a TyCon from the tyCon_m'.
               Just (retTyCon', []) -> do
-                  liftCoreM $ putMsg $ ppr b
-                  liftCoreM $ putMsg $ ppr retTyCon'
                   let (bs, e') = collectBinders e
-                  liftCoreM $ putMsg $ ppr bs
                   -- Lookup the GHC ID of rep_ function
                   Just repName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.rep_
                   repId <- liftCoreM $ lookupId repName
@@ -69,7 +66,7 @@ changeBind bndr@(NonRec b e) = do
                   -- Lookup the GHC type constructor of Expr
                   Just exprName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.Expr
                   exprTyCon <- liftCoreM $ lookupTyCon exprName
-                  -- Make the type of the ExprB for the specified type
+                  -- Make the type of the Expr for the specified type
                   let exprTyConApp = mkTyConApp exprTyCon [retTy']
 
                   -- Lookup the GHC ID of <$> function
@@ -84,6 +81,7 @@ changeBind bndr@(NonRec b e) = do
                   -- Build the Functor dictionary argument to apply
                   functDict <- buildDictionaryT functTyConApp
 
+                  -- Build the modified expresion
                   let repApp = mkCoreApps (Var repId) [Type retTy', repDict]
                   let functApp = mkCoreApps (Var functId) [Type retTyConTy, Type retTy', Type exprTyConApp, functDict, repApp, e']
 
