@@ -60,13 +60,19 @@ changeBind bndr@(NonRec b e) = do
                   -- Lookup the GHC ID of rep_ function
                   Just repName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.rep_
                   repId <- liftCoreM $ lookupId repName
+                  -- Lookup the GHC type constructor of ExprB
+                  Just exprBName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.ExprB
+                  exprBTyCon <- liftCoreM $ lookupTyCon exprBName
+                  -- Make the type of the ExprB for the specified type
+                  let repTyConApp = GhcPlugins.mkTyConApp exprBTyCon [retTy']
+                  -- Build the ExprB dictionary argument to apply
+                  repDict <- buildDictionaryT repTyConApp
+
                   -- Lookup the GHC type constructor of Expr
                   Just exprName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.Expr
                   exprTyCon <- liftCoreM $ lookupTyCon exprName
                   -- Make the type of the ExprB for the specified type
-                  let repTyConApp = GhcPlugins.mkTyConApp exprTyCon [retTy']
-                  -- Build the ExprB dictionary argument to apply
-                  repDict <- buildDictionaryT repTyConApp
+                  let exprTyConApp = GhcPlugins.mkTyConApp exprTyCon [retTy']
 
                   -- Lookup the GHC ID of <$> function
                   Just functAppName <- liftCoreM $ thNameToGhcName '(<$>)
@@ -81,8 +87,8 @@ changeBind bndr@(NonRec b e) = do
                   functDict <- buildDictionaryT functTyConApp
 
                   let repApp = mkCoreApps (Var repId) [Type retTy', repDict]
-                  let functApp = mkCoreApps (Var functId) [Type retTyConTy, Type retTy', Type repTyConApp, functDict, repApp, e]
-                  return (NonRec b functApp)
+                  let functApp = mkCoreApps (Var functId) [Type retTyConTy, Type retTy', Type exprTyConApp, functDict, repApp, e']
+                  return (NonRec b (mkCoreLams bs functApp))
               _ -> return bndr
       _ -> return bndr
 changeBind (Rec bs) = do
