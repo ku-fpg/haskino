@@ -19,8 +19,6 @@ import Control.Monad.Reader
 import System.Hardware.Haskino.Dictionary (buildDictionaryT, PassCoreM(..), )
 
 import qualified System.Hardware.Haskino
-import qualified System.Hardware.Haskino.Data
-import qualified System.Hardware.Haskino.Expr
 
 data BindEnv
     = BindEnv
@@ -42,7 +40,7 @@ bindChangePass guts =
 changeBind :: CoreBind -> BindM CoreBind
 changeBind bndr@(NonRec b e) = do
   df <- liftCoreM getDynFlags
-  let (argTys, retTy) = splitFunTys $ exprType e
+  let (argTys, retTy) = splitFunTys $ varType b
   let tyCon_m = splitTyConApp_maybe retTy
   case tyCon_m of
       -- We are looking for return types of Arduino a
@@ -64,7 +62,7 @@ changeBind bndr@(NonRec b e) = do
                   Just exprBName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.ExprB
                   exprBTyCon <- liftCoreM $ lookupTyCon exprBName
                   -- Make the type of the ExprB for the specified type
-                  let repTyConApp = GhcPlugins.mkTyConApp exprBTyCon [retTy']
+                  let repTyConApp = mkTyConApp exprBTyCon [retTy']
                   -- Build the ExprB dictionary argument to apply
                   repDict <- buildDictionaryT repTyConApp
 
@@ -72,7 +70,7 @@ changeBind bndr@(NonRec b e) = do
                   Just exprName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.Expr
                   exprTyCon <- liftCoreM $ lookupTyCon exprName
                   -- Make the type of the ExprB for the specified type
-                  let exprTyConApp = GhcPlugins.mkTyConApp exprTyCon [retTy']
+                  let exprTyConApp = mkTyConApp exprTyCon [retTy']
 
                   -- Lookup the GHC ID of <$> function
                   Just functAppName <- liftCoreM $ thNameToGhcName '(<$>)
@@ -82,13 +80,17 @@ changeBind bndr@(NonRec b e) = do
                   functTyCon <- liftCoreM $ lookupTyCon functName
                   -- Make the type of the Functor for the specified type
                   let retTyConTy = mkTyConTy retTyCon
-                  let functTyConApp = GhcPlugins.mkTyConApp functTyCon [retTyConTy]
+                  let functTyConApp = mkTyConApp functTyCon [retTyConTy]
                   -- Build the Functor dictionary argument to apply
                   functDict <- buildDictionaryT functTyConApp
 
                   let repApp = mkCoreApps (Var repId) [Type retTy', repDict]
                   let functApp = mkCoreApps (Var functId) [Type retTyConTy, Type retTy', Type exprTyConApp, functDict, repApp, e']
-                  return (NonRec b (mkCoreLams bs functApp))
+
+                  -- Change binding type
+                  let b' = setVarType b $ mkFunTys argTys (mkTyConApp retTyCon [exprTyConApp])
+
+                  return (NonRec b' (mkCoreLams bs functApp))
               _ -> return bndr
       _ -> return bndr
 changeBind (Rec bs) = do
