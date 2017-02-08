@@ -53,8 +53,9 @@ changeBind bndr@(NonRec b e) = do
           s <- get
           put s{args = bs'}
           e'' <- changeArgAppsExpr e'
+          let b' = setVarType b $ mkFunTys argTys' retTy
           let e''' = mkLams bs' e''
-          return (NonRec b e''')
+          return (NonRec b' e''')
       _ -> return bndr
 changeBind (Rec bs) = do
   return $ Rec bs
@@ -64,7 +65,6 @@ changeArg (b, ty) = do
   let tyCon_m = splitTyConApp_maybe ty
   case tyCon_m of
     Just (_, []) -> do
-        liftCoreM $ putMsg $ ppr b
         -- ToDo:  Check that type is a valid Haskino Expr Type?
         -- Lookup the GHC type constructor of Expr
         Just exprName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.Expr
