@@ -69,6 +69,9 @@ changeAppExpr e = do
                 args' <- mapM changeAppArg args             
                 if showSDoc df (ppr b) == "myRead" 
                 then do
+                  -- Get the a type from Expr a
+                  let Just(_, [retTy'']) = splitTyConApp_maybe retTy'
+                  -- Get the monad type from the type constructor
                   let retTyConTy = mkTyConTy retTyCon
                   -- Lookup the GHC ID of <$> function
                   Just functAppName <- liftCoreM $ thNameToGhcName '(<$>)
@@ -84,17 +87,13 @@ changeAppExpr e = do
                   -- Lookup the GHC ID of abs_ function
                   Just absName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.abs_
                   absId <- liftCoreM $ lookupId absName
-{-
-          (<$>
-             @ Arduino
-             @ (Expr Bool)
-             @ Bool
-             System.Hardware.Haskino.Data.$fFunctorArduino
-             (abs_ @ Bool) 
--}                 
+
+                  -- Rebuild the original nested app                 
                   let e' = mkCoreApps b args'
-                  let abs = App (Var absId) (Type retTy')
-                  return $ mkCoreApps (Var functId) [Type retTyConTy, Type retTy', Type retTy', functDict, abs, e']
+                  -- Build the abs_ function
+                  let abs = App (Var absId) (Type retTy'')
+                  -- Build the <$> applied to the abs_ and the original app
+                  return $ mkCoreApps (Var functId) [Type retTyConTy, Type retTy', Type retTy'', functDict, abs, e']
                 else return $ mkCoreApps b args'
               else do
                   e1' <- changeAppExpr e1
