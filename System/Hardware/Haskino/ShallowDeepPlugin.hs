@@ -13,6 +13,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin (plugin) where
 import CoreMonad
 import GhcPlugins
 import System.Hardware.Haskino.AbsLambdaPass 
+import System.Hardware.Haskino.BindChangeAppPass 
 import System.Hardware.Haskino.BindChangeArgPass 
 import System.Hardware.Haskino.BindChangeRetPass 
 import System.Hardware.Haskino.CondPass 
@@ -28,10 +29,12 @@ install _ todo = do
   let absLambdaToDo = [CoreDoPluginPass "AbsLambda" absLambdaPass]
   let condToDo = [CoreDoPluginPass "CondTransform" condPass]
   let bindRetToDo = [CoreDoPluginPass "BindRetTransform" bindChangeRetPass]
+  let bindAppToDo = [CoreDoPluginPass "BindAppTransform" bindChangeAppPass]
   let bindArgToDo = [CoreDoPluginPass "BindArgTransform" bindChangeArgPass]
   let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
   -- return $ bindToDo ++ dumpToDo ++ todo
-  return $ bindRetToDo ++ condToDo ++ [rules3Pass] ++ bindArgToDo ++ [rules2Pass] ++ [rules1Pass] ++ absLambdaToDo ++ [rules0Pass] ++ todo ++ dumpToDo
+  return $ bindRetToDo ++ condToDo ++ [rules3Pass] ++ bindArgToDo ++ [rules2Pass] ++ 
+           bindAppToDo ++ [rules1Pass] ++ absLambdaToDo ++ [rules0Pass] ++ todo ++ dumpToDo
   -- return $ bindToDo ++ condToDo ++ [rules2Pass] ++ [rules1Pass] ++ absLambdaToDo ++ [rules0Pass] ++ todo ++ dumpToDo -- absLambdaToDo ++ [rules0Pass] ++ todo ++ dumpToDo
 
 rules0Pass :: CoreToDo

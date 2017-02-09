@@ -52,7 +52,10 @@ twoButtonProg = do
         delayMillis 1000
 
 main :: IO ()
-main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
+main = putStrLn $ show twoButtonProg
+
+mainOld :: IO ()
+mainOld = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
 
 {-# RULES 
     "digitalRead" [2]
