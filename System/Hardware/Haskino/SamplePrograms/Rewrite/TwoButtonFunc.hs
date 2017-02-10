@@ -91,21 +91,21 @@ mainOld = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
     loopE m
   #-}
 
-{-# RULES "rep-push-add" [1]
+{-# RULES "rep-push-add" [3]
     forall (b1 :: Word8) (b2 :: Word8).
     rep_ (b1 + b2)
       =
     (rep_ b1) + (rep_ b2)
   #-}
 
-{-# RULES "rep-push-or" [1]
+{-# RULES "rep-push-or" [3]
     forall (b1 :: Bool) (b2 :: Bool).
     rep_ (b1 || b2)
       =
     (rep_ b1) ||* (rep_ b2)
   #-}
 
-{-# RULES "rep-push-not" [1]
+{-# RULES "rep-push-not" [3]
     forall (b :: Bool).
     rep_ (not b)
       =
