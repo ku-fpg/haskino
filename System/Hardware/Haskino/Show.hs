@@ -132,7 +132,6 @@ showCommandAndArgs ss = do
     let c = head ss
     let as = tail ss
     let cmdAndArgs = c ++ " (" ++ intercalate ") (" as ++ ")"
-    addToBlock cmdAndArgs 
     return cmdAndArgs
 
 showCommand0 :: String -> State ShowState String
