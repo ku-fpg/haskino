@@ -84,7 +84,7 @@ changeArgAppsExpr e = do
     Lit l -> return $ Lit l
     Type ty -> return $ Type ty
     Coercion co -> return $ Coercion co
-    App (App (App (Var f) (Type _)) (Type _)) (Var v)  |
+    App (App (App (Var f) (Type _)) (_)) (Var v)  |
       varString f == "rep_" && v `elem` (args s) -> do
         return $ (Var v)
     App e1 e2 -> do
