@@ -204,17 +204,20 @@ condTransform ty e alts = do
       let arg1 = mkCoreApps (Var repId) [Type bTy, repDict, e]
 
       -- Build the Second Arg to ifThenElseE
-      let arg2 = mkCoreApps (Var functId) [Type ty', Type ty'', Type exprTyConApp, functDict, (Var repId), e1]
+      arg2 <- changeReturn e1
+      -- let arg2 = mkCoreApps (Var functId) [Type ty', Type ty'', Type exprTyConApp, functDict, (Var repId), e1']
 
       -- Build the Third Arg to ifThenElseE
-      let arg3 = mkCoreApps (Var functId) [Type ty', Type ty'', Type exprTyConApp, functDict, (Var repId), e2]
+      arg3 <- changeReturn e2
+      -- let arg3 = mkCoreApps (Var functId) [Type ty', Type ty'', Type exprTyConApp, functDict, (Var repId), e2']
+
       -- Build the ifThenElse Expr
       let ifteExpr = mkCoreApps (Var ifThenElseId) [Type ty'', condDict, arg1, arg2, arg3]
 
       -- Build the rep wrapped ifThenElse
-      let repIfteExpr = mkCoreApps (Var functId) [Type ty', Type ty'', Type exprTyConApp, functDict, App (Var absId) (Type ty''), ifteExpr]
+      --let repIfteExpr = mkCoreApps (Var functId) [Type ty', Type ty'', Type exprTyConApp, functDict, App (Var absId) (Type ty''), ifteExpr]
 
-      return repIfteExpr
+      return ifteExpr
 
 {-
   The following performs this transform:
@@ -250,3 +253,80 @@ condTransformUnit ty e alts = do
       let arg1 = mkCoreApps (Var repId) [Type bTy, repDict, e]
 
       return $ mkCoreApps (Var ifThenElseId) [ arg1, e1, e2]
+
+changeReturn :: CoreExpr -> CondM CoreExpr
+changeReturn e = do
+    df <- liftCoreM getDynFlags
+    let (f, args) = collectArgs e
+    if (showSDoc df (ppr f) == ">>=") || (showSDoc df (ppr f) == ">>")
+    then do
+        la' <- changeReturn $ last args
+        let args' = init args ++ [la']
+        return $ mkCoreApps f args'
+    else do
+      case args of
+        [Type ty1, Var d, Type ty2, ex] | showSDoc df (ppr f) == "return" -> do
+            -- Lookup the GHC ID of rep_ function
+            Just repName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.rep_
+            repId <- liftCoreM $ lookupId repName
+            -- Lookup the GHC type constructor of ExprB
+            Just exprBName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.ExprB
+            exprBTyCon <- liftCoreM $ lookupTyCon exprBName
+            -- Make the type of the ExprB for the specified type
+            let repTyConApp = mkTyConApp exprBTyCon [ty2]
+            -- Build the ExprB dictionary argument to apply
+            repDict <- buildDictionaryT repTyConApp
+      
+            let retArg = mkCoreApps (Var repId) [Type ty2, repDict, ex]
+
+            -- Lookup the GHC type constructor of Expr
+            Just exprName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.Expr.Expr
+            exprTyCon <- liftCoreM $ lookupTyCon exprName
+            -- Make the type of the Expr for the specified type
+            let retTyConApp = mkTyConApp exprTyCon [ty2]
+
+            return $ mkCoreApps f [Type ty1, Var d, Type retTyConApp, retArg]
+        _ -> do
+            let (_, retTy) = splitFunTys $ exprType f
+            -- Get the Arduino Type Con
+            let Just tyCon'  = tyConAppTyCon_maybe retTy
+            let ty' = mkTyConTy tyCon'
+            liftCoreM $ putMsgS "&&&&&&&&&&&"
+            liftCoreM $ putMsg $ ppr retTy
+            liftCoreM $ putMsg $ ppr ty'
+            -- Get the Arduino Type Arg
+            case tyConAppArgs_maybe retTy of
+              Just [ty''] -> do
+                liftCoreM $ putMsg $ ppr ty''
+                -- Lookup the GHC ID of rep_ function
+                Just repName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.rep_
+                repId <- liftCoreM $ lookupId repName
+                -- Lookup the GHC type constructor of ExprB
+                Just exprBName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.ExprB
+                exprBTyCon <- liftCoreM $ lookupTyCon exprBName
+                -- Make the type of the ExprB for the specified type
+                let repTyConApp = mkTyConApp exprBTyCon [ty'']
+                -- Build the ExprB dictionary argument to apply
+                repDict <- buildDictionaryT repTyConApp
+
+                -- Lookup the GHC type constructor of Expr
+                Just exprName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.Expr.Expr
+                exprTyCon <- liftCoreM $ lookupTyCon exprName
+                -- Make the type of the Expr for the specified type
+                let exprTyConApp = mkTyConApp exprTyCon [ty'']
+
+                -- Lookup the GHC ID of <$> function
+                Just functAppName <- liftCoreM $ thNameToGhcName '(<$>)
+                functId <- liftCoreM $ lookupId functAppName
+                -- Lookup the GHC type constructor of Functor
+                Just functName <- liftCoreM $ thNameToGhcName ''Data.Functor.Functor
+                functTyCon <- liftCoreM $ lookupTyCon functName
+                -- Make the type of the Functor for the specified type
+                let functTyConApp = GhcPlugins.mkTyConApp functTyCon [ty']
+                -- Build the Functor dictionary argument to apply
+                functDict <- buildDictionaryT functTyConApp
+
+                let repApp = mkCoreApps (Var repId) [Type ty'', repDict]
+                let repExpr = mkCoreApps (Var functId) [Type ty', Type ty'', Type exprTyConApp, functDict, repApp, e]
+                return repExpr
+              _ -> return e

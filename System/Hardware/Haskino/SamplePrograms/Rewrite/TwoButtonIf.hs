@@ -37,11 +37,14 @@ twoButtonProg = do
         then do
           digitalWrite led1 a
           digitalWrite led2 b
+          return (not a)
         else do
           digitalWrite led1 (not a)
           digitalWrite led2 (not b)
+          digitalRead led1
+          -- return b
         delayMillis 1000
-
+{-
 testWait :: Arduino Bool
 testWait = do
     let button1 = 2
@@ -83,9 +86,12 @@ testCompile :: Arduino ()
 testCompile = do
     b <- testWaitE
     return ()
-
+-}
 main :: IO ()
-main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
+main = putStrLn $ show twoButtonProg
+
+mainOld :: IO ()
+mainOld = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
 
 {-# RULES 
     "digitalRead" [2]
@@ -168,17 +174,24 @@ main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
       =
     f >>= k . abs_
   #-}
-
+{-
 {-# RULES "rep-return" [1]
     forall (t :: Bool).
     rep_ <$> return t 
       =
     return $ rep_ t
   #-}
-
+-}
 {-# RULES "rep-abs-fuse" [0]
     forall x.
     rep_(abs_(x))
       =
     x
+  #-}
+
+{-# RULES "rep-abs-app-fuse" [0]
+    forall (m :: Arduino (Expr Bool)).
+    rep_ <$> (abs_ <$> m)
+      =
+    m
   #-}
