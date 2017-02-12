@@ -17,7 +17,10 @@ import Data.List
 import Data.Functor
 import Control.Monad.Reader
 
-import System.Hardware.Haskino.Dictionary (buildDictionaryT, PassCoreM(..), )
+import System.Hardware.Haskino.Dictionary (buildDictionaryT, 
+                                           buildDictionaryTyConT, 
+                                           PassCoreM(..), 
+                                           thNameToId, thNameToTyCon)
 
 import qualified System.Hardware.Haskino
 import qualified System.Hardware.Haskino.Data
@@ -157,46 +160,21 @@ condTransform ty e alts = do
       -- Get the conditional type
       let bTy = exprType e
 
-      -- Lookup the GHC ID of ifThenElseE function
-      Just ifThenElseName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.ifThenElseE
-      ifThenElseId <- liftCoreM $ lookupId ifThenElseName
-      -- Lookup the GHC type constructor of ArduinoConditional
-      Just condName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.ArduinoConditional
-      condTyCon <- liftCoreM $ lookupTyCon condName
-      -- Make the type of the ArduinoConditional for the specified type
-      let condTyConApp = GhcPlugins.mkTyConApp condTyCon [ty'']
-      -- Build the ArduinoConditional dictionary argument to apply
-      condDict <- buildDictionaryT condTyConApp
+      ifThenElseId <- thNameToId 'System.Hardware.Haskino.ifThenElseE
+      condTyCon <- thNameToTyCon ''System.Hardware.Haskino.ArduinoConditional
+      condDict <- buildDictionaryTyConT condTyCon ty''
 
-      -- Lookup the GHC ID of abs_ function
-      Just absName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.abs_
-      absId <- liftCoreM $ lookupId absName
+      absId <- thNameToId 'System.Hardware.Haskino.abs_
+      repId <- thNameToId 'System.Hardware.Haskino.rep_
 
-      -- Lookup the GHC ID of rep_ function
-      Just repName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.rep_
-      repId <- liftCoreM $ lookupId repName
-      -- Lookup the GHC type constructor of ExprB
-      Just exprBName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.ExprB
-      exprBTyCon <- liftCoreM $ lookupTyCon exprBName
-      -- Make the type of the ExprB for the specified type
-      let repTyConApp = GhcPlugins.mkTyConApp exprBTyCon [bTy]
-      -- Build the ExprB dictionary argument to apply
-      repDict <- buildDictionaryT repTyConApp
+      exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB
+      repDict <- buildDictionaryTyConT exprBTyCon bTy
 
-      -- Lookup the GHC ID of <$> function
-      Just functAppName <- liftCoreM $ thNameToGhcName '(<$>)
-      functId <- liftCoreM $ lookupId functAppName
-      -- Lookup the GHC type constructor of Functor
-      Just functName <- liftCoreM $ thNameToGhcName ''Data.Functor.Functor
-      functTyCon <- liftCoreM $ lookupTyCon functName
-      -- Make the type of the Functor for the specified type
-      let functTyConApp = GhcPlugins.mkTyConApp functTyCon [ty']
-      -- Build the Functor dictionary argument to apply
-      functDict <- buildDictionaryT functTyConApp
+      functId <- thNameToId '(<$>)
+      functTyCon <- thNameToTyCon ''Data.Functor.Functor
+      functDict <- buildDictionaryTyConT functTyCon ty'
 
-      -- Lookup the GHC type constructor of Expr
-      Just exprName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.Expr.Expr
-      exprTyCon <- liftCoreM $ lookupTyCon exprName
+      exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr.Expr
       -- Make the type of the Expr for the specified type
       let exprTyConApp = GhcPlugins.mkTyConApp exprTyCon [ty'']
 
@@ -235,24 +213,16 @@ condTransformUnit ty e alts = do
       -- Get the conditional type
       let bTy = exprType e
 
-      Just ifThenElseName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.ifThenElseUnitE
-      ifThenElseId <- liftCoreM $ lookupId ifThenElseName
+      ifThenElseId <- thNameToId 'System.Hardware.Haskino.ifThenElseE
 
-      -- Lookup the GHC ID of abs_ function
-      Just repName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.rep_
-      repId <- liftCoreM $ lookupId repName
-      -- Lookup the GHC type constructor of ExprB
-      Just exprBName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.ExprB
-      exprBTyCon <- liftCoreM $ lookupTyCon exprBName
-      -- Make the type of the ExprB for the specified type
-      let repTyConApp = GhcPlugins.mkTyConApp exprBTyCon [bTy]
-      -- Build the ExprB dictionary argument to apply
-      repDict <- buildDictionaryT repTyConApp
+      repId <- thNameToId 'System.Hardware.Haskino.rep_
+      exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB
+      repDict <- buildDictionaryTyConT exprBTyCon bTy
 
       -- Build the First Arg to ifThenElseUnitE
       let arg1 = mkCoreApps (Var repId) [Type bTy, repDict, e]
 
-      return $ mkCoreApps (Var ifThenElseId) [ arg1, e1, e2]
+      return $ mkCoreApps (Var ifThenElseId) [arg1, e1, e2]
 
 changeReturn :: CoreExpr -> CondM CoreExpr
 changeReturn e = do
@@ -266,23 +236,13 @@ changeReturn e = do
     else do
       case args of
         [Type ty1, Var d, Type ty2, ex] | showSDoc df (ppr f) == "return" -> do
-            -- Lookup the GHC ID of rep_ function
-            Just repName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.rep_
-            repId <- liftCoreM $ lookupId repName
-            -- Lookup the GHC type constructor of ExprB
-            Just exprBName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.ExprB
-            exprBTyCon <- liftCoreM $ lookupTyCon exprBName
-            -- Make the type of the ExprB for the specified type
-            let repTyConApp = mkTyConApp exprBTyCon [ty2]
-            -- Build the ExprB dictionary argument to apply
-            repDict <- buildDictionaryT repTyConApp
+            repId <- thNameToId 'System.Hardware.Haskino.rep_
+            exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB
+            repDict <- buildDictionaryTyConT exprBTyCon ty2
       
             let retArg = mkCoreApps (Var repId) [Type ty2, repDict, ex]
 
-            -- Lookup the GHC type constructor of Expr
-            Just exprName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.Expr.Expr
-            exprTyCon <- liftCoreM $ lookupTyCon exprName
-            -- Make the type of the Expr for the specified type
+            exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr
             let retTyConApp = mkTyConApp exprTyCon [ty2]
 
             return $ mkCoreApps f [Type ty1, Var d, Type retTyConApp, retArg]
@@ -298,33 +258,16 @@ changeReturn e = do
             case tyConAppArgs_maybe retTy of
               Just [ty''] -> do
                 liftCoreM $ putMsg $ ppr ty''
-                -- Lookup the GHC ID of rep_ function
-                Just repName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.rep_
-                repId <- liftCoreM $ lookupId repName
-                -- Lookup the GHC type constructor of ExprB
-                Just exprBName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.ExprB
-                exprBTyCon <- liftCoreM $ lookupTyCon exprBName
-                -- Make the type of the ExprB for the specified type
-                let repTyConApp = mkTyConApp exprBTyCon [ty'']
-                -- Build the ExprB dictionary argument to apply
-                repDict <- buildDictionaryT repTyConApp
+                repId <- thNameToId 'System.Hardware.Haskino.rep_
+                exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB
+                repDict <- buildDictionaryTyConT exprBTyCon ty''
 
-                -- Lookup the GHC type constructor of Expr
-                Just exprName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.Expr.Expr
-                exprTyCon <- liftCoreM $ lookupTyCon exprName
-                -- Make the type of the Expr for the specified type
+                exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr.Expr
                 let exprTyConApp = mkTyConApp exprTyCon [ty'']
 
-                -- Lookup the GHC ID of <$> function
-                Just functAppName <- liftCoreM $ thNameToGhcName '(<$>)
-                functId <- liftCoreM $ lookupId functAppName
-                -- Lookup the GHC type constructor of Functor
-                Just functName <- liftCoreM $ thNameToGhcName ''Data.Functor.Functor
-                functTyCon <- liftCoreM $ lookupTyCon functName
-                -- Make the type of the Functor for the specified type
-                let functTyConApp = GhcPlugins.mkTyConApp functTyCon [ty']
-                -- Build the Functor dictionary argument to apply
-                functDict <- buildDictionaryT functTyConApp
+                functId <- thNameToId '(<$>)
+                functTyCon <- thNameToTyCon ''Data.Functor.Functor
+                functDict <- buildDictionaryTyConT functTyCon ty'
 
                 let repApp = mkCoreApps (Var repId) [Type ty'', repDict]
                 let repExpr = mkCoreApps (Var functId) [Type ty', Type ty'', Type exprTyConApp, functDict, repApp, e]

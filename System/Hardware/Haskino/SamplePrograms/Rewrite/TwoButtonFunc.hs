@@ -28,13 +28,13 @@ myWrite :: Word8 -> Bool -> Arduino ()
 myWrite p b = do
     delayMillis 100
     digitalWrite (p+1) (not b)
-
+{-
 myRead_2 :: Word8 -> Arduino (Expr Bool)
 myRead_2 p = rep_ <$> do
     delayMillis 100
     a <- digitalRead (p+1)
     return (not a)
-
+-}
 {-
 testit :: Arduino Bool
 testit = rep_ <$> (abs_ <$> digitalReadE 4)
@@ -127,7 +127,7 @@ mainOld = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
     f >>= k . rep_
   #-}
 -}
-
+{-
 {-# RULES "rep-then-through" [3]
     forall (f :: Arduino a) (k :: Arduino b).
     rep_ <$> (f >> k) 
@@ -157,7 +157,7 @@ mainOld = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
     f >>= (return (rep_ x))
   #-}
 -}
-
+-}
 {-# RULES "rep-return" [1]
     forall (t :: Bool).
     rep_ <$> return t 
