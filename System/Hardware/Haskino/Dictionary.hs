@@ -9,7 +9,11 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell #-}
-module System.Hardware.Haskino.Dictionary (buildDictionaryT, PassCoreM(..)) where
+module System.Hardware.Haskino.Dictionary (buildDictionaryT,
+                                           buildDictionaryTyConT, 
+                                           PassCoreM(..),
+                                           thNameToId, 
+                                           thNameToTyCon) where
 
 import CoreMonad
 import GhcPlugins
@@ -25,6 +29,7 @@ import DsMonad (initDsTc)
 import Control.Arrow (first, second)
 import Control.Monad
 import Encoding (zEncodeString)
+import qualified Language.Haskell.TH as TH
 
 import System.Hardware.Haskino.Typechecker (initTcFromModGuts)
 
@@ -32,6 +37,16 @@ class (Monad m, MonadIO m) => PassCoreM m where
     -- | 'CoreM' can be lifted to this monad.
     liftCoreM  :: CoreM a -> m a
     getModGuts :: m ModGuts
+
+thNameToId :: PassCoreM m => TH.Name -> m Id
+thNameToId n = do
+  (Just name) <- liftCoreM $ thNameToGhcName n
+  liftCoreM $ lookupId name
+
+thNameToTyCon :: PassCoreM m => TH.Name -> m TyCon
+thNameToTyCon n = do
+  (Just name) <- liftCoreM $ thNameToGhcName n
+  liftCoreM $ lookupTyCon name
 
 -- Adapted from HERMIT.Monad
 runTcM :: PassCoreM m => TcM a -> m a
@@ -82,3 +97,7 @@ buildDictionaryT ty = do
     return $ case bnds of
                 [NonRec v e] | i == v -> e -- the common case that we would have gotten a single non-recursive let
                 _ -> mkCoreLets bnds (varToCoreExpr i)
+
+buildDictionaryTyConT :: PassCoreM m => TyCon -> Type -> m CoreExpr 
+buildDictionaryTyConT tyCon ty =
+    buildDictionaryT $ GhcPlugins.mkTyConApp tyCon [ty] 

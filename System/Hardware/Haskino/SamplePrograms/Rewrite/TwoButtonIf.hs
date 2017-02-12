@@ -41,7 +41,8 @@ twoButtonProg = do
         else do
           digitalWrite led1 (not a)
           digitalWrite led2 (not b)
-          digitalRead led1
+          a' <- digitalRead led1
+          return a'
           -- return b
         delayMillis 1000
 {-
@@ -128,6 +129,15 @@ mainOld = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
       =
     loopE m
   #-}
+
+{-
+{-# RULES "return-type-change" [2]
+    forall (a :: ExprB).
+    return a
+      =
+    abs_ <$> (return (rep_(a)))
+  #-}
+-}
 
 {-
 {-# RULES "if-then-else-unit" [0]

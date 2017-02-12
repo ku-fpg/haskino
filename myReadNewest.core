@@ -1,0 +1,33 @@
+myRead :: Word8 -> Arduino (Expr Bool)
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 520 0}]
+ myRead =
+   \ (p :: Word8) ->
+     >>
+       @ Arduino
+       System.Hardware.Haskino.Data.$fMonadArduino
+       @ ()
+       @ Bool
+       (delayMillis (fromInteger @ TimeMillis GHC.Word.$fNumWord32 100))
+       (>>=
+          @ Arduino
+          System.Hardware.Haskino.Data.$fMonadArduino
+          @ Bool
+          @ Bool
+          (digitalRead
+             (+ @ Word8
+                GHC.Word.$fNumWord8
+                p
+                (fromInteger @ Word8 GHC.Word.$fNumWord8 1)))
+          (return
+             @ Arduino
+             System.Hardware.Haskino.Data.$fMonadArduino
+             @ (Expr Bool)
+             (\ (a :: Bool) ->
+                notB
+                  @ (Expr Bool)
+                  System.Hardware.Haskino.Expr.$fBooleanExpr
+                  (rep_ @ Bool System.Hardware.Haskino.Expr.$fExprBBool a)))),
