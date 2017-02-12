@@ -18,11 +18,21 @@ import Control.Monad
 import Data.Word
 import Data.Boolean
 
-myRead :: Word8 -> Arduino Bool
-myRead p = do
+myRead1 :: Word8 -> Arduino Bool
+myRead1 p = do
     delayMillis 100
     a <- digitalRead (p+1)
     return (not a)
+
+myRead2 :: Word8 -> Arduino Bool
+myRead2 p = do
+    delayMillis 100
+    digitalRead (p+1)
+
+myRead3 :: Word8 -> Arduino Bool
+myRead3 p = do
+    delayMillis 100
+    return True
 
 myWrite :: Word8 -> Bool -> Arduino ()
 myWrite p b = do
@@ -46,16 +56,16 @@ twoButtonProg = do
     setPinMode 2 INPUT
     setPinMode 3 INPUT
     loop $ do 
-        a <- myRead 2
-        b <- myRead 3
+        a <- myRead1 2
+        b <- myRead1 3
         myWrite 13 (a || b)
         delayMillis 1000
 
 main :: IO ()
 main = putStrLn $ show twoButtonProg
 
-mainOld :: IO ()
-mainOld = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
+-- main :: IO ()
+-- main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
 
 {-# RULES 
     "digitalRead" [2]
@@ -91,21 +101,21 @@ mainOld = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
     loopE m
   #-}
 
-{-# RULES "rep-push-add" [3]
+{-# RULES "rep-push-add" [1]
     forall (b1 :: Word8) (b2 :: Word8).
     rep_ (b1 + b2)
       =
     (rep_ b1) + (rep_ b2)
   #-}
 
-{-# RULES "rep-push-or" [3]
+{-# RULES "rep-push-or" [1]
     forall (b1 :: Bool) (b2 :: Bool).
     rep_ (b1 || b2)
       =
     (rep_ b1) ||* (rep_ b2)
   #-}
 
-{-# RULES "rep-push-not" [3]
+{-# RULES "rep-push-not" [1]
     forall (b :: Bool).
     rep_ (not b)
       =
@@ -163,6 +173,13 @@ mainOld = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
     rep_ <$> return t 
       =
     return $ rep_ t
+  #-}
+
+{-# RULES "rep-return" [1]
+    forall (t :: Expr Bool).
+    abs_ <$> return t 
+      =
+    return $ abs_ t
   #-}
 
 {-# RULES "rep-abs-fuse" [0]

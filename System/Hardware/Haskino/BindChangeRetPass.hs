@@ -56,6 +56,9 @@ changeBind bndr@(NonRec b e) = do
               -- empty list of types, and just a TyCon from the tyCon_m'.
               Just (retTyCon', []) -> do
                   let (bs, e') = collectBinders e
+                  liftCoreM $ putMsgS "!!!!@@@@"
+                  liftCoreM $ putMsg $ ppr $ bs
+                  liftCoreM $ putMsg $ ppr $ e'
                   repId <- thNameToId 'System.Hardware.Haskino.rep_
                   exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB
                   repDict <- buildDictionaryTyConT exprBTyCon retTy'
@@ -76,8 +79,6 @@ changeBind bndr@(NonRec b e) = do
 
                   -- Change binding type
                   let b' = setVarType b $ mkFunTys argTys (mkTyConApp retTyCon [exprTyConApp])
-                  liftCoreM $ putMsgS "!!!!@@@@"
-                  liftCoreM $ putMsg $ ppr $ varType b'
                   return (NonRec b' (mkCoreLams bs e''))
               _ -> return bndr
       _ -> return bndr
@@ -88,6 +89,9 @@ changeReturn :: CoreExpr -> BindM CoreExpr
 changeReturn e = do
     df <- liftCoreM getDynFlags
     let (bs, e') = collectBinders e
+    liftCoreM $ putMsgS "*********"
+    liftCoreM $ putMsg $ ppr $ bs
+    liftCoreM $ putMsg $ ppr $ e'
     let (f, args) = collectArgs e'
     if (showSDoc df (ppr f) == ">>=") || (showSDoc df (ppr f) == ">>")
     then do
@@ -105,14 +109,31 @@ changeReturn e = do
               repDict <- buildDictionaryTyConT exprBTyCon ty2
         
               let retArg = mkCoreApps (Var repId) [Type ty2, repDict, ex]
-              let retLam = mkLams bs retArg
 
               exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr.Expr
               -- Make the type of the Expr for the specified type
               let retTyConApp = mkTyConApp exprTyCon [ty2]
 
-              return $ mkCoreApps f [Type ty1, Var d, Type retTyConApp, retLam]
-          _ -> do
+              let f' = mkCoreApps f [Type ty1, Var d, Type retTyConApp, retArg]
+              {-
+                  (<$>
+                     @ Arduino
+                     @ (Expr Bool)
+                     @ Bool
+                     System.Hardware.Haskino.Data.$fFunctorArduino
+                     (abs_ @ Bool)
+              -}
+              functId <- thNameToId '(<$>)
+              functTyCon <- thNameToTyCon ''Data.Functor.Functor
+              functDict <- buildDictionaryTyConT functTyCon ty1
+
+              absId <- thNameToId 'System.Hardware.Haskino.abs_
+              let absLamba = mkCoreApps (Var absId ) [Type ty2]
+
+              let retExp = mkCoreApps (Var functId) [Type ty1, Type retTyConApp, Type ty2, functDict, absLamba, f']
+              return $ mkLams bs retExp
+          _ -> return $ mkLams bs e'
+{-
               let (_, retTy) = splitFunTys $ exprType f
               -- Get the Arduino Type Con
               let Just tyCon'  = tyConAppTyCon_maybe retTy
@@ -141,3 +162,4 @@ changeReturn e = do
                                                           functDict, repApp, mkLams bs e']
                   return repExpr
                 _ -> return $ mkLams bs e'
+-}

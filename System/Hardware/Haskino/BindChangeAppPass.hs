@@ -17,7 +17,10 @@ import Var
 import Data.Functor
 import Control.Monad.State
 
-import System.Hardware.Haskino.Dictionary (buildDictionaryT, PassCoreM(..), )
+import System.Hardware.Haskino.Dictionary (buildDictionaryT, 
+                                           buildDictionaryTyConT, 
+                                           PassCoreM(..), 
+                                           thNameToId, thNameToTyCon)
 
 import qualified System.Hardware.Haskino
 
@@ -64,36 +67,31 @@ changeAppExpr e = do
       let tyCon_m = splitTyConApp_maybe retTy
       case tyCon_m of
           Just (retTyCon, [retTy']) | (showSDoc df (ppr retTyCon) == "Arduino") -> do
-              if showSDoc df (ppr b) == "myRead" || showSDoc df (ppr b) == "myWrite"
+              if showSDoc df (ppr b) == "myRead1" || showSDoc df (ppr b) == "myWrite"
               then do
                 args' <- mapM changeAppArg args             
-                if showSDoc df (ppr b) == "myRead" 
+                if showSDoc df (ppr b) == "myRead1" 
                 then do
+                  liftCoreM $ putMsg $ ppr retTy'
                   -- Get the a type from Expr a
-                  let Just(_, [retTy'']) = splitTyConApp_maybe retTy'
-                  -- Get the monad type from the type constructor
-                  let retTyConTy = mkTyConTy retTyCon
-                  -- Lookup the GHC ID of <$> function
-                  Just functAppName <- liftCoreM $ thNameToGhcName '(<$>)
-                  functId <- liftCoreM $ lookupId functAppName
-                  -- Lookup the GHC type constructor of Functor
-                  Just functName <- liftCoreM $ thNameToGhcName ''Data.Functor.Functor
-                  functTyCon <- liftCoreM $ lookupTyCon functName
-                  -- Make the type of the Functor for the specified type
-                  let functTyConApp = GhcPlugins.mkTyConApp functTyCon [retTyConTy]
-                  -- Build the Functor dictionary argument to apply
-                  functDict <- buildDictionaryT functTyConApp
+                  case splitTyConApp_maybe retTy' of
+                     Just(_, [retTy'']) -> do
+                        -- Get the monad type from the type constructor
+                        let retTyConTy = mkTyConTy retTyCon
 
-                  -- Lookup the GHC ID of abs_ function
-                  Just absName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.abs_
-                  absId <- liftCoreM $ lookupId absName
+                        functId <- thNameToId '(<$>)
+                        functTyCon <- thNameToTyCon ''Data.Functor.Functor
+                        functDict <- buildDictionaryTyConT functTyCon retTyConTy
 
-                  -- Rebuild the original nested app                 
-                  let e' = mkCoreApps b args'
-                  -- Build the abs_ function
-                  let abs = App (Var absId) (Type retTy'')
-                  -- Build the <$> applied to the abs_ and the original app
-                  return $ mkCoreApps (Var functId) [Type retTyConTy, Type retTy', Type retTy'', functDict, abs, e']
+                        absId <- thNameToId 'System.Hardware.Haskino.abs_
+
+                        -- Rebuild the original nested app                 
+                        let e' = mkCoreApps b args'
+                        -- Build the abs_ function
+                        let abs = App (Var absId) (Type retTy'')
+                        -- Build the <$> applied to the abs_ and the original app
+                        return $ mkCoreApps (Var functId) [Type retTyConTy, Type retTy', Type retTy'', functDict, abs, e']
+                     _ -> return $ mkCoreApps b args'
                 else return $ mkCoreApps b args'
               else do
                   e1' <- changeAppExpr e1
