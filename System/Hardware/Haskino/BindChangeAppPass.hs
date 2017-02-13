@@ -68,10 +68,10 @@ changeAppExpr e = do
       let tyCon_m = splitTyConApp_maybe retTy
       case tyCon_m of
           Just (retTyCon, [retTy']) | (showSDoc df (ppr retTyCon) == "Arduino") -> do
-              if showSDoc df (ppr b) == "myRead1" || showSDoc df (ppr b) == "myWrite"
+              if showSDoc df (ppr b) == "myRead1" || showSDoc df (ppr b) == "myRead2" || showSDoc df (ppr b) == "myRead3" || showSDoc df (ppr b) == "myWrite"
               then do
                   args' <- mapM changeAppArg args             
-                  if showSDoc df (ppr b) == "myRead1" 
+                  if showSDoc df (ppr b) == "myRead1" || showSDoc df (ppr b) == "myRead2" || showSDoc df (ppr b) == "myRead3" 
                   then do
                       let retTyConTy = mkTyConTy retTyCon
 

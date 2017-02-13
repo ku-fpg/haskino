@@ -60,8 +60,8 @@ myWriteE p b = do
     delayMillisE 100
     digitalWriteE (p+1) (notB b)
 
-twoButtonProg :: Arduino ()
-twoButtonProg = do
+twoButtonProg1 :: Arduino ()
+twoButtonProg1 = do
     setPinMode 13 OUTPUT
     setPinMode 2 INPUT
     setPinMode 3 INPUT
@@ -71,8 +71,8 @@ twoButtonProg = do
         myWrite 13 (a || b)
         delayMillis 1000
 
-twoButtonProgE :: Arduino ()
-twoButtonProgE = do
+twoButtonProg1E :: Arduino ()
+twoButtonProg1E = do
     setPinModeE 13 OUTPUT
     setPinModeE 2 INPUT
     setPinModeE 3 INPUT
@@ -82,18 +82,82 @@ twoButtonProgE = do
         myWriteE 13 (a ||* b)
         delayMillisE 1000
 
+twoButtonProg2 :: Arduino ()
+twoButtonProg2 = do
+    setPinMode 13 OUTPUT
+    setPinMode 2 INPUT
+    setPinMode 3 INPUT
+    loop $ do 
+        a <- myRead2 2
+        b <- myRead2 3
+        myWrite 13 (a || b)
+        delayMillis 1000
+
+twoButtonProg2E :: Arduino ()
+twoButtonProg2E = do
+    setPinModeE 13 OUTPUT
+    setPinModeE 2 INPUT
+    setPinModeE 3 INPUT
+    loopE $ do 
+        a <- myRead2E 2
+        b <- myRead2E 3
+        myWriteE 13 (a ||* b)
+        delayMillisE 1000
+
+twoButtonProg3 :: Arduino ()
+twoButtonProg3 = do
+    setPinMode 13 OUTPUT
+    setPinMode 2 INPUT
+    setPinMode 3 INPUT
+    loop $ do 
+        a <- myRead3 2
+        b <- myRead3 3
+        myWrite 13 (a || b)
+        delayMillis 1000
+
+twoButtonProg3E :: Arduino ()
+twoButtonProg3E = do
+    setPinModeE 13 OUTPUT
+    setPinModeE 2 INPUT
+    setPinModeE 3 INPUT
+    loopE $ do 
+        a <- myRead3E 2
+        b <- myRead3E 3
+        myWriteE 13 (a ||* b)
+        delayMillisE 1000
+
 test1 :: Bool
-test1 = (show twoButtonProg) == (show twoButtonProgE)
+test1 = (show twoButtonProg1) == (show twoButtonProg1E)
+
+test2 :: Bool
+test2 = (show twoButtonProg2) == (show twoButtonProg2E)
+
+test3 :: Bool
+test3 = (show twoButtonProg3) == (show twoButtonProg3E)
 
 main :: IO ()
 main = do
-  if show twoButtonProg == show twoButtonProgE
-  then putStrLn "*** Test Passed"
+  if test1
+  then putStrLn "*** Test1 Passed"
   else do
-      putStrLn "*** Test Failed"
-      putStrLn $ show twoButtonProg
+      putStrLn "*** Test1 Failed"
+      putStrLn $ show twoButtonProg1
       putStrLn "-----------------"
-      putStrLn $ show twoButtonProgE
+      putStrLn $ show twoButtonProg1E
+  if test2
+  then putStrLn "*** Test2 Passed"
+  else do
+      putStrLn "*** Test2 Failed"
+      putStrLn $ show twoButtonProg2
+      putStrLn "-----------------"
+      putStrLn $ show twoButtonProg2E
+  if test3
+  then putStrLn "*** Test3 Passed"
+  else do
+      putStrLn "*** Test3 Failed"
+      putStrLn $ show twoButtonProg3
+      putStrLn "-----------------"
+      putStrLn $ show twoButtonProg3E
 
 -- main = putStrLn $ show twoButtonProg
 
