@@ -265,6 +265,7 @@ main = do
   #-}
 -}
 -}
+{-
 {-# RULES "rep-return" [1]
     forall (t :: Bool).
     rep_ <$> return t 
@@ -272,13 +273,13 @@ main = do
     return $ rep_ t
   #-}
 
-{-# RULES "rep-return" [1]
+{-# RULES "abs-return" [1]
     forall (t :: Expr Bool).
     abs_ <$> return t 
       =
     return $ abs_ t
   #-}
-
+-}
 {-# RULES "rep-abs-fuse" [0]
     forall x.
     rep_(abs_(x))

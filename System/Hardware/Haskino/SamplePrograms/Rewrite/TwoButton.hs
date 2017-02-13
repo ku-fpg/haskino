@@ -116,14 +116,14 @@ main = do
       =
     f >>= k . abs_
   #-}
-
+{-
 {-# RULES "rep-return" [1]
     forall (t :: Bool).
     rep_ <$> return t 
       =
     return $ rep_ t
   #-}
-
+-}
 {-# RULES "rep-abs-fuse" [0]
     forall x.
     rep_(abs_(x))
