@@ -36,7 +36,7 @@ install _ todo = do
   let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
   -- return $ bindToDo ++ dumpToDo ++ todo
   return $ condToDo ++ [rules2Pass] ++ bindRetToDo ++   
-           [rules1Pass] ++ absLambdaToDo ++ bindRet2ToDo ++ bindArgToDo ++ bindAppToDo ++ [rules1Pass] ++[rules0Pass] ++ todo ++ dumpToDo
+           [rules1Pass] ++ absLambdaToDo ++ bindRet2ToDo ++ bindArgToDo ++ bindAppToDo ++ [rules1Pass] ++ absLambdaToDo ++ [rules0Pass] ++ todo -- ++ dumpToDo
   -- Old working version -- return $ bindRetToDo ++ dumpToDo ++ condToDo ++ [rules3Pass] ++ [rules2Pass] ++  
   --         bindArgToDo ++ bindAppToDo ++ [rules1Pass] ++ absLambdaToDo ++ [rules0Pass] ++ todo ++ dumpToDo
   -- return $ bindToDo ++ condToDo ++ [rules2Pass] ++ [rules1Pass] ++ absLambdaToDo ++ [rules0Pass] ++ todo ++ dumpToDo -- absLambdaToDo ++ [rules0Pass] ++ todo ++ dumpToDo

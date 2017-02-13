@@ -24,31 +24,41 @@ myRead1 p = do
     a <- digitalRead (p+1)
     return (not a)
 
+myRead1E :: Expr Word8 -> Arduino (Expr Bool)
+myRead1E p = do
+    delayMillisE 100
+    a <- digitalReadE (p+1)
+    return (notB a)
+
 myRead2 :: Word8 -> Arduino Bool
 myRead2 p = do
     delayMillis 100
     digitalRead (p+1)
+
+myRead2E :: Expr Word8 -> Arduino (Expr Bool)
+myRead2E p = do
+    delayMillis 100
+    digitalReadE (p+1)
 
 myRead3 :: Word8 -> Arduino Bool
 myRead3 p = do
     delayMillis 100
     return True
 
+myRead3E :: Expr Word8 -> Arduino (Expr Bool)
+myRead3E p = do
+    delayMillisE 100
+    return true
+
 myWrite :: Word8 -> Bool -> Arduino ()
 myWrite p b = do
     delayMillis 100
     digitalWrite (p+1) (not b)
-{-
-myRead_2 :: Word8 -> Arduino (Expr Bool)
-myRead_2 p = rep_ <$> do
-    delayMillis 100
-    a <- digitalRead (p+1)
-    return (not a)
--}
-{-
-testit :: Arduino Bool
-testit = rep_ <$> (abs_ <$> digitalReadE 4)
--}
+
+myWriteE :: Expr Word8 -> Expr Bool -> Arduino ()
+myWriteE p b = do
+    delayMillisE 100
+    digitalWriteE (p+1) (notB b)
 
 twoButtonProg :: Arduino ()
 twoButtonProg = do
@@ -61,8 +71,31 @@ twoButtonProg = do
         myWrite 13 (a || b)
         delayMillis 1000
 
+twoButtonProgE :: Arduino ()
+twoButtonProgE = do
+    setPinModeE 13 OUTPUT
+    setPinModeE 2 INPUT
+    setPinModeE 3 INPUT
+    loopE $ do 
+        a <- myRead1E 2
+        b <- myRead1E 3
+        myWriteE 13 (a ||* b)
+        delayMillisE 1000
+
+test1 :: Bool
+test1 = (show twoButtonProg) == (show twoButtonProgE)
+
 main :: IO ()
-main = putStrLn $ show twoButtonProg
+main = do
+  if show twoButtonProg == show twoButtonProgE
+  then putStrLn "*** Test Passed"
+  else do
+      putStrLn "*** Test Failed"
+      putStrLn $ show twoButtonProg
+      putStrLn "-----------------"
+      putStrLn $ show twoButtonProgE
+
+-- main = putStrLn $ show twoButtonProg
 
 -- main :: IO ()
 -- main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg

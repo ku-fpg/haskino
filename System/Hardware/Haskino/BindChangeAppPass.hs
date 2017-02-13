@@ -23,6 +23,7 @@ import System.Hardware.Haskino.Dictionary (buildDictionaryT,
                                            thNameToId, thNameToTyCon)
 
 import qualified System.Hardware.Haskino
+import qualified System.Hardware.Haskino.Expr
 
 data BindEnv
     = BindEnv
@@ -69,30 +70,27 @@ changeAppExpr e = do
           Just (retTyCon, [retTy']) | (showSDoc df (ppr retTyCon) == "Arduino") -> do
               if showSDoc df (ppr b) == "myRead1" || showSDoc df (ppr b) == "myWrite"
               then do
-                args' <- mapM changeAppArg args             
-                if showSDoc df (ppr b) == "myRead1" 
-                then do
-                  liftCoreM $ putMsg $ ppr retTy'
-                  -- Get the a type from Expr a
-                  case splitTyConApp_maybe retTy' of
-                     Just(_, [retTy'']) -> do
-                        -- Get the monad type from the type constructor
-                        let retTyConTy = mkTyConTy retTyCon
+                  args' <- mapM changeAppArg args             
+                  if showSDoc df (ppr b) == "myRead1" 
+                  then do
+                      let retTyConTy = mkTyConTy retTyCon
 
-                        functId <- thNameToId '(<$>)
-                        functTyCon <- thNameToTyCon ''Data.Functor.Functor
-                        functDict <- buildDictionaryTyConT functTyCon retTyConTy
+                      functId <- thNameToId '(<$>)
+                      functTyCon <- thNameToTyCon ''Data.Functor.Functor
+                      functDict <- buildDictionaryTyConT functTyCon retTyConTy
 
-                        absId <- thNameToId 'System.Hardware.Haskino.abs_
+                      exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr.Expr
+                      let exprTyConApp = mkTyConApp exprTyCon [retTy']
 
-                        -- Rebuild the original nested app                 
-                        let e' = mkCoreApps b args'
-                        -- Build the abs_ function
-                        let abs = App (Var absId) (Type retTy'')
-                        -- Build the <$> applied to the abs_ and the original app
-                        return $ mkCoreApps (Var functId) [Type retTyConTy, Type retTy', Type retTy'', functDict, abs, e']
-                     _ -> return $ mkCoreApps b args'
-                else return $ mkCoreApps b args'
+                      absId <- thNameToId 'System.Hardware.Haskino.abs_
+
+                      -- Rebuild the original nested app                 
+                      let e' = mkCoreApps b args'
+                      -- Build the abs_ function
+                      let abs = App (Var absId) (Type retTy')
+                      -- Build the <$> applied to the abs_ and the original app
+                      return $ mkCoreApps (Var functId) [Type retTyConTy, Type exprTyConApp, Type retTy', functDict, abs, e']
+                  else return $ mkCoreApps b args'
               else do
                   e1' <- changeAppExpr e1
                   e2' <- changeAppExpr e2
@@ -127,18 +125,11 @@ changeAppExpr e = do
 
 changeAppArg :: CoreExpr -> BindM CoreExpr
 changeAppArg e = do
-  let ty = exprType e
-  -- Lookup the GHC ID of rep_ function
-  Just repName <- liftCoreM $ thNameToGhcName 'System.Hardware.Haskino.rep_
-  repId <- liftCoreM $ lookupId repName
-  -- Lookup the GHC type constructor of ExprB
-  Just exprBName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.ExprB
-  exprBTyCon <- liftCoreM $ lookupTyCon exprBName
-  -- Make the type of the ExprB for the specified type
-  let repTyConApp = GhcPlugins.mkTyConApp exprBTyCon [ty]
-  -- Build the ExprB dictionary argument to apply
-  repDict <- buildDictionaryT repTyConApp
-  return $ mkCoreApps (Var repId) [Type ty, repDict, e]
+    let ty = exprType e
+    repId <- thNameToId 'System.Hardware.Haskino.rep_
+    exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB
+    repDict <- buildDictionaryTyConT exprBTyCon ty
+    return $ mkCoreApps (Var repId) [Type ty, repDict, e]
 
 varString :: Id -> String
 varString = occNameString . nameOccName . Var.varName
