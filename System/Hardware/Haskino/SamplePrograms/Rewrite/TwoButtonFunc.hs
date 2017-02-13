@@ -188,3 +188,10 @@ main = putStrLn $ show twoButtonProg
       =
     x
   #-}
+
+{-# RULES "rep-abs-app-fuse" [0]
+    forall (m :: Arduino (Expr Bool)).
+    rep_ <$> (abs_ <$> m)
+      =
+    m
+  #-}

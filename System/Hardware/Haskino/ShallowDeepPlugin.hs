@@ -16,7 +16,7 @@ import System.Hardware.Haskino.AbsLambdaPass
 import System.Hardware.Haskino.BindChangeAppPass 
 import System.Hardware.Haskino.BindChangeArgPass 
 import System.Hardware.Haskino.BindChangeRetPass 
--- import System.Hardware.Haskino.BindChangeRet2Pass 
+import System.Hardware.Haskino.BindChangeRet2Pass 
 import System.Hardware.Haskino.CondPass 
 
 plugin :: Plugin
@@ -30,13 +30,13 @@ install _ todo = do
   let absLambdaToDo = [CoreDoPluginPass "AbsLambda" absLambdaPass]
   let condToDo = [CoreDoPluginPass "CondTransform" condPass]
   let bindRetToDo = [CoreDoPluginPass "BindRetTransform" bindChangeRetPass]
---  let bindRet2ToDo = [CoreDoPluginPass "BindRet2Transform" bindChangeRet2Pass]
+  let bindRet2ToDo = [CoreDoPluginPass "BindRet2Transform" bindChangeRet2Pass]
   let bindAppToDo = [CoreDoPluginPass "BindAppTransform" bindChangeAppPass]
   let bindArgToDo = [CoreDoPluginPass "BindArgTransform" bindChangeArgPass]
   let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
   -- return $ bindToDo ++ dumpToDo ++ todo
   return $ condToDo ++ [rules2Pass] ++ bindRetToDo ++   
-           bindArgToDo ++ bindAppToDo ++ [rules1Pass] ++ absLambdaToDo ++ [rules0Pass] ++ todo ++ dumpToDo
+           [rules1Pass] ++ absLambdaToDo ++ bindRet2ToDo ++ bindArgToDo ++ bindAppToDo ++ [rules1Pass] ++[rules0Pass] ++ todo ++ dumpToDo
   -- Old working version -- return $ bindRetToDo ++ dumpToDo ++ condToDo ++ [rules3Pass] ++ [rules2Pass] ++  
   --         bindArgToDo ++ bindAppToDo ++ [rules1Pass] ++ absLambdaToDo ++ [rules0Pass] ++ todo ++ dumpToDo
   -- return $ bindToDo ++ condToDo ++ [rules2Pass] ++ [rules1Pass] ++ absLambdaToDo ++ [rules0Pass] ++ todo ++ dumpToDo -- absLambdaToDo ++ [rules0Pass] ++ todo ++ dumpToDo

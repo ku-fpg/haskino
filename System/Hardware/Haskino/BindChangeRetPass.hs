@@ -56,30 +56,12 @@ changeBind bndr@(NonRec b e) = do
               -- empty list of types, and just a TyCon from the tyCon_m'.
               Just (retTyCon', []) -> do
                   let (bs, e') = collectBinders e
-                  liftCoreM $ putMsgS "!!!!@@@@"
-                  liftCoreM $ putMsg $ ppr $ bs
-                  liftCoreM $ putMsg $ ppr $ e'
-                  repId <- thNameToId 'System.Hardware.Haskino.rep_
-                  exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB
-                  repDict <- buildDictionaryTyConT exprBTyCon retTy'
-
-                  exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr.Expr
-                  let exprTyConApp = mkTyConApp exprTyCon [retTy']
-
-                  functId <- thNameToId '(<$>)
-                  functTyCon <- thNameToTyCon ''Data.Functor.Functor
-                  functDict <- buildDictionaryTyConT functTyCon (mkTyConTy retTyCon)
 
                   -- Change the return
                   e'' <- changeReturn e'
 
-                  -- Build the modified expresion
-                  --let repApp = mkCoreApps (Var repId) [Type retTy', repDict]
-                  --let functApp = mkCoreApps (Var functId) [Type retTyConTy, Type retTy', Type exprTyConApp, functDict, repApp, e'']
-
-                  -- Change binding type
-                  let b' = setVarType b $ mkFunTys argTys (mkTyConApp retTyCon [exprTyConApp])
-                  return (NonRec b' (mkCoreLams bs e''))
+                  -- Rebuild the Lambdas with the changed return
+                  return (NonRec b (mkCoreLams bs e''))
               _ -> return bndr
       _ -> return bndr
 changeBind (Rec bs) = do
@@ -89,9 +71,6 @@ changeReturn :: CoreExpr -> BindM CoreExpr
 changeReturn e = do
     df <- liftCoreM getDynFlags
     let (bs, e') = collectBinders e
-    liftCoreM $ putMsgS "*********"
-    liftCoreM $ putMsg $ ppr $ bs
-    liftCoreM $ putMsg $ ppr $ e'
     let (f, args) = collectArgs e'
     if (showSDoc df (ppr f) == ">>=") || (showSDoc df (ppr f) == ">>")
     then do
@@ -99,9 +78,6 @@ changeReturn e = do
         let args' = init args ++ [la']
         return $ mkCoreApps f args'
     else do
-        -- Need to strip off labmdas and look for return inside in the case 
-        -- statment.
-        -- I'm missing the case of (\x -> return x).
         case args of
           [Type ty1, Var d, Type ty2, ex] | showSDoc df (ppr f) == "return" -> do
               repId <- thNameToId 'System.Hardware.Haskino.rep_
@@ -111,18 +87,10 @@ changeReturn e = do
               let retArg = mkCoreApps (Var repId) [Type ty2, repDict, ex]
 
               exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr.Expr
-              -- Make the type of the Expr for the specified type
               let retTyConApp = mkTyConApp exprTyCon [ty2]
 
               let f' = mkCoreApps f [Type ty1, Var d, Type retTyConApp, retArg]
-              {-
-                  (<$>
-                     @ Arduino
-                     @ (Expr Bool)
-                     @ Bool
-                     System.Hardware.Haskino.Data.$fFunctorArduino
-                     (abs_ @ Bool)
-              -}
+ 
               functId <- thNameToId '(<$>)
               functTyCon <- thNameToTyCon ''Data.Functor.Functor
               functDict <- buildDictionaryTyConT functTyCon ty1
@@ -133,33 +101,3 @@ changeReturn e = do
               let retExp = mkCoreApps (Var functId) [Type ty1, Type retTyConApp, Type ty2, functDict, absLamba, f']
               return $ mkLams bs retExp
           _ -> return $ mkLams bs e'
-{-
-              let (_, retTy) = splitFunTys $ exprType f
-              -- Get the Arduino Type Con
-              let Just tyCon'  = tyConAppTyCon_maybe retTy
-              let ty' = mkTyConTy tyCon'
-              liftCoreM $ putMsgS "&&&&&&&&&&&"
-              liftCoreM $ putMsg $ ppr retTy
-              liftCoreM $ putMsg $ ppr ty'
-              -- Get the Arduino Type Arg
-              case tyConAppArgs_maybe retTy of
-                Just [ty''] -> do
-                  liftCoreM $ putMsg $ ppr ty''
-                  repId <- thNameToId 'System.Hardware.Haskino.rep_
-                  exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB
-                  repDict <- buildDictionaryTyConT exprBTyCon ty''
-
-                  exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr.Expr
-                  -- Make the type of the Expr for the specified type
-                  let exprTyConApp = mkTyConApp exprTyCon [ty'']
-
-                  functId <- thNameToId '(<$>)
-                  functTyCon <- thNameToTyCon ''Data.Functor.Functor
-                  functDict <- buildDictionaryTyConT functTyCon ty'
-
-                  let repApp = mkCoreApps (Var repId) [Type ty'', repDict]
-                  let repExpr = mkCoreApps (Var functId) [Type ty', Type ty'', Type exprTyConApp, 
-                                                          functDict, repApp, mkLams bs e']
-                  return repExpr
-                _ -> return $ mkLams bs e'
--}
