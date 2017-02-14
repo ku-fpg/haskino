@@ -19,9 +19,10 @@ import System.Hardware.Haskino
 import Control.Monad
 import Data.Word
 import Data.Boolean
+import System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonIfE
 
-twoButtonProg :: Arduino ()
-twoButtonProg = do
+twoButtonProg1 :: Arduino ()
+twoButtonProg1 = do
     let led1 = 12
     let led2 = 13
     let button1 = 2
@@ -43,56 +44,57 @@ twoButtonProg = do
           digitalWrite led2 (not b)
           a' <- digitalRead led1
           return a'
-          -- return b
         delayMillis 1000
-{-
-testWait :: Arduino Bool
-testWait = do
-    let button1 = 2
-    let button1 = 3
-    a <- digitalRead button1
-    b <- digitalRead button1
-    if a || b then return $ a || b else return $ a
 
-testWaitWord8 :: Arduino Word8
-testWaitWord8 = do
+twoButtonProg2 :: Arduino ()
+twoButtonProg2 = do
+    let led1 = 12
+    let led2 = 13
     let button1 = 2
-    let button1 = 3
-    a <- digitalRead button1
-    b <- digitalRead button1
-    if a || b then return (0::Word8) else return (1::Word8)
+    let button2 = 3
+    setPinMode led1 OUTPUT
+    setPinMode led2 OUTPUT
+    setPinMode button1 INPUT
+    setPinMode button2 INPUT
+    loop $ do 
+        a <- digitalRead button1
+        b <- digitalRead button2
+        if a || b
+        then do
+          digitalWrite led1 a
+          digitalWrite led2 b
+          return True
+        else do
+          digitalWrite led1 (not a)
+          digitalWrite led2 (not b)
+          digitalRead led1
+        delayMillis 1000
 
-testWait2 :: Arduino Bool
-testWait2 = do
-    let button1 = 2
-    let button1 = 3
-    a <- digitalRead button1
-    b <- digitalRead button1
-    c <- if a || b then return $ a || b else return $ a
-    digitalWrite button1 c
-    return c
+test1 :: Bool
+test1 = (show twoButtonProg1) == (show twoButtonProg1E)
 
--- This is what we want testWait to be transformed to
--- Currently we do all but changing types at the bind
--- level.  Perhaps another pass is needed for that?
-testWaitE :: Arduino Bool
-testWaitE = do
-    let button1 = 2
-    let button1 = 3
-    a <- digitalRead button1
-    b <- digitalRead button1
-    abs_ <$> ifThenElseE (rep_ (a ||* b)) (rep_ <$> (return $ (a ||* b))) (rep_ <$> (return a))
+test2 :: Bool
+test2 = (show twoButtonProg2) == (show twoButtonProg2E)
 
-testCompile :: Arduino ()
-testCompile = do
-    b <- testWaitE
-    return ()
--}
 main :: IO ()
-main = putStrLn $ show twoButtonProg
+main = do
+  if test1
+  then putStrLn "*** Test1 Passed"
+  else do
+      putStrLn "*** Test1 Failed"
+      putStrLn $ show twoButtonProg1
+      putStrLn "-----------------"
+      putStrLn $ show twoButtonProg1E
+  if test2
+  then putStrLn "*** Test2 Passed"
+  else do
+      putStrLn "*** Test2 Failed"
+      putStrLn $ show twoButtonProg2
+      putStrLn "-----------------"
+      putStrLn $ show twoButtonProg2E
 
-mainOld :: IO ()
-mainOld = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
+-- main :: IO ()
+-- main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
 
 {-# RULES 
     "digitalRead" [2]

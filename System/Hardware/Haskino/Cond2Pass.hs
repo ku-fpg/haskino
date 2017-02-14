@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.BindChangeRet2Pass
+-- Module      :  System.Hardware.Haskino.Cond2Pass
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
@@ -9,12 +9,13 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
-module System.Hardware.Haskino.BindChangeRet2Pass (bindChangeRet2Pass) where
+module System.Hardware.Haskino.Cond2Pass (cond2Pass) where
 
 import CoreMonad
 import GhcPlugins
 import Data.Functor
 import Control.Monad.Reader
+import Var
 
 import System.Hardware.Haskino.Dictionary (buildDictionaryT, 
                                            buildDictionaryTyConT, 
@@ -37,39 +38,75 @@ instance PassCoreM BindM where
   liftCoreM = BindM . ReaderT . const
   getModGuts = BindM $ ReaderT (return . pluginModGuts)
 
-bindChangeRet2Pass :: ModGuts -> CoreM ModGuts
-bindChangeRet2Pass guts = 
-    bindsOnlyPass (\x -> (runReaderT (runBindM $ (mapM changeBind) x) (BindEnv guts))) guts
+cond2Pass :: ModGuts -> CoreM ModGuts
+cond2Pass guts = 
+    bindsOnlyPass (\x -> (runReaderT (runBindM $ (mapM changeCond) x) (BindEnv guts))) guts
 
-changeBind :: CoreBind -> BindM CoreBind
-changeBind bndr@(NonRec b e) = do
-    df <- liftCoreM getDynFlags
-    let (argTys, retTy) = splitFunTys $ varType b
-    let tyCon_m = splitTyConApp_maybe retTy
-    case tyCon_m of
-        -- We are looking for return types of Arduino a
-        Just (retTyCon, [retTy']) | (showSDoc df (ppr retTyCon) == "Arduino") &&
-                                    (showSDoc df (ppr retTy') /= "()") -> do
-            let tyCon_m' = splitTyConApp_maybe retTy'
-            case tyCon_m' of
-                -- We do not want types of Arduino (Expr a), so we look for an
-                -- empty list of types, and just a TyCon from the tyCon_m'.
-                Just (retTyCon', []) -> do
-                    let (bs, e') = collectBinders e
+changeCond :: CoreBind -> BindM CoreBind
+changeCond bndr@(NonRec b e) = do
+  let (bs, e') = collectBinders e
+  e'' <- changeCondExpr e'
+  let e''' = mkLams bs e''
+  return (NonRec b e''')
+changeCond (Rec bs) = do
+  return $ Rec bs
 
-                    exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr.Expr
-                    let exprTyConApp = mkTyConApp exprTyCon [retTy']
+changeCondExpr :: CoreExpr -> BindM CoreExpr
+changeCondExpr e = do
+  df <- liftCoreM getDynFlags
+  case e of
+    Var v -> return $ Var v
+    Lit l -> return $ Lit l
+    Type ty -> return $ Type ty
+    Coercion co -> return $ Coercion co
+    App (App (App (App (App (Var f) ty) dict) be) e1) e2 | varString f == "ifThenElseE" -> do
+        e1' <- changeReturn e1
+        e2' <- changeReturn e2
+        return $ mkCoreApps (Var f) [ty, dict, be, e1', e2']
+    App e1 e2 -> do
+        e1' <- changeCondExpr e1
+        e2' <- changeCondExpr e2
+        return $ App e1' e2'
+    Lam tb e -> do
+      e' <- changeCondExpr e
+      return $ Lam tb e'
+    Let bind body -> do
+      body' <- changeCondExpr body
+      bind' <- case bind of
+                  (NonRec v e) -> do
+                    e' <- changeCondExpr e
+                    return $ NonRec v e'
+                  (Rec rbs) -> do
+                    rbs' <- changeCondExpr' rbs
+                    return $ Rec rbs'
+      return $ Let bind' body'
+    Case e tb ty alts -> do
+      e' <- changeCondExpr e
+      alts' <- changeCondExprAlts alts
+      return $ Case e' tb ty alts'
+    Tick t e -> do
+      e' <- changeCondExpr e
+      return $ Tick t e'
+    Cast e co -> do
+      e' <- changeCondExpr e
+      return $ Cast e' co
 
-                    -- Change the return
-                    e'' <- changeReturn e'
+varString :: Id -> String
+varString = occNameString . nameOccName . Var.varName
 
-                    -- Change binding type
-                    let b' = setVarType b $ mkFunTys argTys (mkTyConApp retTyCon [exprTyConApp])
-                    return (NonRec b' (mkCoreLams bs e''))
-                _ -> return bndr
-        _ -> return bndr
-changeBind (Rec bs) = do
-    return $ Rec bs
+changeCondExpr' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
+changeCondExpr' [] = return []
+changeCondExpr' ((b, e) : bs) = do
+  e' <- changeCondExpr e
+  bs' <- changeCondExpr' bs
+  return $ (b, e') : bs'
+
+changeCondExprAlts :: [GhcPlugins.Alt CoreBndr] -> BindM [GhcPlugins.Alt CoreBndr]
+changeCondExprAlts [] = return []
+changeCondExprAlts ((ac, b, a) : as) = do
+  a' <- changeCondExpr a
+  bs' <- changeCondExprAlts as
+  return $ (ac, b, a') : bs'
 
 changeReturn :: CoreExpr -> BindM CoreExpr
 changeReturn e = do
