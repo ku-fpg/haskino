@@ -67,3 +67,26 @@ twoButtonProg2E = do
             digitalWriteE led2 (notB b)
             digitalReadE led1 )
         delayMillisE 1000
+
+twoButtonProg3E :: Arduino ()
+twoButtonProg3E = do
+    let led1 = 12
+    let led2 = 13
+    let button1 = 2
+    let button2 = 3
+    setPinModeE led1 OUTPUT
+    setPinModeE led2 OUTPUT
+    setPinModeE button1 INPUT
+    setPinModeE button2 INPUT
+    loopE $ do 
+        a <- digitalReadE button1
+        b <- digitalReadE button2
+        ifThenElseUnitE 
+          (a ||* b)
+          (   do
+            digitalWriteE led1 a
+            digitalWriteE led2 b )
+          (   do
+            digitalWriteE led1 (notB a)
+            digitalWriteE led2 (notB b) )
+        delayMillisE 1000
