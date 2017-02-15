@@ -17,6 +17,7 @@ import System.Hardware.Haskino
 import Control.Monad
 import Data.Word
 import Data.Boolean
+import System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonE
 
 twoButtonProg :: Arduino ()
 twoButtonProg = do
@@ -29,22 +30,9 @@ twoButtonProg = do
     loop $ do 
         a <- digitalRead button1
         b <- digitalRead button2
-        digitalWrite led (a || b)
+        c <- return (a || b)
+        digitalWrite led c
         delayMillis 1000
-
-twoButtonProgE :: Arduino ()
-twoButtonProgE = do
-    let led = 13
-    let button1 = 2
-    let button2 = 3
-    setPinModeE led OUTPUT
-    setPinModeE button1 INPUT
-    setPinModeE button2 INPUT
-    loopE $ do 
-        a <- digitalReadE button1
-        b <- digitalReadE button2
-        digitalWriteE led (a ||* b)
-        delayMillisE 1000
 
 test :: Bool
 test = (show twoButtonProg) == (show twoButtonProgE)

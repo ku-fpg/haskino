@@ -33,6 +33,7 @@ twoButtonProg1 = do
     setPinMode button2 INPUT
     loop $ do 
         a <- digitalRead button1
+        digitalWrite led1 True
         b <- digitalRead button2
         if a || b
         then do
@@ -43,7 +44,7 @@ twoButtonProg1 = do
           digitalWrite led1 (not a)
           digitalWrite led2 (not b)
           a' <- digitalRead led1
-          return a'
+          return (a' && b)
         delayMillis 1000
 
 twoButtonProg2 :: Arduino ()
@@ -203,6 +204,13 @@ main = do
     rep_ (b1 || b2)
       =
     (rep_ b1) ||* (rep_ b2)
+  #-}
+
+{-# RULES "rep-push-and" [1]
+    forall (b1 :: Bool) (b2 :: Bool).
+    rep_ (b1 && b2)
+      =
+    (rep_ b1) &&* (rep_ b2)
   #-}
 
 {-# RULES "rep-push-not" [1]

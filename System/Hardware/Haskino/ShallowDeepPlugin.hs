@@ -10,6 +10,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 module System.Hardware.Haskino.ShallowDeepPlugin (plugin) where
 
+import StaticFlags
 import CoreMonad
 import GhcPlugins
 import System.Hardware.Haskino.AbsLambdaPass 
@@ -27,6 +28,7 @@ plugin = defaultPlugin {
 
 install :: [CommandLineOption] -> [CoreToDo] -> CoreM [CoreToDo]
 install _ todo = do
+  liftIO initStaticOpts   -- This is required on Windows
   reinitializeGlobals
   let absLambdaToDo = [CoreDoPluginPass "AbsLambda" absLambdaPass]
   let condToDo = [CoreDoPluginPass "CondTransform" condPass]
@@ -36,10 +38,10 @@ install _ todo = do
   let bindAppToDo = [CoreDoPluginPass "BindAppTransform" bindChangeAppPass]
   let bindArgToDo = [CoreDoPluginPass "BindArgTransform" bindChangeArgPass]
   let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
-  return $ condToDo ++ [rules2Pass] ++ bindRetToDo ++   
+  return $ condToDo ++ [rules2Pass] ++ bindRetToDo ++
            [rules1Pass] ++ absLambdaToDo ++ cond2ToDo ++
-           bindRet2ToDo ++ bindArgToDo ++ bindAppToDo ++ 
-           [rules1Pass] ++ absLambdaToDo ++ 
+           bindRet2ToDo ++ bindArgToDo ++ bindAppToDo ++
+           [rules1Pass] ++ absLambdaToDo ++
            [rules0Pass] ++ todo ++ dumpToDo
 
 rules0Pass :: CoreToDo

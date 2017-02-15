@@ -17,6 +17,7 @@ import System.Hardware.Haskino
 import Control.Monad
 import Data.Word
 import Data.Boolean
+import System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonFuncE
 
 myRead1 :: Word8 -> Arduino Bool
 myRead1 p = do
@@ -24,41 +25,20 @@ myRead1 p = do
     a <- digitalRead (p+1)
     return (not a)
 
-myRead1E :: Expr Word8 -> Arduino (Expr Bool)
-myRead1E p = do
-    delayMillisE 100
-    a <- digitalReadE (p+1)
-    return (notB a)
-
 myRead2 :: Word8 -> Arduino Bool
 myRead2 p = do
     delayMillis 100
     digitalRead (p+1)
-
-myRead2E :: Expr Word8 -> Arduino (Expr Bool)
-myRead2E p = do
-    delayMillis 100
-    digitalReadE (p+1)
 
 myRead3 :: Word8 -> Arduino Bool
 myRead3 p = do
     delayMillis 100
     return True
 
-myRead3E :: Expr Word8 -> Arduino (Expr Bool)
-myRead3E p = do
-    delayMillisE 100
-    return true
-
 myWrite :: Word8 -> Bool -> Arduino ()
 myWrite p b = do
     delayMillis 100
     digitalWrite (p+1) (not b)
-
-myWriteE :: Expr Word8 -> Expr Bool -> Arduino ()
-myWriteE p b = do
-    delayMillisE 100
-    digitalWriteE (p+1) (notB b)
 
 twoButtonProg1 :: Arduino ()
 twoButtonProg1 = do
@@ -71,17 +51,6 @@ twoButtonProg1 = do
         myWrite 13 (a || b)
         delayMillis 1000
 
-twoButtonProg1E :: Arduino ()
-twoButtonProg1E = do
-    setPinModeE 13 OUTPUT
-    setPinModeE 2 INPUT
-    setPinModeE 3 INPUT
-    loopE $ do 
-        a <- myRead1E 2
-        b <- myRead1E 3
-        myWriteE 13 (a ||* b)
-        delayMillisE 1000
-
 twoButtonProg2 :: Arduino ()
 twoButtonProg2 = do
     setPinMode 13 OUTPUT
@@ -93,17 +62,6 @@ twoButtonProg2 = do
         myWrite 13 (a || b)
         delayMillis 1000
 
-twoButtonProg2E :: Arduino ()
-twoButtonProg2E = do
-    setPinModeE 13 OUTPUT
-    setPinModeE 2 INPUT
-    setPinModeE 3 INPUT
-    loopE $ do 
-        a <- myRead2E 2
-        b <- myRead2E 3
-        myWriteE 13 (a ||* b)
-        delayMillisE 1000
-
 twoButtonProg3 :: Arduino ()
 twoButtonProg3 = do
     setPinMode 13 OUTPUT
@@ -114,17 +72,6 @@ twoButtonProg3 = do
         b <- myRead3 3
         myWrite 13 (a || b)
         delayMillis 1000
-
-twoButtonProg3E :: Arduino ()
-twoButtonProg3E = do
-    setPinModeE 13 OUTPUT
-    setPinModeE 2 INPUT
-    setPinModeE 3 INPUT
-    loopE $ do 
-        a <- myRead3E 2
-        b <- myRead3E 3
-        myWriteE 13 (a ||* b)
-        delayMillisE 1000
 
 test1 :: Bool
 test1 = (show twoButtonProg1) == (show twoButtonProg1E)

@@ -181,14 +181,8 @@ condTransform ty e alts = do
       -- Build the First Arg to ifThenElseE
       let arg1 = mkCoreApps (Var repId) [Type bTy, repDict, e]
 
-      -- Build the Second Arg to ifThenElseE
-      arg2 <- changeReturn e2
-
-      -- Build the Third Arg to ifThenElseE
-      arg3 <- changeReturn e1
-
       -- Build the ifThenElse Expr
-      let ifteExpr = mkCoreApps (Var ifThenElseId) [Type ty'', condDict, arg1, arg2, arg3]
+      let ifteExpr = mkCoreApps (Var ifThenElseId) [Type ty'', condDict, arg1, e2, e1]
 
       return ifteExpr
 
@@ -218,38 +212,3 @@ condTransformUnit ty e alts = do
       let arg1 = mkCoreApps (Var repId) [Type bTy, repDict, e]
 
       return $ mkCoreApps (Var ifThenElseId) [arg1, e2, e1]
-
-changeReturn :: CoreExpr -> CondM CoreExpr
-changeReturn e = do
-    df <- liftCoreM getDynFlags
-    let (bs, e') = collectBinders e
-    let (f, args) = collectArgs e'
-    if (showSDoc df (ppr f) == ">>=") || (showSDoc df (ppr f) == ">>")
-    then do
-        la' <- changeReturn $ last args
-        let args' = init args ++ [la']
-        return $ mkCoreApps f args'
-    else do
-        case args of
-          [Type ty1, Var d, Type ty2, ex] | showSDoc df (ppr f) == "return" -> do
-              repId <- thNameToId 'System.Hardware.Haskino.rep_
-              exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB
-              repDict <- buildDictionaryTyConT exprBTyCon ty2
-        
-              let retArg = mkCoreApps (Var repId) [Type ty2, repDict, ex]
-
-              exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr.Expr
-              let retTyConApp = mkTyConApp exprTyCon [ty2]
-
-              let f' = mkCoreApps f [Type ty1, Var d, Type retTyConApp, retArg]
- 
-              functId <- thNameToId '(<$>)
-              functTyCon <- thNameToTyCon ''Data.Functor.Functor
-              functDict <- buildDictionaryTyConT functTyCon ty1
-
-              absId <- thNameToId 'System.Hardware.Haskino.abs_
-              let absLamba = mkCoreApps (Var absId ) [Type ty2]
-
-              let retExp = mkCoreApps (Var functId) [Type ty1, Type retTyConApp, Type ty2, functDict, absLamba, f']
-              return $ mkLams bs retExp
-          _ -> return $ mkLams bs e'
