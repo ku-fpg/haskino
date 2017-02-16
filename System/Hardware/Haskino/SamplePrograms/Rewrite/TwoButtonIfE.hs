@@ -6,7 +6,7 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- The /hello world/ of the arduino world, blinking the led.
+-- Two button example used for rewrite
 -------------------------------------------------------------------------------
 
 module System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonIfE where

@@ -123,7 +123,6 @@ changeRetExprAlts ((ac, b, a) : as) = do
 changeReturn :: CoreExpr -> BindM CoreExpr
 changeReturn e = do
     let (f, args) = collectArgs e
-    liftCoreM $ putMsg $ ppr args
     case args of
       [Type ty1, Var d, Type ty2, ex] -> do
           repId <- thNameToId 'System.Hardware.Haskino.rep_

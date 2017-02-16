@@ -42,7 +42,7 @@ install _ todo = do
            [rules1Pass] ++ absLambdaToDo ++ cond2ToDo ++
            bindRetToDo ++ bindArgToDo ++ bindAppToDo ++
            [rules1Pass] ++ absLambdaToDo ++
-           [rules0Pass] ++ todo ++ dumpToDo
+           [rules0Pass] ++ todo -- ++ dumpToDo
 
 rules0Pass :: CoreToDo
 rules0Pass = CoreDoSimplify 1 SimplMode {

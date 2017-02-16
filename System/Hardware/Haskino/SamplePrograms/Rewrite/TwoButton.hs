@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fplugin=System.Hardware.Haskino.ShallowDeepPlugin #-}
+{-# OPTIONS_GHC -fenable-rewrite-rules #-}
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButton
