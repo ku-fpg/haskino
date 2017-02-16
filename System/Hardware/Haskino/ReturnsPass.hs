@@ -5,7 +5,7 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Worker-Wrapper push through lambda pass
+-- return express transformation pass
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -111,6 +111,15 @@ changeRetExprAlts ((ac, b, a) : as) = do
   bs' <- changeRetExprAlts as
   return $ (ac, b, a') : bs'
 
+{-
+  The following performs this transform:
+
+    forall (ExprB a => e :: a) 
+    return e
+      =
+    abs_ <$> (return (rep_ e))
+
+-}
 changeReturn :: CoreExpr -> BindM CoreExpr
 changeReturn e = do
     let (f, args) = collectArgs e

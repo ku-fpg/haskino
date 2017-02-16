@@ -5,7 +5,11 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Worker-Wrapper push through lambda pass
+-- Local bind argument type change pass
+-- f :: a -> ... -> c -> Expr d ==> f :: Expr a  -> ... -> Expr c -> Expr d
+-- It does this by changing the type of the argument, and then replacing
+-- each occurnace of (rep_ a) of the argument 'a' with just the type 
+-- changed argument itself.
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -17,7 +21,8 @@ import Var
 import Data.Functor
 import Control.Monad.State
 
-import System.Hardware.Haskino.Dictionary (buildDictionaryT, PassCoreM(..), )
+import System.Hardware.Haskino.Dictionary (buildDictionaryT, PassCoreM(..), 
+                                           thNameToTyCon)
 
 import qualified System.Hardware.Haskino
 
@@ -67,8 +72,7 @@ changeArg (b, ty) = do
     Just (_, []) -> do
         -- ToDo:  Check that type is a valid Haskino Expr Type?
         -- Lookup the GHC type constructor of Expr
-        Just exprName <- liftCoreM $ thNameToGhcName ''System.Hardware.Haskino.Expr
-        exprTyCon <- liftCoreM $ lookupTyCon exprName
+        exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr
         -- Make the type of the Expr for the specified type
         let ty' = mkTyConApp exprTyCon [ty]
         let b' = setVarType b ty'

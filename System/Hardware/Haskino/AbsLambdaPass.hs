@@ -6,6 +6,10 @@
 -- Stability   :  experimental
 --
 -- Worker-Wrapper push through lambda pass
+-- forall (f :: Arduino a).
+-- (\x -> F[x]).abs
+--   =
+-- (\x' -> let x=abs(x') in F[x])
 -------------------------------------------------------------------------------
 {-# LANGUAGE TemplateHaskell #-}
 module System.Hardware.Haskino.AbsLambdaPass (absLambdaPass) where

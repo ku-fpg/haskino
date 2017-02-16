@@ -5,7 +5,11 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Worker-Wrapper push through lambda pass
+-- Local bind call site type change pass:
+-- forall (f: a -> .. b -> Arduino a).
+-- f aa .. ab
+--   =
+-- abs_ <$> f (rep aa) .. (rep ab)
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}

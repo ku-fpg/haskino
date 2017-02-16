@@ -5,7 +5,8 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Worker-Wrapper push through lambda pass
+-- Conditional Transformation Pass 2
+-- ifThenElseE (rep b) t e => ifThenElseE (rep b) (rep <$> t) (rep <$> e)
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}

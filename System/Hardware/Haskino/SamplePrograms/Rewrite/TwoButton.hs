@@ -4,7 +4,6 @@
 -- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButton
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
---                System.Hardware.Arduino (c) Levent Erkok
 -- License     :  BSD3
 -- Stability   :  experimental
 --
@@ -50,6 +49,9 @@ main = do
 -- main :: IO ()
 -- main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
 
+-- Phase 2 Rules
+-- Command/Procedure shallow->deep rules
+
 {-# RULES 
     "digitalRead" [2]
     forall (p :: Word8).
@@ -84,6 +86,11 @@ main = do
     loopE m
   #-}
 
+-- Phase 1 Rules
+-- rep/abs manipulation rules Rules
+
+-- Expr rep rules
+
 {-# RULES "rep-push-or" [1]
     forall (b1 :: Bool) (b2 :: Bool).
     rep_ (b1 || b2)
@@ -104,17 +111,20 @@ main = do
       =
     f >>= k . abs_
   #-}
-{-
-{-# RULES "rep-return" [1]
-    forall (t :: Bool).
-    rep_ <$> return t 
-      =
-    return $ rep_ t
-  #-}
--}
+
+-- Phase 0 Rules
+-- Fusion Rules
+
 {-# RULES "rep-abs-fuse" [0]
     forall x.
     rep_(abs_(x))
       =
     x
+  #-}
+
+{-# RULES "rep-abs-app-fuse" [0]
+    forall (m :: Arduino (Expr Bool)).
+    rep_ <$> (abs_ <$> m)
+      =
+    m
   #-}

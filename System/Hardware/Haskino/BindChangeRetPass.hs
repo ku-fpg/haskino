@@ -5,7 +5,10 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Worker-Wrapper push through lambda pass
+-- Local bind return type change pass
+-- f :: a -> ... -> c -> d ==> f :: a  -> ... -> c -> Expr d
+-- It does this by inserting a rep_ <$> to the last expresion of the bind
+-- chain for the local bind.
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}

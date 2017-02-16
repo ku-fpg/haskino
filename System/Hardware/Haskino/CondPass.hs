@@ -6,6 +6,7 @@
 -- Stability   :  experimental
 --
 -- Conditional Transformation Pass
+-- if b then t else e ==> ifThenElse[Unit]E (rep b) t e
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -145,7 +146,9 @@ condExprAlts ((ac, b, a) : as) = do
     forall (b :: Bool) (t :: ArduinoConditional a => Arduino a) (e :: ArduinoConditional a => Arduino a).
     if b then t else e
       =
-    rep_ <$> ifThenElseE (abs_ b) (abs_ <$> t) (abs_ <$> e)
+    rep_ <$> ifThenElseE (rep_ b) t e
+
+    The return types of the then and else blocks are not changed until a later pass
 
 -}
 condTransform :: Type -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CondM CoreExpr
@@ -164,7 +167,6 @@ condTransform ty e alts = do
       condTyCon <- thNameToTyCon ''System.Hardware.Haskino.ArduinoConditional
       condDict <- buildDictionaryTyConT condTyCon ty''
 
-      absId <- thNameToId 'System.Hardware.Haskino.abs_
       repId <- thNameToId 'System.Hardware.Haskino.rep_
 
       exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB

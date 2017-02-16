@@ -4,7 +4,6 @@
 -- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonFunc
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
---                System.Hardware.Arduino (c) Levent Erkok
 -- License     :  BSD3
 -- Stability   :  experimental
 --
@@ -106,10 +105,11 @@ main = do
       putStrLn "-----------------"
       putStrLn $ show twoButtonProg3E
 
--- main = putStrLn $ show twoButtonProg
-
 -- main :: IO ()
 -- main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
+
+-- Phase 2 Rules
+-- Command/Procedure shallow->deep rules
 
 {-# RULES 
     "digitalRead" [2]
@@ -145,6 +145,11 @@ main = do
     loopE m
   #-}
 
+-- Phase 1 Rules
+-- rep/abs manipulation rules Rules
+
+-- Expr rep rules
+
 {-# RULES "rep-push-add" [1]
     forall (b1 :: Word8) (b2 :: Word8).
     rep_ (b1 + b2)
@@ -173,60 +178,9 @@ main = do
     f >>= k . abs_
   #-}
 
-{-  Don't really want this
-{-# RULES "rep-3rd-monad" [1]
-    forall (f :: Arduino a) (k :: Expr a -> Arduino b).
-    rep_ <$> f >>= k 
-      =
-    f >>= k . rep_
-  #-}
--}
-{-
-{-# RULES "rep-then-through" [3]
-    forall (f :: Arduino a) (k :: Arduino b).
-    rep_ <$> (f >> k) 
-      =
-    f >> (rep_ <$> k)
-  #-}
+-- Phase 0 Rules
+-- Fusion Rules
 
-{-# RULES "rep-monad-return" [3]
-    forall (f :: Arduino a) (g :: a -> a).
-    rep_ <$> (f >>= (\x -> return (g x)))
-      =
-    f >>= (\x -> return (rep_ (g x)))
-  #-}
-
-{-
-{-# RULES "rep-3rd-monad3" [1]
-    forall (f :: Arduino a) (g :: b -> b).
-    rep_ <$> (f >>= (\x -> return (g x)))
-      =
-    f >>= (\x -> return (rep_ (g x)))
-  #-}
-
-{-# RULES "rep-3rd-monad3" [1]
-    forall (f :: Arduino a) (x :: a).
-    rep_ <$> (f >>= (return x)) 
-      =
-    f >>= (return (rep_ x))
-  #-}
--}
--}
-{-
-{-# RULES "rep-return" [1]
-    forall (t :: Bool).
-    rep_ <$> return t 
-      =
-    return $ rep_ t
-  #-}
-
-{-# RULES "abs-return" [1]
-    forall (t :: Expr Bool).
-    abs_ <$> return t 
-      =
-    return $ abs_ t
-  #-}
--}
 {-# RULES "rep-abs-fuse" [0]
     forall x.
     rep_(abs_(x))

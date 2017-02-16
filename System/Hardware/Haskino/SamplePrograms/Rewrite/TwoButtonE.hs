@@ -3,7 +3,6 @@
 -- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonE
 --                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
---                System.Hardware.Arduino (c) Levent Erkok
 -- License     :  BSD3
 -- Stability   :  experimental
 --
