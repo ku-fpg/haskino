@@ -53,9 +53,9 @@ Library
                     , System.Hardware.Haskino.AbsLambdaPass
                     , System.Hardware.Haskino.BindChangeAppPass,
                     , System.Hardware.Haskino.BindChangeArgPass,
-                    , System.Hardware.Haskino.BindChangeRetPass,
                     , System.Hardware.Haskino.BindChangeRet2Pass,
                     , System.Hardware.Haskino.CondPass
                     , System.Hardware.Haskino.Cond2Pass
+                    , System.Hardware.Haskino.ReturnsPass,
                     , System.Hardware.Haskino.Dictionary
                     , System.Hardware.Haskino.Typechecker

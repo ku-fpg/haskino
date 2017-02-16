@@ -17,9 +17,9 @@ import Var
 import Data.Functor
 import Control.Monad.State
 
-import System.Hardware.Haskino.Dictionary (buildDictionaryT, 
-                                           buildDictionaryTyConT, 
-                                           PassCoreM(..), 
+import System.Hardware.Haskino.Dictionary (buildDictionaryT,
+                                           buildDictionaryTyConT,
+                                           PassCoreM(..),
                                            thNameToId, thNameToTyCon)
 
 import qualified System.Hardware.Haskino
@@ -28,7 +28,8 @@ import qualified System.Hardware.Haskino.Expr
 data BindEnv
     = BindEnv
       { pluginModGuts :: ModGuts,
-        args :: [CoreBndr]
+        chngRet  :: [CoreBndr],
+        chngArgs :: [CoreBndr]
       }
 
 newtype BindM a = BindM { runBindM :: StateT BindEnv CoreM a }
@@ -40,8 +41,34 @@ instance PassCoreM BindM where
   getModGuts = gets pluginModGuts
 
 bindChangeAppPass :: ModGuts -> CoreM ModGuts
-bindChangeAppPass guts =
-    bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM changeBind) x) (BindEnv guts []))) guts
+bindChangeAppPass guts = do
+    (cmds, procs) <- findCmdsProcs $ mg_binds guts
+    bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM changeBind) x) (BindEnv guts procs (cmds ++ procs)))) guts
+
+findCmdsProcs :: [CoreBind] -> CoreM ([CoreBndr],[CoreBndr])
+findCmdsProcs [] = return ([], [])
+findCmdsProcs (bndr@(NonRec b e) : bndrs) = do
+    df <- getDynFlags
+    let (argTys, retTy) = splitFunTys $ varType b
+    let tyCon_m = splitTyConApp_maybe retTy
+    (Just monadTyConName) <- thNameToGhcName ''System.Hardware.Haskino.Arduino
+    monadTyConId <- lookupTyCon monadTyConName
+    case tyCon_m of
+        -- We are looking for return types of Arduino a
+        -- Just (retTyCon, [retTy']) | (showSDoc df (ppr retTyCon) == "Arduino") &&
+        Just (retTyCon, [retTy']) | retTyCon == monadTyConId &&
+                                    (showSDoc df (ppr retTy') == "()") -> do
+            (cmds, procs) <- findCmdsProcs bndrs
+            return (b:cmds, procs)
+        Just (retTyCon, [retTy']) | (showSDoc df (ppr retTyCon) == "Arduino") -> do
+          let tyCon_m' = splitTyConApp_maybe retTy'
+          case tyCon_m' of
+              Just (retTyCon', [retTy'']) -> do
+                  (cmds, procs) <- findCmdsProcs bndrs
+                  return (cmds, b:procs)
+              _ -> findCmdsProcs bndrs
+        _ -> findCmdsProcs bndrs
+findCmdsProcs ((Rec bs) : bndrs) = findCmdsProcs bndrs
 
 changeBind :: CoreBind -> BindM CoreBind
 changeBind bndr@(NonRec b e) = do
@@ -56,6 +83,8 @@ changeBind (Rec bs) = do
 changeAppExpr :: CoreExpr -> BindM CoreExpr
 changeAppExpr e = do
   df <- liftCoreM getDynFlags
+  chngRet <- gets chngRet
+  chngArgs <- gets chngArgs
   s <- get
   case e of
     Var v -> return $ Var v
@@ -66,12 +95,17 @@ changeAppExpr e = do
       let (b, args) = collectArgs e
       let (argTys, retTy) = splitFunTys $ exprType b
       let tyCon_m = splitTyConApp_maybe retTy
+      let defaultRet = do
+            e1' <- changeAppExpr e1
+            e2' <- changeAppExpr e2
+            return $ App e1' e2'
       case tyCon_m of
           Just (retTyCon, [retTy']) | (showSDoc df (ppr retTyCon) == "Arduino") -> do
-              if showSDoc df (ppr b) == "myRead1" || showSDoc df (ppr b) == "myRead2" || showSDoc df (ppr b) == "myRead3" || showSDoc df (ppr b) == "myWrite"
+              let (Var vb) = b
+              if vb `elem` chngArgs
               then do
-                  args' <- mapM changeAppArg args             
-                  if showSDoc df (ppr b) == "myRead1" || showSDoc df (ppr b) == "myRead2" || showSDoc df (ppr b) == "myRead3" 
+                  args' <- mapM changeAppArg args
+                  if vb `elem` chngRet
                   then do
                       let retTyConTy = mkTyConTy retTyCon
 
@@ -84,21 +118,15 @@ changeAppExpr e = do
 
                       absId <- thNameToId 'System.Hardware.Haskino.abs_
 
-                      -- Rebuild the original nested app                 
+                      -- Rebuild the original nested app
                       let e' = mkCoreApps b args'
                       -- Build the abs_ function
                       let abs = App (Var absId) (Type retTy')
                       -- Build the <$> applied to the abs_ and the original app
                       return $ mkCoreApps (Var functId) [Type retTyConTy, Type exprTyConApp, Type retTy', functDict, abs, e']
                   else return $ mkCoreApps b args'
-              else do
-                  e1' <- changeAppExpr e1
-                  e2' <- changeAppExpr e2
-                  return $ App e1' e2'
-          _ -> do
-              e1' <- changeAppExpr e1
-              e2' <- changeAppExpr e2
-              return $ App e1' e2'
+              else defaultRet
+          _ -> defaultRet
     Lam tb e -> do
       e' <- changeAppExpr e
       return $ Lam tb e'
