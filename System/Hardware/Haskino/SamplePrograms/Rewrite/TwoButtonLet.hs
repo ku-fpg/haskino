@@ -17,14 +17,10 @@ import System.Hardware.Haskino
 import Control.Monad
 import Data.Word
 import Data.Boolean
--- import System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonFuncE
+import System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonLetE
 
 twoButtonProg1 :: Arduino ()
 twoButtonProg1 = do
---    let myRead1 = do
---        delayMillis 100
---        a <- digitalRead (1)
---        return (not a)
     let myWrite p b = do
         delayMillis 100
         digitalWrite (1) (not b)
@@ -38,8 +34,6 @@ twoButtonProg1 = do
             return (not a')
         myWrite 13 (a || False)
         delayMillis 1000
---    myRead1 :: Word8 -> Arduino Bool
---    myWrite :: Word8 -> Bool -> Arduino ()
 
 
 twoButtonProg2 :: Arduino ()
@@ -60,9 +54,28 @@ twoButtonProg2 = do
         delayMillis 1000
 
 
+test1 :: Bool
+test1 = (show twoButtonProg1) == (show twoButtonProg1E)
+
+test2 :: Bool
+test2 = (show twoButtonProg2) == (show twoButtonProg2E)
+
 main :: IO ()
 main = do
-       putStrLn $ show twoButtonProg2
+  if test1
+  then putStrLn "*** Test1 Passed"
+  else do
+      putStrLn "*** Test1 Failed"
+      putStrLn $ show twoButtonProg1
+      putStrLn "-----------------"
+      putStrLn $ show twoButtonProg1E
+  if test2
+  then putStrLn "*** Test2 Passed"
+  else do
+      putStrLn "*** Test2 Failed"
+      putStrLn $ show twoButtonProg2
+      putStrLn "-----------------"
+      putStrLn $ show twoButtonProg2E
 
 -- main :: IO ()
 -- main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
