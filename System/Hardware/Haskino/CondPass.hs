@@ -42,6 +42,9 @@ instance PassCoreM CondM where
 
 condPass :: ModGuts -> CoreM ModGuts
 condPass guts = do
+    -- putMsg $ ppr $ mg_rdr_env guts
+    -- let greName = lookupGRE_Name (mg_rdr_env guts) ("Arduino" )
+    -- putMsg $ ppr $ greName
     bindsOnlyPass (\x -> (runReaderT (runCondM $ (mapM condBind) x) (CondEnv guts))) guts
 
 condBind :: CoreBind -> CondM CoreBind
