@@ -193,14 +193,14 @@ main = do
       =
     notB (rep_ b)
   #-}
-
+{-
 {-# RULES "abs-3rd-monad" [1]
     forall (f :: Arduino (Expr Bool)) (k :: Bool -> Arduino b).
     abs_ <$> f >>= k 
       =
     f >>= k . abs_
   #-}
-
+-}
 -- Phase 0 Rules
 -- Fusion Rules
 

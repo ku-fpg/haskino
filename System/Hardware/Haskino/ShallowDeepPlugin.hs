@@ -41,10 +41,10 @@ install _ todo = do
   let bindArgToDo = [CoreDoPluginPass "BindArgTransform" bindChangeArgPass]
   let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
   return $ condToDo ++ [rules2Pass] ++ returnsToDo ++
-           [rules1Pass] ++ cond2ToDo ++ -- ++ lambdaToDo 
+           [rules1Pass] ++ lambdaToDo ++ cond2ToDo ++ 
            bindRetToDo ++ bindArgToDo ++ bindAppToDo ++ 
            [rules1Pass] ++ lambdaToDo ++ 
-           [rules0Pass] ++ todo ++ dumpToDo
+           [rules0Pass] ++ todo -- ++ dumpToDo
 
 rules0Pass :: CoreToDo
 rules0Pass = CoreDoSimplify 1 SimplMode {

@@ -35,18 +35,34 @@ twoButtonProg1 = do
         a <- do
             delayMillis 100
             a' <- digitalRead (1)
-            return (a')
-            -- return (not a')
---        a <- myRead1
+            return (not a')
         myWrite 13 (a || False)
         delayMillis 1000
 --    myRead1 :: Word8 -> Arduino Bool
 --    myWrite :: Word8 -> Bool -> Arduino ()
 
 
+twoButtonProg2 :: Arduino ()
+twoButtonProg2 = do
+    let myRead p = do
+        delayMillis 100
+        a <- digitalRead (p+1)
+        return (not a)
+    let myWrite p b = do
+        delayMillis 100
+        digitalWrite (1) (not b)
+    setPinMode 13 OUTPUT
+    setPinMode 2 INPUT
+    setPinMode 3 INPUT
+    loop $ do
+        a <- myRead 2
+        myWrite 13 (a || False)
+        delayMillis 1000
+
+
 main :: IO ()
 main = do
-       putStrLn $ show twoButtonProg1
+       putStrLn $ show twoButtonProg2
 
 -- main :: IO ()
 -- main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
