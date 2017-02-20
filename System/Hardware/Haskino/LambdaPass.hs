@@ -1,12 +1,22 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.LambdaPass
+-- Module      :  System.Hardware.Haskino.AbsLambdaPass
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Conditional Transformation Pass 2
--- ifThenElseE (rep b) t e => ifThenElseE (rep b) (rep <$> t) (rep <$> e)
+-- Worker-Wrapper push through lambda pass
+-- forall (f :: Arduino a) (g :: a -> Arduino (Expr b)) (k :: b -> Arduino c).
+--     (f >>= (abs_ <$> g)) >>= k
+--        =
+--     (f >>= g) >>= k . abs_
+-- 
+--  And 
+-- 
+-- forall (f :: Arduino a).
+--     (\x -> F[x]).abs
+--        =
+--     (\x' -> let x=abs(x') in F[x])
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -61,11 +71,38 @@ changeLambdaExpr e = do
     Lit l -> return $ Lit l
     Type ty -> return $ Type ty
     Coercion co -> return $ Coercion co
+    -- Look for expressions of the form:  
+    -- forall (m :: Arduino a) (F :: a -> Arudino b)
+    -- m >>= (\x -> F[x])
     App (App (App (App (App (App (Var bind) (Type monadTy)) dict) (Type arg1Ty)) (Type arg2Ty)) e_right) (Lam b e_lam) | varString bind == ">>=" -> do
+        -- Check if the right hand side of the bind operations end
+        -- in monadic function with abs_ applied to it.  In other words
+        -- m >>= m1 >>= ... >>= abs_ <$> mn 
         (e_right', absFlag) <- checkForAbs e_right
+        -- Recursivly check for abs
         e_lam' <- changeLambdaExpr e_lam
         if absFlag
         then do
+            -- If abs is found, then we apply the following two rules.
+            --
+            -- forall (f :: Arduino a) (g :: a -> Arduino (Expr b)) (k :: b -> Arduino c).
+            --     (f >>= (abs_ <$> g)) >>= k
+            --        =
+            --     (f >>= g) >>= k . abs_
+            -- 
+            --  And 
+            -- 
+            -- forall (f :: Arduino a).
+            --     (\x -> F[x]).abs
+            --        =
+            --     (\x' -> let x=abs(x') in F[x])
+            -- 
+            -- This is done in one step The abs is eliminated in the e_right'
+            -- that is returned from changeLambdaExpr, the lambda argument
+            -- x is renamed to x_abs and it's type is changed to Expr a, and 
+            -- finally any occurance of x in the body of the lambda (e_lam')
+            -- is replaced with abs(x_abs) (with the function subVarExpr)
+            --
             exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr
             let exprArg1Ty = mkTyConApp exprTyCon [arg1Ty]
             newb <- buildId ((varString b) ++ "_abs") exprArg1Ty
@@ -73,6 +110,7 @@ changeLambdaExpr e = do
             e_lam'' <- subVarExpr b (App (App (Var absId) (Type arg1Ty)) (Var newb)) e_lam'
             return $ App (App (App (App (App (App (Var bind) (Type monadTy)) dict) (Type exprArg1Ty)) (Type arg2Ty)) e_right') (Lam newb e_lam'')
         else do
+            -- If no abs is found, just call recursively.
             e_right' <- changeLambdaExpr e_right
             return $ App (App (App (App (App (App (Var bind) (Type monadTy)) dict) (Type arg1Ty)) (Type arg2Ty)) e_right') (Lam b e_lam')
     App e1 e2 -> do
@@ -134,11 +172,17 @@ checkForAbs e = do
     df <- liftCoreM getDynFlags
     let (bs, e') = collectBinders e
     let (f, args) = collectArgs e'
+    -- Check if we have reached the bottom of the bind chain or if 
+    -- there is another level.
     if (showSDoc df (ppr f) == ">>=") || (showSDoc df (ppr f) == ">>")
     then do
+        -- Check if the next level has an abs
         (e'', absFlag) <- checkForAbs $ last args
         if absFlag
         then do
+            -- If there was an abs in the level below, then the abs will
+            -- have been removed, and the type of that arm of the bind
+            -- will need to be changed from 'a' to 'Expr a'.
             case args of
                 [Type ty1, dict, Type ty2, Type ty3, e1, e2] -> do
                     exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr
@@ -152,6 +196,10 @@ checkForAbs e = do
             let e''' = mkCoreApps f ((init args) ++ [e''])        
             return $ (mkLams bs e''', absFlag)
     else 
+        -- We are at the bottom of the bind chain.....
+        -- Check for a fmap and abs.  If one is found, then the
+        -- fmap and abs_ are removed, and only the function they 
+        -- are applied to are returned.
         if (showSDoc df (ppr f) == "<$>")
         then  
             case args of
@@ -168,6 +216,8 @@ checkForAbs e = do
 subVarExpr :: Id -> CoreExpr -> CoreExpr -> BindM CoreExpr
 subVarExpr id esub e = 
   case e of
+    -- Perform the variable substitution with the esub
+    -- expression.
     Var v -> do
       if v == id
       then return esub
