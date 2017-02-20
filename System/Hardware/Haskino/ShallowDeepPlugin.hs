@@ -17,7 +17,6 @@ import System.Hardware.Haskino.AbsLambdaPass
 import System.Hardware.Haskino.BindChangeAppPass 
 import System.Hardware.Haskino.BindChangeArgPass 
 import System.Hardware.Haskino.BindChangeRetPass 
-import System.Hardware.Haskino.LambdaPass 
 import System.Hardware.Haskino.CondPass 
 import System.Hardware.Haskino.Cond2Pass 
 import System.Hardware.Haskino.ReturnsPass 
@@ -35,15 +34,14 @@ install _ todo = do
   let condToDo = [CoreDoPluginPass "CondTransform" condPass]
   let cond2ToDo = [CoreDoPluginPass "Cond2Transform" cond2Pass]
   let returnsToDo = [CoreDoPluginPass "ReturnsTransform" returnsPass]
-  let lambdaToDo = [CoreDoPluginPass "LambdaTransform" lambdaPass]
   let bindRetToDo = [CoreDoPluginPass "BindRetTransform" bindChangeRetPass]
   let bindAppToDo = [CoreDoPluginPass "BindAppTransform" bindChangeAppPass]
   let bindArgToDo = [CoreDoPluginPass "BindArgTransform" bindChangeArgPass]
   let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
   return $ condToDo ++ [rules2Pass] ++ returnsToDo ++
-           [rules1Pass] ++ lambdaToDo ++ cond2ToDo ++ 
+           [rules1Pass] ++ absLambdaToDo ++ cond2ToDo ++ 
            bindRetToDo ++ bindArgToDo ++ bindAppToDo ++ 
-           [rules1Pass] ++ lambdaToDo ++ 
+           [rules1Pass] ++ absLambdaToDo ++ 
            [rules0Pass] ++ todo -- ++ dumpToDo
 
 rules0Pass :: CoreToDo
