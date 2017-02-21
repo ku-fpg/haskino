@@ -1,16 +1,16 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.Cond2Pass
+-- Module      :  System.Hardware.Haskino.CondRetPass
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Conditional Transformation Pass 2
+-- Conditional Transformation Return Pass 
 -- ifThenElseE (rep b) t e => ifThenElseE (rep b) (rep <$> t) (rep <$> e)
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
-module System.Hardware.Haskino.Cond2Pass (cond2Pass) where
+module System.Hardware.Haskino.CondRetPass (condRetPass) where
 
 import CoreMonad
 import GhcPlugins
@@ -39,8 +39,8 @@ instance PassCoreM BindM where
   liftCoreM = BindM . ReaderT . const
   getModGuts = BindM $ ReaderT (return . pluginModGuts)
 
-cond2Pass :: ModGuts -> CoreM ModGuts
-cond2Pass guts = 
+condRetPass :: ModGuts -> CoreM ModGuts
+condRetPass guts = 
     bindsOnlyPass (\x -> (runReaderT (runBindM $ (mapM changeCond) x) (BindEnv guts))) guts
 
 changeCond :: CoreBind -> BindM CoreBind
