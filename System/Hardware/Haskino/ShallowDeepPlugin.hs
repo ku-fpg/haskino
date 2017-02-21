@@ -20,6 +20,8 @@ import System.Hardware.Haskino.BindChangeRetPass
 import System.Hardware.Haskino.CondPass 
 import System.Hardware.Haskino.Cond2Pass 
 import System.Hardware.Haskino.ReturnsPass 
+import System.Hardware.Haskino.CommProcPass
+
 
 plugin :: Plugin
 plugin = defaultPlugin {
@@ -37,8 +39,9 @@ install _ todo = do
   let bindRetToDo = [CoreDoPluginPass "BindRetTransform" bindChangeRetPass]
   let bindAppToDo = [CoreDoPluginPass "BindAppTransform" bindChangeAppPass]
   let bindArgToDo = [CoreDoPluginPass "BindArgTransform" bindChangeArgPass]
+  let commProcToDo = [CoreDoPluginPass "CommProcTransform" commProcPass]
   let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
-  return $ condToDo ++ [rules2Pass] ++ returnsToDo ++
+  return $ condToDo ++ commProcToDo ++ dumpToDo ++ returnsToDo ++
            [rules1Pass] ++ absLambdaToDo ++ cond2ToDo ++ 
            bindRetToDo ++ bindArgToDo ++ bindAppToDo ++ 
            [rules1Pass] ++ absLambdaToDo ++ 

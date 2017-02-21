@@ -52,7 +52,7 @@ main = do
 
 -- Phase 2 Rules
 -- Command/Procedure shallow->deep rules
-
+{-
 {-# RULES 
     "digitalRead" [2]
     forall (p :: Word8).
@@ -86,7 +86,7 @@ main = do
       =
     loopE m
   #-}
-
+-}
 -- Phase 1 Rules
 -- rep/abs manipulation rules Rules
 

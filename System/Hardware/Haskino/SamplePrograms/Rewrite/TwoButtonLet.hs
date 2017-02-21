@@ -82,7 +82,7 @@ main = do
 
 -- Phase 2 Rules
 -- Command/Procedure shallow->deep rules
-
+{-
 {-# RULES
     "digitalRead" [2]
     forall (p :: Word8).
@@ -116,7 +116,7 @@ main = do
       =
     loopE m
   #-}
-
+-}
 {-
 {-# RULES "assoc" [2]
     forall (m1 :: Arduino a) (m2 :: Arduino b) (m3 :: b -> Arduino c).
