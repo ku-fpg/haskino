@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.ReturnsPass
+-- Module      :  System.Hardware.Haskino.ShallowDeepPlugin.ReturnsPass
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
@@ -9,7 +9,7 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
-module System.Hardware.Haskino.ReturnsPass (returnsPass) where
+module System.Hardware.Haskino.ShallowDeepPlugin.ReturnsPass (returnsPass) where
 
 import CoreMonad
 import GhcPlugins
@@ -17,7 +17,7 @@ import Data.Functor
 import Control.Monad.Reader
 import Var
 
-import System.Hardware.Haskino.Dictionary (buildDictionaryT, 
+import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary (buildDictionaryT, 
                                            buildDictionaryTyConT, 
                                            PassCoreM(..), 
                                            thNameToId, thNameToTyCon)

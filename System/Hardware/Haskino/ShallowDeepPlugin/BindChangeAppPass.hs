@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.BindChangeAppPass
+-- Module      :  System.Hardware.Haskino.ShallowDeepPlugin.BindChangeAppPass
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
@@ -13,7 +13,7 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
-module System.Hardware.Haskino.BindChangeAppPass (bindChangeAppPass) where
+module System.Hardware.Haskino.ShallowDeepPlugin.BindChangeAppPass (bindChangeAppPass) where
 
 import CoreMonad
 import GhcPlugins
@@ -21,7 +21,7 @@ import Var
 import Data.Functor
 import Control.Monad.State
 
-import System.Hardware.Haskino.Dictionary (buildDictionaryT,
+import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary (buildDictionaryT,
                                            buildDictionaryTyConT,
                                            PassCoreM(..),
                                            thNameToId, thNameToTyCon)

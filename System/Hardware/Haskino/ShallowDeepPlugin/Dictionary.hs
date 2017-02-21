@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.Dictionary
+-- Module      :  System.Hardware.Haskino.ShallowDeepPlugin.Dictionary
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
@@ -9,7 +9,7 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell #-}
-module System.Hardware.Haskino.Dictionary (buildDictionaryT,
+module System.Hardware.Haskino.ShallowDeepPlugin.Dictionary (buildDictionaryT,
                                            buildDictionaryTyConT, 
                                            PassCoreM(..),
                                            thNameToId, 
@@ -31,7 +31,7 @@ import Control.Monad
 import Encoding (zEncodeString)
 import qualified Language.Haskell.TH as TH
 
-import System.Hardware.Haskino.Typechecker (initTcFromModGuts)
+import System.Hardware.Haskino.ShallowDeepPlugin.Typechecker (initTcFromModGuts)
 
 class (Monad m, MonadIO m) => PassCoreM m where
     -- | 'CoreM' can be lifted to this monad.

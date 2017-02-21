@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.BindChangeRetPass
+-- Module      :  System.Hardware.Haskino.ShallowDeepPlugin.BindChangeRetPass
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
@@ -12,14 +12,14 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
-module System.Hardware.Haskino.BindChangeRetPass (bindChangeRetPass) where
+module System.Hardware.Haskino.ShallowDeepPlugin.BindChangeRetPass (bindChangeRetPass) where
 
 import CoreMonad
 import GhcPlugins
 import Data.Functor
 import Control.Monad.Reader
 
-import System.Hardware.Haskino.Dictionary (buildDictionaryT, 
+import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary (buildDictionaryT, 
                                            buildDictionaryTyConT, 
                                            PassCoreM(..), 
                                            thNameToId, thNameToTyCon)

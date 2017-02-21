@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.AbsLambdaPass
+-- Module      :  System.Hardware.Haskino.ShallowDeepPlugin.AbsLambdaPass
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
@@ -20,7 +20,7 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
-module System.Hardware.Haskino.AbsLambdaPass (absLambdaPass) where
+module System.Hardware.Haskino.ShallowDeepPlugin.AbsLambdaPass (absLambdaPass) where
 
 import CoreMonad
 import GhcPlugins
@@ -29,7 +29,7 @@ import Control.Monad.Reader
 import OccName
 import Var
 
-import System.Hardware.Haskino.Dictionary (buildDictionaryT, 
+import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary (buildDictionaryT, 
                                            buildDictionaryTyConT, 
                                            PassCoreM(..), 
                                            thNameToId, thNameToTyCon)

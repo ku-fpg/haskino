@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.CommProcPass
+-- Module      :  System.Hardware.Haskino.ShallowDeepPlugin.CommProcPass
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
@@ -10,7 +10,7 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
-module System.Hardware.Haskino.CommProcPass (commProcPass) where
+module System.Hardware.Haskino.ShallowDeepPlugin.CommProcPass (commProcPass) where
 
 import CoreMonad
 import GhcPlugins
@@ -18,7 +18,7 @@ import Data.List
 import Data.Functor
 import Control.Monad.Reader
 
-import System.Hardware.Haskino.Dictionary (buildDictionaryT,
+import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary (buildDictionaryT,
                                            buildDictionaryTyConT,
                                            PassCoreM(..),
                                            thNameToId, thNameToTyCon)

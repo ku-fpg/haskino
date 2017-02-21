@@ -2,7 +2,7 @@
 {-# LANGUAGE RankNTypes #-}
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.Typechecker
+-- Module      :  System.Hardware.Haskino.ShallowDeepPlugin.Typechecker
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
@@ -11,7 +11,7 @@
 -- Note: the contents of this module should eventually be folded into GHC proper.
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.Typechecker
+module System.Hardware.Haskino.ShallowDeepPlugin.Typechecker
     (
       initTcFromModGuts
     , mk_type_env

@@ -13,14 +13,14 @@ module System.Hardware.Haskino.ShallowDeepPlugin (plugin) where
 import StaticFlags
 import CoreMonad
 import GhcPlugins
-import System.Hardware.Haskino.AbsLambdaPass 
-import System.Hardware.Haskino.BindChangeAppPass 
-import System.Hardware.Haskino.BindChangeArgPass 
-import System.Hardware.Haskino.BindChangeRetPass 
-import System.Hardware.Haskino.CondPass 
-import System.Hardware.Haskino.CondRetPass 
-import System.Hardware.Haskino.ReturnsPass 
-import System.Hardware.Haskino.CommProcPass
+import System.Hardware.Haskino.ShallowDeepPlugin.AbsLambdaPass 
+import System.Hardware.Haskino.ShallowDeepPlugin.BindChangeAppPass 
+import System.Hardware.Haskino.ShallowDeepPlugin.BindChangeArgPass 
+import System.Hardware.Haskino.ShallowDeepPlugin.BindChangeRetPass 
+import System.Hardware.Haskino.ShallowDeepPlugin.CommProcPass
+import System.Hardware.Haskino.ShallowDeepPlugin.CondPass 
+import System.Hardware.Haskino.ShallowDeepPlugin.CondRetPass 
+import System.Hardware.Haskino.ShallowDeepPlugin.ReturnsPass 
 
 
 plugin :: Plugin
