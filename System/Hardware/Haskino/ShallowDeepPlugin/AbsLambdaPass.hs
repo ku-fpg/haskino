@@ -172,46 +172,56 @@ checkForAbs e = do
     df <- liftCoreM getDynFlags
     let (bs, e') = collectBinders e
     let (f, args) = collectArgs e'
-    -- Check if we have reached the bottom of the bind chain or if 
-    -- there is another level.
-    if (showSDoc df (ppr f) == ">>=") || (showSDoc df (ppr f) == ">>")
-    then do
-        -- Check if the next level has an abs
-        (e'', absFlag) <- checkForAbs $ last args
-        if absFlag
+    bindId <- thNameToId '(>>=)
+    thenId <- thNameToId '(>>)
+    fmapId <- thNameToId '(<$>)
+    absId <- thNameToId 'System.Hardware.Haskino.abs_
+    case f of
+      Var fv -> do
+        -- Check if we have reached the bottom of the bind chain or if 
+        -- there is another level.
+        if fv == bindId || fv == thenId
         then do
-            -- If there was an abs in the level below, then the abs will
-            -- have been removed, and the type of that arm of the bind
-            -- will need to be changed from 'a' to 'Expr a'.
-            case args of
-                [Type ty1, dict, Type ty2, Type ty3, e1, e2] -> do
-                    exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr
-                    let exprTy3 = mkTyConApp exprTyCon [ty3]
-                    let e''' = mkCoreApps f [Type ty1, dict, Type ty2, Type exprTy3, e1, e'']
-                    return $ (mkLams bs e''', absFlag)
-                _ -> do
-                    let e''' = mkCoreApps f ((init args) ++ [e''])        
-                    return $ (mkLams bs e''', absFlag)
-        else do
-            let e''' = mkCoreApps f ((init args) ++ [e''])        
-            return $ (mkLams bs e''', absFlag)
-    else 
-        -- We are at the bottom of the bind chain.....
-        -- Check for a fmap and abs.  If one is found, then the
-        -- fmap and abs_ are removed, and only the function they 
-        -- are applied to are returned.
-        if (showSDoc df (ppr f) == "<$>")
-        then  
-            case args of
-                [Type ty1, Type ty2, Type ty3, dict, e1, e2] -> do
-                    let (g, _) = collectArgs e1
-                    if  (showSDoc df (ppr g) == "abs_")
-                    then do
-                      return (mkLams bs e2, True)
-                    else return (e, False)
-                _ -> return (e, False)
-        else
-            return (e, False)
+            -- Check if the next level has an abs
+            (e'', absFlag) <- checkForAbs $ last args
+            if absFlag
+            then do
+                -- If there was an abs in the level below, then the abs will
+                -- have been removed, and the type of that arm of the bind
+                -- will need to be changed from 'a' to 'Expr a'.
+                case args of
+                    [Type ty1, dict, Type ty2, Type ty3, e1, e2] -> do
+                        exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr
+                        let exprTy3 = mkTyConApp exprTyCon [ty3]
+                        let e''' = mkCoreApps f [Type ty1, dict, Type ty2, Type exprTy3, e1, e'']
+                        return $ (mkLams bs e''', absFlag)
+                    _ -> do
+                        let e''' = mkCoreApps f ((init args) ++ [e''])        
+                        return $ (mkLams bs e''', absFlag)
+            else do
+                let e''' = mkCoreApps f ((init args) ++ [e''])        
+                return $ (mkLams bs e''', absFlag)
+        else 
+            -- We are at the bottom of the bind chain.....
+            -- Check for a fmap and abs.  If one is found, then the
+            -- fmap and abs_ are removed, and only the function they 
+            -- are applied to are returned.
+            if fv == fmapId
+            then  
+                case args of
+                    [Type ty1, Type ty2, Type ty3, dict, e1, e2] -> do
+                        let (g, _) = collectArgs e1
+                        case g of
+                          Var gv -> do
+                            if  gv == absId
+                            then do
+                              return (mkLams bs e2, True)
+                            else return (e, False)
+                          _ -> return (e, False)
+                    _ -> return (e, False)
+            else
+                return (e, False)
+      _ -> return (e, False)
 
 subVarExpr :: Id -> CoreExpr -> CoreExpr -> BindM CoreExpr
 subVarExpr id esub e = 

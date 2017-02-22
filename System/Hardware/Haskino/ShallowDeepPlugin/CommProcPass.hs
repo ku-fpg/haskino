@@ -14,6 +14,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin.CommProcPass (commProcPass) whe
 
 import CoreMonad
 import GhcPlugins
+import Type
 import Data.List
 import Data.Functor
 import Control.Monad.Reader
@@ -29,26 +30,19 @@ import qualified System.Hardware.Haskino.Expr
 
 data XlatEntry = XlatEntry {  fromId   :: BindM Id
                             , toId     :: BindM Id
-                            , xlatRet  :: Bool
-                            , xlatArgs :: [Bool]
                            }
 
 xlatList :: [XlatEntry]
 xlatList = [  XlatEntry (thNameToId 'System.Hardware.Haskino.loop)
                         (thNameToId 'System.Hardware.Haskino.loopE)
-                        False []
             , XlatEntry (thNameToId 'System.Hardware.Haskino.setPinMode)
                         (thNameToId 'System.Hardware.Haskino.setPinModeE)
-                        False [True, False]
             , XlatEntry (thNameToId 'System.Hardware.Haskino.digitalRead)
                         (thNameToId 'System.Hardware.Haskino.digitalReadE)
-                        True  [True]
             , XlatEntry (thNameToId 'System.Hardware.Haskino.digitalWrite)
                         (thNameToId 'System.Hardware.Haskino.digitalWriteE)
-                        False [True, True]
             , XlatEntry (thNameToId 'System.Hardware.Haskino.delayMillis)
                         (thNameToId 'System.Hardware.Haskino.delayMillisE)
-                        False [True]
            ]
 
 data BindEnv
@@ -161,12 +155,13 @@ commProcExprAlts ((ac, b, a) : as) = do
 commProcXlat :: XlatEntry -> CoreExpr -> BindM CoreExpr
 commProcXlat xe e = do
   let (f, args) = collectArgs e
-  let zargs = zip (xlatArgs xe) args
+  (xlatRet, xlatArgs) <- genXlatBools (fromId xe) (toId xe)
+  let zargs = zip xlatArgs args
   args' <- mapM commProcXlatArg zargs
   newId <- toId xe
   let f' = Var newId
 
-  if xlatRet xe
+  if xlatRet
   then do
     let (tyCon, [ty]) = splitTyConApp $ exprType e
     let tyConTy = mkTyConTy tyCon
@@ -174,7 +169,7 @@ commProcXlat xe e = do
     exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr.Expr
     let exprTy = mkTyConApp exprTyCon [ty]
 
-    functId <- thNameToId '(<$>)
+    fmapId <- thNameToId '(<$>)
     functTyCon <- thNameToTyCon ''Data.Functor.Functor
     functDict <- buildDictionaryTyConT functTyCon tyConTy
 
@@ -183,9 +178,19 @@ commProcXlat xe e = do
 
     let abs = App (Var absId) (Type ty)
     -- Build the <$> applied to the abs_ and the original app
-    return $ mkCoreApps (Var functId) [Type tyConTy, Type exprTy, Type ty, functDict, abs, mkCoreApps f' args']
+    return $ mkCoreApps (Var fmapId) [Type tyConTy, Type exprTy, Type ty, functDict, abs, mkCoreApps f' args']
   else
     return $ mkCoreApps f' args'
+
+genXlatBools :: BindM Id -> BindM Id -> BindM (Bool, [Bool])
+genXlatBools from to = do
+  f <- from
+  t <- to
+  let (fTys, fRetTy) = splitFunTys $ exprType $ Var f
+  let (tTys, tRetTy) = splitFunTys $ exprType $ Var t
+  let zTys = zip fTys tTys
+  let changeArgs = map (\(x,y) -> not $ x `eqType` y) zTys
+  return $ (not $ fRetTy `eqType` tRetTy, changeArgs)
 
 commProcXlatArg :: (Bool, CoreExpr) -> BindM CoreExpr
 commProcXlatArg (xlat, e) =

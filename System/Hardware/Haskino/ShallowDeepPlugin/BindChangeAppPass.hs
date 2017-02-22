@@ -47,7 +47,7 @@ instance PassCoreM BindM where
 bindChangeAppPass :: ModGuts -> CoreM ModGuts
 bindChangeAppPass guts = do
     (cmds, procs) <- findCmdsProcs $ mg_binds guts
-    bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM changeBind) x) (BindEnv guts procs (cmds ++ procs)))) guts
+    bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM changeAppBind) x) (BindEnv guts procs (cmds ++ procs)))) guts
 
 findCmdsProcs :: [CoreBind] -> CoreM ([CoreBndr],[CoreBndr])
 findCmdsProcs [] = return ([], [])
@@ -56,15 +56,17 @@ findCmdsProcs (bndr@(NonRec b e) : bndrs) = do
     let (argTys, retTy) = splitFunTys $ varType b
     let tyCon_m = splitTyConApp_maybe retTy
     (Just monadTyConName) <- thNameToGhcName ''System.Hardware.Haskino.Arduino
-    monadTyConId <- lookupTyCon monadTyConName
+    monadTyCon <- lookupTyCon monadTyConName
+    (Just unitTyConName) <- thNameToGhcName ''()
+    unitTyCon <- lookupTyCon unitTyConName
+    let unitTyConTy = mkTyConTy unitTyCon
     case tyCon_m of
         -- We are looking for return types of Arduino a
-        -- Just (retTyCon, [retTy']) | (showSDoc df (ppr retTyCon) == "Arduino") &&
-        Just (retTyCon, [retTy']) | retTyCon == monadTyConId &&
-                                    (showSDoc df (ppr retTy') == "()") -> do
+        Just (retTyCon, [retTy']) | retTyCon == monadTyCon &&
+                                    retTy' `eqType` unitTyConTy -> do
             (cmds, procs) <- findCmdsProcs bndrs
             return (b:cmds, procs)
-        Just (retTyCon, [retTy']) | (showSDoc df (ppr retTyCon) == "Arduino") -> do
+        Just (retTyCon, [retTy']) | retTyCon == monadTyCon -> do
           let tyCon_m' = splitTyConApp_maybe retTy'
           case tyCon_m' of
               Just (retTyCon', [retTy'']) -> do
@@ -74,14 +76,14 @@ findCmdsProcs (bndr@(NonRec b e) : bndrs) = do
         _ -> findCmdsProcs bndrs
 findCmdsProcs ((Rec bs) : bndrs) = findCmdsProcs bndrs
 
-changeBind :: CoreBind -> BindM CoreBind
-changeBind bndr@(NonRec b e) = do
+changeAppBind :: CoreBind -> BindM CoreBind
+changeAppBind bndr@(NonRec b e) = do
   df <- liftCoreM getDynFlags
   let (bs, e') = collectBinders e
   e'' <- changeAppExpr e'
   let e''' = mkLams bs e''
   return (NonRec b e''')
-changeBind (Rec bs) = do
+changeAppBind (Rec bs) = do
   return $ Rec bs
 
 changeAppExpr :: CoreExpr -> BindM CoreExpr
@@ -103,8 +105,9 @@ changeAppExpr e = do
             e1' <- changeAppExpr e1
             e2' <- changeAppExpr e2
             return $ App e1' e2'
+      monadTyConId <- thNameToTyCon ''System.Hardware.Haskino.Arduino
       case tyCon_m of
-          Just (retTyCon, [retTy']) | (showSDoc df (ppr retTyCon) == "Arduino") -> do
+          Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
               let (Var vb) = b
               if vb `elem` chngArgs
               then do
@@ -113,7 +116,7 @@ changeAppExpr e = do
                   then do
                       let retTyConTy = mkTyConTy retTyCon
 
-                      functId <- thNameToId '(<$>)
+                      fmapId <- thNameToId '(<$>)
                       functTyCon <- thNameToTyCon ''Data.Functor.Functor
                       functDict <- buildDictionaryTyConT functTyCon retTyConTy
 
@@ -127,7 +130,7 @@ changeAppExpr e = do
                       -- Build the abs_ function
                       let abs = App (Var absId) (Type retTy')
                       -- Build the <$> applied to the abs_ and the original app
-                      return $ mkCoreApps (Var functId) [Type retTyConTy, Type exprTyConApp, Type retTy', functDict, abs, e']
+                      return $ mkCoreApps (Var fmapId) [Type retTyConTy, Type exprTyConApp, Type retTy', functDict, abs, e']
                   else return $ mkCoreApps b args'
               else defaultRet
           _ -> defaultRet

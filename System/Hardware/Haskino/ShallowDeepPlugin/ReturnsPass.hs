@@ -55,6 +55,9 @@ changeBind (Rec bs) = do
 changeRetExpr :: CoreExpr -> BindM CoreExpr
 changeRetExpr e = do
   df <- liftCoreM getDynFlags
+  returnId <- thNameToId 'Prelude.return
+  monadTyCon <- thNameToTyCon ''System.Hardware.Haskino.Arduino
+  let monadTy = mkTyConTy monadTyCon
   case e of
     Var v -> return $ Var v
     Lit l -> return $ Lit l
@@ -62,11 +65,23 @@ changeRetExpr e = do
     Coercion co -> return $ Coercion co
     App e1 e2 -> do
       let (b, args) = collectArgs e
-      if (showSDoc df (ppr b) == "return") && (showSDoc df (ppr $ head args) == "TYPE: Arduino")
-      then do
-          e' <- changeReturn e
-          return e'
-      else do
+      case b of
+        Var bv -> do
+          case head args of
+            Type ty -> do
+              if bv == returnId && ty `eqType` monadTy
+              then do
+                  e' <- changeReturn e
+                  return e'
+              else do
+                  e1' <- changeRetExpr e1
+                  e2' <- changeRetExpr e2
+                  return $ App e1' e2'
+            _ -> do
+              e1' <- changeRetExpr e1
+              e2' <- changeRetExpr e2
+              return $ App e1' e2'
+        _ -> do
           e1' <- changeRetExpr e1
           e2' <- changeRetExpr e2
           return $ App e1' e2'
@@ -136,13 +151,13 @@ changeReturn e = do
 
           let f' = mkCoreApps f [Type ty1, Var d, Type retTyConApp, retArg]
 
-          functId <- thNameToId '(<$>)
+          fmapId <- thNameToId '(<$>)
           functTyCon <- thNameToTyCon ''Data.Functor.Functor
           functDict <- buildDictionaryTyConT functTyCon ty1
 
           absId <- thNameToId 'System.Hardware.Haskino.abs_
           let absLamba = mkCoreApps (Var absId ) [Type ty2]
 
-          let retExp = mkCoreApps (Var functId) [Type ty1, Type retTyConApp, Type ty2, functDict, absLamba, f']
+          let retExp = mkCoreApps (Var fmapId) [Type ty1, Type retTyConApp, Type ty2, functDict, absLamba, f']
           return retExp
       _ -> return e

@@ -42,16 +42,19 @@ instance PassCoreM BindM where
 
 bindChangeRetPass :: ModGuts -> CoreM ModGuts
 bindChangeRetPass guts = 
-    bindsOnlyPass (\x -> (runReaderT (runBindM $ (mapM changeBind) x) (BindEnv guts))) guts
+    bindsOnlyPass (\x -> (runReaderT (runBindM $ (mapM changeRetBind) x) (BindEnv guts))) guts
 
-changeBind :: CoreBind -> BindM CoreBind
-changeBind bndr@(NonRec b e) = do
+changeRetBind :: CoreBind -> BindM CoreBind
+changeRetBind bndr@(NonRec b e) = do
     df <- liftCoreM getDynFlags
     let (argTys, retTy) = splitFunTys $ varType b
     let tyCon_m = splitTyConApp_maybe retTy
+    monadTyCon <- thNameToTyCon ''System.Hardware.Haskino.Arduino
+    unitTyCon <- thNameToTyCon ''()
+    let unitTyConTy = mkTyConTy unitTyCon
     case tyCon_m of
         -- We are looking for return types of Arduino a
-        Just (retTyCon, [retTy']) | (showSDoc df (ppr retTyCon) == "Arduino") &&
+        Just (retTyCon, [retTy']) | retTyCon == monadTyCon &&
                                     (showSDoc df (ppr retTy') /= "()") -> do
             let tyCon_m' = splitTyConApp_maybe retTy'
             case tyCon_m' of
@@ -79,30 +82,35 @@ changeReturn e = do
     df <- liftCoreM getDynFlags
     let (bs, e') = collectBinders e
     let (f, args) = collectArgs e'
-    if (showSDoc df (ppr f) == ">>=") || (showSDoc df (ppr f) == ">>")
-    then do
-        la' <- changeReturn $ last args
-        let args' = init args ++ [la']
-        return $ mkCoreApps f args'
-    else do
-        let ty = exprType e'
-        let Just tyCon'  = tyConAppTyCon_maybe ty
-        let ty' = mkTyConTy tyCon'
-        let Just [ty''] = tyConAppArgs_maybe ty 
+    bindId <- thNameToId '(>>=)
+    thenId <- thNameToId '(>>)
+    case f of
+      Var fv -> do
+        if fv == bindId || fv == thenId
+        then do
+            la' <- changeReturn $ last args
+            let args' = init args ++ [la']
+            return $ mkCoreApps f args'
+        else do
+            let ty = exprType e'
+            let Just tyCon'  = tyConAppTyCon_maybe ty
+            let ty' = mkTyConTy tyCon'
+            let Just [ty''] = tyConAppArgs_maybe ty 
 
-        repId <- thNameToId 'System.Hardware.Haskino.rep_
-        exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB
-        repDict <- buildDictionaryTyConT exprBTyCon ty''
+            repId <- thNameToId 'System.Hardware.Haskino.rep_
+            exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB
+            repDict <- buildDictionaryTyConT exprBTyCon ty''
 
-        exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr.Expr
-        let exprTyConApp = mkTyConApp exprTyCon [ty'']
+            exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr.Expr
+            let exprTyConApp = mkTyConApp exprTyCon [ty'']
 
-        functId <- thNameToId '(<$>)
-        functTyCon <- thNameToTyCon ''Data.Functor.Functor
-        functDict <- buildDictionaryTyConT functTyCon ty'
+            fmapId <- thNameToId '(<$>)
+            functTyCon <- thNameToTyCon ''Data.Functor.Functor
+            functDict <- buildDictionaryTyConT functTyCon ty'
 
-        let repApp = mkCoreApps (Var repId) [Type ty'', repDict]
-        let repExpr = mkCoreApps (Var functId) [Type ty', Type ty'', Type exprTyConApp, 
-                                                          functDict, repApp, e']
+            let repApp = mkCoreApps (Var repId) [Type ty'', repDict]
+            let repExpr = mkCoreApps (Var fmapId) [Type ty', Type ty'', Type exprTyConApp, 
+                                                              functDict, repApp, e']
 
-        return $ mkLams bs repExpr
+            return $ mkLams bs repExpr
+      _ -> return e

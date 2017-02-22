@@ -55,12 +55,13 @@ changeCond (Rec bs) = do
 changeCondExpr :: CoreExpr -> BindM CoreExpr
 changeCondExpr e = do
   df <- liftCoreM getDynFlags
+  ifThenElseId <- thNameToId 'System.Hardware.Haskino.ifThenElseE
   case e of
     Var v -> return $ Var v
     Lit l -> return $ Lit l
     Type ty -> return $ Type ty
     Coercion co -> return $ Coercion co
-    App (App (App (App (App (Var f) ty) dict) be) e1) e2 | varString f == "ifThenElseE" -> do
+    App (App (App (App (App (Var f) ty) dict) be) e1) e2 | f == ifThenElseId -> do
         e1' <- changeReturn e1
         e2' <- changeReturn e2
         return $ mkCoreApps (Var f) [ty, dict, be, e1', e2']
@@ -114,30 +115,35 @@ changeReturn e = do
     df <- liftCoreM getDynFlags
     let (bs, e') = collectBinders e
     let (f, args) = collectArgs e'
-    if (showSDoc df (ppr f) == ">>=") || (showSDoc df (ppr f) == ">>")
-    then do
-        la' <- changeReturn $ last args
-        let args' = init args ++ [la']
-        return $ mkCoreApps f args'
-    else do
-        let ty = exprType e'
-        let Just tyCon'  = tyConAppTyCon_maybe ty
-        let ty' = mkTyConTy tyCon'
-        let Just [ty''] = tyConAppArgs_maybe ty 
+    bindId <- thNameToId '(>>=)
+    thenId <- thNameToId '(>>)
+    case f of
+      Var fv -> do
+        if fv == bindId || fv == thenId
+        then do
+            la' <- changeReturn $ last args
+            let args' = init args ++ [la']
+            return $ mkCoreApps f args'
+        else do
+            let ty = exprType e'
+            let Just tyCon'  = tyConAppTyCon_maybe ty
+            let ty' = mkTyConTy tyCon'
+            let Just [ty''] = tyConAppArgs_maybe ty 
 
-        repId <- thNameToId 'System.Hardware.Haskino.rep_
-        exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB
-        repDict <- buildDictionaryTyConT exprBTyCon ty''
+            repId <- thNameToId 'System.Hardware.Haskino.rep_
+            exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB
+            repDict <- buildDictionaryTyConT exprBTyCon ty''
 
-        exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr.Expr
-        let exprTyConApp = mkTyConApp exprTyCon [ty'']
+            exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr.Expr
+            let exprTyConApp = mkTyConApp exprTyCon [ty'']
 
-        functId <- thNameToId '(<$>)
-        functTyCon <- thNameToTyCon ''Data.Functor.Functor
-        functDict <- buildDictionaryTyConT functTyCon ty'
+            fmapId <- thNameToId '(<$>)
+            functTyCon <- thNameToTyCon ''Data.Functor.Functor
+            functDict <- buildDictionaryTyConT functTyCon ty'
 
-        let repApp = mkCoreApps (Var repId) [Type ty'', repDict]
-        let repExpr = mkCoreApps (Var functId) [Type ty', Type ty'', Type exprTyConApp, 
-                                                          functDict, repApp, e']
+            let repApp = mkCoreApps (Var repId) [Type ty'', repDict]
+            let repExpr = mkCoreApps (Var fmapId) [Type ty', Type ty'', Type exprTyConApp, 
+                                                              functDict, repApp, e']
 
-        return $ mkLams bs repExpr
+            return $ mkLams bs repExpr
+      _ -> return e

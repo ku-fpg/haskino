@@ -22,6 +22,7 @@ import Data.Functor
 import Control.Monad.State
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary (buildDictionaryT, PassCoreM(..), 
+                                           thNameToId,
                                            thNameToTyCon)
 
 import qualified System.Hardware.Haskino
@@ -42,17 +43,18 @@ instance PassCoreM BindM where
 
 bindChangeArgPass :: ModGuts -> CoreM ModGuts
 bindChangeArgPass guts =
-    bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM changeBind) x) (BindEnv guts []))) guts
+    bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM changeArgBind) x) (BindEnv guts []))) guts
 
-changeBind :: CoreBind -> BindM CoreBind
-changeBind bndr@(NonRec b e) = do
+changeArgBind :: CoreBind -> BindM CoreBind
+changeArgBind bndr@(NonRec b e) = do
   df <- liftCoreM getDynFlags
   let (argTys, retTy) = splitFunTys $ varType b
   let (bs, e') = collectBinders e
   let tyCon_m = splitTyConApp_maybe retTy
+  monadTyConId <- thNameToTyCon ''System.Hardware.Haskino.Arduino
   case tyCon_m of
       -- We are looking for return types of Arduino a
-      Just (retTyCon, [retTy']) | (showSDoc df (ppr retTyCon) == "Arduino") -> do
+      Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
           zipBsArgTys <- mapM changeArg (zip bs argTys)
           let (bs', argTys') = unzip zipBsArgTys
           s <- get
@@ -62,7 +64,7 @@ changeBind bndr@(NonRec b e) = do
           let e''' = mkLams bs' e''
           return (NonRec b' e''')
       _ -> return bndr
-changeBind (Rec bs) = do
+changeArgBind (Rec bs) = do
   return $ Rec bs
 
 changeArg :: (CoreBndr, Type) -> BindM (CoreBndr, Type)
@@ -83,13 +85,13 @@ changeArgAppsExpr :: CoreExpr -> BindM CoreExpr
 changeArgAppsExpr e = do
   df <- liftCoreM getDynFlags
   s <- get
+  repId <- thNameToId 'System.Hardware.Haskino.rep_
   case e of
     Var v -> return $ Var v
     Lit l -> return $ Lit l
     Type ty -> return $ Type ty
     Coercion co -> return $ Coercion co
-    App (App (App (Var f) (Type _)) (_)) (Var v)  |
-      varString f == "rep_" && v `elem` (args s) -> do
+    App (App (App (Var f) (Type _)) (_)) (Var v)  | f == repId && v `elem` (args s) -> do
         return $ (Var v)
     App e1 e2 -> do
       e1' <- changeArgAppsExpr e1

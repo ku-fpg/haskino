@@ -175,10 +175,6 @@ condTransform ty e alts = do
       exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB
       repDict <- buildDictionaryTyConT exprBTyCon bTy
 
-      functId <- thNameToId '(<$>)
-      functTyCon <- thNameToTyCon ''Data.Functor.Functor
-      functDict <- buildDictionaryTyConT functTyCon ty'
-
       exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr.Expr
       -- Make the type of the Expr for the specified type
       let exprTyConApp = GhcPlugins.mkTyConApp exprTyCon [ty'']
