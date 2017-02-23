@@ -21,9 +21,6 @@ import Control.Monad.Reader
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary
 
-import qualified System.Hardware.Haskino
-import qualified System.Hardware.Haskino.Expr
-
 data BindEnv
     = BindEnv
       { pluginModGuts :: ModGuts
@@ -60,7 +57,7 @@ changeRetBind bndr@(NonRec b e) = do
                 Just (retTyCon', []) -> do
                     let (bs, e') = collectBinders e
 
-                    exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr.Expr
+                    exprTyCon <- thNameToTyCon exprTyConTH
                     let exprTyConApp = mkTyConApp exprTyCon [retTy']
 
                     -- Change the return
@@ -79,8 +76,8 @@ changeReturn e = do
     df <- liftCoreM getDynFlags
     let (bs, e') = collectBinders e
     let (f, args) = collectArgs e'
-    bindId <- thNameToId '(>>=)
-    thenId <- thNameToId '(>>)
+    bindId <- thNameToId bindNameTH
+    thenId <- thNameToId bindThenNameTH
     case f of
       Var fv -> do
         if fv == bindId || fv == thenId
@@ -94,15 +91,15 @@ changeReturn e = do
             let ty' = mkTyConTy tyCon'
             let Just [ty''] = tyConAppArgs_maybe ty
 
-            repId <- thNameToId 'System.Hardware.Haskino.rep_
-            exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB
+            repId <- thNameToId repNameTH
+            exprBTyCon <- thNameToTyCon exprClassTyConTH
             repDict <- buildDictionaryTyConT exprBTyCon ty''
 
-            exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr.Expr
+            exprTyCon <- thNameToTyCon exprTyConTH
             let exprTyConApp = mkTyConApp exprTyCon [ty'']
 
-            fmapId <- thNameToId '(<$>)
-            functTyCon <- thNameToTyCon ''Data.Functor.Functor
+            fmapId <- thNameToId fmapNameTH
+            functTyCon <- thNameToTyCon functTyConTH
             functDict <- buildDictionaryTyConT functTyCon ty'
 
             let repApp = mkCoreApps (Var repId) [Type ty'', repDict]

@@ -14,8 +14,23 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Dictionary (buildDictionaryT,
                                            PassCoreM(..),
                                            thNameToId,
                                            thNameToTyCon,
+                                           -- DSL specific names
+                                           exprClassTyConTH,
+                                           exprTyConTH,
+                                           monadCondTyConTH,
                                            monadTyConTH,
-                                           unitTyConTH) where
+                                           absNameTH,
+                                           repNameTH, 
+                                           ifThenElseNameTH,
+                                           ifThenElseUnitNameTH,
+                                           -- General Haskell names
+                                           bindNameTH,
+                                           functTyConTH,
+                                           unitTyConTH,
+                                           bindThenNameTH,
+                                           falseNameTH,
+                                           fmapNameTH,
+                                           returnNameTH) where
 
 import CoreMonad
 import GhcPlugins
@@ -30,6 +45,7 @@ import DsBinds
 import DsMonad (initDsTc)
 import Control.Arrow (first, second)
 import Control.Monad
+import Data.Functor
 import Encoding (zEncodeString)
 import qualified Language.Haskell.TH as TH
 
@@ -37,9 +53,22 @@ import System.Hardware.Haskino.ShallowDeepPlugin.Typechecker (initTcFromModGuts)
 
 import qualified System.Hardware.Haskino
 
-unitTyConTH = ''()
+exprClassTyConTH     = ''System.Hardware.Haskino.ExprB
+exprTyConTH          = ''System.Hardware.Haskino.Expr
+monadCondTyConTH     = ''System.Hardware.Haskino.ArduinoConditional
+monadTyConTH         = ''System.Hardware.Haskino.Arduino
+absNameTH            = 'System.Hardware.Haskino.abs_
+repNameTH            = 'System.Hardware.Haskino.rep_
+ifThenElseNameTH     = 'System.Hardware.Haskino.ifThenElseE
+ifThenElseUnitNameTH = 'System.Hardware.Haskino.ifThenElseUnitE
 
-monadTyConTH = ''System.Hardware.Haskino.Arduino
+functTyConTH         = ''Data.Functor.Functor
+unitTyConTH          = ''()
+bindNameTH           = '(>>=)
+bindThenNameTH       = '(>>)
+falseNameTH          = 'Prelude.False
+fmapNameTH           = '(<$>)
+returnNameTH         = 'Prelude.return
 
 class (Monad m, MonadIO m) => PassCoreM m where
     -- | 'CoreM' can be lifted to this monad.

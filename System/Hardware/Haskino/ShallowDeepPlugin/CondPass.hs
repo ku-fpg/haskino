@@ -18,12 +18,9 @@ import Data.List
 import Data.Functor
 import Control.Monad.Reader
 
-import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary (buildDictionaryT,
-                                           buildDictionaryTyConT,
-                                           PassCoreM(..),
-                                           thNameToId, thNameToTyCon)
+import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary
 
-import qualified System.Hardware.Haskino
+-- import qualified System.Hardware.Haskino
 
 data CondEnv
     = CondEnv
@@ -40,9 +37,6 @@ instance PassCoreM CondM where
 
 condPass :: ModGuts -> CoreM ModGuts
 condPass guts = do
-    -- putMsg $ ppr $ mg_rdr_env guts
-    -- let greName = lookupGRE_Name (mg_rdr_env guts) ("Arduino" )
-    -- putMsg $ ppr $ greName
     bindsOnlyPass (\x -> (runReaderT (runCondM $ (mapM condBind) x) (CondEnv guts))) guts
 
 condBind :: CoreBind -> CondM CoreBind
@@ -63,7 +57,7 @@ condBind' ((b, e) : bs) = do
 condExpr :: CoreExpr -> CondM CoreExpr
 condExpr e = do
   df <- liftCoreM getDynFlags
-  monadTyCon <- thNameToTyCon ''System.Hardware.Haskino.Arduino
+  monadTyCon <- thNameToTyCon monadTyConTH
   unitTyCon <- thNameToTyCon ''()
   let unitTyConTy = mkTyConTy unitTyCon
   case e of
@@ -99,7 +93,7 @@ condExpr e = do
               [(ac1, _, _), _] -> do
                 case ac1 of
                   DataAlt d -> do
-                    Just falseName <- liftCoreM $ thNameToGhcName 'Prelude.False
+                    Just falseName <- liftCoreM $ thNameToGhcName falseNameTH
                     if (getName d) == falseName
                     then if retTy' `eqType` unitTyConTy
                          then condTransformUnit ty e' alts'
@@ -115,9 +109,6 @@ condExpr e = do
     Cast e co -> do
       e' <- condExpr e
       return $ Cast e' co
-
-nameString :: Name -> String
-nameString = occNameString . nameOccName
 
 condExpr' :: [(Id, CoreExpr)] -> CondM [(Id, CoreExpr)]
 condExpr' [] = return []
@@ -156,16 +147,16 @@ condTransform ty e alts = do
       -- Get the conditional type
       let bTy = exprType e
 
-      ifThenElseId <- thNameToId 'System.Hardware.Haskino.ifThenElseE
-      condTyCon <- thNameToTyCon ''System.Hardware.Haskino.ArduinoConditional
+      ifThenElseId <- thNameToId ifThenElseNameTH
+      condTyCon <- thNameToTyCon monadCondTyConTH
       condDict <- buildDictionaryTyConT condTyCon ty''
 
-      repId <- thNameToId 'System.Hardware.Haskino.rep_
+      repId <- thNameToId repNameTH
 
-      exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB
+      exprBTyCon <- thNameToTyCon exprClassTyConTH
       repDict <- buildDictionaryTyConT exprBTyCon bTy
 
-      exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr
+      exprTyCon <- thNameToTyCon exprTyConTH
       -- Make the type of the Expr for the specified type
       let exprTyConApp = GhcPlugins.mkTyConApp exprTyCon [ty'']
 
@@ -193,10 +184,10 @@ condTransformUnit ty e alts = do
       -- Get the conditional type
       let bTy = exprType e
 
-      ifThenElseId <- thNameToId 'System.Hardware.Haskino.ifThenElseUnitE
+      ifThenElseId <- thNameToId ifThenElseUnitNameTH
 
-      repId <- thNameToId 'System.Hardware.Haskino.rep_
-      exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB
+      repId <- thNameToId repNameTH
+      exprBTyCon <- thNameToTyCon exprClassTyConTH
       repDict <- buildDictionaryTyConT exprBTyCon bTy
 
       -- Build the First Arg to ifThenElseUnitE

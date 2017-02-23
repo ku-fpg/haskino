@@ -29,13 +29,7 @@ import Control.Monad.Reader
 import OccName
 import Var
 
-import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary (buildDictionaryT, 
-                                           buildDictionaryTyConT, 
-                                           PassCoreM(..), 
-                                           thNameToId, thNameToTyCon)
-
-import qualified System.Hardware.Haskino
-import qualified System.Hardware.Haskino.Expr
+import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary
 
 data BindEnv
     = BindEnv
@@ -66,6 +60,7 @@ changeLambda (Rec bs) = do
 changeLambdaExpr :: CoreExpr -> BindM CoreExpr
 changeLambdaExpr e = do
   df <- liftCoreM getDynFlags
+  bindId <- thNameToId bindNameTH 
   case e of
     Var v -> return $ Var v
     Lit l -> return $ Lit l
@@ -74,7 +69,7 @@ changeLambdaExpr e = do
     -- Look for expressions of the form:  
     -- forall (m :: Arduino a) (F :: a -> Arudino b)
     -- m >>= (\x -> F[x])
-    App (App (App (App (App (App (Var bind) (Type monadTy)) dict) (Type arg1Ty)) (Type arg2Ty)) e_right) (Lam b e_lam) | varString bind == ">>=" -> do
+    App (App (App (App (App (App (Var bind) (Type monadTy)) dict) (Type arg1Ty)) (Type arg2Ty)) e_right) (Lam b e_lam) | bind == bindId -> do
         -- Check if the right hand side of the bind operations end
         -- in monadic function with abs_ applied to it.  In other words
         -- m >>= m1 >>= ... >>= abs_ <$> mn 
@@ -103,10 +98,10 @@ changeLambdaExpr e = do
             -- finally any occurance of x in the body of the lambda (e_lam')
             -- is replaced with abs(x_abs) (with the function subVarExpr)
             --
-            exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr
+            exprTyCon <- thNameToTyCon exprTyConTH
             let exprArg1Ty = mkTyConApp exprTyCon [arg1Ty]
             newb <- buildId ((varString b) ++ "_abs") exprArg1Ty
-            absId <- thNameToId 'System.Hardware.Haskino.abs_
+            absId <- thNameToId absNameTH
             e_lam'' <- subVarExpr b (App (App (Var absId) (Type arg1Ty)) (Var newb)) e_lam'
             return $ App (App (App (App (App (App (Var bind) (Type monadTy)) dict) (Type exprArg1Ty)) (Type arg2Ty)) e_right') (Lam newb e_lam'')
         else do
@@ -144,9 +139,6 @@ changeLambdaExpr e = do
 varString :: Id -> String 
 varString = occNameString . nameOccName . Var.varName
 
-nameString :: Name -> String 
-nameString = occNameString . nameOccName
-
 buildId :: String -> Type -> BindM Id
 buildId varName typ = do
   dunique <- liftCoreM getUniqueM
@@ -175,7 +167,7 @@ checkForAbs e = do
     bindId <- thNameToId '(>>=)
     thenId <- thNameToId '(>>)
     fmapId <- thNameToId '(<$>)
-    absId <- thNameToId 'System.Hardware.Haskino.abs_
+    absId <- thNameToId absNameTH
     case f of
       Var fv -> do
         -- Check if we have reached the bottom of the bind chain or if 
@@ -191,7 +183,7 @@ checkForAbs e = do
                 -- will need to be changed from 'a' to 'Expr a'.
                 case args of
                     [Type ty1, dict, Type ty2, Type ty3, e1, e2] -> do
-                        exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr
+                        exprTyCon <- thNameToTyCon exprTyConTH
                         let exprTy3 = mkTyConApp exprTyCon [ty3]
                         let e''' = mkCoreApps f [Type ty1, dict, Type ty2, Type exprTy3, e1, e'']
                         return $ (mkLams bs e''', absFlag)

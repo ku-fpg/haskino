@@ -21,11 +21,7 @@ import Var
 import Data.Functor
 import Control.Monad.State
 
-import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary (buildDictionaryT, PassCoreM(..), 
-                                           thNameToId,
-                                           thNameToTyCon)
-
-import qualified System.Hardware.Haskino
+import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary
 
 data BindEnv
     = BindEnv
@@ -51,7 +47,7 @@ changeArgBind bndr@(NonRec b e) = do
   let (argTys, retTy) = splitFunTys $ varType b
   let (bs, e') = collectBinders e
   let tyCon_m = splitTyConApp_maybe retTy
-  monadTyConId <- thNameToTyCon ''System.Hardware.Haskino.Arduino
+  monadTyConId <- thNameToTyCon monadTyConTH
   case tyCon_m of
       -- We are looking for return types of Arduino a
       Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
@@ -74,7 +70,7 @@ changeArg (b, ty) = do
     Just (_, []) -> do
         -- ToDo:  Check that type is a valid Haskino Expr Type?
         -- Lookup the GHC type constructor of Expr
-        exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr
+        exprTyCon <- thNameToTyCon exprTyConTH
         -- Make the type of the Expr for the specified type
         let ty' = mkTyConApp exprTyCon [ty]
         let b' = setVarType b ty'
@@ -85,7 +81,7 @@ changeArgAppsExpr :: CoreExpr -> BindM CoreExpr
 changeArgAppsExpr e = do
   df <- liftCoreM getDynFlags
   s <- get
-  repId <- thNameToId 'System.Hardware.Haskino.rep_
+  repId <- thNameToId repNameTH
   case e of
     Var v -> return $ Var v
     Lit l -> return $ Lit l
@@ -120,9 +116,6 @@ changeArgAppsExpr e = do
     Cast e co -> do
       e' <- changeArgAppsExpr e
       return $ Cast e' co
-
-varString :: Id -> String
-varString = occNameString . nameOccName . Var.varName
 
 changeArgAppsExpr' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
 changeArgAppsExpr' [] = return []

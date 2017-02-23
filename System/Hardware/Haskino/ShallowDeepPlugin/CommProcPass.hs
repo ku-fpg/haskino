@@ -19,14 +19,9 @@ import Data.List
 import Data.Functor
 import Control.Monad.Reader
 
-import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary (buildDictionaryT,
-                                           buildDictionaryTyConT,
-                                           PassCoreM(..),
-                                           thNameToId, thNameToTyCon)
+import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary
 
 import qualified System.Hardware.Haskino
-import qualified System.Hardware.Haskino.Data
-import qualified System.Hardware.Haskino.Expr
 
 data XlatEntry = XlatEntry {  fromId   :: BindM Id
                             , toId     :: BindM Id
@@ -135,9 +130,6 @@ commProcExpr e = do
       e' <- commProcExpr e
       return $ Cast e' co
 
-nameString :: Name -> String
-nameString = occNameString . nameOccName
-
 commProcExpr' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
 commProcExpr' [] = return []
 commProcExpr' ((b, e) : bs) = do
@@ -166,15 +158,15 @@ commProcXlat xe e = do
     let (tyCon, [ty]) = splitTyConApp $ exprType e
     let tyConTy = mkTyConTy tyCon
 
-    exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr.Expr
+    exprTyCon <- thNameToTyCon exprTyConTH
     let exprTy = mkTyConApp exprTyCon [ty]
 
-    fmapId <- thNameToId '(<$>)
-    functTyCon <- thNameToTyCon ''Data.Functor.Functor
+    fmapId <- thNameToId fmapNameTH
+    functTyCon <- thNameToTyCon functTyConTH
     functDict <- buildDictionaryTyConT functTyCon tyConTy
 
     -- Build the abs_ function
-    absId <- thNameToId 'System.Hardware.Haskino.abs_
+    absId <- thNameToId absNameTH
 
     let abs = App (Var absId) (Type ty)
     -- Build the <$> applied to the abs_ and the original app
@@ -197,8 +189,8 @@ commProcXlatArg (xlat, e) =
   if xlat
   then do
     let ty = exprType e
-    repId <- thNameToId 'System.Hardware.Haskino.rep_
-    exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB
+    repId <- thNameToId repNameTH
+    exprBTyCon <- thNameToTyCon exprClassTyConTH
     repDict <- buildDictionaryTyConT exprBTyCon ty
     return $ mkCoreApps (Var repId) [Type ty, repDict, e]
   else return e

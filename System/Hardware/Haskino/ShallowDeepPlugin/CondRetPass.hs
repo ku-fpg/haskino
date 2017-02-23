@@ -18,13 +18,7 @@ import Data.Functor
 import Control.Monad.Reader
 import Var
 
-import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary (buildDictionaryT, 
-                                           buildDictionaryTyConT, 
-                                           PassCoreM(..), 
-                                           thNameToId, thNameToTyCon)
-
-import qualified System.Hardware.Haskino
-import qualified System.Hardware.Haskino.Expr
+import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary 
 
 data BindEnv
     = BindEnv
@@ -55,7 +49,7 @@ changeCond (Rec bs) = do
 changeCondExpr :: CoreExpr -> BindM CoreExpr
 changeCondExpr e = do
   df <- liftCoreM getDynFlags
-  ifThenElseId <- thNameToId 'System.Hardware.Haskino.ifThenElseE
+  ifThenElseId <- thNameToId ifThenElseNameTH
   case e of
     Var v -> return $ Var v
     Lit l -> return $ Lit l
@@ -93,9 +87,6 @@ changeCondExpr e = do
       e' <- changeCondExpr e
       return $ Cast e' co
 
-varString :: Id -> String
-varString = occNameString . nameOccName . Var.varName
-
 changeCondExpr' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
 changeCondExpr' [] = return []
 changeCondExpr' ((b, e) : bs) = do
@@ -130,15 +121,15 @@ changeReturn e = do
             let ty' = mkTyConTy tyCon'
             let Just [ty''] = tyConAppArgs_maybe ty 
 
-            repId <- thNameToId 'System.Hardware.Haskino.rep_
-            exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB
+            repId <- thNameToId repNameTH
+            exprBTyCon <- thNameToTyCon exprClassTyConTH
             repDict <- buildDictionaryTyConT exprBTyCon ty''
 
-            exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr
+            exprTyCon <- thNameToTyCon exprTyConTH
             let exprTyConApp = mkTyConApp exprTyCon [ty'']
 
             fmapId <- thNameToId '(<$>)
-            functTyCon <- thNameToTyCon ''Data.Functor.Functor
+            functTyCon <- thNameToTyCon functTyConTH
             functDict <- buildDictionaryTyConT functTyCon ty'
 
             let repApp = mkCoreApps (Var repId) [Type ty'', repDict]

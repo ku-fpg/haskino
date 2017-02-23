@@ -21,13 +21,7 @@ import Var
 import Data.Functor
 import Control.Monad.State
 
-import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary (buildDictionaryT,
-                                           buildDictionaryTyConT,
-                                           PassCoreM(..),
-                                           thNameToId, thNameToTyCon)
-
-import qualified System.Hardware.Haskino
-import qualified System.Hardware.Haskino.Expr
+import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary
 
 data BindEnv
     = BindEnv
@@ -55,9 +49,9 @@ findCmdsProcs (bndr@(NonRec b e) : bndrs) = do
     df <- getDynFlags
     let (argTys, retTy) = splitFunTys $ varType b
     let tyCon_m = splitTyConApp_maybe retTy
-    (Just monadTyConName) <- thNameToGhcName ''System.Hardware.Haskino.Arduino
+    (Just monadTyConName) <- thNameToGhcName monadTyConTH
     monadTyCon <- lookupTyCon monadTyConName
-    (Just unitTyConName) <- thNameToGhcName ''()
+    (Just unitTyConName) <- thNameToGhcName unitTyConTH
     unitTyCon <- lookupTyCon unitTyConName
     let unitTyConTy = mkTyConTy unitTyCon
     case tyCon_m of
@@ -105,7 +99,7 @@ changeAppExpr e = do
             e1' <- changeAppExpr e1
             e2' <- changeAppExpr e2
             return $ App e1' e2'
-      monadTyConId <- thNameToTyCon ''System.Hardware.Haskino.Arduino
+      monadTyConId <- thNameToTyCon monadTyConTH
       case tyCon_m of
           Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
               let (Var vb) = b
@@ -116,14 +110,14 @@ changeAppExpr e = do
                   then do
                       let retTyConTy = mkTyConTy retTyCon
 
-                      fmapId <- thNameToId '(<$>)
-                      functTyCon <- thNameToTyCon ''Data.Functor.Functor
+                      fmapId <- thNameToId fmapNameTH
+                      functTyCon <- thNameToTyCon functTyConTH
                       functDict <- buildDictionaryTyConT functTyCon retTyConTy
 
-                      exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr
+                      exprTyCon <- thNameToTyCon exprTyConTH
                       let exprTyConApp = mkTyConApp exprTyCon [retTy']
 
-                      absId <- thNameToId 'System.Hardware.Haskino.abs_
+                      absId <- thNameToId absNameTH
 
                       -- Rebuild the original nested app
                       let e' = mkCoreApps b args'
@@ -161,13 +155,10 @@ changeAppExpr e = do
 changeAppArg :: CoreExpr -> BindM CoreExpr
 changeAppArg e = do
     let ty = exprType e
-    repId <- thNameToId 'System.Hardware.Haskino.rep_
-    exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB
+    repId <- thNameToId repNameTH
+    exprBTyCon <- thNameToTyCon exprClassTyConTH
     repDict <- buildDictionaryTyConT exprBTyCon ty
     return $ mkCoreApps (Var repId) [Type ty, repDict, e]
-
-varString :: Id -> String
-varString = occNameString . nameOccName . Var.varName
 
 changeAppExpr' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
 changeAppExpr' [] = return []
