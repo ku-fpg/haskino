@@ -27,6 +27,8 @@ data XlatEntry = XlatEntry {  fromId   :: BindM Id
                             , toId     :: BindM Id
                            }
 
+-- The following talbe defines the names of the Shallow DSL functions
+-- to translate from and the Deep DSL functions to translate to.
 xlatList :: [XlatEntry]
 xlatList = [  XlatEntry (thNameToId 'System.Hardware.Haskino.loop)
                         (thNameToId 'System.Hardware.Haskino.loopE)

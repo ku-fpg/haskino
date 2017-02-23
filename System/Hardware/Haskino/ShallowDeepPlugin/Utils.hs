@@ -51,6 +51,10 @@ import qualified Language.Haskell.TH as TH
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Typechecker (initTcFromModGuts)
 
+-- The following line contain the imports specific to the DSL language
+-- being trnasformed, as well as Template Haskell definintions of the
+-- DSL Monad and Expr types, names for the Worker/Wrapper abs/rep,
+-- and names of the conditionals in the DSL.
 import qualified System.Hardware.Haskino
 
 exprClassTyConTH     = ''System.Hardware.Haskino.ExprB
@@ -62,6 +66,8 @@ repNameTH            = 'System.Hardware.Haskino.rep_
 ifThenElseNameTH     = 'System.Hardware.Haskino.ifThenElseE
 ifThenElseUnitNameTH = 'System.Hardware.Haskino.ifThenElseUnitE
 
+-- The following lines contain definitions of Template Haskell namde
+-- for standard Haskell functions.
 functTyConTH         = ''Data.Functor.Functor
 unitTyConTH          = ''()
 bindNameTH           = '(>>=)
