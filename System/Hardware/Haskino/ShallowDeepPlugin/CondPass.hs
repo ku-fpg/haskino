@@ -18,9 +18,7 @@ import Data.List
 import Data.Functor
 import Control.Monad.Reader
 
-import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary
-
--- import qualified System.Hardware.Haskino
+import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 
 data CondEnv
     = CondEnv

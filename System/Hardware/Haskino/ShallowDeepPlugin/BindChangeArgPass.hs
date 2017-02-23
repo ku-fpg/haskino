@@ -21,7 +21,7 @@ import Var
 import Data.Functor
 import Control.Monad.State
 
-import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary
+import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 
 data BindEnv
     = BindEnv

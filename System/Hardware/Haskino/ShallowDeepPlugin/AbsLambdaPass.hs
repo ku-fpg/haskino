@@ -29,7 +29,7 @@ import Control.Monad.Reader
 import OccName
 import Var
 
-import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary
+import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 
 data BindEnv
     = BindEnv

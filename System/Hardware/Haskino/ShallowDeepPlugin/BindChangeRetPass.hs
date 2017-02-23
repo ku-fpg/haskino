@@ -19,7 +19,7 @@ import GhcPlugins
 import Data.Functor
 import Control.Monad.Reader
 
-import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary
+import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 
 data BindEnv
     = BindEnv

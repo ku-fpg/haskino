@@ -1,15 +1,15 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.ShallowDeepPlugin.Dictionary
+-- Module      :  System.Hardware.Haskino.ShallowDeepPlugin.Utils
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- GHC Dictionary Utility Functions
+-- Shallow Deep Plugin Utility Functions
 -------------------------------------------------------------------------------
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell #-}
-module System.Hardware.Haskino.ShallowDeepPlugin.Dictionary (buildDictionaryT,
+module System.Hardware.Haskino.ShallowDeepPlugin.Utils (buildDictionaryT,
                                            buildDictionaryTyConT,
                                            PassCoreM(..),
                                            thNameToId,
