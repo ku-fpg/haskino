@@ -106,8 +106,8 @@ changeReturn e = do
     df <- liftCoreM getDynFlags
     let (bs, e') = collectBinders e
     let (f, args) = collectArgs e'
-    bindId <- thNameToId '(>>=)
-    thenId <- thNameToId '(>>)
+    bindId <- thNameToId bindNameTH
+    thenId <- thNameToId bindThenNameTH
     case f of
       Var fv -> do
         if fv == bindId || fv == thenId
@@ -128,7 +128,7 @@ changeReturn e = do
             exprTyCon <- thNameToTyCon exprTyConTH
             let exprTyConApp = mkTyConApp exprTyCon [ty'']
 
-            fmapId <- thNameToId '(<$>)
+            fmapId <- thNameToId fmapNameTH
             functTyCon <- thNameToTyCon functTyConTH
             functDict <- buildDictionaryTyConT functTyCon ty'
 

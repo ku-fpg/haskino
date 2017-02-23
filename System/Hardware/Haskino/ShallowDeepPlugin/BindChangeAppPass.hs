@@ -105,7 +105,7 @@ changeAppExpr e = do
               let (Var vb) = b
               if vb `elem` chngArgs
               then do
-                  args' <- mapM changeAppArg args
+                  args' <- mapM repExpr args
                   if vb `elem` chngRet
                   then do
                       let retTyConTy = mkTyConTy retTyCon
@@ -151,14 +151,6 @@ changeAppExpr e = do
     Cast e co -> do
       e' <- changeAppExpr e
       return $ Cast e' co
-
-changeAppArg :: CoreExpr -> BindM CoreExpr
-changeAppArg e = do
-    let ty = exprType e
-    repId <- thNameToId repNameTH
-    exprBTyCon <- thNameToTyCon exprClassTyConTH
-    repDict <- buildDictionaryTyConT exprBTyCon ty
-    return $ mkCoreApps (Var repId) [Type ty, repDict, e]
 
 changeAppExpr' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
 changeAppExpr' [] = return []

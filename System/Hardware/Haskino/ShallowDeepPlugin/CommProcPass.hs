@@ -176,6 +176,9 @@ commProcXlat xe e = do
   else
     return $ mkCoreApps f' args'
 
+commProcXlatArg :: (Bool, CoreExpr) -> BindM CoreExpr
+commProcXlatArg (xlat, e) = if xlat then repExpr e else return e
+
 genXlatBools :: BindM Id -> BindM Id -> BindM (Bool, [Bool])
 genXlatBools from to = do
   f <- from
@@ -185,15 +188,4 @@ genXlatBools from to = do
   let zTys = zip fTys tTys
   let changeArgs = map (\(x,y) -> not $ x `eqType` y) zTys
   return $ (not $ fRetTy `eqType` tRetTy, changeArgs)
-
-commProcXlatArg :: (Bool, CoreExpr) -> BindM CoreExpr
-commProcXlatArg (xlat, e) =
-  if xlat
-  then do
-    let ty = exprType e
-    repId <- thNameToId repNameTH
-    exprBTyCon <- thNameToTyCon exprClassTyConTH
-    repDict <- buildDictionaryTyConT exprBTyCon ty
-    return $ mkCoreApps (Var repId) [Type ty, repDict, e]
-  else return e
 

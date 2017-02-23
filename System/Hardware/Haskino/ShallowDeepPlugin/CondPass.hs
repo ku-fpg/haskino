@@ -142,24 +142,13 @@ condTransform ty e alts = do
       let ty' = mkTyConTy tyCon'
       -- Get the Arduino Type Arg
       let Just [ty''] = tyConAppArgs_maybe ty
-      -- Get the conditional type
-      let bTy = exprType e
 
       ifThenElseId <- thNameToId ifThenElseNameTH
       condTyCon <- thNameToTyCon monadCondTyConTH
       condDict <- buildDictionaryTyConT condTyCon ty''
 
-      repId <- thNameToId repNameTH
-
-      exprBTyCon <- thNameToTyCon exprClassTyConTH
-      repDict <- buildDictionaryTyConT exprBTyCon bTy
-
-      exprTyCon <- thNameToTyCon exprTyConTH
-      -- Make the type of the Expr for the specified type
-      let exprTyConApp = GhcPlugins.mkTyConApp exprTyCon [ty'']
-
       -- Build the First Arg to ifThenElseE
-      let arg1 = mkCoreApps (Var repId) [Type bTy, repDict, e]
+      arg1 <- repExpr e
 
       -- Build the ifThenElse Expr
       let ifteExpr = mkCoreApps (Var ifThenElseId) [Type ty'', condDict, arg1, e2, e1]
@@ -179,16 +168,7 @@ condTransformUnit :: Type -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CondM Core
 condTransformUnit ty e alts = do
   case alts of
     [(_, _, e1),(_, _, e2)] -> do
-      -- Get the conditional type
-      let bTy = exprType e
-
       ifThenElseId <- thNameToId ifThenElseUnitNameTH
-
-      repId <- thNameToId repNameTH
-      exprBTyCon <- thNameToTyCon exprClassTyConTH
-      repDict <- buildDictionaryTyConT exprBTyCon bTy
-
       -- Build the First Arg to ifThenElseUnitE
-      let arg1 = mkCoreApps (Var repId) [Type bTy, repDict, e]
-
+      arg1 <- repExpr e
       return $ mkCoreApps (Var ifThenElseId) [arg1, e2, e1]

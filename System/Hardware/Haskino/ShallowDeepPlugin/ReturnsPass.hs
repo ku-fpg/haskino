@@ -131,11 +131,7 @@ changeReturn e = do
     let (f, args) = collectArgs e
     case args of
       [Type ty1, Var d, Type ty2, ex] -> do
-          repId <- thNameToId repNameTH
-          exprBTyCon <- thNameToTyCon exprClassTyConTH
-          repDict <- buildDictionaryTyConT exprBTyCon ty2
-
-          let retArg = mkCoreApps (Var repId) [Type ty2, repDict, ex]
+          retArg <- repExpr ex
 
           exprTyCon <- thNameToTyCon exprTyConTH
           let retTyConApp = mkTyConApp exprTyCon [ty2]

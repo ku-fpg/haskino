@@ -12,6 +12,7 @@
 module System.Hardware.Haskino.ShallowDeepPlugin.Utils (buildDictionaryT,
                                            buildDictionaryTyConT,
                                            PassCoreM(..),
+                                           repExpr,
                                            thNameToId,
                                            thNameToTyCon,
                                            -- DSL specific names
@@ -90,6 +91,14 @@ thNameToTyCon :: PassCoreM m => TH.Name -> m TyCon
 thNameToTyCon n = do
   (Just name) <- liftCoreM $ thNameToGhcName n
   liftCoreM $ lookupTyCon name
+
+repExpr :: PassCoreM m => CoreExpr -> m CoreExpr
+repExpr e = do
+    let ty = exprType e
+    repId <- thNameToId repNameTH
+    exprBTyCon <- thNameToTyCon exprClassTyConTH
+    repDict <- buildDictionaryTyConT exprBTyCon ty
+    return $ mkCoreApps (Var repId) [Type ty, repDict, e]
 
 -- Adapted from HERMIT.Monad
 runTcM :: PassCoreM m => TcM a -> m a
