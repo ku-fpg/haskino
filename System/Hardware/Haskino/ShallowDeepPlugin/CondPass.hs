@@ -14,18 +14,16 @@ module System.Hardware.Haskino.ShallowDeepPlugin.CondPass (condPass) where
 
 import CoreMonad
 import GhcPlugins
-import Data.List 
+import Data.List
 import Data.Functor
 import Control.Monad.Reader
 
-import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary (buildDictionaryT, 
-                                           buildDictionaryTyConT, 
-                                           PassCoreM(..), 
+import System.Hardware.Haskino.ShallowDeepPlugin.Dictionary (buildDictionaryT,
+                                           buildDictionaryTyConT,
+                                           PassCoreM(..),
                                            thNameToId, thNameToTyCon)
 
 import qualified System.Hardware.Haskino
-import qualified System.Hardware.Haskino.Data
-import qualified System.Hardware.Haskino.Expr
 
 data CondEnv
     = CondEnv
@@ -65,6 +63,9 @@ condBind' ((b, e) : bs) = do
 condExpr :: CoreExpr -> CondM CoreExpr
 condExpr e = do
   df <- liftCoreM getDynFlags
+  monadTyCon <- thNameToTyCon ''System.Hardware.Haskino.Arduino
+  unitTyCon <- thNameToTyCon ''()
+  let unitTyConTy = mkTyConTy unitTyCon
   case e of
     Var v -> return $ Var v
     Lit l -> return $ Lit l
@@ -79,46 +80,35 @@ condExpr e = do
       return $ Lam tb e'
     Let bind body -> do
       body' <- condExpr body
-      bind' <- case bind of 
+      bind' <- case bind of
                   (NonRec v e) -> do
                     e' <- condExpr e
                     return $ NonRec v e'
                   (Rec rbs) -> do
                     rbs' <- condExpr' rbs
                     return $ Rec rbs'
-      return $ Let bind' body' 
-    Case e tb ty alts | showSDoc df (ppr ty) == "Arduino ()" -> do
-      e' <- condExpr e
-      alts' <- condExprAlts alts
-      if length alts' == 2 
-      then case alts' of
-        [(ac1, _, _), _] -> do
-          case ac1 of 
-            DataAlt d -> do
-              Just falseName <- liftCoreM $ thNameToGhcName 'Prelude.False
-              if (getName d) == falseName
-              then condTransformUnit ty e' alts'
-              else return $ Case e' tb ty alts'
-            _ -> return $ Case e' tb ty alts'
-      else return $ Case e' tb ty alts'
-    Case e tb ty alts | isPrefixOf "Arduino " (showSDoc df (ppr ty)) -> do
-      e' <- condExpr e
-      alts' <- condExprAlts alts
-      if length alts' == 2 
-      then case alts' of
-        [(ac1, _, _), _] -> do
-          case ac1 of 
-            DataAlt d -> do
-              Just falseName <- liftCoreM $ thNameToGhcName 'Prelude.False
-              if (getName d) == falseName
-              then condTransform ty e' alts'
-              else return $ Case e' tb ty alts'
-            _ -> return $ Case e' tb ty alts'
-      else return $ Case e' tb ty alts'
+      return $ Let bind' body'
     Case e tb ty alts -> do
+      let tyCon_m = splitTyConApp_maybe ty
       e' <- condExpr e
       alts' <- condExprAlts alts
-      return $ Case e' tb ty alts'
+      case tyCon_m of
+        Just (retTyCon, [retTy']) | retTyCon == monadTyCon -> do
+            if length alts' == 2
+            then case alts' of
+              [(ac1, _, _), _] -> do
+                case ac1 of
+                  DataAlt d -> do
+                    Just falseName <- liftCoreM $ thNameToGhcName 'Prelude.False
+                    if (getName d) == falseName
+                    then if retTy' `eqType` unitTyConTy
+                         then condTransformUnit ty e' alts'
+                         else condTransform ty e' alts'
+                    else return $ Case e' tb ty alts'
+                  _ -> return $ Case e' tb ty alts'
+            else return $ Case e' tb ty alts'
+        _ -> do
+            return $ Case e' tb ty alts'
     Tick t e -> do
       e' <- condExpr e
       return $ Tick t e'
@@ -126,7 +116,7 @@ condExpr e = do
       e' <- condExpr e
       return $ Cast e' co
 
-nameString :: Name -> String 
+nameString :: Name -> String
 nameString = occNameString . nameOccName
 
 condExpr' :: [(Id, CoreExpr)] -> CondM [(Id, CoreExpr)]
@@ -175,7 +165,7 @@ condTransform ty e alts = do
       exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB
       repDict <- buildDictionaryTyConT exprBTyCon bTy
 
-      exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr.Expr
+      exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr
       -- Make the type of the Expr for the specified type
       let exprTyConApp = GhcPlugins.mkTyConApp exprTyCon [ty'']
 

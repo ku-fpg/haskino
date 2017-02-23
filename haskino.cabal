@@ -34,6 +34,7 @@ Library
                     , natural-transformation >= 0.4
                     , Boolean
                     , cereal
+                    , template-haskell
                     , transformers
                     , ghc >= 8.0.1
                     , exceptions  >= 0.8 && < 0.9
@@ -50,12 +51,13 @@ Library
                     , System.Hardware.Haskino.Expr
                     , System.Hardware.Haskino.Protocol
                     , System.Hardware.Haskino.Utils
-                    , System.Hardware.Haskino.AbsLambdaPass
-                    , System.Hardware.Haskino.BindChangeAppPass,
-                    , System.Hardware.Haskino.BindChangeArgPass,
-                    , System.Hardware.Haskino.BindChangeRet2Pass,
-                    , System.Hardware.Haskino.CondPass
-                    , System.Hardware.Haskino.Cond2Pass
-                    , System.Hardware.Haskino.ReturnsPass,
-                    , System.Hardware.Haskino.Dictionary
-                    , System.Hardware.Haskino.Typechecker
+                    , System.Hardware.Haskino.ShallowDeepPlugin.AbsLambdaPass
+                    , System.Hardware.Haskino.ShallowDeepPlugin.BindChangeAppPass
+                    , System.Hardware.Haskino.ShallowDeepPlugin.BindChangeArgPass
+                    , System.Hardware.Haskino.ShallowDeepPlugin.BindChangeRetPass
+                    , System.Hardware.Haskino.ShallowDeepPlugin.CommProcPass
+                    , System.Hardware.Haskino.ShallowDeepPlugin.CondPass
+                    , System.Hardware.Haskino.ShallowDeepPlugin.CondRetPass
+                    , System.Hardware.Haskino.ShallowDeepPlugin.ReturnsPass
+                    , System.Hardware.Haskino.ShallowDeepPlugin.Dictionary
+                    , System.Hardware.Haskino.ShallowDeepPlugin.Typechecker

@@ -134,7 +134,7 @@ changeReturn e = do
             exprBTyCon <- thNameToTyCon ''System.Hardware.Haskino.ExprB
             repDict <- buildDictionaryTyConT exprBTyCon ty''
 
-            exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr.Expr
+            exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr
             let exprTyConApp = mkTyConApp exprTyCon [ty'']
 
             fmapId <- thNameToId '(<$>)

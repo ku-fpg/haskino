@@ -146,7 +146,7 @@ changeReturn e = do
 
           let retArg = mkCoreApps (Var repId) [Type ty2, repDict, ex]
 
-          exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr.Expr
+          exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr
           let retTyConApp = mkTyConApp exprTyCon [ty2]
 
           let f' = mkCoreApps f [Type ty1, Var d, Type retTyConApp, retArg]

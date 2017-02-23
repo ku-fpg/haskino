@@ -120,7 +120,7 @@ changeAppExpr e = do
                       functTyCon <- thNameToTyCon ''Data.Functor.Functor
                       functDict <- buildDictionaryTyConT functTyCon retTyConTy
 
-                      exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr.Expr
+                      exprTyCon <- thNameToTyCon ''System.Hardware.Haskino.Expr
                       let exprTyConApp = mkTyConApp exprTyCon [retTy']
 
                       absId <- thNameToId 'System.Hardware.Haskino.abs_

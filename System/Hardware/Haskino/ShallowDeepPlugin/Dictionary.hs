@@ -10,10 +10,12 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell #-}
 module System.Hardware.Haskino.ShallowDeepPlugin.Dictionary (buildDictionaryT,
-                                           buildDictionaryTyConT, 
+                                           buildDictionaryTyConT,
                                            PassCoreM(..),
-                                           thNameToId, 
-                                           thNameToTyCon) where
+                                           thNameToId,
+                                           thNameToTyCon,
+                                           monadTyConTH,
+                                           unitTyConTH) where
 
 import CoreMonad
 import GhcPlugins
@@ -32,6 +34,12 @@ import Encoding (zEncodeString)
 import qualified Language.Haskell.TH as TH
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Typechecker (initTcFromModGuts)
+
+import qualified System.Hardware.Haskino
+
+unitTyConTH = ''()
+
+monadTyConTH = ''System.Hardware.Haskino.Arduino
 
 class (Monad m, MonadIO m) => PassCoreM m where
     -- | 'CoreM' can be lifted to this monad.
@@ -98,6 +106,6 @@ buildDictionaryT ty = do
                 [NonRec v e] | i == v -> e -- the common case that we would have gotten a single non-recursive let
                 _ -> mkCoreLets bnds (varToCoreExpr i)
 
-buildDictionaryTyConT :: PassCoreM m => TyCon -> Type -> m CoreExpr 
+buildDictionaryTyConT :: PassCoreM m => TyCon -> Type -> m CoreExpr
 buildDictionaryTyConT tyCon ty =
-    buildDictionaryT $ GhcPlugins.mkTyConApp tyCon [ty] 
+    buildDictionaryT $ GhcPlugins.mkTyConApp tyCon [ty]
