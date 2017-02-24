@@ -108,23 +108,9 @@ changeAppExpr e = do
                   args' <- mapM repExpr args
                   if vb `elem` chngRet
                   then do
-                      let retTyConTy = mkTyConTy retTyCon
-
-                      fmapId <- thNameToId fmapNameTH
-                      functTyCon <- thNameToTyCon functTyConTH
-                      functDict <- buildDictionaryTyConT functTyCon retTyConTy
-
-                      exprTyCon <- thNameToTyCon exprTyConTH
-                      let exprTyConApp = mkTyConApp exprTyCon [retTy']
-
-                      absId <- thNameToId absNameTH
-
                       -- Rebuild the original nested app
                       let e' = mkCoreApps b args'
-                      -- Build the abs_ function
-                      let abs = App (Var absId) (Type retTy')
-                      -- Build the <$> applied to the abs_ and the original app
-                      return $ mkCoreApps (Var fmapId) [Type retTyConTy, Type exprTyConApp, Type retTy', functDict, abs, e']
+                      fmapAbsExpr (mkTyConTy retTyCon) retTy' e'
                   else return $ mkCoreApps b args'
               else defaultRet
           _ -> defaultRet

@@ -95,19 +95,17 @@ commProcExpr e = do
     Coercion co -> return $ Coercion co
     App e1 e2 -> do
       let (f, args) = collectArgs e
+      let defaultReturn = do
+              e1' <- commProcExpr e1
+              e2' <- commProcExpr e2
+              return $ App e1' e2'
       case f of
           Var v -> do
               inList <- funcInXlatList v
               case inList of
                   Just xe -> commProcXlat xe e
-                  Nothing -> do
-                      e1' <- commProcExpr e1
-                      e2' <- commProcExpr e2
-                      return $ App e1' e2'
-          _ -> do
-              e1' <- commProcExpr e1
-              e2' <- commProcExpr e2
-              return $ App e1' e2'
+                  Nothing -> defaultReturn
+          _ -> defaultReturn
     Lam tb e -> do
       e' <- commProcExpr e
       return $ Lam tb e'
@@ -158,21 +156,8 @@ commProcXlat xe e = do
   if xlatRet
   then do
     let (tyCon, [ty]) = splitTyConApp $ exprType e
-    let tyConTy = mkTyConTy tyCon
-
-    exprTyCon <- thNameToTyCon exprTyConTH
-    let exprTy = mkTyConApp exprTyCon [ty]
-
-    fmapId <- thNameToId fmapNameTH
-    functTyCon <- thNameToTyCon functTyConTH
-    functDict <- buildDictionaryTyConT functTyCon tyConTy
-
-    -- Build the abs_ function
-    absId <- thNameToId absNameTH
-
-    let abs = App (Var absId) (Type ty)
-    -- Build the <$> applied to the abs_ and the original app
-    return $ mkCoreApps (Var fmapId) [Type tyConTy, Type exprTy, Type ty, functDict, abs, mkCoreApps f' args']
+    let e' = mkCoreApps f' args'
+    fmapAbsExpr (mkTyConTy tyCon) ty e'
   else
     return $ mkCoreApps f' args'
 

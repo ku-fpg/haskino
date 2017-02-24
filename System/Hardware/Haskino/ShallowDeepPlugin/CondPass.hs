@@ -184,6 +184,6 @@ changeReturn e = do
             return $ mkLams bs (mkCoreApps f args')
         else do
             let (tyCon,[ty']) = splitTyConApp $ exprType e'
-            retExpr <- fmapRepExpr tyCon ty' e'
+            retExpr <- fmapRepExpr (mkTyConTy tyCon) ty' e'
             return $ mkLams bs retExpr
       _ -> return e

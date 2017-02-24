@@ -11,6 +11,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 module System.Hardware.Haskino.ShallowDeepPlugin.Utils (buildDictionaryT,
                                            buildDictionaryTyConT,
+                                           fmapAbsExpr,
                                            fmapRepExpr,
                                            repExpr,
                                            thNameToId,
@@ -117,9 +118,21 @@ repExpr e = do
     repDict <- thNameTyToDict exprClassTyConTH ty
     return $ mkCoreApps (Var repId) [Type ty, repDict, e]
 
-fmapRepExpr :: PassCoreM m => TyCon -> Type -> CoreExpr -> m CoreExpr
-fmapRepExpr tyCon ty e = do
-    let tyConTy = mkTyConTy tyCon
+fmapAbsExpr :: PassCoreM m => Type -> Type -> CoreExpr -> m CoreExpr
+fmapAbsExpr tyConTy ty e = do
+    absId <- thNameToId absNameTH
+
+    exprTyConApp <- thNameTyToTyConApp exprTyConTH ty
+
+    fmapId <- thNameToId fmapNameTH
+    functDict <- thNameTyToDict functTyConTH tyConTy
+
+    let absApp = mkCoreApps (Var absId) [Type ty]
+    return $ mkCoreApps (Var fmapId) [Type tyConTy, Type exprTyConApp, Type ty, 
+                                      functDict, absApp, e]
+
+fmapRepExpr :: PassCoreM m => Type -> Type -> CoreExpr -> m CoreExpr
+fmapRepExpr tyConTy ty e = do
     repId <- thNameToId repNameTH
     repDict <- thNameTyToDict exprClassTyConTH ty
 

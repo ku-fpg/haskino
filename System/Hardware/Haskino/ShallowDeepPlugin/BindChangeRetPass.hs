@@ -73,7 +73,6 @@ changeBind (Rec bs) = do
 
 changeReturn :: CoreExpr -> BindM CoreExpr
 changeReturn e = do
-    df <- liftCoreM getDynFlags
     let (bs, e') = collectBinders e
     let (f, args) = collectArgs e'
     bindId <- thNameToId bindNameTH
@@ -86,25 +85,7 @@ changeReturn e = do
             let args' = init args ++ [la']
             return $ mkLams bs (mkCoreApps f args')
         else do
-            let ty = exprType e'
-            let Just tyCon'  = tyConAppTyCon_maybe ty
-            let ty' = mkTyConTy tyCon'
-            let Just [ty''] = tyConAppArgs_maybe ty
-
-            repId <- thNameToId repNameTH
-            exprBTyCon <- thNameToTyCon exprClassTyConTH
-            repDict <- buildDictionaryTyConT exprBTyCon ty''
-
-            exprTyCon <- thNameToTyCon exprTyConTH
-            let exprTyConApp = mkTyConApp exprTyCon [ty'']
-
-            fmapId <- thNameToId fmapNameTH
-            functTyCon <- thNameToTyCon functTyConTH
-            functDict <- buildDictionaryTyConT functTyCon ty'
-
-            let repApp = mkCoreApps (Var repId) [Type ty'', repDict]
-            let repExpr = mkCoreApps (Var fmapId) [Type ty', Type ty'', Type exprTyConApp,
-                                                              functDict, repApp, e']
-
-            return $ mkLams bs repExpr
+            let (tyCon,[ty']) = splitTyConApp $ exprType e'
+            retExpr <- fmapRepExpr (mkTyConTy tyCon) ty' e'
+            return $ mkLams bs retExpr
       _ -> return e

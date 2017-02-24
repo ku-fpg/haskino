@@ -57,7 +57,6 @@ Library
                     , System.Hardware.Haskino.ShallowDeepPlugin.BindChangeRetPass
                     , System.Hardware.Haskino.ShallowDeepPlugin.CommProcPass
                     , System.Hardware.Haskino.ShallowDeepPlugin.CondPass
-                    , System.Hardware.Haskino.ShallowDeepPlugin.CondRetPass
                     , System.Hardware.Haskino.ShallowDeepPlugin.ReturnsPass
                     , System.Hardware.Haskino.ShallowDeepPlugin.Utils
                     , System.Hardware.Haskino.ShallowDeepPlugin.Typechecker

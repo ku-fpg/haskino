@@ -59,26 +59,21 @@ changeRetExpr e = do
     Coercion co -> return $ Coercion co
     App e1 e2 -> do
       let (b, args) = collectArgs e
+      let defaultReturn = do
+                  e1' <- changeRetExpr e1
+                  e2' <- changeRetExpr e2
+                  return $ App e1' e2'
       case b of
         Var bv -> do
           case head args of
             Type ty -> do
               if bv == returnId && ty `eqType` monadTy
               then do
-                  e' <- changeReturn e
+                  e' <- changeReturnTypes e
                   return e'
-              else do
-                  e1' <- changeRetExpr e1
-                  e2' <- changeRetExpr e2
-                  return $ App e1' e2'
-            _ -> do
-              e1' <- changeRetExpr e1
-              e2' <- changeRetExpr e2
-              return $ App e1' e2'
-        _ -> do
-          e1' <- changeRetExpr e1
-          e2' <- changeRetExpr e2
-          return $ App e1' e2'
+              else defaultReturn
+            _ -> defaultReturn
+        _ -> defaultReturn
     Lam tb e -> do
       e' <- changeRetExpr e
       return $ Lam tb e'
@@ -126,25 +121,13 @@ changeRetExprAlts ((ac, b, a) : as) = do
     abs_ <$> (return (rep_ e))
 
 -}
-changeReturn :: CoreExpr -> BindM CoreExpr
-changeReturn e = do
+changeReturnTypes :: CoreExpr -> BindM CoreExpr
+changeReturnTypes e = do
     let (f, args) = collectArgs e
     case args of
       [Type ty1, Var d, Type ty2, ex] -> do
           retArg <- repExpr ex
-
-          exprTyCon <- thNameToTyCon exprTyConTH
-          let retTyConApp = mkTyConApp exprTyCon [ty2]
-
-          let f' = mkCoreApps f [Type ty1, Var d, Type retTyConApp, retArg]
-
-          fmapId <- thNameToId fmapNameTH
-          functTyCon <- thNameToTyCon functTyConTH
-          functDict <- buildDictionaryTyConT functTyCon ty1
-
-          absId <- thNameToId absNameTH
-          let absLamba = mkCoreApps (Var absId ) [Type ty2]
-
-          let retExp = mkCoreApps (Var fmapId) [Type ty1, Type retTyConApp, Type ty2, functDict, absLamba, f']
-          return retExp
+          exprTyConApp <- thNameTyToTyConApp exprTyConTH ty2
+          let f' = mkCoreApps f [Type ty1, Var d, Type exprTyConApp, retArg]
+          fmapAbsExpr ty1 ty2 f'
       _ -> return e
