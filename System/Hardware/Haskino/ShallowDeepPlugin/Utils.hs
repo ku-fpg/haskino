@@ -11,17 +11,20 @@
 {-# LANGUAGE TemplateHaskell #-}
 module System.Hardware.Haskino.ShallowDeepPlugin.Utils (buildDictionaryT,
                                            buildDictionaryTyConT,
-                                           PassCoreM(..),
+                                           fmapRepExpr,
                                            repExpr,
                                            thNameToId,
                                            thNameToTyCon,
+                                           thNameTyToDict,
+                                           thNameTyToTyConApp,
+                                           PassCoreM(..),
                                            -- DSL specific names
                                            exprClassTyConTH,
                                            exprTyConTH,
                                            monadCondTyConTH,
                                            monadTyConTH,
                                            absNameTH,
-                                           repNameTH, 
+                                           repNameTH,
                                            ifThenElseNameTH,
                                            ifThenElseUnitNameTH,
                                            -- General Haskell names
@@ -82,8 +85,13 @@ class (Monad m, MonadIO m) => PassCoreM m where
     liftCoreM  :: CoreM a -> m a
     getModGuts :: m ModGuts
 
+instance PassCoreM CoreM where
+  liftCoreM = id
+  getModGuts = error "Cannot get modguts from CoreM"
+
 thNameToId :: PassCoreM m => TH.Name -> m Id
 thNameToId n = do
+  -- TBD MDG - handle error cases
   (Just name) <- liftCoreM $ thNameToGhcName n
   liftCoreM $ lookupId name
 
@@ -92,13 +100,37 @@ thNameToTyCon n = do
   (Just name) <- liftCoreM $ thNameToGhcName n
   liftCoreM $ lookupTyCon name
 
+thNameTyToDict :: PassCoreM m => TH.Name -> Type -> m CoreExpr
+thNameTyToDict n ty = do
+  tyCon <- thNameToTyCon n
+  buildDictionaryTyConT tyCon ty
+
+thNameTyToTyConApp :: PassCoreM m => TH.Name -> Type -> m Type
+thNameTyToTyConApp n ty = do
+  tyCon <- thNameToTyCon n
+  return $  mkTyConApp tyCon [ty]
+
 repExpr :: PassCoreM m => CoreExpr -> m CoreExpr
 repExpr e = do
     let ty = exprType e
     repId <- thNameToId repNameTH
-    exprBTyCon <- thNameToTyCon exprClassTyConTH
-    repDict <- buildDictionaryTyConT exprBTyCon ty
+    repDict <- thNameTyToDict exprClassTyConTH ty
     return $ mkCoreApps (Var repId) [Type ty, repDict, e]
+
+fmapRepExpr :: PassCoreM m => TyCon -> Type -> CoreExpr -> m CoreExpr
+fmapRepExpr tyCon ty e = do
+    let tyConTy = mkTyConTy tyCon
+    repId <- thNameToId repNameTH
+    repDict <- thNameTyToDict exprClassTyConTH ty
+
+    exprTyConApp <- thNameTyToTyConApp exprTyConTH ty
+
+    fmapId <- thNameToId fmapNameTH
+    functDict <- thNameTyToDict functTyConTH tyConTy
+
+    let repApp = mkCoreApps (Var repId) [Type ty, repDict]
+    return $ mkCoreApps (Var fmapId) [Type tyConTy, Type ty, Type exprTyConApp,
+                                      functDict, repApp, e]
 
 -- Adapted from HERMIT.Monad
 runTcM :: PassCoreM m => TcM a -> m a

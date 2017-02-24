@@ -10,17 +10,16 @@
 {-# LANGUAGE TemplateHaskell #-}
 module System.Hardware.Haskino.ShallowDeepPlugin (plugin) where
 
-import StaticFlags
+import StaticFlags   -- This is required on Windows
 import CoreMonad
 import GhcPlugins
-import System.Hardware.Haskino.ShallowDeepPlugin.AbsLambdaPass 
-import System.Hardware.Haskino.ShallowDeepPlugin.BindChangeAppPass 
-import System.Hardware.Haskino.ShallowDeepPlugin.BindChangeArgPass 
-import System.Hardware.Haskino.ShallowDeepPlugin.BindChangeRetPass 
+import System.Hardware.Haskino.ShallowDeepPlugin.AbsLambdaPass
+import System.Hardware.Haskino.ShallowDeepPlugin.BindChangeAppPass
+import System.Hardware.Haskino.ShallowDeepPlugin.BindChangeArgPass
+import System.Hardware.Haskino.ShallowDeepPlugin.BindChangeRetPass
 import System.Hardware.Haskino.ShallowDeepPlugin.CommProcPass
-import System.Hardware.Haskino.ShallowDeepPlugin.CondPass 
-import System.Hardware.Haskino.ShallowDeepPlugin.CondRetPass 
-import System.Hardware.Haskino.ShallowDeepPlugin.ReturnsPass 
+import System.Hardware.Haskino.ShallowDeepPlugin.CondPass
+import System.Hardware.Haskino.ShallowDeepPlugin.ReturnsPass
 
 
 plugin :: Plugin
@@ -34,7 +33,6 @@ install _ todo = do
   reinitializeGlobals
   let absLambdaToDo = [CoreDoPluginPass "AbsLambda" absLambdaPass]
   let condToDo = [CoreDoPluginPass "CondTransform" condPass]
-  let condRetToDo = [CoreDoPluginPass "CondRetTransform" condRetPass]
   let returnsToDo = [CoreDoPluginPass "ReturnsTransform" returnsPass]
   let bindRetToDo = [CoreDoPluginPass "BindRetTransform" bindChangeRetPass]
   let bindAppToDo = [CoreDoPluginPass "BindAppTransform" bindChangeAppPass]
@@ -42,9 +40,9 @@ install _ todo = do
   let commProcToDo = [CoreDoPluginPass "CommProcTransform" commProcPass]
   let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
   return $ condToDo ++ commProcToDo ++ returnsToDo ++
-           [rules1Pass] ++ absLambdaToDo ++ condRetToDo ++ 
-           bindRetToDo ++ bindArgToDo ++ bindAppToDo ++ 
-           [rules1Pass] ++ absLambdaToDo ++ 
+           [rules1Pass] ++ absLambdaToDo ++
+           bindRetToDo ++ bindArgToDo ++ bindAppToDo ++
+           [rules1Pass] ++ absLambdaToDo ++
            [rules0Pass] ++ todo -- ++ dumpToDo
 
 rules0Pass :: CoreToDo
@@ -81,4 +79,4 @@ dumpPass :: ModGuts -> CoreM ModGuts
 dumpPass guts = do
   putMsgS "In dumpPass"
   putMsg $ ppr (mg_binds guts)
-  return guts      
+  return guts

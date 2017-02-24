@@ -5,7 +5,7 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Conditional Transformation Return Pass 
+-- Conditional Transformation Return Pass
 -- ifThenElseE (rep b) t e => ifThenElseE (rep b) (rep <$> t) (rep <$> e)
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -18,7 +18,7 @@ import Data.Functor
 import Control.Monad.Reader
 import Var
 
-import System.Hardware.Haskino.ShallowDeepPlugin.Utils 
+import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 
 data BindEnv
     = BindEnv
@@ -34,7 +34,7 @@ instance PassCoreM BindM where
   getModGuts = BindM $ ReaderT (return . pluginModGuts)
 
 condRetPass :: ModGuts -> CoreM ModGuts
-condRetPass guts = 
+condRetPass guts =
     bindsOnlyPass (\x -> (runReaderT (runBindM $ (mapM changeCond) x) (BindEnv guts))) guts
 
 changeCond :: CoreBind -> BindM CoreBind
@@ -114,12 +114,12 @@ changeReturn e = do
         then do
             la' <- changeReturn $ last args
             let args' = init args ++ [la']
-            return $ mkCoreApps f args'
+            return $ mkLams bs (mkCoreApps f args')
         else do
             let ty = exprType e'
             let Just tyCon'  = tyConAppTyCon_maybe ty
             let ty' = mkTyConTy tyCon'
-            let Just [ty''] = tyConAppArgs_maybe ty 
+            let Just [ty''] = tyConAppArgs_maybe ty
 
             repId <- thNameToId repNameTH
             exprBTyCon <- thNameToTyCon exprClassTyConTH
@@ -133,7 +133,7 @@ changeReturn e = do
             functDict <- buildDictionaryTyConT functTyCon ty'
 
             let repApp = mkCoreApps (Var repId) [Type ty'', repDict]
-            let repExpr = mkCoreApps (Var fmapId) [Type ty', Type ty'', Type exprTyConApp, 
+            let repExpr = mkCoreApps (Var fmapId) [Type ty', Type ty'', Type exprTyConApp,
                                                               functDict, repApp, e']
 
             return $ mkLams bs repExpr

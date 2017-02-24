@@ -54,10 +54,6 @@ condBind' ((b, e) : bs) = do
 
 condExpr :: CoreExpr -> CondM CoreExpr
 condExpr e = do
-  df <- liftCoreM getDynFlags
-  monadTyCon <- thNameToTyCon monadTyConTH
-  unitTyCon <- thNameToTyCon ''()
-  let unitTyConTy = mkTyConTy unitTyCon
   case e of
     Var v -> return $ Var v
     Lit l -> return $ Lit l
@@ -84,6 +80,8 @@ condExpr e = do
       let tyCon_m = splitTyConApp_maybe ty
       e' <- condExpr e
       alts' <- condExprAlts alts
+      let defaultReturn = return $ Case e' tb ty alts'
+      monadTyCon <- thNameToTyCon monadTyConTH
       case tyCon_m of
         Just (retTyCon, [retTy']) | retTyCon == monadTyCon -> do
             if length alts' == 2
@@ -91,16 +89,17 @@ condExpr e = do
               [(ac1, _, _), _] -> do
                 case ac1 of
                   DataAlt d -> do
+                    unitTyCon <- thNameToTyCon ''()
+                    let unitTyConTy = mkTyConTy unitTyCon
                     Just falseName <- liftCoreM $ thNameToGhcName falseNameTH
                     if (getName d) == falseName
                     then if retTy' `eqType` unitTyConTy
                          then condTransformUnit ty e' alts'
                          else condTransform ty e' alts'
-                    else return $ Case e' tb ty alts'
-                  _ -> return $ Case e' tb ty alts'
-            else return $ Case e' tb ty alts'
-        _ -> do
-            return $ Case e' tb ty alts'
+                    else defaultReturn
+                  _ -> defaultReturn
+            else defaultReturn
+        _ -> defaultReturn
     Tick t e -> do
       e' <- condExpr e
       return $ Tick t e'
@@ -128,31 +127,28 @@ condExprAlts ((ac, b, a) : as) = do
     forall (b :: Bool) (t :: ArduinoConditional a => Arduino a) (e :: ArduinoConditional a => Arduino a).
     if b then t else e
       =
-    rep_ <$> ifThenElseE (rep_ b) t e
-
-    The return types of the then and else blocks are not changed until a later pass
+    abs_ <$> ifThenElseE (rep_ b) (rep_ t) (rep_ e)
 
 -}
 condTransform :: Type -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CondM CoreExpr
 condTransform ty e alts = do
   case alts of
     [(_, _, e1),(_, _, e2)] -> do
-      -- Get the Arduino Type Con
-      let Just tyCon'  = tyConAppTyCon_maybe ty
-      let ty' = mkTyConTy tyCon'
-      -- Get the Arduino Type Arg
-      let Just [ty''] = tyConAppArgs_maybe ty
+      let [ty'] = tyConAppArgs ty
 
       ifThenElseId <- thNameToId ifThenElseNameTH
-      condTyCon <- thNameToTyCon monadCondTyConTH
-      condDict <- buildDictionaryTyConT condTyCon ty''
+      condDict <- thNameTyToDict monadCondTyConTH ty'
 
-      -- Build the First Arg to ifThenElseE
+      -- Build the args to ifThenElseE
       arg1 <- repExpr e
+      e1' <- changeReturn e1
+      e2' <- changeReturn e2
 
       -- Build the ifThenElse Expr
-      let ifteExpr = mkCoreApps (Var ifThenElseId) [Type ty'', condDict, arg1, e2, e1]
+      let ifteExpr = mkCoreApps (Var ifThenElseId) [Type ty', condDict, arg1, e2', e1']
 
+      -- TBD MDG - Need to fmap abs onto this, and write an example in TwoButtonIf that
+      -- tests it.
       return ifteExpr
 
 {-
@@ -172,3 +168,22 @@ condTransformUnit ty e alts = do
       -- Build the First Arg to ifThenElseUnitE
       arg1 <- repExpr e
       return $ mkCoreApps (Var ifThenElseId) [arg1, e2, e1]
+
+changeReturn :: CoreExpr -> CondM CoreExpr
+changeReturn e = do
+    let (bs, e') = collectBinders e
+    let (f, args) = collectArgs e'
+    bindId <- thNameToId bindNameTH
+    thenId <- thNameToId bindThenNameTH
+    case f of
+      Var fv -> do
+        if fv == bindId || fv == thenId
+        then do
+            la' <- changeReturn $ last args
+            let args' = init args ++ [la']
+            return $ mkLams bs (mkCoreApps f args')
+        else do
+            let (tyCon,[ty']) = splitTyConApp $ exprType e'
+            retExpr <- fmapRepExpr tyCon ty' e'
+            return $ mkLams bs retExpr
+      _ -> return e

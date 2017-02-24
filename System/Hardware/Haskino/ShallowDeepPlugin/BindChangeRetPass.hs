@@ -84,7 +84,7 @@ changeReturn e = do
         then do
             la' <- changeReturn $ last args
             let args' = init args ++ [la']
-            return $ mkCoreApps f args'
+            return $ mkLams bs (mkCoreApps f args')
         else do
             let ty = exprType e'
             let Just tyCon'  = tyConAppTyCon_maybe ty

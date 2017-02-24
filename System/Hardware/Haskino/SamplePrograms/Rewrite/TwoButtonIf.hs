@@ -31,7 +31,7 @@ twoButtonProg1 = do
     setPinMode led2 OUTPUT
     setPinMode button1 INPUT
     setPinMode button2 INPUT
-    loop $ do 
+    loop $ do
         a <- digitalRead button1
         digitalWrite led1 True
         b <- digitalRead button2
@@ -57,7 +57,7 @@ twoButtonProg2 = do
     setPinMode led2 OUTPUT
     setPinMode button1 INPUT
     setPinMode button2 INPUT
-    loop $ do 
+    loop $ do
         a <- digitalRead button1
         b <- digitalRead button2
         if a || b
@@ -66,9 +66,11 @@ twoButtonProg2 = do
           digitalWrite led2 b
           return True
         else do
+          c <- digitalRead led1
           digitalWrite led1 (not a)
           digitalWrite led2 (not b)
           digitalRead led1
+          return c
         delayMillis 1000
 
 twoButtonProg3 :: Arduino ()
@@ -81,7 +83,7 @@ twoButtonProg3 = do
     setPinMode led2 OUTPUT
     setPinMode button1 INPUT
     setPinMode button2 INPUT
-    loop $ do 
+    loop $ do
         a <- digitalRead button1
         b <- digitalRead button2
         if a || b
@@ -132,12 +134,12 @@ main = do
 -- Phase 2 Rules
 -- Command/Procedure shallow->deep rules
 {-
-{-# RULES 
+{-# RULES
     "digitalRead" [2]
     forall (p :: Word8).
     digitalRead p
-      = 
-    abs_ <$> (digitalReadE $ rep_ p) 
+      =
+    abs_ <$> (digitalReadE $ rep_ p)
   #-}
 
 {-# RULES "digitalWrite" [2]
@@ -196,7 +198,7 @@ main = do
 {-
 {-# RULES "abs-3rd-monad" [1]
     forall (f :: Arduino (Expr Bool)) (k :: Bool -> Arduino b).
-    abs_ <$> f >>= k 
+    abs_ <$> f >>= k
       =
     f >>= k . abs_
   #-}

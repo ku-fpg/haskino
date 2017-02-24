@@ -26,11 +26,11 @@ twoButtonProg1E = do
     setPinModeE led2 OUTPUT
     setPinModeE button1 INPUT
     setPinModeE button2 INPUT
-    loopE $ do 
+    loopE $ do
         a <- digitalReadE button1
         digitalWriteE led1 true
         b <- digitalReadE button2
-        ifThenElseE 
+        ifThenElseE
           (a ||* b)
           (   do
             digitalWriteE led1 a
@@ -53,19 +53,21 @@ twoButtonProg2E = do
     setPinModeE led2 OUTPUT
     setPinModeE button1 INPUT
     setPinModeE button2 INPUT
-    loopE $ do 
+    loopE $ do
         a <- digitalReadE button1
         b <- digitalReadE button2
-        ifThenElseE 
+        ifThenElseE
           (a ||* b)
           (   do
             digitalWriteE led1 a
             digitalWriteE led2 b
             return true )
           (   do
+            c <- digitalReadE led1
             digitalWriteE led1 (notB a)
             digitalWriteE led2 (notB b)
-            digitalReadE led1 )
+            digitalReadE led1
+            return c )
         delayMillisE 1000
 
 twoButtonProg3E :: Arduino ()
@@ -78,10 +80,10 @@ twoButtonProg3E = do
     setPinModeE led2 OUTPUT
     setPinModeE button1 INPUT
     setPinModeE button2 INPUT
-    loopE $ do 
+    loopE $ do
         a <- digitalReadE button1
         b <- digitalReadE button2
-        ifThenElseUnitE 
+        ifThenElseUnitE
           (a ||* b)
           (   do
             digitalWriteE led1 a
