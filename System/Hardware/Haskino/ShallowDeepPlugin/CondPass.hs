@@ -147,9 +147,9 @@ condTransform ty e alts = do
       -- Build the ifThenElse Expr
       let ifteExpr = mkCoreApps (Var ifThenElseId) [Type ty', condDict, arg1, e2', e1']
 
-      -- TBD MDG - Need to fmap abs onto this, and write an example in TwoButtonIf that
-      -- tests it.
-      return ifteExpr
+      -- Apply fmap of abs_
+      tyCon <- thNameToTyCon monadTyConTH
+      fmapAbsExpr (mkTyConTy tyCon) ty' ifteExpr
 
 {-
   The following performs this transform:

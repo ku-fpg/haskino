@@ -95,6 +95,33 @@ twoButtonProg3 = do
           digitalWrite led2 (not b)
         delayMillis 1000
 
+twoButtonProg4 :: Arduino ()
+twoButtonProg4 = do
+    let led1 = 12
+    let led2 = 13
+    let button1 = 2
+    let button2 = 3
+    setPinMode led1 OUTPUT
+    setPinMode led2 OUTPUT
+    setPinMode button1 INPUT
+    setPinMode button2 INPUT
+    loop $ do
+        a <- digitalRead button1
+        digitalWrite led1 True
+        b <- digitalRead button2
+        c <- if a || b
+             then do
+               digitalWrite led1 a
+               digitalWrite led2 b
+               return (not a)
+             else do
+               digitalWrite led1 (not a)
+               digitalWrite led2 (not b)
+               a' <- digitalRead led1
+               return (a' && b)
+        digitalWrite led2 c
+        delayMillis 1000
+
 test1 :: Bool
 test1 = (show twoButtonProg1) == (show twoButtonProg1E)
 
@@ -103,6 +130,9 @@ test2 = (show twoButtonProg2) == (show twoButtonProg2E)
 
 test3 :: Bool
 test3 = (show twoButtonProg3) == (show twoButtonProg3E)
+
+test4 :: Bool
+test4 = (show twoButtonProg4) == (show twoButtonProg4E)
 
 main :: IO ()
 main = do
@@ -127,6 +157,13 @@ main = do
       putStrLn $ show twoButtonProg3
       putStrLn "-----------------"
       putStrLn $ show twoButtonProg3E
+  if test4
+  then putStrLn "*** Test4 Passed"
+  else do
+      putStrLn "*** Test4 Failed"
+      putStrLn $ show twoButtonProg4
+      putStrLn "-----------------"
+      putStrLn $ show twoButtonProg4E
 
 -- main :: IO ()
 -- main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
