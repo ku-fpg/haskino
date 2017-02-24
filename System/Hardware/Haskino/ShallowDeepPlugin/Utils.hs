@@ -93,13 +93,17 @@ instance PassCoreM CoreM where
 thNameToId :: PassCoreM m => TH.Name -> m Id
 thNameToId n = do
   -- TBD MDG - handle error cases
-  (Just name) <- liftCoreM $ thNameToGhcName n
-  liftCoreM $ lookupId name
+  name_m <- liftCoreM $ thNameToGhcName n
+  case name_m of
+    (Just name) -> liftCoreM $ lookupId name
+    _           -> error "Unable to Lookup ID"
 
 thNameToTyCon :: PassCoreM m => TH.Name -> m TyCon
 thNameToTyCon n = do
-  (Just name) <- liftCoreM $ thNameToGhcName n
-  liftCoreM $ lookupTyCon name
+  name_m <- liftCoreM $ thNameToGhcName n
+  case name_m of
+    (Just name) -> liftCoreM $ lookupTyCon name
+    _           -> error "Unable to Lookup TyCon"
 
 thNameTyToDict :: PassCoreM m => TH.Name -> Type -> m CoreExpr
 thNameTyToDict n ty = do
@@ -128,7 +132,7 @@ fmapAbsExpr tyConTy ty e = do
     functDict <- thNameTyToDict functTyConTH tyConTy
 
     let absApp = mkCoreApps (Var absId) [Type ty]
-    return $ mkCoreApps (Var fmapId) [Type tyConTy, Type exprTyConApp, Type ty, 
+    return $ mkCoreApps (Var fmapId) [Type tyConTy, Type exprTyConApp, Type ty,
                                       functDict, absApp, e]
 
 fmapRepExpr :: PassCoreM m => Type -> Type -> CoreExpr -> m CoreExpr
