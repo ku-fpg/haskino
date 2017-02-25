@@ -61,7 +61,7 @@ changeRetBind bndr@(NonRec b e) = do
                     let exprTyConApp = mkTyConApp exprTyCon [retTy']
 
                     -- Change the return
-                    e'' <- changeReturn e'
+                    e'' <- fmapRepBindReturn e'
 
                     -- Change binding type
                     let b' = setVarType b $ mkFunTys argTys (mkTyConApp retTyCon [exprTyConApp])
@@ -70,22 +70,3 @@ changeRetBind bndr@(NonRec b e) = do
         _ -> return bndr
 changeBind (Rec bs) = do
     return $ Rec bs
-
-changeReturn :: CoreExpr -> BindM CoreExpr
-changeReturn e = do
-    let (bs, e') = collectBinders e
-    let (f, args) = collectArgs e'
-    bindId <- thNameToId bindNameTH
-    thenId <- thNameToId bindThenNameTH
-    case f of
-      Var fv -> do
-        if fv == bindId || fv == thenId
-        then do
-            la' <- changeReturn $ last args
-            let args' = init args ++ [la']
-            return $ mkLams bs (mkCoreApps f args')
-        else do
-            let (tyCon,[ty']) = splitTyConApp $ exprType e'
-            retExpr <- fmapRepExpr (mkTyConTy tyCon) ty' e'
-            return $ mkLams bs retExpr
-      _ -> return e

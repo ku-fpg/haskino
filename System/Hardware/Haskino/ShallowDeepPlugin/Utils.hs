@@ -12,6 +12,7 @@
 module System.Hardware.Haskino.ShallowDeepPlugin.Utils (buildDictionaryT,
                                            buildDictionaryTyConT,
                                            fmapAbsExpr,
+                                           fmapRepBindReturn,
                                            fmapRepExpr,
                                            repExpr,
                                            thNameToId,
@@ -148,6 +149,25 @@ fmapRepExpr tyConTy ty e = do
     let repApp = mkCoreApps (Var repId) [Type ty, repDict]
     return $ mkCoreApps (Var fmapId) [Type tyConTy, Type ty, Type exprTyConApp,
                                       functDict, repApp, e]
+
+fmapRepBindReturn :: PassCoreM m => CoreExpr -> m CoreExpr
+fmapRepBindReturn e = do
+    let (bs, e') = collectBinders e
+    let (f, args) = collectArgs e'
+    bindId <- thNameToId bindNameTH
+    thenId <- thNameToId bindThenNameTH
+    case f of
+      Var fv -> do
+        if fv == bindId || fv == thenId
+        then do
+            la' <- fmapRepBindReturn $ last args
+            let args' = init args ++ [la']
+            return $ mkLams bs (mkCoreApps f args')
+        else do
+            let (tyCon,[ty']) = splitTyConApp $ exprType e'
+            retExpr <- fmapRepExpr (mkTyConTy tyCon) ty' e'
+            return $ mkLams bs retExpr
+      _ -> return e
 
 -- Adapted from HERMIT.Monad
 runTcM :: PassCoreM m => TcM a -> m a

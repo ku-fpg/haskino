@@ -141,8 +141,8 @@ condTransform ty e alts = do
 
       -- Build the args to ifThenElseE
       arg1 <- repExpr e
-      e1' <- changeReturn e1
-      e2' <- changeReturn e2
+      e1' <- fmapRepBindReturn e1
+      e2' <- fmapRepBindReturn e2
 
       -- Build the ifThenElse Expr
       let ifteExpr = mkCoreApps (Var ifThenElseId) [Type ty', condDict, arg1, e2', e1']
@@ -168,22 +168,3 @@ condTransformUnit ty e alts = do
       -- Build the First Arg to ifThenElseUnitE
       arg1 <- repExpr e
       return $ mkCoreApps (Var ifThenElseId) [arg1, e2, e1]
-
-changeReturn :: CoreExpr -> CondM CoreExpr
-changeReturn e = do
-    let (bs, e') = collectBinders e
-    let (f, args) = collectArgs e'
-    bindId <- thNameToId bindNameTH
-    thenId <- thNameToId bindThenNameTH
-    case f of
-      Var fv -> do
-        if fv == bindId || fv == thenId
-        then do
-            la' <- changeReturn $ last args
-            let args' = init args ++ [la']
-            return $ mkLams bs (mkCoreApps f args')
-        else do
-            let (tyCon,[ty']) = splitTyConApp $ exprType e'
-            retExpr <- fmapRepExpr (mkTyConTy tyCon) ty' e'
-            return $ mkLams bs retExpr
-      _ -> return e
