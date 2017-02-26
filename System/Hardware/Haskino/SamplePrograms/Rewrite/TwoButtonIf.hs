@@ -122,6 +122,23 @@ twoButtonProg4 = do
         digitalWrite led2 c
         delayMillis 1000
 
+twoButtonProg5 :: Arduino ()
+twoButtonProg5 = do
+    let led1 = 12 :: Word8
+    let led2 = 13 :: Word8
+    let button1 = 2
+    setPinMode led1 OUTPUT
+    setPinMode led2 OUTPUT
+    setPinMode button1 INPUT
+    loop $ do
+        a <- digitalRead button1
+        if led1 > led2
+        then do
+          digitalWrite led1 a
+        else do
+          digitalWrite led1 (not a)
+        delayMillis 1000
+
 test1 :: Bool
 test1 = (show twoButtonProg1) == (show twoButtonProg1E)
 
@@ -164,6 +181,27 @@ main = do
       putStrLn $ show twoButtonProg4
       putStrLn "-----------------"
       putStrLn $ show twoButtonProg4E
+
+testIt :: Arduino ()
+testIt = do
+    let test1 = 3 :: Word8
+    let test2 = 4 :: Word8
+    loopE $ do
+        if test1 > test2
+        then digitalWrite test1 True
+        else digitalWrite test1 False
+
+{-
+testItE :: Arduino ()
+testItE = do
+    let test1 = 3 :: Word8
+    let test2 = 4 :: Word8
+    loopE $ do
+        ifThenElseUnitE ((lit test1) >* (lit test2))
+            (digitalWriteE (lit test1) true)
+            (digitalWriteE (lit test1) false)
+        return ()
+-}
 
 -- main :: IO ()
 -- main = withArduino True "/dev/cu.usbmodem1421" twoButtonProg
@@ -232,6 +270,14 @@ main = do
       =
     notB (rep_ b)
   #-}
+
+{-# RULES "rep-push-greater" [1]
+    forall (w1 :: Word8) (w2 :: Word8).
+    rep_ (w1 > w2)
+      =
+    (rep_ w1) >* (rep_ w2)
+  #-}
+
 {-
 {-# RULES "abs-3rd-monad" [1]
     forall (f :: Arduino (Expr Bool)) (k :: Bool -> Arduino b).
@@ -256,3 +302,4 @@ main = do
       =
     m
   #-}
+

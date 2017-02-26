@@ -42,10 +42,35 @@ install _ todo = do
   let repPushToDo = [CoreDoPluginPass "RepPush" repPushPass]
   let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
   return $ condToDo ++ commProcToDo ++ returnsToDo ++
-           repPushToDo ++ dumpToDo ++ absLambdaToDo ++ -- [rules1Pass]  
+           [rules1Pass] ++ absLambdaToDo ++  
            bindRetToDo ++ bindArgToDo ++ bindAppToDo ++
-           repPushToDo ++ absLambdaToDo ++ -- [rules1Pass] 
+           [rules1Pass] ++ absLambdaToDo ++ 
+           [rules0Pass] ++ todo ++ dumpToDo
+{-  return $ dumpToDo ++ condToDo ++ commProcToDo ++ returnsToDo ++
+           repPushToDo ++ [simplPass] ++ absLambdaToDo ++   
+           bindRetToDo ++ bindArgToDo ++ bindAppToDo ++
+           repPushToDo ++ absLambdaToDo ++  
            [rules0Pass] ++ todo -- ++ dumpToDo
+}
+-}
+
+-- This pass is needed to simply lambdas that may be introducted from
+-- let inlining.
+simplPass :: CoreToDo
+simplPass = CoreDoSimplify 1 SimplMode {
+            sm_names = [],
+            sm_phase = Phase 2,
+            sm_rules = False,
+            sm_inline = False,
+            sm_case_case = False,
+            sm_eta_expand = False
+            }
+
+dumpPass :: ModGuts -> CoreM ModGuts
+dumpPass guts = do
+  putMsgS "In dumpPass"
+  putMsg $ ppr (mg_binds guts)
+  return guts
 
 rules0Pass :: CoreToDo
 rules0Pass = CoreDoSimplify 1 SimplMode {
@@ -56,6 +81,14 @@ rules0Pass = CoreDoSimplify 1 SimplMode {
             sm_case_case = False,
             sm_eta_expand = False
             }
+
+{-
+  return $ condToDo ++ commProcToDo ++ returnsToDo ++
+           [rules1Pass] ++ dumpToDo ++ absLambdaToDo ++  
+           bindRetToDo ++ bindArgToDo ++ bindAppToDo ++
+           [rules1Pass] ++ absLambdaToDo ++ 
+           [rules0Pass] ++ todo -- ++ dumpToDo
+-}
 
 rules1Pass :: CoreToDo
 rules1Pass = CoreDoSimplify 2 SimplMode {
@@ -77,8 +110,3 @@ rules2Pass = CoreDoSimplify 1 SimplMode {
             sm_eta_expand = False
             }
 
-dumpPass :: ModGuts -> CoreM ModGuts
-dumpPass guts = do
-  putMsgS "In dumpPass"
-  putMsg $ ppr (mg_binds guts)
-  return guts

@@ -5,18 +5,16 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Worker-Wrapper push through lambda pass
--- forall (f :: Arduino a) (g :: a -> Arduino (Expr b)) (k :: b -> Arduino c).
---     (f >>= (abs_ <$> g)) >>= k
---        =
---     (f >>= g) >>= k . abs_
--- 
---  And 
--- 
--- forall (f :: Arduino a).
---     (\x -> F[x]).abs
---        =
---     (\x' -> let x=abs(x') in F[x])
+-- Rep Push Pass
+-- This pass is only partially completed.  It is intended to do the rep 
+-- pushing as do rules like:
+--    forall (b1 :: Bool) (b2 :: Bool).
+--    rep_ (b1 || b2)
+--      =
+--    (rep_ b1) ||* (rep_ b2)
+-- However, hadling for rules for the comparison operators such as
+-- (>*) proved much harder than expected due to coercions, so
+-- it is at this point incomplete and will not work with such ops.
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -36,9 +34,7 @@ import Data.Boolean
 import System.Hardware.Haskino
 
 data XlatEntry = XlatEntry {  fromId         :: BindM Id
-                            --, fromTyArgCount :: Int
                             , toId           :: BindM Id
-                            , toTyCon        :: BindM TyCon
                            }
 
 -- The following talbe defines the names of the Shallow DSL functions
@@ -46,20 +42,14 @@ data XlatEntry = XlatEntry {  fromId         :: BindM Id
 xlatList :: [XlatEntry]
 xlatList = [  XlatEntry (thNameToId 'not)
                         (thNameToId 'Data.Boolean.notB)
-                        -- (thNameToTyCon exprTyConTH)
-                        (thNameToTyCon ''Data.Boolean.Boolean)
             , XlatEntry (thNameToId '(||))
                         (thNameToId '(||*))
-                        -- (thNameToTyCon exprTyConTH)
-                        (thNameToTyCon ''Data.Boolean.Boolean)
             , XlatEntry (thNameToId '(&&))
                         (thNameToId '(&&*))
-                       -- (thNameToTyCon exprTyConTH)
-                        (thNameToTyCon ''Data.Boolean.Boolean)
+            , XlatEntry (thNameToId '(>))
+                        (thNameToId '(>*))
             , XlatEntry (thNameToId '(+))
                         (thNameToId '(+))
-                        -- (thNameToTyCon exprTyConTH)
-                        (thNameToTyCon ''Prelude.Num)
            ]
 
 data BindEnv
@@ -112,11 +102,7 @@ changeRepExpr e = do
                 Var v' -> do
                   inList <- funcInXlatList v'
                   case inList of
-                    Just xe -> do
-                      liftCoreM $ putMsg $ ppr [ty, d, e']
-                      pr <- pushRep xe args'
-                      liftCoreM $ putMsg $ ppr pr
-                      return pr
+                    Just xe -> pushRep xe args'                     
                     _ -> defaultReturn
                 _ -> defaultReturn
             _ -> defaultReturn
@@ -175,8 +161,6 @@ pushRep :: XlatEntry -> [CoreExpr] -> BindM CoreExpr
 pushRep xe args = do
     fi <- fromId xe
     ti <- toId xe
-    liftCoreM $ putMsgS "-------------------"
-    liftCoreM $ putMsg $ ppr args
     -- Break down the arguments from the old function
     -- into foralls, args, and return types.
     let (fromForAlls, fromFuncTy) = splitForAllTys $ idType fi
@@ -190,58 +174,34 @@ pushRep xe args = do
     let dictTys = take dictCount toArgTys
     let nonDictTys = drop dictCount toArgTys
 
-    -- liftCoreM $ putMsgS "*******************"
-    -- liftCoreM $ putMsg $ ppr $ (fromArgTys, fromRetTy)
-    -- liftCoreM $ putMsg $ ppr $ countNonDictTypes fromArgTys
-    -- liftCoreM $ putMsgS "###################"
-    -- liftCoreM $ putMsg $ ppr $ (toArgTys, toRetTy)
-    -- liftCoreM $ putMsg $ ppr $ isDictTy $ head toArgTys
-    -- liftCoreM $ putMsg $ ppr $ countNonDictTypes toArgTys
-    -- liftCoreM $ putMsgS "*******************"
     let typeArgs = genForAllArgs toForAlls nonDictTys origArgs
     exprTypeArgs <- mapM (thNameTyToTyConApp exprTyConTH) typeArgs
     let exprTypeVars = map Type exprTypeArgs
-    -- liftCoreM $ putMsgS "!!!!!!!!!!!!!!"
     dictArgs <- genDictArgs dictTys nonDictTys origArgs
     repArgs <- mapM repExpr origArgs
     repArgs' <- mapM changeRepExpr repArgs
-    -- liftCoreM $ putMsg $ ppr $ typeArgs ++ dictArgs ++ repArgs'
-    -- return $ head args
     return $ mkCoreApps (Var ti) (exprTypeVars ++ dictArgs ++ repArgs')
 
 genDictArgs :: [Type] -> [Type] -> [CoreExpr] -> BindM [CoreExpr]
 genDictArgs [] _  _ = return []
 genDictArgs (dty:dtys) tys args = do
-    -- let (tyCon, [ty']) = splitTyConApp dty
     let (tyConTy, ty') = splitAppTy dty
-    -- liftCoreM $ putMsg $ ppr dty
-    -- liftCoreM $ putMsg $ ppr tyConTy
-    -- liftCoreM $ putMsg $ ppr ty'
     case findIndex (eqType ty') tys of
       Just idx -> do
         let dictTy = exprType $ args !! idx
-        -- liftCoreM $ putMsg $ ppr (tyConAppTyCon tyConTy)
-        -- liftCoreM $ putMsg $ ppr $ args
-        -- liftCoreM $ putMsg $ ppr $ idx
-        -- liftCoreM $ putMsg $ ppr dictTy thNameToTyCon
         exprTyCon <- thNameToTyCon exprTyConTH
-        liftCoreM $ putMsgS "*******************"
-        liftCoreM $ putMsg $ ppr (tyConAppTyCon tyConTy)
         exprTy <- thNameTyToTyConApp exprTyConTH dictTy
         dict <- buildDictionaryTyConT (tyConAppTyCon tyConTy) exprTy
-        -- dict <- buildDictionaryTyConT (tyConAppTyCon tyConTy) dictTy
-        -- liftCoreM $ putMsgS "Here I am"
-        -- liftCoreM $ putMsg $ ppr dict
         dicts <- genDictArgs dtys tys args
         return $ dict:dicts
-      Nothing  -> error "Can't find tyVar"
+      Nothing  -> error "Can't find tyVar in genDictArgs"
 
 genForAllArgs :: [TyVar] -> [Type] -> [CoreExpr] -> [Type]
 genForAllArgs [] _ _  = []
 genForAllArgs (tv:tvs) tys args = 
     case findIndex (eqType (mkTyVarTy tv)) tys of
       Just idx -> (exprType $ args !! idx) : genForAllArgs tvs tys args
-      Nothing  -> error "Can't find tyVar"
+      Nothing  -> error "Can't find tyVar genForAllArgs"
 
 countNonDictTypes :: [Type] -> Int
 countNonDictTypes [] = 0
