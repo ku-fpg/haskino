@@ -19,6 +19,7 @@ import System.Hardware.Haskino.ShallowDeepPlugin.BindChangeArgPass
 import System.Hardware.Haskino.ShallowDeepPlugin.BindChangeRetPass
 import System.Hardware.Haskino.ShallowDeepPlugin.CommProcPass
 import System.Hardware.Haskino.ShallowDeepPlugin.CondPass
+import System.Hardware.Haskino.ShallowDeepPlugin.RepPushPass
 import System.Hardware.Haskino.ShallowDeepPlugin.ReturnsPass
 
 
@@ -38,11 +39,12 @@ install _ todo = do
   let bindAppToDo = [CoreDoPluginPass "BindAppTransform" bindChangeAppPass]
   let bindArgToDo = [CoreDoPluginPass "BindArgTransform" bindChangeArgPass]
   let commProcToDo = [CoreDoPluginPass "CommProcTransform" commProcPass]
+  let repPushToDo = [CoreDoPluginPass "RepPush" repPushPass]
   let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
   return $ condToDo ++ commProcToDo ++ returnsToDo ++
-           [rules1Pass] ++ absLambdaToDo ++
+           repPushToDo ++ dumpToDo ++ absLambdaToDo ++ -- [rules1Pass]  
            bindRetToDo ++ bindArgToDo ++ bindAppToDo ++
-           [rules1Pass] ++ absLambdaToDo ++
+           repPushToDo ++ absLambdaToDo ++ -- [rules1Pass] 
            [rules0Pass] ++ todo -- ++ dumpToDo
 
 rules0Pass :: CoreToDo
