@@ -164,6 +164,7 @@ pushRep xe args = do
     -- Break down the arguments from the old function
     -- into foralls, args, and return types.
     let (fromForAlls, fromFuncTy) = splitForAllTys $ idType fi
+    let (fromArgTys, fromRetTy) = splitFunTys fromFuncTy
     let (toForAlls, toFuncTy) = splitForAllTys $ idType ti
     let (toArgTys, toRetTy) = splitFunTys toFuncTy
     -- Get the count of non-dictionary args in the new function
@@ -174,17 +175,17 @@ pushRep xe args = do
     let dictTys = take dictCount toArgTys
     let nonDictTys = drop dictCount toArgTys
 
-    let typeArgs = genForAllArgs toForAlls nonDictTys origArgs
+    let typeArgs = genForAllArgs toForAlls nonDictTys fromRetTy origArgs
     exprTypeArgs <- mapM (thNameTyToTyConApp exprTyConTH) typeArgs
     let exprTypeVars = map Type exprTypeArgs
-    dictArgs <- genDictArgs dictTys nonDictTys origArgs
+    dictArgs <- genDictArgs dictTys nonDictTys fromRetTy origArgs
     repArgs <- mapM repExpr origArgs
     repArgs' <- mapM changeRepExpr repArgs
     return $ mkCoreApps (Var ti) (exprTypeVars ++ dictArgs ++ repArgs')
 
-genDictArgs :: [Type] -> [Type] -> [CoreExpr] -> BindM [CoreExpr]
-genDictArgs [] _  _ = return []
-genDictArgs (dty:dtys) tys args = do
+genDictArgs :: [Type] -> [Type] -> Type -> [CoreExpr] -> BindM [CoreExpr]
+genDictArgs [] _ _ _ = return []
+genDictArgs (dty:dtys) tys rty args = do
     let (tyConTy, ty') = splitAppTy dty
     case findIndex (eqType ty') tys of
       Just idx -> do
@@ -192,16 +193,21 @@ genDictArgs (dty:dtys) tys args = do
         exprTyCon <- thNameToTyCon exprTyConTH
         exprTy <- thNameTyToTyConApp exprTyConTH dictTy
         dict <- buildDictionaryTyConT (tyConAppTyCon tyConTy) exprTy
-        dicts <- genDictArgs dtys tys args
+        dicts <- genDictArgs dtys tys rty args
         return $ dict:dicts
-      Nothing  -> error "Can't find tyVar in genDictArgs"
+      Nothing  -> do
+        exprTyCon <- thNameToTyCon exprTyConTH
+        exprTy <- thNameTyToTyConApp exprTyConTH rty
+        dict <- buildDictionaryTyConT (tyConAppTyCon tyConTy) exprTy
+        dicts <- genDictArgs dtys tys rty args
+        return $ dict:dicts
 
-genForAllArgs :: [TyVar] -> [Type] -> [CoreExpr] -> [Type]
-genForAllArgs [] _ _  = []
-genForAllArgs (tv:tvs) tys args = 
+genForAllArgs :: [TyVar] -> [Type] -> Type -> [CoreExpr] -> [Type]
+genForAllArgs [] _ _ _ = []
+genForAllArgs (tv:tvs) tys rty args = 
     case findIndex (eqType (mkTyVarTy tv)) tys of
-      Just idx -> (exprType $ args !! idx) : genForAllArgs tvs tys args
-      Nothing  -> error "Can't find tyVar genForAllArgs"
+      Just idx -> (exprType $ args !! idx) : genForAllArgs tvs tys rty args
+      Nothing  -> rty : genForAllArgs tvs tys rty args
 
 countNonDictTypes :: [Type] -> Int
 countNonDictTypes [] = 0
