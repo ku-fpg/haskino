@@ -5,7 +5,7 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Rep Abs Fusion Pass
+-- Rep Abs Fusion Pass - Performs the equivelent of the following rules:
 --    forall x.
 --    rep_(abs_(x))
 --      =
@@ -47,13 +47,13 @@ instance PassCoreM BindM where
   getModGuts = BindM $ ReaderT (return . pluginModGuts)
 
 repAbsFusePass :: ModGuts -> CoreM ModGuts
-repAbsFusePass guts = 
+repAbsFusePass guts =
     bindsOnlyPass (\x -> (runReaderT (runBindM $ (mapM changeFuse) x) (BindEnv guts))) guts
 
 changeFuse :: CoreBind -> BindM CoreBind
 changeFuse bndr@(NonRec b e) = do
   let (bs, e') = collectBinders e
-  e'' <- changeRepExpr e'
+  e'' <- changeFuseExpr e'
   let e''' = mkLams bs e''
   return (NonRec b e''')
 changeFuse (Rec bs) = do
@@ -62,9 +62,9 @@ changeFuse (Rec bs) = do
 changeFuseExpr :: CoreExpr -> BindM CoreExpr
 changeFuseExpr e = do
   df <- liftCoreM getDynFlags
-  repId <- thNameToId repNameTH 
-  absId <- thNameToId absNameTH 
-  fmapId <- thNameToId fmapNameTH 
+  repId <- thNameToId repNameTH
+  absId <- thNameToId absNameTH
+  fmapId <- thNameToId fmapNameTH
   case e of
     Var v -> return $ Var v
     Lit l -> return $ Lit l
@@ -75,30 +75,53 @@ changeFuseExpr e = do
         let defaultReturn = do
             e1' <- changeFuseExpr e1
             e2' <- changeFuseExpr e2
-            return $ App e1' e2'       
+            return $ App e1' e2'
         case f of
           Var fv -> do
             if fv == repId
+            -- Look for case of rep_(abs_(x))
             then do
               case args of
                  [Type _, _, e''] -> do
-                    let (f', args') = collectBinders e''
+                    let (f', args') = collectArgs e''
                     case f' of
                       Var fv' -> do
-                        if fv' = absId
+                        if fv' == absId
                         then do
-                          case args of
-                            [Type _, e'''] -> e'''
-                          _ -> defaultReturn
+                          case args' of
+                            [Type _, e'''] -> return e'''
+                            _ -> defaultReturn
                         else defaultReturn
-                    _ -> defaultReturn
-              _ -> defaultReturn
-            else if fv == fmapId 
+                      _ -> defaultReturn
+                 _ -> defaultReturn
+            else if fv == fmapId
+              -- Look for case of rep_ <$> (abs_ <$> m)
               then do
                 case args of
-                    [Type ty1, dict, Type ty2, Type ty3, e1, e2] -> do
-              else defaultReturn       
-        _ -> defaultReturn
+                    [Type _, Type _, Type _, _, e1, e2] -> do
+                      let (f1, args1) = collectArgs e1
+                      let (f2, args2) = collectArgs e2
+                      case f1 of
+                        Var f1v -> do
+                          case f2 of
+                            Var f2v -> do
+                              if f1v == repId && f2v == fmapId
+                              then do
+                                case args2 of
+                                  [Type _, Type _, Type _, _, e3, e4] -> do
+                                    let (f3, _) = collectArgs e3
+                                    case f3 of
+                                      Var f3v -> do
+                                        if f3v == absId
+                                        then return e4
+                                        else defaultReturn
+                                      _ -> defaultReturn
+                              else defaultReturn
+                            _ -> defaultReturn
+                        _ -> defaultReturn
+                    _ -> defaultReturn
+              else defaultReturn
+          _ -> defaultReturn
     Lam tb e -> do
       e' <- changeFuseExpr e
       return $ Lam tb e'

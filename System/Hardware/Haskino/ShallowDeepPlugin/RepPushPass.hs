@@ -6,7 +6,7 @@
 -- Stability   :  experimental
 --
 -- Rep Push Pass
--- This pass is only partially completed.  It is intended to do the rep 
+-- This pass is only partially completed.  It is intended to do the rep
 -- pushing as do rules like:
 --    forall (b1 :: Bool) (b2 :: Bool).
 --    rep_ (b1 || b2)
@@ -66,7 +66,8 @@ instance PassCoreM BindM where
   getModGuts = BindM $ ReaderT (return . pluginModGuts)
 
 repPushPass :: ModGuts -> CoreM ModGuts
-repPushPass guts = 
+repPushPass guts = do
+    putMsg $ ppr $ mg_rules guts
     bindsOnlyPass (\x -> (runReaderT (runBindM $ (mapM changeRep) x) (BindEnv guts))) guts
 
 changeRep :: CoreBind -> BindM CoreBind
@@ -81,7 +82,7 @@ changeRep (Rec bs) = do
 changeRepExpr :: CoreExpr -> BindM CoreExpr
 changeRepExpr e = do
   df <- liftCoreM getDynFlags
-  repId <- thNameToId repNameTH 
+  repId <- thNameToId repNameTH
   case e of
     Var v -> return $ Var v
     Lit l -> return $ Lit l
@@ -92,7 +93,7 @@ changeRepExpr e = do
       let defaultReturn = do
           e1' <- changeRepExpr e1
           e2' <- changeRepExpr e2
-          return $ App e1' e2'       
+          return $ App e1' e2'
       case b of
         Var v | v == repId -> do
           case args of
@@ -102,7 +103,7 @@ changeRepExpr e = do
                 Var v' -> do
                   inList <- funcInXlatList v'
                   case inList of
-                    Just xe -> pushRep xe args'                     
+                    Just xe -> pushRep xe args'
                     _ -> defaultReturn
                 _ -> defaultReturn
             _ -> defaultReturn
@@ -161,6 +162,7 @@ pushRep :: XlatEntry -> [CoreExpr] -> BindM CoreExpr
 pushRep xe args = do
     fi <- fromId xe
     ti <- toId xe
+    liftCoreM $ putMsg $ ppr $ idType ti
     -- Break down the arguments from the old function
     -- into foralls, args, and return types.
     let (fromForAlls, fromFuncTy) = splitForAllTys $ idType fi
@@ -204,7 +206,7 @@ genDictArgs (dty:dtys) tys rty args = do
 
 genForAllArgs :: [TyVar] -> [Type] -> Type -> [CoreExpr] -> [Type]
 genForAllArgs [] _ _ _ = []
-genForAllArgs (tv:tvs) tys rty args = 
+genForAllArgs (tv:tvs) tys rty args =
     case findIndex (eqType (mkTyVarTy tv)) tys of
       Just idx -> (exprType $ args !! idx) : genForAllArgs tvs tys rty args
       Nothing  -> rty : genForAllArgs tvs tys rty args
