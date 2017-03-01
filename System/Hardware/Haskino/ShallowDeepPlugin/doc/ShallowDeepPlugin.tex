@@ -46,15 +46,35 @@
 \begin{document}
 \maketitle
 
-\section{Introduction}
-%\subsection{}
+\section{Overview}
+
+The Shallow Deep Plugin is used to transform embedded DSL's using a
+Remote Monad form from a shallow embedding to a deep embedding.
+It currently operates on a per module basis, transforming all DSL
+functions present in the module.
+
+The plugin is located in System/Hardware/Haskino/ShallowDeepPlugin[.hs].
+It is activated in compiling a Haskell module by using the flags \break
+-fplugin=System.Hardware.Haskino.ShallowDeepPlugin and 
+-fenable-rewrite-rules.
+
+There are several example test files to use for testing the plugin in \break
+System/Hardware/Haskino/SamplePrograms/Rewrite.  There are both
+shallow and deep versions of the same program in separate files (i.e. 
+TwoButton.hs and TwoButtonE.hs).  The main function in each of the
+shallow modules may be run to test the plugin.  It reifies, using the
+Haskino show function, both the deep version and the transformed
+shallow version, and then compares the resulting strings.
 
 \section{Pass Structure}
+
+The following diagram shows the order of the passes used in the transformation
+plugin.
 
 \begin{tikzpicture}
   [node distance=.8cm,
   start chain=going below,]
-     \node[passblock, join] (cond) {Conditional Pass};
+     \node[passblock, join] (cond) {Conditionals Pass};
      \node[passblock, join] (commproc) {Command/Procedure Translation Pass};
      \node[passblock, join] (return)      {Return\break Translation Pass};
      \node[passblock, join] (repPush1) {Rep Push and\break Abs Lambda Passes};
@@ -62,16 +82,6 @@
      \node[passblock, join] (repPush2) {Rep Push and\break Abs Lambda Passes};
      \node[passblock, join] (repAbs) {Rep Abs\break Fussion Passe};
 \end{tikzpicture}
-
-\begin{verbatim}
-condToDo 
-commProcToDo
-returnsToDo
-[rules1Pass] ++ absLambdaToDo  
-bindRetToDo ++ bindArgToDo ++ bindAppToDo
-[rules1Pass] ++ absLambdaToDo
-[rules0Pass] 
-\end{verbatim}
 
 \subsection{Conditionals Pass}
 
@@ -178,9 +188,9 @@ The Rep Push pass is currently executed in the plugin by running the rules1Pass.
 An attempt to write this pass without rules has been made also, and is
 located at ShallowDeepPlugin/RepPushPass.hs.  Like the CommProcPass,
 it contains a table of the Expr operations for transformation.  (In the example 
-rule about this pair consists of the Template Haskell names for the (||) and (||*)
+rule about this pair consists of the Template Haskell names for the \verb+(||)+ and \verb+(||*)+
 operators.  However, this prototype pass does not work for all of the DSL 
-operators, specifically those using Type Families, such as (>*) and (==*).
+operators, specifically those using Type Families, such as \verb+(>*)+ and \verb+(==*)+.
 A solution will require generating Cast's and Coercion's, which is yet to
 be investigated.
 
@@ -222,5 +232,20 @@ fmap application.
 
 A non-rules based version of this pass has also been created, and is
 located in ShallowDeepPlugin/RepAbsFusePass.hs
+
+\section{Open Issues}
+
+\begin{itemize}
+  \item Rules must be present in the module being compiled - This appears to be 
+  GHC bug.  I have searched for rules defined in imported modules in all of the
+  three locations used by Hermit, and the rules are not present in any of them. 
+  Need to do a simplified version and report a bug.
+  \item Complete RepPushPass.hs to handle Expr operations defined with
+  Type Families.  This requires understanding of how to generate Cast's and
+  Coersion's in Core.
+  \item Determine how to kick off transformation.  Should current module 
+  strategy be used, or should all functions called from send(), compile() or
+  show() be transformed?.
+\end{itemize}
 
 \end{document}  
