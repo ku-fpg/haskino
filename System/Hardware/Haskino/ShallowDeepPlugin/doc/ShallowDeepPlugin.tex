@@ -108,7 +108,9 @@ does the following transformation:
     f >>= (rep_ <$> k )
 \end{verbatim}
 
-This ensures that the rep is TBD.
+This ensures that the rep is is moved to the final monadic expression in the bind chain,
+which will fuse with the abs that will be placed there by subsequent transformation
+phases.
 The Conditionals Pass is implemented in ShallowDeepPlugin/CondPass.hs.
 
 \subsection{Command/Procedure Translation Pass}
@@ -210,6 +212,8 @@ be investigated.
 
 \subsection{Local Functions (Binds) Passes}
 
+There are currently three passes used to transform local functions...
+
 \subsection{Rep Abs Fusion Pass}
 
 This final pass fuses the rep and abs pairs that have been moved next
@@ -246,6 +250,8 @@ located in ShallowDeepPlugin/RepAbsFusePass.hs
   \item Determine how to kick off transformation.  Should current module 
   strategy be used, or should all functions called from send(), compile() or
   show() be transformed?.
+  \item Should Haskino DSL be changed to unify the ifThenElseE and IfThenElseUnitE
+  procedures by adding an Expr () to the expression language?
 \end{itemize}
 
 \end{document}  
