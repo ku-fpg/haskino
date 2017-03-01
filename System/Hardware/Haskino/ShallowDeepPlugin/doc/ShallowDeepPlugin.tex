@@ -69,7 +69,9 @@ shallow version, and then compares the resulting strings.
 \section{Pass Structure}
 
 The following diagram shows the order of the passes used in the transformation
-plugin.
+plugin.  Each of the passes is described in more detail in the remaining subsections of this
+section.  In addition, a dumpPass is defined for debugging purposes, allowing the
+core to be dumped before and after a pass.
 
 \begin{tikzpicture}
   [node distance=.8cm,
@@ -98,8 +100,8 @@ forall (b :: Bool) (t :: Arduino a) (e :: Arduino a)
   abs_ <$> ifThenElseE (rep_ b) (rep_ <$> t) (rep_ <$> e)
 \end{verbatim}
 
-For the fmap application of rep to both the then and else expressions, it also
-does the following transformation:
+For the fmap application of \verb+rep+ to bodies of both the \verb+then+ and
+\verb+else+ expressions, it also does the following transformation:
 
 \begin{verbatim}
  forall (f :: Arduino a) (k :: a -> Arduino b).
@@ -174,7 +176,7 @@ wrapper functions which were inserted by the previous passes, transforming
 shallow expression functions to deep, and moving the functions for
 possible fusion in the last pass.
 
-The Rep Push pass is currently performed by rules, and it phase it occurs in
+The Rep Push pass is currently performed by rules, and the phase it occurs in
 is controlled by marking the rules with a [1].  An example of a rep push rule
 is shown below.  One of these rules needs to be defined for each of the DSL's
 Expr operations:
@@ -196,12 +198,19 @@ operators, specifically those using Type Families, such as \verb+(>*)+ and \verb
 A solution will require generating Cast's and Coercion's, which is yet to
 be investigated.
 
+The Abs Lambda pass performs the equivelent of two rules.  The first of these
+uses a varient of the 3rd monad law to move the abs function through a bind
+to be composed with the continuation.
+
 \begin{verbatim}
  forall (f :: Arduino a) (g :: a -> Arduino (Expr b)) (k :: b -> Arduino c).
      (f >>= (abs_ <$> g)) >>= k
             =
      (f >>= g) >>= k . abs_
 \end{verbatim}
+
+The second rule then takes the composed abs and pushes it into a lambda, as
+described by the following rule:
 
 \begin{verbatim}
  forall (f :: Arduino a).
@@ -210,9 +219,38 @@ be investigated.
      (\x' -> let x=abs(x') in F[x])
 \end{verbatim}
 
+The plugin pass does this by changing the type of the lambda argument from
+\verb+a+ to \verb+Expr a+, and then replacing all occurances of \verb+x+
+in the body of the lambda with \verb+abs(x')+.
+
 \subsection{Local Functions (Binds) Passes}
 
-There are currently three passes used to transform local functions...
+There are currently three passes used to transform local functions.  These
+passes operate on functions local defined in the module with a return type
+of Arudino a.
+
+The first of these, BindRetPass.hs changes the return type of the these
+functions in the function signature, and then fmaps a \verb+rep+ to the body to 
+change it's type, as was done with the then and else branches of 
+conditionals.
+
+The second phase, BindArgPass.hs changes the type of each of the
+arguments of the functions (i.e.  \verb+x+) from \verb+a+ to  \verb+Expr a+
+in the function signature, and then replaces any occurences of  \verb+rep x+ 
+with \verb+x+.
+
+The final phase, BindAppPass.hs, changes the types at the application
+sites of each of the local functions.  They are transform similarly to
+how command, procedures and returns are transformed, with the
+following rule representing how a function with two arguments are
+returned.
+
+\begin{verbatim}
+forall (x1 :: a) (x2 :: b) (f :: a -> b -> Arduino c)
+  f x1 x2  
+    =  
+  abs_ <$> (f (rep_ x1) (rep_ x2)
+\end{verbatim}
 
 \subsection{Rep Abs Fusion Pass}
 
@@ -250,8 +288,8 @@ located in ShallowDeepPlugin/RepAbsFusePass.hs
   \item Determine how to kick off transformation.  Should current module 
   strategy be used, or should all functions called from send(), compile() or
   show() be transformed?.
-  \item Should Haskino DSL be changed to unify the ifThenElseE and IfThenElseUnitE
-  procedures by adding an Expr () to the expression language?
+  \item Should Haskino DSL be changed to unify the dicotomy of Arduino (Expr a)
+  and Arduino () values by by adding an Expr () to the expression language?
 \end{itemize}
 
 \end{document}  
