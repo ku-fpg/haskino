@@ -292,4 +292,47 @@ located in ShallowDeepPlugin/RepAbsFusePass.hs
   and Arduino () values by by adding an Expr () to the expression language?
 \end{itemize}
 
+\section{Reason for Ordering of Passes}
+
+The reasoning as to why there are two instances of the RepPush/AbsLambda passes, 
+and the the local function pass is done after the others can be shown with a
+small example.  
+
+Consider the following local function example:
+
+\begin{verbatim}
+myRead1 :: Word8 -> Arduino Bool
+myRead1 p = do
+    delayMillis 100
+    a <- digitalRead (p+1)
+    return (not a)
+\end{verbatim}
+
+After the command/procedure translation, return translation, and the first
+repPus/AbsLambda pass the function will look like:
+
+\begin{verbatim}
+myRead1 :: Word8 -> Arduino Bool
+myRead1 p = do
+    delayMillisE rep_100
+    a <- digitalReadE ((rep_ p) + (rep_ 1))
+    return (notB a)
+\end{verbatim}
+
+It can be seen that these transformations have created the function argument
+\verb+(rep_ p)+ to the \verb+digitalReadE+ function.  This prepares the function for the
+BindArgPass.  When we change the type of the \verb+p+ parameter, we get:
+
+\begin{verbatim}
+myRead1 :: Expr Word8 -> Arduino Bool
+myRead1 p = do
+    delayMillisE rep_100
+    a <- digitalReadE (p + (rep_ 1))
+    return (notB a)
+\end{verbatim}
+
+Performing the BindArgPass first would not work as designed, as there would
+not be an instance of \verb+(rep_ p)+.  The pass could be written differently
+however, and if done first, changing occurrences of \verb+p+ to \verb+(abs_ p)+.
+
 \end{document}  
