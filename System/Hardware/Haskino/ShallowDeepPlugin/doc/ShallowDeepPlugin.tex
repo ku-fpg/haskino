@@ -76,14 +76,23 @@ core to be dumped before and after a pass.
 \begin{tikzpicture}
   [node distance=.8cm,
   start chain=going below,]
+     \node[passblock, join] (simpl) {Simplifier Pass};
      \node[passblock, join] (cond) {Conditionals Pass};
      \node[passblock, join] (commproc) {Command/Procedure Translation Pass};
      \node[passblock, join] (return)      {Return\break Translation Pass};
-     \node[passblock, join] (repPush1) {Rep Push and\break Abs Lambda Passes};
      \node[passblock, join] (locals) {Local\break Functions Passes};
-     \node[passblock, join] (repPush2) {Rep Push and\break Abs Lambda Passes};
-     \node[passblock, join] (repAbs) {Rep Abs\break Fussion Passe};
+     \node[passblock, join] (repPush1) {Rep Push and\break Abs Lambda Passes};
+     \node[passblock, join] (repAbs) {Rep Abs\break Fusion Pass};
 \end{tikzpicture}
+
+\subsection{Simplifier Pass}
+
+The Simplifier pass is ran before any others.  It runs one pass of the GHC simplifier,
+with no rules, no inlining, and no eta-expansion.  The main reason for running
+this at this point in the transformation, is that the compiler may inline functions
+defined in let's, but it leaves them in a \verb+(\x -> F[x])(x)+ form.  The other Shallow/Deep
+passes are not designed to handle that form, and the simplifier will do the application
+of the lambda, eliminating it.
 
 \subsection{Conditionals Pass}
 
@@ -169,6 +178,35 @@ This transforms returns in the same way that DSL commands and procedures
 were transformed by the Command/Procedure Transformation Pass.
 The Returns Transformation Pass is implemented in ShallowDeepPlugin/ReturnsPass.hs.
 
+\subsection{Local Functions (Binds) Passes}
+
+There are currently three passes used to transform local functions.  These
+passes operate on functions local defined in the module with a return type
+of Arudino a.
+
+The first of these, BindRetPass.hs changes the return type of the these
+functions in the function signature, and then fmaps a \verb+rep+ to the body to 
+change it's type, as was done with the then and else branches of 
+conditionals.
+
+The second phase, BindArgPass.hs changes the type of each of the
+arguments of the functions (i.e.  \verb+x+) from \verb+a+ to  \verb+Expr a+
+in the function signature, and then replaces any occurrences of  \verb+x+ 
+with \verb+(abs_ x)+.
+
+The final phase, BindAppPass.hs, changes the types at the application
+sites of each of the local functions.  They are transform similarly to
+how command, procedures and returns are transformed, with the
+following rule representing how a function with two arguments are
+returned.
+
+\begin{verbatim}
+forall (x1 :: a) (x2 :: b) (f :: a -> b -> Arduino c)
+  f x1 x2  
+    =  
+  abs_ <$> (f (rep_ x1) (rep_ x2)
+\end{verbatim}
+
 \subsection{Rep Push and Abs Lambda Passes}
 
 The Rep Push and Abs Lambda passes are used to manipulate the worker
@@ -223,35 +261,6 @@ The plugin pass does this by changing the type of the lambda argument from
 \verb+a+ to \verb+Expr a+, and then replacing all occurances of \verb+x+
 in the body of the lambda with \verb+abs(x')+.
 
-\subsection{Local Functions (Binds) Passes}
-
-There are currently three passes used to transform local functions.  These
-passes operate on functions local defined in the module with a return type
-of Arudino a.
-
-The first of these, BindRetPass.hs changes the return type of the these
-functions in the function signature, and then fmaps a \verb+rep+ to the body to 
-change it's type, as was done with the then and else branches of 
-conditionals.
-
-The second phase, BindArgPass.hs changes the type of each of the
-arguments of the functions (i.e.  \verb+x+) from \verb+a+ to  \verb+Expr a+
-in the function signature, and then replaces any occurences of  \verb+rep x+ 
-with \verb+x+.
-
-The final phase, BindAppPass.hs, changes the types at the application
-sites of each of the local functions.  They are transform similarly to
-how command, procedures and returns are transformed, with the
-following rule representing how a function with two arguments are
-returned.
-
-\begin{verbatim}
-forall (x1 :: a) (x2 :: b) (f :: a -> b -> Arduino c)
-  f x1 x2  
-    =  
-  abs_ <$> (f (rep_ x1) (rep_ x2)
-\end{verbatim}
-
 \subsection{Rep Abs Fusion Pass}
 
 This final pass fuses the rep and abs pairs that have been moved next
@@ -291,48 +300,5 @@ located in ShallowDeepPlugin/RepAbsFusePass.hs
   \item Should Haskino DSL be changed to unify the dicotomy of Arduino (Expr a)
   and Arduino () values by by adding an Expr () to the expression language?
 \end{itemize}
-
-\section{Reason for Ordering of Passes}
-
-The reasoning as to why there are two instances of the RepPush/AbsLambda passes, 
-and the the local function pass is done after the others can be shown with a
-small example.  
-
-Consider the following local function example:
-
-\begin{verbatim}
-myRead1 :: Word8 -> Arduino Bool
-myRead1 p = do
-    delayMillis 100
-    a <- digitalRead (p+1)
-    return (not a)
-\end{verbatim}
-
-After the command/procedure translation, return translation, and the first
-repPus/AbsLambda pass the function will look like:
-
-\begin{verbatim}
-myRead1 :: Word8 -> Arduino Bool
-myRead1 p = do
-    delayMillisE rep_100
-    a <- digitalReadE ((rep_ p) + (rep_ 1))
-    return (notB a)
-\end{verbatim}
-
-It can be seen that these transformations have created the function argument
-\verb+(rep_ p)+ to the \verb+digitalReadE+ function.  This prepares the function for the
-BindArgPass.  When we change the type of the \verb+p+ parameter, we get:
-
-\begin{verbatim}
-myRead1 :: Expr Word8 -> Arduino Bool
-myRead1 p = do
-    delayMillisE rep_100
-    a <- digitalReadE (p + (rep_ 1))
-    return (notB a)
-\end{verbatim}
-
-Performing the BindArgPass first would not work as designed, as there would
-not be an instance of \verb+(rep_ p)+.  The pass could be written differently
-however, and if done first, changing occurrences of \verb+p+ to \verb+(abs_ p)+.
 
 \end{document}  

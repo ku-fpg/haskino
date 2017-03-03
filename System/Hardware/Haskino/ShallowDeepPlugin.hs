@@ -19,10 +19,10 @@ import System.Hardware.Haskino.ShallowDeepPlugin.BindChangeArgPass
 import System.Hardware.Haskino.ShallowDeepPlugin.BindChangeRetPass
 import System.Hardware.Haskino.ShallowDeepPlugin.CommProcPass
 import System.Hardware.Haskino.ShallowDeepPlugin.CondPass
+import System.Hardware.Haskino.ShallowDeepPlugin.RepAbsFusePass
 import System.Hardware.Haskino.ShallowDeepPlugin.RepPushPass
 import System.Hardware.Haskino.ShallowDeepPlugin.ReturnsPass
 import System.Hardware.Haskino.ShallowDeepPlugin.CoreShow
-
 
 plugin :: Plugin
 plugin = defaultPlugin {
@@ -41,6 +41,7 @@ install _ todo = do
   let bindArgToDo = [CoreDoPluginPass "BindArgTransform" bindChangeArgPass]
   let commProcToDo = [CoreDoPluginPass "CommProcTransform" commProcPass]
   let repPushToDo = [CoreDoPluginPass "RepPush" repPushPass]
+  let repAbsFuseToDo = [CoreDoPluginPass "RepPush" repAbsFusePass]
   let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
   let showToDo = [CoreDoPluginPass "ShowPass" showPass]
   return $ [simplPass] ++ condToDo ++ commProcToDo ++ returnsToDo ++ 
@@ -83,7 +84,6 @@ rules1Pass = CoreDoSimplify 2 SimplMode {
 
 dumpPass :: ModGuts -> CoreM ModGuts
 dumpPass guts = do
-  putMsgS "In dumpPass"
   putMsg $ ppr (mg_binds guts)
   return guts
 
