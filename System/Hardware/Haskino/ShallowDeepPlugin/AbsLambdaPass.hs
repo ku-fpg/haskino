@@ -74,8 +74,9 @@ changeLambdaExpr e = do
         -- in monadic function with abs_ applied to it.  In other words
         -- m >>= m1 >>= ... >>= abs_ <$> mn 
         (e_right', absFlag) <- checkForAbs e_right
-        -- Recursivly check for abs
+        -- Recursivly process the subexpressions
         e_lam' <- changeLambdaExpr e_lam
+        e_right'' <- changeLambdaExpr e_right'
         if absFlag
         then do
             -- If abs is found, then we apply the following two rules.
@@ -103,11 +104,9 @@ changeLambdaExpr e = do
             newb <- buildId ((varString b) ++ "_abs") exprArg1Ty
             absId <- thNameToId absNameTH
             e_lam'' <- subVarExpr b (App (App (Var absId) (Type arg1Ty)) (Var newb)) e_lam'
-            return $ App (App (App (App (App (App (Var bind) (Type monadTy)) dict) (Type exprArg1Ty)) (Type arg2Ty)) e_right') (Lam newb e_lam'')
+            return $ App (App (App (App (App (App (Var bind) (Type monadTy)) dict) (Type exprArg1Ty)) (Type arg2Ty)) e_right'') (Lam newb e_lam'')
         else do
-            -- If no abs is found, just call recursively.
-            e_right' <- changeLambdaExpr e_right
-            return $ App (App (App (App (App (App (Var bind) (Type monadTy)) dict) (Type arg1Ty)) (Type arg2Ty)) e_right') (Lam b e_lam')
+            return $ App (App (App (App (App (App (Var bind) (Type monadTy)) dict) (Type arg1Ty)) (Type arg2Ty)) e_right'') (Lam b e_lam')
     App e1 e2 -> do
       e1' <- changeLambdaExpr e1
       e2' <- changeLambdaExpr e2

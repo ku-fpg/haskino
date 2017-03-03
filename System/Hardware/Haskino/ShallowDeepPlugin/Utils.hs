@@ -9,7 +9,8 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell #-}
-module System.Hardware.Haskino.ShallowDeepPlugin.Utils (buildDictionaryT,
+module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
+                                           buildDictionaryT,
                                            buildDictionaryTyConT,
                                            fmapAbsExpr,
                                            fmapRepBindReturn,
@@ -122,6 +123,12 @@ repExpr e = do
     repId <- thNameToId repNameTH
     repDict <- thNameTyToDict exprClassTyConTH ty
     return $ mkCoreApps (Var repId) [Type ty, repDict, e]
+
+absExpr :: PassCoreM m => CoreExpr -> m CoreExpr
+absExpr e = do
+    let ty = exprType e
+    absId <- thNameToId absNameTH
+    return $ mkCoreApps (Var absId) [Type ty, e]
 
 fmapAbsExpr :: PassCoreM m => Type -> Type -> CoreExpr -> m CoreExpr
 fmapAbsExpr tyConTy ty e = do

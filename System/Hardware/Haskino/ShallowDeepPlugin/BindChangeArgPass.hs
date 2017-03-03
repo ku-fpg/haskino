@@ -83,12 +83,12 @@ changeArgAppsExpr e = do
   s <- get
   repId <- thNameToId repNameTH
   case e of
+    -- Replace any occurances of the parameters "p" with "abs_ p"
+    Var v | v `elem` (args s) -> absExpr e
     Var v -> return $ Var v
     Lit l -> return $ Lit l
     Type ty -> return $ Type ty
     Coercion co -> return $ Coercion co
-    App (App (App (Var f) (Type _)) (_)) (Var v)  | f == repId && v `elem` (args s) -> do
-        return $ (Var v)
     App e1 e2 -> do
       e1' <- changeArgAppsExpr e1
       e2' <- changeArgAppsExpr e2
