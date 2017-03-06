@@ -17,6 +17,7 @@ import GhcPlugins
 import Data.List
 import Data.Functor
 import Control.Monad.Reader
+import IOEnv
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 
@@ -35,6 +36,13 @@ instance PassCoreM CondM where
 
 condPass :: ModGuts -> CoreM ModGuts
 condPass guts = do
+    --rb  <- getRuleBase
+    --hscEnv  <- getHscEnv
+    --rb'     <- liftM eps_rule_base $ liftIO $ runIOEnv () $ readMutVar (hsc_EPS hscEnv)
+    --putMsg $ ppr $ concat (nameEnvElts rb)
+    --putMsg $ ppr $ concat (nameEnvElts rb')
+    --putMsg $ ppr $ mg_rules guts
+    putMsgS $ show $ mg_deps guts
     bindsOnlyPass (\x -> (runReaderT (runCondM $ (mapM condBind) x) (CondEnv guts))) guts
 
 condBind :: CoreBind -> CondM CoreBind

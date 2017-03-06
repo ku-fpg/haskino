@@ -40,6 +40,8 @@ xlatList = [  XlatEntry (thNameToId 'System.Hardware.Haskino.loop)
                         (thNameToId 'System.Hardware.Haskino.digitalWriteE)
             , XlatEntry (thNameToId 'System.Hardware.Haskino.delayMillis)
                         (thNameToId 'System.Hardware.Haskino.delayMillisE)
+            , XlatEntry (thNameToId 'System.Hardware.Haskino.ifThenElse)
+                        (thNameToId 'System.Hardware.Haskino.ifThenElseE)
            ]
 
 data BindEnv
@@ -94,7 +96,8 @@ commProcExpr e = do
     Type ty -> return $ Type ty
     Coercion co -> return $ Coercion co
     App e1 e2 -> do
-      let (f, args) = collectArgs e
+      let (bs, e') = collectBinders e
+      let (f, args) = collectArgs e'
       let defaultReturn = do
               e1' <- commProcExpr e1
               e2' <- commProcExpr e2
@@ -102,9 +105,37 @@ commProcExpr e = do
       case f of
           Var v -> do
               inList <- funcInXlatList v
-              case inList of
-                  Just xe -> commProcXlat xe e
-                  Nothing -> defaultReturn
+              -- Conditionals have already been handled, do
+              -- not translate them.
+              ifThenElseName <- thNameToId ifThenElseNameTH
+              ifThenElseUnitName <- thNameToId ifThenElseUnitNameTH
+              if v == ifThenElseName || v == ifThenElseUnitName
+              then defaultReturn
+              else
+                case inList of
+                    -- If the function is in the list of DSL functions to
+                    -- be translated, then do so
+                    Just xe -> commProcXlat xe e
+                    -- If not check if it is of type DSLMonad a
+                    Nothing -> do
+                      let (argTys, retTy) = splitFunTys $ exprType f
+                      let tyCon_m = splitTyConApp_maybe retTy
+                      monadTyConId <- thNameToTyCon monadTyConTH
+                      unitTyCon <- thNameToTyCon ''()
+                      let unitTyConTy = mkTyConTy unitTyCon
+                      case tyCon_m of
+                          Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
+                              args' <- mapM repExpr args
+                              -- If the function type is not DSLMonad () then
+                              -- change the return type to DSLMonad (Expr a)
+                              if not(retTy' `eqType` unitTyConTy)
+                              then do
+                                  -- Rebuild the original nested app
+                                  let e' = mkCoreApps f args'
+                                  absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' e'
+                                  return $ mkLams bs absExpr 
+                              else return $ mkLams bs $ mkCoreApps f args'
+                          _ -> defaultReturn
           _ -> defaultReturn
     Lam tb e -> do
       e' <- commProcExpr e
