@@ -16,6 +16,8 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            fmapRepBindReturn,
                                            fmapRepExpr,
                                            repExpr,
+                                           stringToId,
+                                           stringToId_maybe,
                                            thNameToId,
                                            thNameToTyCon,
                                            thNameTyToDict,
@@ -94,11 +96,30 @@ instance PassCoreM CoreM where
 
 thNameToId :: PassCoreM m => TH.Name -> m Id
 thNameToId n = do
-  -- TBD MDG - handle error cases
   name_m <- liftCoreM $ thNameToGhcName n
   case name_m of
     (Just name) -> liftCoreM $ lookupId name
     _           -> error "Unable to Lookup ID"
+
+stringToId_maybe :: PassCoreM m => String -> m (Maybe Id)
+stringToId_maybe str = do
+  let lookId x = do
+        id <- liftCoreM $ lookupId $ gre_name x
+        return $ Just id
+  guts <- getModGuts
+  let gres = lookupGlobalRdrEnv (mg_rdr_env guts) (mkVarOcc str)
+  case gres of
+    []   -> return Nothing
+    [x]  -> lookId x
+    x:xs -> lookId x -- Need to fix this, if there are multiples, need to
+                     -- find one we are looking for.
+
+stringToId :: PassCoreM m => String -> m Id
+stringToId str = do
+  id_m <- stringToId_maybe str
+  case id_m of
+    (Just id) -> return id
+    _         -> error $ "Error unable to Lookup ID " ++ str ++ "."
 
 thNameToTyCon :: PassCoreM m => TH.Name -> m TyCon
 thNameToTyCon n = do
