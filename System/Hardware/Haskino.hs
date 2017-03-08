@@ -7,7 +7,7 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Haskino allows Haskell programs to control Arduino boards 
+-- Haskino allows Haskell programs to control Arduino boards
 -- (<http://www.arduino.cc>) and peripherals
 --
 -- For details, see: <http://kufpg.github.com/Haskino>.
@@ -25,7 +25,7 @@ module System.Hardware.Haskino (
   -- ** Gereral utils
   , systemReset, queryFirmware
   -- ** Digital IO
-  , digitalWrite, digitalRead, digitalWriteE, digitalReadE  
+  , digitalWrite, digitalRead, digitalWriteE, digitalReadE
   -- ** Analog IO
   , analogWrite, analogRead, analogWriteE, analogReadE
   -- ** I2C
@@ -34,7 +34,7 @@ module System.Hardware.Haskino (
   , servoDetach, servoDetachE, servoWrite, servoWriteE, servoWriteMicros
   , servoWriteMicrosE, servoAttach, servoAttachE, servoAttachMixMax
   , servoAttachMixMaxE, servoRead, servoReadE, servoReadMicros, servoReadMicrosE
-  -- ** Time 
+  -- ** Time
   , millis, micros, millisE, microsE, delayMillis, delayMicros,delayMillisE, delayMicrosE
   -- ** Scheduler
   , TaskLength, TaskID, TimeMillis, TimeMicros, TaskPos, queryAllTasks, queryTask
@@ -47,7 +47,7 @@ module System.Hardware.Haskino (
   --, StepDevice, StepType(..), NumSteps, StepSpeed, StepAccel, StepPerRev
   --, StepDelay(..), StepDir(..), stepperConfig, stepperStep
   , stepper2Pin, stepper2PinE, stepper4Pin, stepper4PinE, stepperSetSpeed
-  , stepperSetSpeedE, stepperStep ,stepperStepE 
+  , stepperSetSpeedE, stepperStep ,stepperStepE
   -- ** Control structures
   -- ToDo: Cleanup IfThenElse's
   --, loop, ifThenElseUnit, ifThenElseUnitE, loopE, forInE, ArduinoConditional(..)
@@ -55,7 +55,7 @@ module System.Hardware.Haskino (
   -- ** Expressions
   , Expr(..), RemoteRef, lit, newRemoteRef, readRemoteRef, writeRemoteRef
   , modifyRemoteRef, (++*), (*:), (!!*), len, pack, litString, showE, showFFloatE
-  , ExprB, abs_, rep_ -- abs8_, rep8_, absB_, repB_
+  , ExprB, abs_, rep_, lessE, lesseqE, greatE, greateqE, eqE, neqE
   -- ** Debugging
   , debug, debugE, debugListen, die, deframe
   -- ** Compiler

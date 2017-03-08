@@ -257,61 +257,111 @@ data Expr a where
 deriving instance Show a => Show (Expr a)
 
 class ExprB a where
-    lit     :: a -> Expr a
-    remBind :: Int -> Expr a
-    showE   :: Expr a -> Expr [Word8]
+    lit      :: a -> Expr a
+    remBind  :: Int -> Expr a
+    showE    :: Expr a -> Expr [Word8]
+    lessE    :: Expr a -> Expr a -> Expr Bool
+    lesseqE  :: Expr a -> Expr a -> Expr Bool
+    {-# INLINE lesseqE #-}
+    lesseqE a b = notB (lessE b a)
+    greatE   :: Expr a -> Expr a -> Expr Bool
+    {-# INLINE greatE #-}
+    greatE a b = lessE b a
+    greateqE :: Expr a -> Expr a -> Expr Bool
+    {-# INLINE greateqE #-}
+    greateqE a b = notB (lessE a b)
+    eqE      :: Expr a -> Expr a -> Expr Bool
+    neqE     :: Expr a -> Expr a -> Expr Bool
+    {-# INLINE neqE #-}
+    neqE a b = notB (eqE a b)
 
 instance ExprB Word8 where
     lit = LitW8
     remBind = RemBindW8
-    showE = ShowW8  
+    showE = ShowW8
+    {-# INLINE lessE #-}
+    lessE = (B.<*)
+    {-# INLINE eqE #-}
+    eqE = (==*)
 
 instance ExprB Word16 where
     lit = LitW16
     remBind = RemBindW16
-    showE = ShowW16  
+    showE = ShowW16
+    {-# INLINE lessE #-}
+    lessE = (B.<*)
+    {-# INLINE eqE #-}
+    eqE = (==*)
 
 instance ExprB Word32 where
     lit = LitW32
     remBind = RemBindW32
-    showE = ShowW32  
+    showE = ShowW32
+    {-# INLINE lessE #-}
+    lessE = (B.<*)
+    {-# INLINE eqE #-}
+    eqE = (==*)
 
 instance ExprB Int8 where
     lit = LitI8
     remBind = RemBindI8
-    showE = ShowI8  
+    showE = ShowI8
+    {-# INLINE lessE #-}
+    lessE = (B.<*)
+    {-# INLINE eqE #-}
+    eqE = (==*)
 
 instance ExprB Int16 where
     lit = LitI16
     remBind = RemBindI16
-    showE = ShowI16  
+    showE = ShowI16
+    {-# INLINE lessE #-}
+    lessE = (B.<*)
+    {-# INLINE eqE #-}
+    eqE = (==*)
 
 instance ExprB Int32 where
     lit = LitI32
     remBind = RemBindI32
-    showE = ShowI32  
+    showE = ShowI32
+    {-# INLINE lessE #-}
+    lessE = (B.<*)
+    {-# INLINE eqE #-}
+    eqE = (==*)
 
 instance ExprB Bool where
     lit = LitB
     remBind = RemBindB
-    showE = ShowB  
+    showE = ShowB
+    {-# INLINE lessE #-}
+    lessE = (B.<*)
+    {-# INLINE eqE #-}
+    eqE = (==*)
 
 instance ExprB [Word8] where
     lit = LitList8
     remBind = RemBindList8
     showE = id
+    {-# INLINE lessE #-}
+    lessE = (B.<*)
+    {-# INLINE eqE #-}
+    eqE = (==*)
 
 instance ExprB Float where
     lit = LitFloat
     remBind = RemBindFloat
     showE = showFFloatE Nothing
+    {-# INLINE lessE #-}
+    lessE = (B.<*)
+    {-# INLINE eqE #-}
+    eqE = (==*)
 
 litString :: String -> Expr [Word8]
 litString s = LitList8 $ stringToBytes s
 
 showFFloatE :: Maybe (Expr Word8) -> Expr Float -> Expr [Word8]
-showFFloatE Nothing ef = showFFloatE (Just 2) ef 
-showFFloatE (Just ep) ef = ShowFloat ef ep 
+showFFloatE Nothing ef = showFFloatE (Just 2) ef
+showFFloatE (Just ep) ef = ShowFloat ef ep
 
 instance B.Boolean (Expr Bool) where
   true  = LitB True
@@ -375,7 +425,7 @@ instance BB.BitsB (Expr Word8) where
   bit = \i -> 1 `shiftL` i
   setBit = SetBW8
   clearBit = ClrBW8
-  testBit = TestBW8 
+  testBit = TestBW8
 
 instance  Num (Expr Word16) where
   (+) x y = AddW16 x y
@@ -467,7 +517,7 @@ instance BB.BitsB (Expr Word32) where
   bit = \i -> 1 `shiftL` i
   setBit = SetBW32
   clearBit = ClrBW32
-  testBit = TestBW32 
+  testBit = TestBW32
 
 instance Num (Expr Int8) where
   (+) x y = AddI8 x y
@@ -513,7 +563,7 @@ instance BB.BitsB (Expr Int8) where
   bit = \i -> 1 `shiftL` i
   setBit = SetBI8
   clearBit = ClrBI8
-  testBit = TestBI8 
+  testBit = TestBI8
 
 instance  Num (Expr Int16) where
   (+) x y = AddI16 x y
@@ -605,7 +655,7 @@ instance BB.BitsB (Expr Int32) where
   bit = \i -> 1 `shiftL` i
   setBit = SetBI32
   clearBit = ClrBI32
-  testBit = TestBI32 
+  testBit = TestBI32
 
 type instance BooleanOf (Expr Float) = Expr Bool
 
@@ -660,7 +710,7 @@ instance BN.RealFracB (Expr Float) where
   truncate f = fromIntegralB $ TruncFloat f
   round f = fromIntegralB $ RoundFloat f
   ceiling f = fromIntegralB $ CeilFloat f
-  floor f = fromIntegralB $ FloorFloat f 
+  floor f = fromIntegralB $ FloorFloat f
 
 instance RealFloatB (Expr Float) where
   isNaN = IsNaNFloat
@@ -699,7 +749,7 @@ len l = LenList8 l
 pack :: [Expr Word8] -> Expr [Word8]
 pack l = PackList8 l
 
--- | Haskino Firmware expresions, see:tbd 
+-- | Haskino Firmware expresions, see:tbd
 data ExprType = EXPR_BOOL
               | EXPR_WORD8
               | EXPR_WORD16
@@ -770,7 +820,7 @@ data ExprFloatOp = EXPRF_LIT
             | EXPRF_MATH
           deriving (Show, Enum, Ord, Eq)
 
-data ExprFloatMathOp = EXPRF_TRUNC 
+data ExprFloatMathOp = EXPRF_TRUNC
             | EXPRF_FRAC
             | EXPRF_ROUND
             | EXPRF_CEIL
@@ -779,14 +829,14 @@ data ExprFloatMathOp = EXPRF_TRUNC
             | EXPRF_EXP
             | EXPRF_LOG
             | EXPRF_SQRT
-            | EXPRF_SIN 
+            | EXPRF_SIN
             | EXPRF_COS
             | EXPRF_TAN
             | EXPRF_ASIN
             | EXPRF_ACOS
             | EXPRF_ATAN
             | EXPRF_ATAN2
-            | EXPRF_SINH 
+            | EXPRF_SINH
             | EXPRF_COSH
             | EXPRF_TANH
             | EXPRF_POWER
@@ -803,7 +853,7 @@ exprExtTypeVal EXPR_LIST8 = (fromIntegral $ fromEnum EXPR_EXT) `DB.shiftL` 5 DB.
 exprExtTypeVal EXPR_FLOAT = (fromIntegral $ fromEnum EXPR_EXT) `DB.shiftL` 5 DB..|. 1 `DB.shiftL` 4
 
 exprExtValType :: Word8 -> ExprExtType
-exprExtValType 0x0E = EXPR_LIST8 
+exprExtValType 0x0E = EXPR_LIST8
 exprExtValType 0x0F = EXPR_FLOAT
 
 exprCmdVal :: ExprType -> ExprOp -> Word8
