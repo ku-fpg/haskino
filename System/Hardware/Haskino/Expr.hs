@@ -274,6 +274,7 @@ class ExprB a where
     neqE     :: Expr a -> Expr a -> Expr Bool
     {-# INLINE neqE #-}
     neqE a b = notB (eqE a b)
+    ifBE     :: Expr Bool -> Expr a -> Expr a -> Expr a
 
 instance ExprB Word8 where
     lit = LitW8
@@ -283,6 +284,8 @@ instance ExprB Word8 where
     lessE = (B.<*)
     {-# INLINE eqE #-}
     eqE = (==*)
+    {-# INLINE ifBE #-}
+    ifBE = ifB
 
 instance ExprB Word16 where
     lit = LitW16
@@ -292,6 +295,8 @@ instance ExprB Word16 where
     lessE = (B.<*)
     {-# INLINE eqE #-}
     eqE = (==*)
+    {-# INLINE ifBE #-}
+    ifBE = ifB
 
 instance ExprB Word32 where
     lit = LitW32
@@ -301,6 +306,8 @@ instance ExprB Word32 where
     lessE = (B.<*)
     {-# INLINE eqE #-}
     eqE = (==*)
+    {-# INLINE ifBE #-}
+    ifBE = ifB
 
 instance ExprB Int8 where
     lit = LitI8
@@ -310,6 +317,8 @@ instance ExprB Int8 where
     lessE = (B.<*)
     {-# INLINE eqE #-}
     eqE = (==*)
+    {-# INLINE ifBE #-}
+    ifBE = ifB
 
 instance ExprB Int16 where
     lit = LitI16
@@ -319,6 +328,8 @@ instance ExprB Int16 where
     lessE = (B.<*)
     {-# INLINE eqE #-}
     eqE = (==*)
+    {-# INLINE ifBE #-}
+    ifBE = ifB
 
 instance ExprB Int32 where
     lit = LitI32
@@ -328,6 +339,8 @@ instance ExprB Int32 where
     lessE = (B.<*)
     {-# INLINE eqE #-}
     eqE = (==*)
+    {-# INLINE ifBE #-}
+    ifBE = ifB
 
 instance ExprB Bool where
     lit = LitB
@@ -337,6 +350,8 @@ instance ExprB Bool where
     lessE = (B.<*)
     {-# INLINE eqE #-}
     eqE = (==*)
+    {-# INLINE ifBE #-}
+    ifBE = ifB
 
 instance ExprB [Word8] where
     lit = LitList8
@@ -346,6 +361,8 @@ instance ExprB [Word8] where
     lessE = (B.<*)
     {-# INLINE eqE #-}
     eqE = (==*)
+    {-# INLINE ifBE #-}
+    ifBE = ifB
 
 instance ExprB Float where
     lit = LitFloat
@@ -355,6 +372,8 @@ instance ExprB Float where
     lessE = (B.<*)
     {-# INLINE eqE #-}
     eqE = (==*)
+    {-# INLINE ifBE #-}
+    ifBE = ifB
 
 litString :: String -> Expr [Word8]
 litString s = LitList8 $ stringToBytes s
