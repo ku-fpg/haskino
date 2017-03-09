@@ -46,8 +46,18 @@ xlatList = [  XlatEntry (thNameToId 'not)
                         (thNameToId '(||*))
             , XlatEntry (thNameToId '(&&))
                         (thNameToId '(&&*))
+            , XlatEntry (thNameToId '(==))
+                        (thNameToId 'eqE)
+            , XlatEntry (thNameToId '(/=))
+                        (thNameToId 'neqE)
             , XlatEntry (thNameToId '(>))
-                        (thNameToId '(>*))
+                        (thNameToId 'greatE)
+            , XlatEntry (thNameToId '(<))
+                        (thNameToId 'lessE)
+            , XlatEntry (thNameToId '(>=))
+                        (thNameToId 'greateqE)
+            , XlatEntry (thNameToId '(<))
+                        (thNameToId 'lesseqE)
             , XlatEntry (thNameToId '(+))
                         (thNameToId '(+))
            ]
@@ -67,7 +77,6 @@ instance PassCoreM BindM where
 
 repPushPass :: ModGuts -> CoreM ModGuts
 repPushPass guts = do
-    putMsg $ ppr $ mg_rules guts
     bindsOnlyPass (\x -> (runReaderT (runBindM $ (mapM changeRep) x) (BindEnv guts))) guts
 
 changeRep :: CoreBind -> BindM CoreBind
@@ -162,7 +171,6 @@ pushRep :: XlatEntry -> [CoreExpr] -> BindM CoreExpr
 pushRep xe args = do
     fi <- fromId xe
     ti <- toId xe
-    liftCoreM $ putMsg $ ppr $ idType ti
     -- Break down the arguments from the old function
     -- into foralls, args, and return types.
     let (fromForAlls, fromFuncTy) = splitForAllTys $ idType fi
@@ -180,28 +188,54 @@ pushRep xe args = do
     let typeArgs = genForAllArgs toForAlls nonDictTys fromRetTy origArgs
     exprTypeArgs <- mapM (thNameTyToTyConApp exprTyConTH) typeArgs
     let exprTypeVars = map Type exprTypeArgs
-    dictArgs <- genDictArgs dictTys nonDictTys fromRetTy origArgs
+    dictArgs <- genDictArgs dictTys nonDictTys fromRetTy toRetTy origArgs
     repArgs <- mapM repExpr origArgs
     repArgs' <- mapM changeRepExpr repArgs
     return $ mkCoreApps (Var ti) (exprTypeVars ++ dictArgs ++ repArgs')
 
-genDictArgs :: [Type] -> [Type] -> Type -> [CoreExpr] -> BindM [CoreExpr]
-genDictArgs [] _ _ _ = return []
-genDictArgs (dty:dtys) tys rty args = do
+genDictArgs :: [Type] -> [Type] -> Type -> Type -> [CoreExpr] -> BindM [CoreExpr]
+genDictArgs [] _ _ _ _ = return []
+genDictArgs (dty:dtys) tys frty trty args = do
     let (tyConTy, ty') = splitAppTy dty
-    case findIndex (eqType ty') tys of
+    case findIndex (typeIn ty') tys of
       Just idx -> do
+        -- Find the index of the from function arg which matches the 
+        -- type required by the dictionary
         let dictTy = exprType $ args !! idx
-        exprTyCon <- thNameToTyCon exprTyConTH
-        exprTy <- thNameTyToTyConApp exprTyConTH dictTy
-        dict <- buildDictionaryTyConT (tyConAppTyCon tyConTy) exprTy
-        dicts <- genDictArgs dtys tys rty args
+        -- Get the type of the to function arg at the same index
+        let toArgTy = tys !! idx
+        -- Determine if it has a type constructor
+        let tys_m = splitTyConApp_maybe toArgTy
+        dictTy' <- case tys_m of
+                     -- If it does, we are dealing with a function
+                     -- of type Class a => Expr a -> ... -> retType
+                     -- so the dictionary type is of a not Expr a
+                     Just (tyCon, tys') -> return dictTy
+                     -- If there is no TyCon, then we have a 
+                     -- function of type Class a => a -> ... -> retType
+                     -- so the dictionary type needs to be Expr a.
+                     Nothing -> do
+                         exprTyCon <- thNameToTyCon exprTyConTH
+                         thNameTyToTyConApp exprTyConTH dictTy
+        dict <- buildDictionaryTyConT (tyConAppTyCon tyConTy) dictTy'
+        dicts <- genDictArgs dtys tys frty trty args
         return $ dict:dicts
       Nothing  -> do
-        exprTyCon <- thNameToTyCon exprTyConTH
-        exprTy <- thNameTyToTyConApp exprTyConTH rty
-        dict <- buildDictionaryTyConT (tyConAppTyCon tyConTy) exprTy
-        dicts <- genDictArgs dtys tys rty args
+        -- Determine if the return type has a type constructor
+        let tys_m = splitTyConApp_maybe trty
+        dictTy' <- case tys_m of
+                     -- If it does, we are dealing with a function
+                     -- of type Class a => Expr a -> ... -> retType
+                     -- so the dictionary type is of a not Expr a
+                     Just (tyCon, tys') -> return trty
+                     -- If there is no TyCon, then we have a 
+                     -- function of type Class a => a -> ... -> retType
+                     -- so the dictionary type needs to be Expr a.
+                     Nothing -> do
+                         exprTyCon <- thNameToTyCon exprTyConTH
+                         thNameTyToTyConApp exprTyConTH trty
+        dict <- buildDictionaryTyConT (tyConAppTyCon tyConTy) dictTy'
+        dicts <- genDictArgs dtys tys frty trty args
         return $ dict:dicts
 
 genForAllArgs :: [TyVar] -> [Type] -> Type -> [CoreExpr] -> [Type]
@@ -217,5 +251,10 @@ countNonDictTypes (ty:tys) = if isDictTy ty
                            then countNonDictTypes tys
                            else 1 + countNonDictTypes tys
 
-
-
+typeIn :: Type -> Type -> Bool
+typeIn t ty = 
+    if t `eqType` ty 
+    then True
+    else
+      let (tyCon, tys') = splitTyConApp ty in
+      t `eqType` last tys'
