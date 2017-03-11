@@ -89,7 +89,7 @@ returnNameTH         = 'Prelude.return
 
 -- An infix pattern synonym for `App` to make applications with multiple
 -- arguments easier to manipulate:
-infixr 0 :$
+infixl 0 :$
 pattern f :$ x = App f x
 
 class (Monad m, MonadIO m) => PassCoreM m where
