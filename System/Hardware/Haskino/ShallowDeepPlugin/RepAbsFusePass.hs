@@ -73,9 +73,9 @@ changeFuseExpr e = do
     App e1 e2 -> do
         let (f, args) = collectArgs e
         let defaultReturn = do
-            e1' <- changeFuseExpr e1
-            e2' <- changeFuseExpr e2
-            return $ App e1' e2'
+              e1' <- changeFuseExpr e1
+              e2' <- changeFuseExpr e2
+              return $ App e1' e2'
         case f of
           Var fv -> do
             if fv == repId

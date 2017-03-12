@@ -49,3 +49,6 @@ firmware/EEPROMErase/build-*
 
 # Mac Files
 .DS_Store
+
+# Editor temporary files
+.*.swp
