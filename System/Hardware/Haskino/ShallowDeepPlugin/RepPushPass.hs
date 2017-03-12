@@ -100,9 +100,9 @@ changeRepExpr e = do
     App e1 e2 -> do
       let (b, args) = collectArgs e
       let defaultReturn = do
-          e1' <- changeRepExpr e1
-          e2' <- changeRepExpr e2
-          return $ App e1' e2'
+            e1' <- changeRepExpr e1
+            e2' <- changeRepExpr e2
+            return $ App e1' e2'
       case b of
         Var v | v == repId -> do
           case args of

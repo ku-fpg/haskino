@@ -9,6 +9,7 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE PatternSynonyms #-}
 module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            buildDictionaryT,
                                            buildDictionaryTyConT,
@@ -23,6 +24,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            thNameTyToDict,
                                            thNameTyToTyConApp,
                                            PassCoreM(..),
+                                           pattern (:$),
                                            -- DSL specific names
                                            exprClassTyConTH,
                                            exprTyConTH,
@@ -84,6 +86,11 @@ bindThenNameTH       = '(>>)
 falseNameTH          = 'Prelude.False
 fmapNameTH           = '(<$>)
 returnNameTH         = 'Prelude.return
+
+-- An infix pattern synonym for `App` to make applications with multiple
+-- arguments easier to manipulate:
+infixl 0 :$
+pattern f :$ x = App f x
 
 class (Monad m, MonadIO m) => PassCoreM m where
     -- | 'CoreM' can be lifted to this monad.

@@ -69,7 +69,7 @@ changeLambdaExpr e = do
     -- Look for expressions of the form:  
     -- forall (m :: Arduino a) (F :: a -> Arudino b)
     -- m >>= (\x -> F[x])
-    App (App (App (App (App (App (Var bind) (Type monadTy)) dict) (Type arg1Ty)) (Type arg2Ty)) e_right) (Lam b e_lam) | bind == bindId -> do
+    (Var bind) :$ (Type monadTy) :$ dict :$ (Type arg1Ty) :$ (Type arg2Ty) :$ e_right :$ (Lam b e_lam) | bind == bindId -> do
         -- Check if the right hand side of the bind operations end
         -- in monadic function with abs_ applied to it.  In other words
         -- m >>= m1 >>= ... >>= abs_ <$> mn 
@@ -104,9 +104,9 @@ changeLambdaExpr e = do
             newb <- buildId ((varString b) ++ "_abs") exprArg1Ty
             absId <- thNameToId absNameTH
             e_lam'' <- subVarExpr b (App (App (Var absId) (Type arg1Ty)) (Var newb)) e_lam'
-            return $ App (App (App (App (App (App (Var bind) (Type monadTy)) dict) (Type exprArg1Ty)) (Type arg2Ty)) e_right'') (Lam newb e_lam'')
+            return ((Var bind) :$ (Type monadTy) :$ dict :$ (Type exprArg1Ty) :$ (Type arg2Ty) :$ e_right'' :$ (Lam newb e_lam''))
         else do
-            return $ App (App (App (App (App (App (Var bind) (Type monadTy)) dict) (Type arg1Ty)) (Type arg2Ty)) e_right'') (Lam b e_lam')
+            return ((Var bind) :$ (Type monadTy) :$ dict :$ (Type arg1Ty) :$ (Type arg2Ty) :$ e_right'' :$ (Lam b e_lam'))
     App e1 e2 -> do
       e1' <- changeLambdaExpr e1
       e2' <- changeLambdaExpr e2
