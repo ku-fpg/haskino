@@ -5,15 +5,17 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Local bind argument type change pass
--- f :: a -> ... -> c -> Expr d ==> f :: Expr a  -> ... -> Expr c -> Expr d
+-- Local bind argument and return type change pass
+-- f :: a -> ... -> c -> d ==> f :: Expr a  -> ... -> Expr c -> Expr d
 -- It does this by changing the type of the argument, and then replacing
 -- each occurnace of (rep_ a) of the argument 'a' with just the type 
 -- changed argument itself.
+-- It does this by inserting a rep_ <$> to the last expresion of the bind
+-- chain for the local bind to change the return type.
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
-module System.Hardware.Haskino.ShallowDeepPlugin.BindChangeArgPass (bindChangeArgPass) where
+module System.Hardware.Haskino.ShallowDeepPlugin.BindChangeArgPass (bindChangeArgRetPass) where
 
 import CoreMonad
 import GhcPlugins
@@ -37,30 +39,52 @@ instance PassCoreM BindM where
   liftCoreM m = BindM $ lift m
   getModGuts = gets pluginModGuts
 
-bindChangeArgPass :: ModGuts -> CoreM ModGuts
-bindChangeArgPass guts =
-    bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM changeArgBind) x) (BindEnv guts []))) guts
+bindChangeArgRetPass :: ModGuts -> CoreM ModGuts
+bindChangeArgRetPass guts =
+    bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM changeBind) x) (BindEnv guts []))) guts
 
-changeArgBind :: CoreBind -> BindM CoreBind
-changeArgBind bndr@(NonRec b e) = do
+changeBind :: CoreBind -> BindM CoreBind
+changeBind bndr@(NonRec b e) = do
   df <- liftCoreM getDynFlags
   let (argTys, retTy) = splitFunTys $ varType b
   let (bs, e') = collectBinders e
   let tyCon_m = splitTyConApp_maybe retTy
   monadTyConId <- thNameToTyCon monadTyConTH
+  unitTyConId <- thNameToTyCon ''()
+  let unitTyConTy = mkTyConTy unitTyConId
   case tyCon_m of
       -- We are looking for return types of Arduino a
       Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
+          -- Change the binds and arg types to Expr a
           zipBsArgTys <- mapM changeArg (zip bs argTys)
           let (bs', argTys') = unzip zipBsArgTys
+
+          -- Put arg types into state
           s <- get
           put s{args = bs'}
+
+          -- Change any apps of the args in the body
+          -- TBD - Need to change top level binds - i.e. bs?
           e'' <- changeArgAppsExpr e'
-          let b' = setVarType b $ mkFunTys argTys' retTy
-          let e''' = mkLams bs' e''
-          return (NonRec b' e''')
+
+          -- If it is not a unit type return, change return type
+          if not (retTy' `eqType` unitTyConTy) 
+          then do
+              exprTyCon <- thNameToTyCon exprTyConTH
+              let exprTyConApp = mkTyConApp exprTyCon [retTy']
+
+              -- Change the return
+              e''' <- fmapRepBindReturn e''
+
+              -- Change the top level bind type
+              let b' = setVarType b $ mkFunTys argTys (mkTyConApp retTyCon [exprTyConApp])
+              return $ NonRec b' $ mkLams bs' e'''
+          else do
+              -- Change the top level bind type
+              let b' = setVarType b $ mkFunTys argTys' retTy
+              return  $ NonRec b' $ mkLams bs' e''
       _ -> return bndr
-changeArgBind (Rec bs) = do
+changeBind (Rec bs) = do
   return $ Rec bs
 
 changeArg :: (CoreBndr, Type) -> BindM (CoreBndr, Type)
