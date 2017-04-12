@@ -39,6 +39,13 @@ instance PassCoreM BindM where
   liftCoreM m = BindM $ lift m
   getModGuts = gets pluginModGuts
 
+{-
+bindsOnlyPass :: (CoreProgram -> CoreM CoreProgram) -> ModGuts -> CoreM ModGuts
+bindsOnlyPass pass guts
+  = do { binds' <- pass (mg_binds guts)
+       ; return (guts { mg_binds = binds' }) }
+-}
+
 bindChangeArgRetPass :: ModGuts -> CoreM ModGuts
 bindChangeArgRetPass guts =
     bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM changeBind) x) (BindEnv guts []))) guts
