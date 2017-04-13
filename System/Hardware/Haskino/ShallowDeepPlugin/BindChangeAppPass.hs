@@ -92,8 +92,7 @@ changeAppExpr e = do
     Type ty -> return $ Type ty
     Coercion co -> return $ Coercion co
     App e1 e2 -> do
-      let (bs, e') = collectBinders e
-      let (b, args) = collectArgs e'
+      let (b, args) = collectArgs e
       let (argTys, retTy) = splitFunTys $ exprType b
       let tyCon_m = splitTyConApp_maybe retTy
       let defaultRet = do
@@ -112,8 +111,8 @@ changeAppExpr e = do
                       -- Rebuild the original nested app
                       let e' = mkCoreApps b args'
                       absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' e'
-                      return $ mkLams bs absExpr 
-                  else return $ mkLams bs $ mkCoreApps b args'
+                      return $ absExpr
+                  else return $ mkCoreApps b args'
               else defaultRet
           _ -> defaultRet
     Lam tb e -> do

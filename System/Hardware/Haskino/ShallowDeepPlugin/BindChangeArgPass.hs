@@ -39,18 +39,12 @@ instance PassCoreM BindM where
   liftCoreM m = BindM $ lift m
   getModGuts = gets pluginModGuts
 
-{-
-bindsOnlyPass :: (CoreProgram -> CoreM CoreProgram) -> ModGuts -> CoreM ModGuts
-bindsOnlyPass pass guts
-  = do { binds' <- pass (mg_binds guts)
-       ; return (guts { mg_binds = binds' }) }
--}
-
 bindChangeArgRetPass :: ModGuts -> CoreM ModGuts
-bindChangeArgRetPass guts =
-    bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM changeBind) x) (BindEnv guts []))) guts
+bindChangeArgRetPass guts = do
+    bindsL' <- (\x -> fst <$> (runStateT (runBindM $ (mapM changeBind) x) (BindEnv guts []))) (mg_binds guts)
+    return (guts { mg_binds = concat bindsL' })
 
-changeBind :: CoreBind -> BindM CoreBind
+changeBind :: CoreBind -> BindM [CoreBind]
 changeBind bndr@(NonRec b e) = do
   df <- liftCoreM getDynFlags
   let (argTys, retTy) = splitFunTys $ varType b
@@ -71,11 +65,13 @@ changeBind bndr@(NonRec b e) = do
           put s{args = bs'}
 
           -- Change any apps of the args in the body
-          -- TBD - Need to change top level binds - i.e. bs?
           e'' <- changeArgAppsExpr e'
 
+          -- Generate args for new shallow body
+          deepArgs <- mapM repExpr (map Var bs)
+
           -- If it is not a unit type return, change return type
-          if not (retTy' `eqType` unitTyConTy) 
+          if not (retTy' `eqType` unitTyConTy)
           then do
               exprTyCon <- thNameToTyCon exprTyConTH
               let exprTyConApp = mkTyConApp exprTyCon [retTy']
@@ -85,14 +81,25 @@ changeBind bndr@(NonRec b e) = do
 
               -- Change the top level bind type
               let b' = setVarType b $ mkFunTys argTys (mkTyConApp retTyCon [exprTyConApp])
-              return $ NonRec b' $ mkLams bs' e'''
-          else do
-              -- Change the top level bind type
-              let b' = setVarType b $ mkFunTys argTys' retTy
-              return  $ NonRec b' $ mkLams bs' e''
-      _ -> return bndr
+
+              -- Apply the abs <$> to the new shallow body
+              let shallowE = mkCoreApps (Var b') deepArgs
+              absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' shallowE
+
+              -- return [NonRec b absExpr, NonRec b' $ mkLams bs' e''']
+              return [NonRec b' $ mkLams bs' e''']
+          else if length bs > 0 
+              then do
+                  -- Change the top level bind type
+                  let b' = setVarType b $ mkFunTys argTys' retTy
+
+                  let shallowE = mkCoreApps (Var b') deepArgs
+                  -- return [NonRec b shallowE, NonRec b' $ mkLams bs' e'']
+                  return [NonRec b' $ mkLams bs' e'']
+              else return [bndr]
+      _ -> return [bndr]
 changeBind (Rec bs) = do
-  return $ Rec bs
+  return [Rec bs]
 
 changeArg :: (CoreBndr, Type) -> BindM (CoreBndr, Type)
 changeArg (b, ty) = do
