@@ -56,8 +56,7 @@ changeFuse bndr@(NonRec b e) = do
   e'' <- changeFuseExpr e'
   let e''' = mkLams bs e''
   return (NonRec b e''')
-changeFuse (Rec bs) = do
-  return $ Rec bs
+changeFuse bndr@(Rec bs) = return bndr 
 
 changeFuseExpr :: CoreExpr -> BindM CoreExpr
 changeFuseExpr e = do

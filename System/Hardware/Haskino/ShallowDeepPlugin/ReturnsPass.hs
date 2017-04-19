@@ -43,8 +43,7 @@ changeBind bndr@(NonRec b e) = do
   e'' <- changeRetExpr e'
   let e''' = mkLams bs e''
   return (NonRec b e''')
-changeBind (Rec bs) = do
-  return $ Rec bs
+changeBind bndr@(Rec bs) = return bndr
 
 changeRetExpr :: CoreExpr -> BindM CoreExpr
 changeRetExpr e = do

@@ -98,8 +98,7 @@ changeBind bndr@(NonRec b e) = do
                   return [NonRec b' $ mkLams bs' e'']
               else return [bndr]
       _ -> return [bndr]
-changeBind (Rec bs) = do
-  return [Rec bs]
+changeBind bndr@(Rec bs) = return [bndr]
 
 changeArg :: (CoreBndr, Type) -> BindM (CoreBndr, Type)
 changeArg (b, ty) = do

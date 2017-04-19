@@ -54,8 +54,7 @@ changeLambda bndr@(NonRec b e) = do
   e'' <- changeLambdaExpr e'
   let e''' = mkLams bs e''
   return (NonRec b e''')
-changeLambda (Rec bs) = do
-  return $ Rec bs
+changeLambda bndr@(Rec bs) = return bndr
 
 changeLambdaExpr :: CoreExpr -> BindM CoreExpr
 changeLambdaExpr e = do

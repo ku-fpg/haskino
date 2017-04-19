@@ -23,7 +23,9 @@ import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 data BindEnv
     = BindEnv
       { pluginModGuts :: ModGuts,
-        funcId        :: [Id]
+        funcId        :: [Id],
+        aType         :: [Type],
+        bType         :: [Type]
       }
 
 newtype BindM a = BindM { runBindM :: StateT BindEnv CoreM a }
@@ -36,25 +38,45 @@ instance PassCoreM BindM where
 
 recurPass :: ModGuts -> CoreM ModGuts
 recurPass guts = do
-    bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM recurBind) x) (BindEnv guts []))) guts
+    bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM recurBind) x) (BindEnv guts [] [] []))) guts
 
 recurBind :: CoreBind -> BindM CoreBind
 recurBind bndr@(NonRec b e) = return bndr
 recurBind (Rec bs) = do
-  bs' <- recurBind' bs
-  return $ Rec bs'
+    bs' <- recurBind' bs
+    return $ Rec bs'
 
 recurBind' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
 recurBind' [] = return []
 recurBind' ((b, e) : bs) = do
-  s <- get
-  put s {funcId = [b]}
-  liftCoreM $ putMsgS "Rec Bind"
-  liftCoreM $ putMsg $ ppr b
-  liftCoreM $ putMsg $ ppr $ exprType e
-  (_, hasAp) <- checkForRecur b e 
-  bs' <- recurBind' bs
-  return $ (b, e) : bs'
+    let defaultRet = do
+        bs' <- recurBind' bs
+        return $ (b, e) : bs'
+    s <- get
+    put s {funcId = [b]}
+    let (argTys, retTy) = splitFunTys $ exprType e
+    let tyCon_m = splitTyConApp_maybe retTy
+    monadTyCon <- thNameToTyCon monadTyConTH
+    case tyCon_m of
+        Just (tyCon, [tyArg]) -> do
+            liftCoreM $ putMsgS "------------------"
+            liftCoreM $ putMsg $ ppr argTys
+            liftCoreM $ putMsg $ ppr tyArg            
+            liftCoreM $ putMsgS "------------------"
+            if length argTys == 1 && tyCon == monadTyCon
+            then do
+                s <- get
+                put s {funcId = [b], aType = argTys, bType = [tyArg]}
+                liftCoreM $ putMsgS "Rec Bind"
+                liftCoreM $ putMsg $ ppr b
+                liftCoreM $ putMsg $ ppr argTys
+                liftCoreM $ putMsg $ ppr retTy
+                (e', hasAp) <- checkForRecur b e 
+                bs' <- recurBind' bs
+                return $ (b, e') : bs'
+            else defaultRet
+        _ -> defaultRet
+
 
 checkForRecur :: Id -> CoreExpr -> BindM (CoreExpr, Bool)
 checkForRecur id e = do
@@ -68,44 +90,44 @@ checkForRecur id e = do
     apId <- thNameToId '($)
     case f of
       Var fv -> do
-        -- Check if we have reached the bottom of the bind chain or if 
-        -- there is another level.
-        if fv == bindId || fv == thenId
-        then do
-            -- Check if the next level has an recur
-            (e'', absFlag) <- checkForRecur id $ last args
-            let e''' = mkCoreApps f args        
-            return $ (mkLams bs e''', absFlag)
-        else 
-            -- We are at the bottom of the bind chain.....
-            -- Check for recursive call.
-            -- Either in the form of (Var funcId) $ arg ...
-            if fv == head funcId 
-            then do
-                liftCoreM $ putMsg $ ppr fv
-                liftCoreM $ putMsg $ ppr args
-                return (e, True)
-            else if fv == apId
-                 then case args of
-                     [_, _, _, Var fv', _] | fv' == head funcId -> return (e, True)
-                     _                                          -> return (e, False) 
-                 else return (e, False)
+          -- Check if we have reached the bottom of the bind chain or if 
+          -- there is another level.
+          if fv == bindId || fv == thenId
+          then do
+              -- Check if the next level has an recur
+              (e'', absFlag) <- checkForRecur id $ last args
+              let e''' = mkCoreApps f args        
+              return $ (mkLams bs e''', absFlag)
+          else 
+              -- We are at the bottom of the bind chain.....
+              -- Check for recursive call.
+              -- Either in the form of (Var funcId) arg ...
+              if fv == head funcId 
+              then return (e, True)
+              -- ... Or in the form of (Var funcId) $ arg
+              else if fv == apId
+                   then case args of
+                       [_, _, _, Var fv', arg] | fv' == head funcId -> return (e, True)
+                       _                                          -> return (e, False) 
+                   else return (e, False)
       Case e' tb ty alts -> do
-        liftCoreM $ putMsgS "Found Case"
-        alts' <- checkAltsForRecur alts
-        return (Case e' tb ty alts', False)
+          liftCoreM $ putMsgS "Found Case"
+          liftCoreM $ putMsg $ ppr args
+          alts' <- checkAltsForRecur alts
+          return (Case e' tb ty alts', False)
       _ -> return (e, False)
 
 
 checkAltsForRecur :: [GhcPlugins.Alt CoreBndr] -> BindM [GhcPlugins.Alt CoreBndr]
 checkAltsForRecur [] = return []
 checkAltsForRecur ((ac, b, a) : as) = do
-  funcId <- gets funcId
-  (_, hasAp) <- checkForRecur (head funcId) a 
-  liftCoreM $ putMsgS "#######"
-  liftCoreM $ putMsg $ ppr hasAp
-  liftCoreM $ putMsg $ ppr ac
-  liftCoreM $ putMsg $ ppr b
-  bs' <- checkAltsForRecur as
-  return $ (ac, b, a) : bs'
+    funcId <- gets funcId
+    (a', hasAp) <- checkForRecur (head funcId) a
+    let a'' = if hasAp then a' else a'
+    liftCoreM $ putMsgS "#######"
+    liftCoreM $ putMsg $ ppr hasAp
+    liftCoreM $ putMsg $ ppr ac
+    liftCoreM $ putMsg $ ppr b
+    bs' <- checkAltsForRecur as
+    return $ (ac, b, a'') : bs'
 

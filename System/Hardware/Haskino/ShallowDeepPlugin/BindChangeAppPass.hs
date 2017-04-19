@@ -77,8 +77,7 @@ changeAppBind bndr@(NonRec b e) = do
   e'' <- changeAppExpr e'
   let e''' = mkLams bs e''
   return (NonRec b e''')
-changeAppBind (Rec bs) = do
-  return $ Rec bs
+changeAppBind bndr@(Rec bs) = return bndr
 
 changeAppExpr :: CoreExpr -> BindM CoreExpr
 changeAppExpr e = do

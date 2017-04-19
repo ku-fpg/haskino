@@ -24,6 +24,9 @@ led = 13
 button1 = 2
 button2 = 3
 
+stuff :: Arduino (Iter a ())
+stuff = done <$> return ()
+
 blink :: Word8 -> Arduino ()
 blink 0 = return ()
 blink t = do 
