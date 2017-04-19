@@ -35,6 +35,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            ifThenElseNameTH,
                                            ifThenElseUnitNameTH,
                                            -- General Haskell names
+                                           apNameTH,
                                            bindNameTH,
                                            functTyConTH,
                                            unitTyConTH,
@@ -88,6 +89,7 @@ bindNameTH           = '(>>=)
 bindThenNameTH       = '(>>)
 falseNameTH          = 'Prelude.False
 fmapNameTH           = '(<$>)
+apNameTH             = '($)
 returnNameTH         = 'Prelude.return
 notNameTH            = 'not
 

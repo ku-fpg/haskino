@@ -88,10 +88,10 @@ checkForRecur step e = do
     df <- liftCoreM getDynFlags
     let (bs, e') = collectBinders e
     let (f, args) = collectArgs e'
-    bindId <- thNameToId '(>>=)
-    thenId <- thNameToId '(>>)
-    fmapId <- thNameToId '(<$>)
-    apId <- thNameToId '($)
+    bindId <- thNameToId bindNameTH
+    thenId <- thNameToId bindThenNameTH
+    fmapId <- thNameToId fmapNameTH
+    apId <- thNameToId apNameTH
     case f of
       Var fv -> do
           -- Check if we have reached the bottom of the bind chain or if
