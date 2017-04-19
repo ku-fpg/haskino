@@ -41,6 +41,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            bindThenNameTH,
                                            falseNameTH,
                                            fmapNameTH,
+                                           notNameTH,
                                            returnNameTH) where
 
 import CoreMonad
@@ -86,6 +87,7 @@ bindThenNameTH       = '(>>)
 falseNameTH          = 'Prelude.False
 fmapNameTH           = '(<$>)
 returnNameTH         = 'Prelude.return
+notNameTH            = 'not
 
 -- An infix pattern synonym for `App` to make applications with multiple
 -- arguments easier to manipulate:

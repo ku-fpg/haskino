@@ -24,8 +24,7 @@ data BindEnv
     = BindEnv
       { pluginModGuts :: ModGuts,
         funcId        :: [Id],
-        aType         :: [Type],
-        bType         :: [Type]
+        conds         :: [CoreExpr]
       }
 
 newtype BindM a = BindM { runBindM :: StateT BindEnv CoreM a }
@@ -38,7 +37,7 @@ instance PassCoreM BindM where
 
 recurPass :: ModGuts -> CoreM ModGuts
 recurPass guts = do
-    bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM recurBind) x) (BindEnv guts [] [] []))) guts
+    bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM recurBind) x) (BindEnv guts [] []))) guts
 
 recurBind :: CoreBind -> BindM CoreBind
 recurBind bndr@(NonRec b e) = return bndr
@@ -59,21 +58,19 @@ recurBind' ((b, e) : bs) = do
     monadTyCon <- thNameToTyCon monadTyConTH
     case tyCon_m of
         Just (tyCon, [tyArg]) -> do
-            liftCoreM $ putMsgS "------------------"
-            liftCoreM $ putMsg $ ppr argTys
-            liftCoreM $ putMsg $ ppr tyArg
-            liftCoreM $ putMsgS "------------------"
             if length argTys == 1 && tyCon == monadTyCon
             then do
                 s <- get
-                put s {funcId = [b], aType = argTys, bType = [tyArg]}
-                liftCoreM $ putMsgS "Rec Bind"
+                put s {funcId = [b]}
+                liftCoreM $ putMsgS "One Arg Arudino Rec Bind"
                 liftCoreM $ putMsg $ ppr b
                 liftCoreM $ putMsg $ ppr argTys
                 liftCoreM $ putMsg $ ppr retTy
                 let (lbs, e') = collectBinders e
-                liftCoreM $ putMsg $ ppr lbs
                 (e'', hasAp) <- checkForRecur b e'
+                conds <- gets conds
+                liftCoreM $ putMsgS "Conds = "
+                liftCoreM $ putMsg $ ppr conds
                 bs' <- recurBind' bs
                 return $ (b, mkLams lbs e'') : bs'
             else defaultRet
@@ -113,23 +110,34 @@ checkForRecur id e = do
                        _                                          -> return (e, False)
                    else return (e, False)
       Case e' tb ty alts -> do
-          liftCoreM $ putMsgS "Found Case"
-          liftCoreM $ putMsg $ ppr args
-          alts' <- checkAltsForRecur alts
+          alts' <- checkAltsForRecur e' alts
           return (Case e' tb ty alts', False)
       _ -> return (e, False)
 
 
-checkAltsForRecur :: [GhcPlugins.Alt CoreBndr] -> BindM [GhcPlugins.Alt CoreBndr]
-checkAltsForRecur [] = return []
-checkAltsForRecur ((ac, b, a) : as) = do
+checkAltsForRecur :: CoreExpr -> [GhcPlugins.Alt CoreBndr] -> BindM [GhcPlugins.Alt CoreBndr]
+checkAltsForRecur _ [] = return []
+checkAltsForRecur e ((ac, b, a) : as) = do
     funcId <- gets funcId
     (a', hasAp) <- checkForRecur (head funcId) a
-    let a'' = if hasAp then a' else a'
-    liftCoreM $ putMsgS "#######"
-    liftCoreM $ putMsg $ ppr hasAp
-    liftCoreM $ putMsg $ ppr ac
-    liftCoreM $ putMsg $ ppr b
-    bs' <- checkAltsForRecur as
+    a'' <- if hasAp
+           then do
+              -- For a Step branch, save the conditional
+              s <- get
+              e' <- case ac of
+                      DataAlt d -> do
+                        Just falseName <- liftCoreM $ thNameToGhcName falseNameTH
+                        -- if d == falseName
+                        if (getName d) == falseName
+                        then do
+                          -- If we are in the False branch of the case, we
+                          -- need to negate the conditional
+                          notName <- thNameToId notNameTH
+                          return $ mkCoreApps (Var notName) [e]
+                        else return e
+              put s {conds = e' : conds s}
+              return a'
+           else return a'
+    bs' <- checkAltsForRecur e as
     return $ (ac, b, a'') : bs'
 
