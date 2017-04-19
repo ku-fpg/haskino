@@ -67,7 +67,7 @@ recurBind' ((b, e) : bs) = do
                 liftCoreM $ putMsg $ ppr argTys
                 liftCoreM $ putMsg $ ppr retTy
                 let (lbs, e') = collectBinders e
-                (e'', hasAp) <- checkForRecur b e'
+                (e'', hasAp) <- checkForRecur True e'
                 conds <- gets conds
                 liftCoreM $ putMsgS "Conds = "
                 liftCoreM $ putMsg $ ppr conds
@@ -77,8 +77,8 @@ recurBind' ((b, e) : bs) = do
         _ -> defaultRet
 
 
-checkForRecur :: Id -> CoreExpr -> BindM (CoreExpr, Bool)
-checkForRecur id e = do
+checkForRecur :: Bool -> CoreExpr -> BindM (CoreExpr, Bool)
+checkForRecur step e = do
     funcId <- gets funcId
     df <- liftCoreM getDynFlags
     let (bs, e') = collectBinders e
@@ -93,8 +93,8 @@ checkForRecur id e = do
           -- there is another level.
           if fv == bindId || fv == thenId
           then do
-              -- Check if the next level has an recur
-              (e'', absFlag) <- checkForRecur id $ last args
+              -- Check if the next level has a recur
+              (e'', absFlag) <- checkForRecur step $ last args
               let e''' = mkCoreApps f args
               return $ (mkLams bs e''', absFlag)
           else
@@ -110,16 +110,15 @@ checkForRecur id e = do
                        _                                          -> return (e, False)
                    else return (e, False)
       Case e' tb ty alts -> do
-          alts' <- checkAltsForRecur e' alts
+          alts' <- checkAltsForRecur step e' alts
           return (Case e' tb ty alts', False)
       _ -> return (e, False)
 
 
-checkAltsForRecur :: CoreExpr -> [GhcPlugins.Alt CoreBndr] -> BindM [GhcPlugins.Alt CoreBndr]
-checkAltsForRecur _ [] = return []
-checkAltsForRecur e ((ac, b, a) : as) = do
-    funcId <- gets funcId
-    (a', hasAp) <- checkForRecur (head funcId) a
+checkAltsForRecur :: Bool -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> BindM [GhcPlugins.Alt CoreBndr]
+checkAltsForRecur _ _ [] = return []
+checkAltsForRecur step e ((ac, b, a) : as) = do
+    (a', hasAp) <- checkForRecur step a
     a'' <- if hasAp
            then do
               -- For a Step branch, save the conditional
@@ -138,6 +137,6 @@ checkAltsForRecur e ((ac, b, a) : as) = do
               put s {conds = e' : conds s}
               return a'
            else return a'
-    bs' <- checkAltsForRecur e as
+    bs' <- checkAltsForRecur step e as
     return $ (ac, b, a'') : bs'
 
