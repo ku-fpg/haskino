@@ -61,7 +61,7 @@ module System.Hardware.Haskino (
   -- ** Compiler
   , compileProgram
   -- ** Recursion
-  , Iter(..), done, step, iterLoop
+  , Iter(..), done, step, iterLoop, recurErr
  )
  where
 

@@ -67,7 +67,12 @@ recurBind' ((b, e) : bs) = do
                 liftCoreM $ putMsg $ ppr argTys
                 liftCoreM $ putMsg $ ppr retTy
                 let (lbs, e') = collectBinders e
-                (e'', hasAp) <- checkForRecur True e'
+                (e'', hasAp)  <- checkForRecur True e'
+                (e''', hasAp) <- checkForRecur False e'
+                liftCoreM $ putMsgS "Step Pass = "
+                liftCoreM $ putMsg $ ppr e''
+                liftCoreM $ putMsgS "Done Pass = "
+                liftCoreM $ putMsg $ ppr e'''
                 conds <- gets conds
                 liftCoreM $ putMsgS "Conds = "
                 liftCoreM $ putMsg $ ppr conds
@@ -118,11 +123,11 @@ checkForRecur step e = do
 checkAltsForRecur :: Bool -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> BindM [GhcPlugins.Alt CoreBndr]
 checkAltsForRecur _ _ [] = return []
 checkAltsForRecur step e ((ac, b, a) : as) = do
+    recurErrName <- thNameToId recurErrNameTH
     (a', hasAp) <- checkForRecur step a
     a'' <- if hasAp
            then do
               -- For a Step branch, save the conditional
-              s <- get
               e' <- case ac of
                       DataAlt d -> do
                         Just falseName <- liftCoreM $ thNameToGhcName falseNameTH
@@ -134,9 +139,17 @@ checkAltsForRecur step e ((ac, b, a) : as) = do
                           notName <- thNameToId notNameTH
                           return $ mkCoreApps (Var notName) [e]
                         else return e
-              put s {conds = e' : conds s}
-              return a'
-           else return a'
+              if step
+              then do
+                  -- Add conditional to list to generate while conditional
+                  -- during the Step phase.
+                  s <- get
+                  put s {conds = e' : conds s}
+                  return a'
+              else return (Var recurErrName)
+           else if step
+                then return (Var recurErrName)
+                else return a'
     bs' <- checkAltsForRecur step e as
     return $ (ac, b, a'') : bs'
 

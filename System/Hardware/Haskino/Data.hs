@@ -1228,4 +1228,6 @@ done d = Done d
 iterLoop :: (a -> Arduino (Iter a b)) -> Arduino a -> Arduino b
 iterLoop _ _ = error "Cannot execute iterLoop"
 
+recurErr :: Arduino a
+recurErr = error "RecurPass Error"
 

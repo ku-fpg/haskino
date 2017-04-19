@@ -42,6 +42,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            falseNameTH,
                                            fmapNameTH,
                                            notNameTH,
+                                           recurErrNameTH,
                                            returnNameTH) where
 
 import CoreMonad
@@ -77,6 +78,7 @@ absNameTH            = 'System.Hardware.Haskino.abs_
 repNameTH            = 'System.Hardware.Haskino.rep_
 ifThenElseNameTH     = 'System.Hardware.Haskino.ifThenElseE
 ifThenElseUnitNameTH = 'System.Hardware.Haskino.ifThenElseUnitE
+recurErrNameTH       = 'System.Hardware.Haskino.recurErr
 
 -- The following lines contain definitions of Template Haskell namde
 -- for standard Haskell functions.
