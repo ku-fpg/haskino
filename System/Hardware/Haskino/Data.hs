@@ -1210,3 +1210,22 @@ data Processor = ATMEGA8
                | QUARK
                | UNKNOWN_PROCESSOR
     deriving (Eq, Show, Enum)
+
+-- Recursion Transformer types
+data Iter a b
+    = Step a
+    | Done b
+
+step :: a -> Iter a b
+step s = Step s
+
+done :: b -> Iter a b
+done d = Done d
+
+-- iterLoop :: (a -> Iter (Arduino a) (Arduino b)) -> Arduino a -> Arduino b
+-- iterLoop _ _ = error "Cannot execute iterLoop"
+
+iterLoop :: (a -> Arduino (Iter a b)) -> Arduino a -> Arduino b
+iterLoop _ _ = error "Cannot execute iterLoop"
+
+

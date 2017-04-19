@@ -18,6 +18,7 @@ import System.Hardware.Haskino.ShallowDeepPlugin.BindChangeAppPass
 import System.Hardware.Haskino.ShallowDeepPlugin.BindChangeArgPass
 import System.Hardware.Haskino.ShallowDeepPlugin.CommProcPass
 import System.Hardware.Haskino.ShallowDeepPlugin.CondPass
+import System.Hardware.Haskino.ShallowDeepPlugin.RecurPass
 import System.Hardware.Haskino.ShallowDeepPlugin.RepAbsFusePass
 import System.Hardware.Haskino.ShallowDeepPlugin.RepPushPass
 import System.Hardware.Haskino.ShallowDeepPlugin.ReturnsPass
@@ -34,6 +35,7 @@ install _ todo = do
   reinitializeGlobals
   let absLambdaToDo = [CoreDoPluginPass "AbsLambda" absLambdaPass]
   let condToDo = [CoreDoPluginPass "CondTransform" condPass]
+  let recurToDo = [CoreDoPluginPass "RecursionTransform" recurPass]
   let returnsToDo = [CoreDoPluginPass "ReturnsTransform" returnsPass]
   let bindAppToDo = [CoreDoPluginPass "BindAppTransform" bindChangeAppPass]
   let bindArgRetToDo = [CoreDoPluginPass "BindArgRetTransform" bindChangeArgRetPass]
@@ -42,7 +44,7 @@ install _ todo = do
   let repAbsFuseToDo = [CoreDoPluginPass "RepAbsFuse" repAbsFusePass]
   let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
   let showToDo = [CoreDoPluginPass "ShowPass" showPass]
-  return $ [simplPass] ++ condToDo ++ commProcToDo ++ returnsToDo ++ 
+  return $ [simplPass] ++ recurToDo ++ condToDo ++ commProcToDo ++ returnsToDo ++ 
            bindArgRetToDo ++ bindAppToDo ++
            repPushToDo ++ absLambdaToDo ++  
            repAbsFuseToDo ++ todo -- ++ dumpToDo

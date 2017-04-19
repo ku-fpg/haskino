@@ -60,6 +60,8 @@ module System.Hardware.Haskino (
   , debug, debugE, debugListen, die, deframe
   -- ** Compiler
   , compileProgram
+  -- ** Recursion
+  , Iter(..), done, step, iterLoop
  )
  where
 
