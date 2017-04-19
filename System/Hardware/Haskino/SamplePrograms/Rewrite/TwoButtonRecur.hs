@@ -24,22 +24,22 @@ led = 13
 button1 = 2
 button2 = 3
 
-stuff :: Arduino (Iter a ())
-stuff = done <$> return ()
+-- stuff :: Arduino (Iter a ())
+-- stuff = done <$> return ()
 
 blink :: Word8 -> Arduino ()
 blink 0 = return ()
-blink t = do 
+blink t = do
     digitalWrite led True
     delayMillis 1000
     digitalWrite led False
     delayMillis 1000
-    blink $ t-1
+    blink ( t-1 )
 
 wait :: Arduino ()
 wait = do
   b <- digitalRead button1
-  if b then return () else wait 
+  if b then return () else wait
 
 recurProg :: Arduino ()
 recurProg = do
@@ -51,7 +51,7 @@ recurProg = do
 {-
 blinkf :: Word8 -> Arduino Word8
 blinkf 0 = return 0
-blinkf t = do 
+blinkf t = do
     digitalWrite led True
     delayMillis 1000
     digitalWrite led False
@@ -107,7 +107,7 @@ blink2' t = do
 wait :: Arduino ()
 wait = do
   b <- digitalRead button1
-  if b then return () else wait 
+  if b then return () else wait
 
 wait2 :: Arduino ()
 wait2 = wait2' True
@@ -121,22 +121,22 @@ wait2I :: Bool -> Arduino (Iter Bool ())
 wait2I i = done <$> do
      b <- digitalRead button1
      if b then return () else wait2' True
-  
+
 wait2I' :: Bool -> Arduino (Iter Bool ())
 wait2I' i = do
      b <- digitalRead button1
      done <$> if b then return () else wait2' True
-  
+
 wait2I'' :: Bool -> Arduino (Iter Bool ())
 wait2I'' i = do
      b <- digitalRead button1
      if b then done <$> return () else done <$> wait2' True
-  
+
 wait2I''' :: Bool -> Arduino (Iter Bool ())
 wait2I''' i = do
      b <- digitalRead button1
      if b then done <$> return () else step <$> return True
-  
+
 wait2'' t = do
     while True (\x -> x) (\x -> do
       b <- digitalRead button1
@@ -158,7 +158,7 @@ wait2I''' = do
 wait' = do
   while True (\x -> x) (\x -> do
     b < digitalRead button1
-    if b then 
+    if b then
   return ()
 
 wait' = do
@@ -170,7 +170,7 @@ wait' = do
 
 {-
 littleLoop :: Arduino ()
-littleLoop = do 
+littleLoop = do
     digitalWrite led True
     delayMillis 10
     littleLoop
