@@ -80,6 +80,8 @@ repNameTH            = 'System.Hardware.Haskino.rep_
 ifThenElseNameTH     = 'System.Hardware.Haskino.ifThenElseE
 ifThenElseUnitNameTH = 'System.Hardware.Haskino.ifThenElseUnitE
 recurErrNameTH       = 'System.Hardware.Haskino.recurErr
+whileTH              = 'System.Hardware.Haskino.while
+whileETH             = 'System.Hardware.Haskino.whileE
 
 -- The following lines contain definitions of Template Haskell namde
 -- for standard Haskell functions.

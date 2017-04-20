@@ -24,7 +24,8 @@ data BindEnv
     = BindEnv
       { pluginModGuts :: ModGuts,
         funcId        :: [Id],
-        conds         :: [CoreExpr]
+        conds         :: [CoreExpr],
+        dicts         :: [CoreExpr]
       }
 
 newtype BindM a = BindM { runBindM :: StateT BindEnv CoreM a }
@@ -37,7 +38,7 @@ instance PassCoreM BindM where
 
 recurPass :: ModGuts -> CoreM ModGuts
 recurPass guts = do
-    bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM recurBind) x) (BindEnv guts [] []))) guts
+    bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM recurBind) x) (BindEnv guts [] [] []))) guts
 
 recurBind :: CoreBind -> BindM CoreBind
 recurBind bndr@(NonRec b e) = return bndr
@@ -52,7 +53,7 @@ recurBind' ((b, e) : bs) = do
         bs' <- recurBind' bs
         return $ (b, e) : bs'
     s <- get
-    put s {funcId = [b]}
+    put s {funcId = [b], conds = []}
     let (argTys, retTy) = splitFunTys $ exprType e
     let tyCon_m = splitTyConApp_maybe retTy
     monadTyCon <- thNameToTyCon monadTyConTH
@@ -98,21 +99,29 @@ checkForRecur step e = do
           -- there is another level.
           if fv == bindId || fv == thenId
           then do
+              -- TBD - This is a hack, need to generate dictionary 
+              -- not copy it from a bind.
+              s <- get               
+              put s {dicts = [args !! 1]}              
               -- Check if the next level has a recur
-              (e'', absFlag) <- checkForRecur step $ last args
-              let e''' = mkCoreApps f args
-              return $ (mkLams bs e''', absFlag)
+              (e'', recurFlag) <- checkForRecur step $ last args
+              let e''' = mkCoreApps f ((init args) ++ [e''])
+              return $ (mkLams bs e''', recurFlag)
           else
               -- We are at the bottom of the bind chain.....
               -- Check for recursive call.
               -- Either in the form of (Var funcId) arg ...
               if fv == head funcId
-              then return (e, True)
+              then do
+                  ret_e <- genReturn $ head args
+                  return (mkLams bs ret_e, True)
               -- ... Or in the form of (Var funcId) $ arg
               else if fv == apId
                    then case args of
-                       [_, _, _, Var fv', arg] | fv' == head funcId -> return (e, True)
-                       _                                          -> return (e, False)
+                       [_, _, _, Var fv', arg] | fv' == head funcId -> do
+                           ret_e <- genReturn arg
+                           return (mkLams bs ret_e, True)
+                       _ -> return (e, False)
                    else return (e, False)
       Case e' tb ty alts -> do
           alts' <- checkAltsForRecur step e' alts
@@ -152,4 +161,13 @@ checkAltsForRecur step e ((ac, b, a) : as) = do
                 else return a'
     bs' <- checkAltsForRecur step e as
     return $ (ac, b, a'') : bs'
+
+genReturn :: CoreExpr -> BindM CoreExpr
+genReturn e = do
+    dicts <- gets dicts
+    returnId <- thNameToId returnNameTH
+    monadTyConId <- thNameToTyCon monadTyConTH
+    let monadTyConTy = mkTyConTy monadTyConId
+    -- dict <- buildDictionaryTyConT (tyConAppTyCon monadTyConTy) $ exprType e
+    return $ mkCoreApps (Var returnId) [Type monadTyConTy, head dicts, Type (exprType e), e]
 
