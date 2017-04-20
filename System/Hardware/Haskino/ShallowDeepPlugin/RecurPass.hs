@@ -75,8 +75,9 @@ recurBind' ((b, e) : bs) = do
                 liftCoreM $ putMsgS "Done Pass = "
                 liftCoreM $ putMsg $ ppr e'''
                 conds <- gets conds
-                liftCoreM $ putMsgS "Conds = "
-                liftCoreM $ putMsg $ ppr conds
+                whileCond <- genWhileCond conds
+                liftCoreM $ putMsgS "Whild Cond = "
+                liftCoreM $ putMsg $ ppr whileCond
                 bs' <- recurBind' bs
                 return $ (b, mkLams lbs e'') : bs'
             else defaultRet
@@ -171,3 +172,13 @@ genReturn e = do
     -- dict <- buildDictionaryTyConT (tyConAppTyCon monadTyConTy) $ exprType e
     return $ mkCoreApps (Var returnId) [Type monadTyConTy, head dicts, Type (exprType e), e]
 
+genWhileCond :: [CoreExpr] -> BindM CoreExpr
+genWhileCond [c]        = return c
+genWhileCond [c1,c2]    = do
+    andId <- thNameToId andNameTH
+    return $ mkCoreApps (Var andId) [c1, c2]
+genWhileCond (c:cs) = do
+    andId <- thNameToId andNameTH
+    gcs <- genWhileCond cs
+    return $ mkCoreApps (Var andId) [c, gcs]
+ 

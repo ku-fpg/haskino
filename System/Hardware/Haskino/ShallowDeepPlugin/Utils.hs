@@ -36,6 +36,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            ifThenElseUnitNameTH,
                                            -- General Haskell names
                                            apNameTH,
+                                           andNameTH,
                                            bindNameTH,
                                            functTyConTH,
                                            unitTyConTH,
@@ -94,6 +95,7 @@ fmapNameTH           = '(<$>)
 apNameTH             = '($)
 returnNameTH         = 'Prelude.return
 notNameTH            = 'not
+andNameTH            = '(&&)
 
 -- An infix pattern synonym for `App` to make applications with multiple
 -- arguments easier to manipulate:
