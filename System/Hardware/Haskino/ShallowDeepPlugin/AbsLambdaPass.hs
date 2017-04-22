@@ -137,12 +137,6 @@ changeLambdaExpr e = do
 varString :: Id -> String 
 varString = occNameString . nameOccName . Var.varName
 
-buildId :: String -> Type -> BindM Id
-buildId varName typ = do
-  dunique <- liftCoreM getUniqueM
-  let name = mkInternalName dunique (mkOccName OccName.varName varName) noSrcSpan
-  return $ mkLocalVar VanillaId name typ vanillaIdInfo
-
 changeLambdaExpr' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
 changeLambdaExpr' [] = return []
 changeLambdaExpr' ((b, e) : bs) = do

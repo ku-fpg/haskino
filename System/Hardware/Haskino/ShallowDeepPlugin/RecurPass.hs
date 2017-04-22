@@ -63,23 +63,59 @@ recurBind' ((b, e) : bs) = do
             then do
                 s <- get
                 put s {funcId = [b]}
+{-
                 liftCoreM $ putMsgS "One Arg Arudino Rec Bind"
                 liftCoreM $ putMsg $ ppr b
                 liftCoreM $ putMsg $ ppr argTys
                 liftCoreM $ putMsg $ ppr retTy
+-}
+
+                let argTy = head argTys
+
                 let (lbs, e') = collectBinders e
+
+                let arg = head lbs
+
                 (e'', hasAp)  <- checkForRecur True e'
+                newStepB <- buildId ("x") argTy
+                stepE <- changeVarExpr arg newStepB e''
+                let stepLam = mkLams [newStepB] stepE
+
                 (e''', hasAp) <- checkForRecur False e'
-                liftCoreM $ putMsgS "Step Pass = "
-                liftCoreM $ putMsg $ ppr e''
-                liftCoreM $ putMsgS "Done Pass = "
-                liftCoreM $ putMsg $ ppr e'''
+                newDoneB <- buildId ("x'") argTy
+                doneE <- changeVarExpr arg newDoneB e'''
+                let doneLam = mkLams [newDoneB] doneE
+
                 conds <- gets conds
-                whileCond <- genWhileCond conds
-                liftCoreM $ putMsgS "Whild Cond = "
-                liftCoreM $ putMsg $ ppr whileCond
+                cond <- genWhileCond conds
+                newCondB <- buildId ("x") argTy
+                cond' <- changeVarExpr arg newCondB cond
+                let condLam = mkLams [newCondB] cond'
+
+                whileId <- thNameToId whileTH
+                condDict <- thNameTyToDict monadCondTyConTH argTy
+                let whileExpr = mkCoreApps (Var whileId) [Type argTy, condDict, Var arg, condLam, stepLam]
+
+                bindId <- thNameToId bindNameTH
+                dicts <- gets dicts
+                monadTyConId <- thNameToTyCon monadTyConTH
+                let monadTyConTy = mkTyConTy monadTyConId
+                let bindExpr = mkCoreApps (Var bindId) [Type monadTyConTy, head dicts, Type argTy, Type retTy, whileExpr, doneLam]
+{-
+                liftCoreM $ putMsgS "Cond Lam = "
+                liftCoreM $ putMsg $ ppr condLam
+                liftCoreM $ putMsgS "Step Lam = "
+                liftCoreM $ putMsg $ ppr stepLam
+                liftCoreM $ putMsgS "Done Lam = "
+                liftCoreM $ putMsg $ ppr stepLam
+                liftCoreM $ putMsgS "While Expr = "
+                liftCoreM $ putMsg $ ppr whileExpr
+                liftCoreM $ putMsgS "----------------"
+                liftCoreM $ putMsg $ ppr $ mkLams lbs bindExpr
+-}
+
                 bs' <- recurBind' bs
-                return $ (b, mkLams lbs e'') : bs'
+                return $ (b, mkLams lbs bindExpr) : bs'
             else defaultRet
         _ -> defaultRet
 
@@ -182,3 +218,54 @@ genWhileCond (c:cs) = do
     gcs <- genWhileCond cs
     return $ mkCoreApps (Var andId) [c, gcs]
  
+changeVarExpr :: CoreBndr -> CoreBndr -> CoreExpr -> BindM CoreExpr
+changeVarExpr f t e = do
+  df <- liftCoreM getDynFlags
+  case e of
+    -- Replace any occurances of the parameters "p" with "abs_ p"
+    Var v | v == f -> return $ Var t
+    Var v -> return $ Var v
+    Lit l -> return $ Lit l
+    Type ty -> return $ Type ty
+    Coercion co -> return $ Coercion co
+    App e1 e2 -> do
+      e1' <- changeVarExpr f t e1
+      e2' <- changeVarExpr f t e2
+      return $ App e1' e2'
+    Lam tb e -> do
+      e' <- changeVarExpr f t e
+      return $ Lam tb e'
+    Let bind body -> do
+      body' <- changeVarExpr f t body
+      bind' <- case bind of
+                  (NonRec v e) -> do
+                    e' <- changeVarExpr f t e
+                    return $ NonRec v e'
+                  (Rec rbs) -> do
+                    rbs' <- changeVarExpr' f t rbs
+                    return $ Rec rbs'
+      return $ Let bind' body'
+    Case e tb ty alts -> do
+      e' <- changeVarExpr f t e
+      alts' <- changeVarExprAlts f t alts
+      return $ Case e' tb ty alts'
+    Tick ti e -> do
+      e' <- changeVarExpr f t e
+      return $ Tick ti e'
+    Cast e co -> do
+      e' <- changeVarExpr f t e
+      return $ Cast e' co
+
+changeVarExpr' :: CoreBndr -> CoreBndr -> [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
+changeVarExpr' _ _ [] = return []
+changeVarExpr' f t ((b, e) : bs) = do
+  e' <- changeVarExpr f t e
+  bs' <- changeVarExpr' f t bs
+  return $ (b, e') : bs'
+
+changeVarExprAlts :: CoreBndr -> CoreBndr -> [GhcPlugins.Alt CoreBndr] -> BindM [GhcPlugins.Alt CoreBndr]
+changeVarExprAlts _ _ [] = return []
+changeVarExprAlts f t ((ac, b, a) : as) = do
+  a' <- changeVarExpr f t a
+  bs' <- changeVarExprAlts f t as
+  return $ (ac, b, a') : bs'

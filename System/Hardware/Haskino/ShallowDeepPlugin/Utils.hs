@@ -13,6 +13,7 @@
 module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            buildDictionaryT,
                                            buildDictionaryTyConT,
+                                           buildId,
                                            fmapAbsExpr,
                                            fmapRepBindReturn,
                                            fmapRepExpr,
@@ -34,6 +35,8 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            repNameTH,
                                            ifThenElseNameTH,
                                            ifThenElseUnitNameTH,
+                                           whileTH,
+                                           whileETH,
                                            -- General Haskell names
                                            apNameTH,
                                            andNameTH,
@@ -62,6 +65,7 @@ import Control.Arrow (first, second)
 import Control.Monad
 import Data.Functor
 import Encoding (zEncodeString)
+import OccName
 import qualified Language.Haskell.TH as TH
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Typechecker (initTcFromModGuts)
@@ -154,6 +158,12 @@ thNameTyToTyConApp :: PassCoreM m => TH.Name -> Type -> m Type
 thNameTyToTyConApp n ty = do
   tyCon <- thNameToTyCon n
   return $  mkTyConApp tyCon [ty]
+
+buildId :: PassCoreM m => String -> Type -> m Id
+buildId varName typ = do
+  dunique <- liftCoreM getUniqueM
+  let name = mkInternalName dunique (mkOccName OccName.varName varName) noSrcSpan
+  return $ mkLocalVar VanillaId name typ vanillaIdInfo
 
 repExpr :: PassCoreM m => CoreExpr -> m CoreExpr
 repExpr e = do
