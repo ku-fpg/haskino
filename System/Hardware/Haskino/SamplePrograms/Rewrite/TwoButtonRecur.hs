@@ -35,11 +35,12 @@ blink t = do
     digitalWrite led False
     delayMillis 1000
     blink ( t-1 )
-
+{-
 wait :: Arduino ()
 wait = do
   b <- digitalRead button1
   if b then return () else wait
+-}
 
 recurProg :: Arduino ()
 recurProg = do

@@ -36,22 +36,24 @@ instance PassCoreM BindM where
     liftCoreM m = BindM $ lift m
     getModGuts = gets pluginModGuts
 
+
 recurPass :: ModGuts -> CoreM ModGuts
 recurPass guts = do
-    bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM recurBind) x) (BindEnv guts [] [] []))) guts
+    bindsL' <- (\x -> fst <$> (runStateT (runBindM $ (mapM recurBind) x) (BindEnv guts [] [] []))) (mg_binds guts)
+    return (guts { mg_binds = concat bindsL' })
 
-recurBind :: CoreBind -> BindM CoreBind
-recurBind bndr@(NonRec b e) = return bndr
+recurBind :: CoreBind -> BindM [CoreBind]
+recurBind bndr@(NonRec b e) = return [bndr]
 recurBind (Rec bs) = do
-    bs' <- recurBind' bs
-    return $ Rec bs'
+    (nonRec, bs') <- recurBind' bs
+    return $ nonRec ++ [Rec bs']
 
-recurBind' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
-recurBind' [] = return []
+recurBind' :: [(Id, CoreExpr)] -> BindM ([CoreBind],[(Id, CoreExpr)])
+recurBind' [] = return ([],[])
 recurBind' ((b, e) : bs) = do
     let defaultRet = do
-        bs' <- recurBind' bs
-        return $ (b, e) : bs'
+        (nonrec, bs') <- recurBind' bs
+        return $ (nonrec, (b, e) : bs')
     s <- get
     put s {funcId = [b], conds = []}
     let (argTys, retTy) = splitFunTys $ exprType e
@@ -76,31 +78,43 @@ recurBind' ((b, e) : bs) = do
 
                 let arg = head lbs
 
+                -- Build the step body of the While
                 (e'', hasAp)  <- checkForRecur True e'
                 newStepB <- buildId ("x") argTy
                 stepE <- changeVarExpr arg newStepB e''
                 let stepLam = mkLams [newStepB] stepE
 
+                -- Build the done body which executes after the while
                 (e''', hasAp) <- checkForRecur False e'
                 newDoneB <- buildId ("x'") argTy
                 doneE <- changeVarExpr arg newDoneB e'''
                 let doneLam = mkLams [newDoneB] doneE
 
+                -- Build the conditional for the while
                 conds <- gets conds
                 cond <- genWhileCond conds
                 newCondB <- buildId ("x") argTy
                 cond' <- changeVarExpr arg newCondB cond
+                -- condDeep <- repExpr cond'
                 let condLam = mkLams [newCondB] cond'
 
+                -- Build the initialization argument
+                -- initArg <- repExpr (Var arg)
+
+                -- Build the while expression
                 whileId <- thNameToId whileTH
                 condDict <- thNameTyToDict monadCondTyConTH argTy
                 let whileExpr = mkCoreApps (Var whileId) [Type argTy, condDict, Var arg, condLam, stepLam]
 
+                -- Build the While >>= Done expression
                 bindId <- thNameToId bindNameTH
                 dicts <- gets dicts
                 monadTyConId <- thNameToTyCon monadTyConTH
                 let monadTyConTy = mkTyConTy monadTyConId
-                let bindExpr = mkCoreApps (Var bindId) [Type monadTyConTy, head dicts, Type argTy, Type retTy, whileExpr, doneLam]
+                let bindExpr = mkCoreApps (Var bindId) [Type monadTyConTy, head dicts, Type argTy, Type tyArg, whileExpr, doneLam]
+
+                -- Create the transformed non-recursive bind
+                let nonrecBind = NonRec b (mkLams lbs bindExpr)
 {-
                 liftCoreM $ putMsgS "Cond Lam = "
                 liftCoreM $ putMsg $ ppr condLam
@@ -113,9 +127,9 @@ recurBind' ((b, e) : bs) = do
                 liftCoreM $ putMsgS "----------------"
                 liftCoreM $ putMsg $ ppr $ mkLams lbs bindExpr
 -}
-
-                bs' <- recurBind' bs
-                return $ (b, mkLams lbs bindExpr) : bs'
+                -- Recursively call for the other binds in the array
+                (nonrecs, bs') <- recurBind' bs
+                return $ (nonrecBind : nonrecs, bs')
             else defaultRet
         _ -> defaultRet
 
