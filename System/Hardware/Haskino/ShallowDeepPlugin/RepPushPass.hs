@@ -60,6 +60,8 @@ xlatList = [  XlatEntry (thNameToId 'not)
                         (thNameToId 'lesseqE)
             , XlatEntry (thNameToId '(+))
                         (thNameToId '(+))
+            , XlatEntry (thNameToId '(-))
+                        (thNameToId '(-))
            ]
 
 data BindEnv

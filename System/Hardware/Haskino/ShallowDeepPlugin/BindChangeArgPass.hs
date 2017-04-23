@@ -68,7 +68,7 @@ changeBind bndr@(NonRec b e) = do
           e'' <- changeArgAppsExpr e'
 
           -- Generate args for new shallow body
-          deepArgs <- mapM repExpr (map Var bs)
+          -- deepArgs <- mapM repExpr (map Var bs)
 
           -- If it is not a unit type return, change return type
           if not (retTy' `eqType` unitTyConTy)
@@ -83,8 +83,8 @@ changeBind bndr@(NonRec b e) = do
               let b' = setVarType b $ mkFunTys argTys (mkTyConApp retTyCon [exprTyConApp])
 
               -- Apply the abs <$> to the new shallow body
-              let shallowE = mkCoreApps (Var b') deepArgs
-              absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' shallowE
+              -- let shallowE = mkCoreApps (Var b') deepArgs
+              -- absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' shallowE
 
               -- return [NonRec b absExpr, NonRec b' $ mkLams bs' e''']
               return [NonRec b' $ mkLams bs' e''']
@@ -93,7 +93,7 @@ changeBind bndr@(NonRec b e) = do
                   -- Change the top level bind type
                   let b' = setVarType b $ mkFunTys argTys' retTy
 
-                  let shallowE = mkCoreApps (Var b') deepArgs
+                  -- let shallowE = mkCoreApps (Var b') deepArgs
                   -- return [NonRec b shallowE, NonRec b' $ mkLams bs' e'']
                   return [NonRec b' $ mkLams bs' e'']
               else return [bndr]
