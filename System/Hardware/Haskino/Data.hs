@@ -11,12 +11,13 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE FlexibleInstances, GADTs, KindSignatures, RankNTypes,
              OverloadedStrings, ScopedTypeVariables, StandaloneDeriving,
-             GeneralizedNewtypeDeriving, NamedFieldPuns, DataKinds #-}
+             GeneralizedNewtypeDeriving, NamedFieldPuns, DataKinds,
+             MultiParamTypeClasses #-}
 
 module System.Hardware.Haskino.Data where
 
 import           Control.Applicative
-import           Control.Concurrent (Chan, MVar, ThreadId, withMVar, modifyMVar, 
+import           Control.Concurrent (Chan, MVar, ThreadId, withMVar, modifyMVar,
                                      modifyMVar_, putMVar, takeMVar, readMVar,
                                      newEmptyMVar)
 import           Control.Monad (ap, liftM2, forever)
@@ -42,7 +43,7 @@ import           System.Hardware.Haskino.Utils
 -- | The Arduino remote monad
 newtype Arduino a = Arduino (RemoteMonad ArduinoCommand ArduinoProcedure a)
   deriving (Functor, Applicative, Monad)
-  
+
 instance MonadIO Arduino where
   liftIO m = Arduino $ procedure $ LiftIO m
 
@@ -74,18 +75,18 @@ data IntMode = LOW
 -- | LCD's connected to the board
 data LCD = LCD {
                  lcdController     :: LCDController -- ^ Actual controller
-               , lcdState          :: MVar LCDData  -- ^ State information    
+               , lcdState          :: MVar LCDData  -- ^ State information
                }
 
 data LCDE = LCDE {
                   lcdControllerE   :: LCDController  -- ^ Actual controller
-                , lcdStateE        :: LCDDataE  -- ^ State information    
+                , lcdStateE        :: LCDDataE  -- ^ State information
                 }
 
 -- | Hitachi LCD controller: See: <http://en.wikipedia.org/wiki/Hitachi_HD44780_LCD_controller>.
 -- We model only the 4-bit variant, with RS and EN lines only. (The most common Arduino usage.)
 -- The data sheet can be seen at: <http://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf>.
-data LCDController = 
+data LCDController =
     Hitachi44780 {
                        lcdRS       :: Pin  -- ^ Hitachi pin @ 4@: Register-select
                      , lcdEN       :: Pin  -- ^ Hitachi pin @ 6@: Enable
@@ -151,7 +152,7 @@ data ArduinoCommand =
        SystemReset                              -- ^ Send system reset
      | SetPinModeE PinE (Expr Word8)            -- ^ Set the mode on a pin
      | DigitalPortWriteE PinE (Expr Word8) (Expr Word8)
-     | DigitalWriteE PinE (Expr Bool)              
+     | DigitalWriteE PinE (Expr Bool)
      | AnalogWriteE PinE (Expr Word16)
      | ToneE PinE (Expr Word16) (Maybe (Expr Word32))       -- ^ Play a tone on a pin
      | NoToneE PinE                             -- ^ Stop playing a tone on a pin
@@ -191,7 +192,7 @@ data ArduinoCommand =
      | ModifyRemoteRefFloat (RemoteRef Float) (Expr Float -> Expr Float)
      | Loop (Arduino ())
      | LoopE (Arduino ())
-     | ForInE (Expr [Word8]) (Expr Word8 -> Arduino ()) 
+     | ForInE (Expr [Word8]) (Expr Word8 -> Arduino ())
      | IfThenElseUnit (Bool) (Arduino ()) (Arduino ())
      | IfThenElseUnitE (Expr Bool) (Arduino ()) (Arduino ())
      -- ToDo: add SPI commands
@@ -390,7 +391,7 @@ class ExprB a => RemoteReference a where
     newRemoteRef          :: Expr a -> Arduino (RemoteRef a)
     readRemoteRef         :: RemoteRef a -> Arduino (Expr a)
     writeRemoteRef        :: RemoteRef a -> Expr a -> Arduino ()
-    modifyRemoteRef       :: RemoteRef a -> (Expr a -> Expr a) -> 
+    modifyRemoteRef       :: RemoteRef a -> (Expr a -> Expr a) ->
                              Arduino ()
 
 instance RemoteReference Bool where
@@ -404,7 +405,7 @@ instance RemoteReference Word8 where
     readRemoteRef = readRemoteRefW8
     writeRemoteRef = writeRemoteRefW8
     modifyRemoteRef = modifyRemoteRefW8
- 
+
 instance RemoteReference Word16 where
     newRemoteRef = newRemoteRefW16
     readRemoteRef = readRemoteRefW16
@@ -453,7 +454,7 @@ loop m = Arduino $ command $ Loop m
 data ArduinoProcedure :: * -> * where
      QueryFirmware  :: ArduinoProcedure Word16                   -- ^ Query the Firmware version installed
      QueryFirmwareE :: ArduinoProcedure (Expr Word16)                  -- ^ Query the Firmware version installed
-     QueryProcessor :: ArduinoProcedure Processor                -- ^ Query the type of processor on 
+     QueryProcessor :: ArduinoProcedure Processor                -- ^ Query the type of processor on
      QueryProcessorE :: ArduinoProcedure (Expr Word8)
      Micros         :: ArduinoProcedure Word32
      MicrosE        :: ArduinoProcedure (Expr Word32)
@@ -468,7 +469,7 @@ data ArduinoProcedure :: * -> * where
      DigitalPortRead  :: Pin -> Word8 -> ArduinoProcedure Word8          -- ^ Read the values on a port digitally
      DigitalPortReadE :: PinE -> Expr Word8 -> ArduinoProcedure (Expr Word8)
      AnalogRead     :: Pin -> ArduinoProcedure Word16          -- ^ Read the analog value on a pin
-     AnalogReadE    :: PinE -> ArduinoProcedure (Expr Word16)          
+     AnalogReadE    :: PinE -> ArduinoProcedure (Expr Word16)
      I2CRead :: SlaveAddress -> Word8 -> ArduinoProcedure [Word8]
      I2CReadE :: SlaveAddressE -> Expr Word8 -> ArduinoProcedure (Expr [Word8])
      Stepper2Pin :: Word16 -> Pin -> Pin -> ArduinoProcedure Word8
@@ -543,6 +544,10 @@ data ArduinoProcedure :: * -> * where
      WhileFloatE       :: (Expr Float) -> (Expr Float -> Expr Bool) -> (Expr Float -> Arduino (Expr Float)) -> ArduinoProcedure (Expr Float)
      WhileL8           :: [Word8] -> ([Word8] -> Bool) -> ([Word8] -> Arduino [Word8]) -> ArduinoProcedure [Word8]
      WhileL8E          :: (Expr [Word8]) -> (Expr [Word8] -> Expr Bool) -> (Expr [Word8] -> Arduino (Expr [Word8])) -> ArduinoProcedure (Expr [Word8])
+     IterateW8W8E      :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Word8)) -> ArduinoProcedure (Expr Word8)
+     IterateW8UnitE    :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 () )) -> ArduinoProcedure (Expr () )
+     IterateUnitW8E    :: Expr () -> (Expr () -> Arduino (ExprEither () Word8)) -> ArduinoProcedure (Expr Word8)
+     IterateUnitUnitE  :: Expr () -> (Expr () -> Arduino (ExprEither () () )) -> ArduinoProcedure (Expr () )
      LiftIO            :: IO a -> ArduinoProcedure a
      Debug             :: String -> ArduinoProcedure ()
      DebugE            :: Expr [Word8] -> ArduinoProcedure ()
@@ -847,7 +852,7 @@ class ExprB a => ArduinoConditional a where
     ifThenElse          :: Bool -> Arduino a -> Arduino a -> Arduino a
     ifThenElseE         :: Expr Bool -> Arduino (Expr a) -> Arduino (Expr a) -> Arduino (Expr a)
     while               :: a -> (a -> Bool) -> (a -> Arduino a) -> Arduino a
-    whileE              :: Expr a -> (Expr a -> Expr Bool) -> 
+    whileE              :: Expr a -> (Expr a -> Expr Bool) ->
                              (Expr a -> Arduino (Expr a)) -> Arduino (Expr a)
 
 instance ArduinoConditional Bool where
@@ -865,19 +870,19 @@ instance ArduinoConditional Word8 where
 instance ArduinoConditional Word16 where
     ifThenElse = ifThenElseWord16
     ifThenElseE = ifThenElseWord16E
-    while  = whileWord16 
+    while  = whileWord16
     whileE = whileWord16E
 
 instance ArduinoConditional Word32 where
     ifThenElse = ifThenElseWord32
     ifThenElseE = ifThenElseWord32E
-    while  = whileWord32 
+    while  = whileWord32
     whileE = whileWord32E
 
 instance ArduinoConditional Int8 where
     ifThenElse = ifThenElseInt8
     ifThenElseE = ifThenElseInt8E
-    while  = whileInt8 
+    while  = whileInt8
     whileE = whileInt8E
 
 instance ArduinoConditional Int16 where
@@ -895,7 +900,7 @@ instance ArduinoConditional Int32 where
 instance ArduinoConditional [Word8] where
     ifThenElse = ifThenElseL8
     ifThenElseE = ifThenElseL8E
-    while  = whileL8 
+    while  = whileL8
     whileE = whileL8E
 
 instance ArduinoConditional Float where
@@ -903,6 +908,22 @@ instance ArduinoConditional Float where
     ifThenElseE = ifThenElseFloatE
     while  = whileFloat
     whileE = whileFloatE
+
+class (ExprB a, ExprB b) => ArduinoIterate a b where
+    -- iterate   :: a -> (a -> Arduino (Either a b)) -> Arduino b
+    iterateE  :: Expr a -> (Expr a -> Arduino (ExprEither a b)) -> Arduino (Expr b)
+
+instance ArduinoIterate Word8 Word8 where
+    iterateE iv bf = Arduino $ procedure $ IterateW8W8E iv bf
+
+instance ArduinoIterate Word8 () where
+    iterateE iv bf = Arduino $ procedure $ IterateW8UnitE iv bf
+
+instance ArduinoIterate () Word8 where
+    iterateE iv bf = Arduino $ procedure $ IterateUnitW8E iv bf
+
+instance ArduinoIterate () () where
+    iterateE iv bf = Arduino $ procedure $ IterateUnitUnitE iv bf
 
 -- | A response, as returned from the Arduino
 data Response = DelayResp
@@ -917,10 +938,10 @@ data Response = DelayResp
               | I2CReply [Word8]                     -- ^ Response to a I2C Read
               | Stepper2PinReply Word8
               | Stepper4PinReply Word8
-              | StepperStepReply             
+              | StepperStepReply
               | ServoAttachReply Word8
               | ServoReadReply Int16
-              | ServoReadMicrosReply Int16             
+              | ServoReadMicrosReply Int16
               | QueryAllTasksReply [Word8]           -- ^ Response to Query All Tasks
               | QueryTaskReply (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
               | BootTaskResp Word8
@@ -959,7 +980,7 @@ data Response = DelayResp
               | InvalidChecksumFrame [Word8]
     deriving Show
 
--- | Haskino Firmware commands, see: 
+-- | Haskino Firmware commands, see:
 -- | https://github.com/ku-fpg/haskino/wiki/Haskino-Firmware-Protocol-Definition
 data FirmwareCmd = BC_CMD_SYSTEM_RESET
                  | BC_CMD_SET_PIN_MODE
@@ -1073,59 +1094,59 @@ firmwareCmdVal EXPR_CMD_RET             = 0xD0
 
 -- | Compute the numeric value of a command
 firmwareValCmd :: Word8 -> FirmwareCmd
-firmwareValCmd 0x10 = BC_CMD_SYSTEM_RESET    
-firmwareValCmd 0x11 = BC_CMD_SET_PIN_MODE    
-firmwareValCmd 0x12 = BC_CMD_DELAY_MILLIS    
-firmwareValCmd 0x13 = BC_CMD_DELAY_MICROS    
-firmwareValCmd 0x14 = BC_CMD_WHILE           
-firmwareValCmd 0x15 = BC_CMD_IF_THEN_ELSE    
-firmwareValCmd 0x16 = BC_CMD_LOOP            
-firmwareValCmd 0x17 = BC_CMD_FORIN           
-firmwareValCmd 0x20 = BS_CMD_REQUEST_VERSION 
-firmwareValCmd 0x21 = BS_CMD_REQUEST_TYPE    
-firmwareValCmd 0x22 = BS_CMD_REQUEST_MICROS  
-firmwareValCmd 0x23 = BS_CMD_REQUEST_MILLIS  
-firmwareValCmd 0x24 = BS_CMD_DEBUG  
-firmwareValCmd 0x30 = DIG_CMD_READ_PIN       
-firmwareValCmd 0x31 = DIG_CMD_WRITE_PIN      
-firmwareValCmd 0x32 = DIG_CMD_READ_PORT      
-firmwareValCmd 0x33 = DIG_CMD_WRITE_PORT     
-firmwareValCmd 0x40 = ALG_CMD_READ_PIN       
-firmwareValCmd 0x41 = ALG_CMD_WRITE_PIN      
-firmwareValCmd 0x42 = ALG_CMD_TONE_PIN       
-firmwareValCmd 0x43 = ALG_CMD_NOTONE_PIN     
-firmwareValCmd 0x50 = I2C_CMD_CONFIG         
-firmwareValCmd 0x51 = I2C_CMD_READ           
-firmwareValCmd 0x52 = I2C_CMD_WRITE  
-firmwareValCmd 0x60 = STEP_CMD_2PIN  
-firmwareValCmd 0x61 = STEP_CMD_4PIN  
-firmwareValCmd 0x62 = STEP_CMD_SET_SPEED  
-firmwareValCmd 0x63 = STEP_CMD_STEP  
+firmwareValCmd 0x10 = BC_CMD_SYSTEM_RESET
+firmwareValCmd 0x11 = BC_CMD_SET_PIN_MODE
+firmwareValCmd 0x12 = BC_CMD_DELAY_MILLIS
+firmwareValCmd 0x13 = BC_CMD_DELAY_MICROS
+firmwareValCmd 0x14 = BC_CMD_WHILE
+firmwareValCmd 0x15 = BC_CMD_IF_THEN_ELSE
+firmwareValCmd 0x16 = BC_CMD_LOOP
+firmwareValCmd 0x17 = BC_CMD_FORIN
+firmwareValCmd 0x20 = BS_CMD_REQUEST_VERSION
+firmwareValCmd 0x21 = BS_CMD_REQUEST_TYPE
+firmwareValCmd 0x22 = BS_CMD_REQUEST_MICROS
+firmwareValCmd 0x23 = BS_CMD_REQUEST_MILLIS
+firmwareValCmd 0x24 = BS_CMD_DEBUG
+firmwareValCmd 0x30 = DIG_CMD_READ_PIN
+firmwareValCmd 0x31 = DIG_CMD_WRITE_PIN
+firmwareValCmd 0x32 = DIG_CMD_READ_PORT
+firmwareValCmd 0x33 = DIG_CMD_WRITE_PORT
+firmwareValCmd 0x40 = ALG_CMD_READ_PIN
+firmwareValCmd 0x41 = ALG_CMD_WRITE_PIN
+firmwareValCmd 0x42 = ALG_CMD_TONE_PIN
+firmwareValCmd 0x43 = ALG_CMD_NOTONE_PIN
+firmwareValCmd 0x50 = I2C_CMD_CONFIG
+firmwareValCmd 0x51 = I2C_CMD_READ
+firmwareValCmd 0x52 = I2C_CMD_WRITE
+firmwareValCmd 0x60 = STEP_CMD_2PIN
+firmwareValCmd 0x61 = STEP_CMD_4PIN
+firmwareValCmd 0x62 = STEP_CMD_SET_SPEED
+firmwareValCmd 0x63 = STEP_CMD_STEP
 firmwareValCmd 0x80 = SRVO_CMD_ATTACH
 firmwareValCmd 0x81 = SRVO_CMD_DETACH
 firmwareValCmd 0x82 = SRVO_CMD_WRITE
 firmwareValCmd 0x83 = SRVO_CMD_WRITE_MICROS
 firmwareValCmd 0x84 = SRVO_CMD_READ
 firmwareValCmd 0x85 = SRVO_CMD_READ_MICROS
-firmwareValCmd 0xA0 = SCHED_CMD_CREATE_TASK  
-firmwareValCmd 0xA1 = SCHED_CMD_DELETE_TASK  
-firmwareValCmd 0xA2 = SCHED_CMD_ADD_TO_TASK  
-firmwareValCmd 0xA3 = SCHED_CMD_SCHED_TASK   
-firmwareValCmd 0xA4 = SCHED_CMD_QUERY        
-firmwareValCmd 0xA5 = SCHED_CMD_QUERY_ALL    
-firmwareValCmd 0xA6 = SCHED_CMD_RESET        
-firmwareValCmd 0xA7 = SCHED_CMD_BOOT_TASK    
-firmwareValCmd 0xA8 = SCHED_CMD_TAKE_SEM    
-firmwareValCmd 0xA9 = SCHED_CMD_GIVE_SEM    
-firmwareValCmd 0xAA = SCHED_CMD_ATTACH_INT    
+firmwareValCmd 0xA0 = SCHED_CMD_CREATE_TASK
+firmwareValCmd 0xA1 = SCHED_CMD_DELETE_TASK
+firmwareValCmd 0xA2 = SCHED_CMD_ADD_TO_TASK
+firmwareValCmd 0xA3 = SCHED_CMD_SCHED_TASK
+firmwareValCmd 0xA4 = SCHED_CMD_QUERY
+firmwareValCmd 0xA5 = SCHED_CMD_QUERY_ALL
+firmwareValCmd 0xA6 = SCHED_CMD_RESET
+firmwareValCmd 0xA7 = SCHED_CMD_BOOT_TASK
+firmwareValCmd 0xA8 = SCHED_CMD_TAKE_SEM
+firmwareValCmd 0xA9 = SCHED_CMD_GIVE_SEM
+firmwareValCmd 0xAA = SCHED_CMD_ATTACH_INT
 firmwareValCmd 0xAB = SCHED_CMD_DETACH_INT
 firmwareValCmd 0xAC = SCHED_CMD_INTERRUPTS
-firmwareValCmd 0xAD = SCHED_CMD_NOINTERRUPTS    
-firmwareValCmd 0xC0 = REF_CMD_NEW            
-firmwareValCmd 0xC1 = REF_CMD_READ           
-firmwareValCmd 0xC2 = REF_CMD_WRITE 
-firmwareValCmd 0xD0 = EXPR_CMD_RET 
-firmwareValCmd _    = UNKNOWN_COMMAND        
+firmwareValCmd 0xAD = SCHED_CMD_NOINTERRUPTS
+firmwareValCmd 0xC0 = REF_CMD_NEW
+firmwareValCmd 0xC1 = REF_CMD_READ
+firmwareValCmd 0xC2 = REF_CMD_WRITE
+firmwareValCmd 0xD0 = EXPR_CMD_RET
+firmwareValCmd _    = UNKNOWN_COMMAND
 
 data RefType = REF_BOOL
              | REF_WORD8
@@ -1139,7 +1160,7 @@ data RefType = REF_BOOL
              | REF_UNIT
             deriving (Show, Enum)
 
--- | Firmware replies, see: 
+-- | Firmware replies, see:
 -- | https://github.com/ku-fpg/haskino/wiki/Haskino-Firmware-Protocol-Definition
 data FirmwareReply =  BC_RESP_DELAY
                    |  BC_RESP_IF_THEN_ELSE

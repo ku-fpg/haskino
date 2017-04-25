@@ -56,6 +56,7 @@ data Expr a where
   ShowI16      :: Expr Int16 -> Expr [Word8]
   ShowI32      :: Expr Int32 -> Expr [Word8]
   ShowFloat    :: Expr Float -> Expr Word8 -> Expr [Word8]
+  ShowUnit     :: Expr () -> Expr [Word8]
   RefB         :: Int -> Expr Bool
   RefW8        :: Int -> Expr Word8
   RefW16       :: Int -> Expr Word16
@@ -74,6 +75,7 @@ data Expr a where
   RemBindI32   :: Int -> Expr Int32
   RemBindList8 :: Int -> Expr [Word8]
   RemBindFloat :: Int -> Expr Float
+  RemBindUnit  :: Int -> Expr ()
   FromIntW8    :: Expr Int32 -> Expr Word8
   FromIntW16   :: Expr Int32 -> Expr Word16
   FromIntW32   :: Expr Int32 -> Expr Word32
@@ -302,6 +304,19 @@ class ExprB a where
     ifBE     :: Expr Bool -> Expr a -> Expr a -> Expr a
     leftE    :: ExprB b => Expr a -> ExprEither a b
     rightE   :: ExprB b => Expr a -> ExprEither b a
+
+instance ExprB () where
+    lit _ = LitUnit
+    remBind = RemBindUnit
+    showE = ShowUnit
+    {-# INLINE lessE #-}
+    lessE _ _ = false
+    {-# INLINE eqE #-}
+    eqE _ _ = true
+    {-# INLINE ifBE #-}
+    ifBE _ _ _ = LitUnit
+    leftE = ExprLeftUnit
+    rightE b = ExprRightUnit b
 
 instance ExprB Word8 where
     lit = LitW8
