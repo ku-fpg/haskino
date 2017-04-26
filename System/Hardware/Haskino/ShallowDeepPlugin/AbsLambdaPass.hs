@@ -10,9 +10,9 @@
 --     (f >>= (abs_ <$> g)) >>= k
 --        =
 --     (f >>= g) >>= k . abs_
--- 
---  And 
--- 
+--
+--  And
+--
 -- forall (f :: Arduino a).
 --     (\x -> F[x]).abs
 --        =
@@ -45,7 +45,7 @@ instance PassCoreM BindM where
   getModGuts = BindM $ ReaderT (return . pluginModGuts)
 
 absLambdaPass :: ModGuts -> CoreM ModGuts
-absLambdaPass guts = 
+absLambdaPass guts =
     bindsOnlyPass (\x -> (runReaderT (runBindM $ (mapM changeLambda) x) (BindEnv guts))) guts
 
 changeLambda :: CoreBind -> BindM CoreBind
@@ -54,24 +54,35 @@ changeLambda bndr@(NonRec b e) = do
   e'' <- changeLambdaExpr e'
   let e''' = mkLams bs e''
   return (NonRec b e''')
-changeLambda bndr@(Rec bs) = return bndr
+changeLambda bndr@(Rec bs) = do
+  bs' <- changeLambda' bs
+  return $ Rec bs'
+
+changeLambda' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
+changeLambda' [] = return []
+changeLambda' ((b, e) : bs) = do
+  let (lbs, e') = collectBinders e
+  e'' <- changeLambdaExpr e'
+  let e''' = mkLams lbs e''
+  bs' <- changeLambda' bs
+  return $ (b, e''') : bs'
 
 changeLambdaExpr :: CoreExpr -> BindM CoreExpr
 changeLambdaExpr e = do
   df <- liftCoreM getDynFlags
-  bindId <- thNameToId bindNameTH 
+  bindId <- thNameToId bindNameTH
   case e of
     Var v -> return $ Var v
     Lit l -> return $ Lit l
     Type ty -> return $ Type ty
     Coercion co -> return $ Coercion co
-    -- Look for expressions of the form:  
+    -- Look for expressions of the form:
     -- forall (m :: Arduino a) (F :: a -> Arudino b)
     -- m >>= (\x -> F[x])
     (Var bind) :$ (Type monadTy) :$ dict :$ (Type arg1Ty) :$ (Type arg2Ty) :$ e_right :$ (Lam b e_lam) | bind == bindId -> do
         -- Check if the right hand side of the bind operations end
         -- in monadic function with abs_ applied to it.  In other words
-        -- m >>= m1 >>= ... >>= abs_ <$> mn 
+        -- m >>= m1 >>= ... >>= abs_ <$> mn
         (e_right', absFlag) <- checkForAbs e_right
         -- Recursivly process the subexpressions
         e_lam' <- changeLambdaExpr e_lam
@@ -84,17 +95,17 @@ changeLambdaExpr e = do
             --     (f >>= (abs_ <$> g)) >>= k
             --        =
             --     (f >>= g) >>= k . abs_
-            -- 
-            --  And 
-            -- 
+            --
+            --  And
+            --
             -- forall (f :: Arduino a).
             --     (\x -> F[x]).abs
             --        =
             --     (\x' -> let x=abs(x') in F[x])
-            -- 
+            --
             -- This is done in one step The abs is eliminated in the e_right'
             -- that is returned from changeLambdaExpr, the lambda argument
-            -- x is renamed to x_abs and it's type is changed to Expr a, and 
+            -- x is renamed to x_abs and it's type is changed to Expr a, and
             -- finally any occurance of x in the body of the lambda (e_lam')
             -- is replaced with abs(x_abs) (with the function subVarExpr)
             --
@@ -109,7 +120,7 @@ changeLambdaExpr e = do
     App e1 e2 -> do
       e1' <- changeLambdaExpr e1
       e2' <- changeLambdaExpr e2
-      return $ App e1' e2'       
+      return $ App e1' e2'
     Lam tb e -> do
       e' <- changeLambdaExpr e
       return $ Lam tb e'
@@ -134,7 +145,7 @@ changeLambdaExpr e = do
       e' <- changeLambdaExpr e
       return $ Cast e' co
 
-varString :: Id -> String 
+varString :: Id -> String
 varString = occNameString . nameOccName . Var.varName
 
 changeLambdaExpr' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
@@ -162,7 +173,7 @@ checkForAbs e = do
     absId <- thNameToId absNameTH
     case f of
       Var fv -> do
-        -- Check if we have reached the bottom of the bind chain or if 
+        -- Check if we have reached the bottom of the bind chain or if
         -- there is another level.
         if fv == bindId || fv == thenId
         then do
@@ -180,18 +191,18 @@ checkForAbs e = do
                         let e''' = mkCoreApps f [Type ty1, dict, Type ty2, Type exprTy3, e1, e'']
                         return $ (mkLams bs e''', absFlag)
                     _ -> do
-                        let e''' = mkCoreApps f ((init args) ++ [e''])        
+                        let e''' = mkCoreApps f ((init args) ++ [e''])
                         return $ (mkLams bs e''', absFlag)
             else do
-                let e''' = mkCoreApps f ((init args) ++ [e''])        
+                let e''' = mkCoreApps f ((init args) ++ [e''])
                 return $ (mkLams bs e''', absFlag)
-        else 
+        else
             -- We are at the bottom of the bind chain.....
             -- Check for a fmap and abs.  If one is found, then the
-            -- fmap and abs_ are removed, and only the function they 
+            -- fmap and abs_ are removed, and only the function they
             -- are applied to are returned.
             if fv == fmapId
-            then  
+            then
                 case args of
                     [Type ty1, Type ty2, Type ty3, dict, e1, e2] -> do
                         let (g, _) = collectArgs e1
@@ -208,7 +219,7 @@ checkForAbs e = do
       _ -> return (e, False)
 
 subVarExpr :: Id -> CoreExpr -> CoreExpr -> BindM CoreExpr
-subVarExpr id esub e = 
+subVarExpr id esub e =
   case e of
     -- Perform the variable substitution with the esub
     -- expression.
@@ -228,14 +239,14 @@ subVarExpr id esub e =
       return $ Lam tb e'
     Let bind body -> do
       body' <- subVarExpr id esub body
-      bind' <- case bind of 
+      bind' <- case bind of
                   (NonRec v e) -> do
                     e' <- subVarExpr id esub e
                     return $ NonRec v e'
                   (Rec rbs) -> do
                     rbs' <- subVarExpr' id esub rbs
                     return $ Rec rbs'
-      return $ Let bind' body' 
+      return $ Let bind' body'
     Case e tb ty alts -> do
       e' <- subVarExpr id esub e
       alts' <- subVarExprAlts id esub alts

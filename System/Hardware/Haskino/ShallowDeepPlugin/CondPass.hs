@@ -41,8 +41,9 @@ condBind :: CoreBind -> CondM CoreBind
 condBind bndr@(NonRec b e) = do
   e' <- condExpr e
   return (NonRec b e')
-condBind bndr@(Rec bs) = 
-  return bndr
+condBind (Rec bs) = do
+  bs' <- condBind' bs
+  return $ Rec bs'
 
 condBind' :: [(Id, CoreExpr)] -> CondM [(Id, CoreExpr)]
 condBind' [] = return []

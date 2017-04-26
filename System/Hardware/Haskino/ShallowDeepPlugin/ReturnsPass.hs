@@ -17,7 +17,7 @@ import Data.Functor
 import Control.Monad.Reader
 import Var
 
-import System.Hardware.Haskino.ShallowDeepPlugin.Utils 
+import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 
 data BindEnv
     = BindEnv
@@ -33,17 +33,27 @@ instance PassCoreM BindM where
   getModGuts = BindM $ ReaderT (return . pluginModGuts)
 
 returnsPass :: ModGuts -> CoreM ModGuts
-returnsPass guts = 
+returnsPass guts =
     bindsOnlyPass (\x -> (runReaderT (runBindM $ (mapM changeBind) x) (BindEnv guts))) guts
 
 changeBind :: CoreBind -> BindM CoreBind
 changeBind bndr@(NonRec b e) = do
-  df <- liftCoreM getDynFlags
   let (bs, e') = collectBinders e
   e'' <- changeRetExpr e'
   let e''' = mkLams bs e''
   return (NonRec b e''')
-changeBind bndr@(Rec bs) = return bndr
+changeBind bndr@(Rec bs) = do
+  bs' <- changeBind' bs
+  return $ Rec bs'
+
+changeBind' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
+changeBind' [] = return []
+changeBind' ((b, e) : bs) = do
+  let (lbs, e') = collectBinders e
+  e'' <- changeRetExpr e'
+  let e''' = mkLams lbs e''
+  bs' <- changeBind' bs
+  return $ (b, e''') : bs'
 
 changeRetExpr :: CoreExpr -> BindM CoreExpr
 changeRetExpr e = do
@@ -114,7 +124,7 @@ changeRetExprAlts ((ac, b, a) : as) = do
 {-
   The following performs this transform:
 
-    forall (ExprB a => e :: a) 
+    forall (ExprB a => e :: a)
     return e
       =
     abs_ <$> (return (rep_ e))

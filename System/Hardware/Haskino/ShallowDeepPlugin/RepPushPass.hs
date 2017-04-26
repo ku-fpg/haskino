@@ -87,7 +87,18 @@ changeRep bndr@(NonRec b e) = do
   e'' <- changeRepExpr e'
   let e''' = mkLams bs e''
   return (NonRec b e''')
-changeRep bndr@(Rec bs) = return bndr
+changeRep bndr@(Rec bs) = do
+  bs' <- changeRep' bs
+  return $ Rec bs'
+
+changeRep' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
+changeRep' [] = return []
+changeRep' ((b, e) : bs) = do
+  let (lbs, e') = collectBinders e
+  e'' <- changeRepExpr e'
+  let e''' = mkLams lbs e''
+  bs' <- changeRep' bs
+  return $ (b, e''') : bs'
 
 changeRepExpr :: CoreExpr -> BindM CoreExpr
 changeRepExpr e = do
@@ -200,7 +211,7 @@ genDictArgs (dty:dtys) tys frty trty args = do
     let (tyConTy, ty') = splitAppTy dty
     case findIndex (typeIn ty') tys of
       Just idx -> do
-        -- Find the index of the from function arg which matches the 
+        -- Find the index of the from function arg which matches the
         -- type required by the dictionary
         let dictTy = exprType $ args !! idx
         -- Get the type of the to function arg at the same index
@@ -212,7 +223,7 @@ genDictArgs (dty:dtys) tys frty trty args = do
                      -- of type Class a => Expr a -> ... -> retType
                      -- so the dictionary type is of a not Expr a
                      Just (tyCon, tys') -> return dictTy
-                     -- If there is no TyCon, then we have a 
+                     -- If there is no TyCon, then we have a
                      -- function of type Class a => a -> ... -> retType
                      -- so the dictionary type needs to be Expr a.
                      Nothing -> do
@@ -229,7 +240,7 @@ genDictArgs (dty:dtys) tys frty trty args = do
                      -- of type Class a => Expr a -> ... -> retType
                      -- so the dictionary type is of a not Expr a
                      Just (tyCon, tys') -> return trty
-                     -- If there is no TyCon, then we have a 
+                     -- If there is no TyCon, then we have a
                      -- function of type Class a => a -> ... -> retType
                      -- so the dictionary type needs to be Expr a.
                      Nothing -> do
@@ -253,8 +264,8 @@ countNonDictTypes (ty:tys) = if isDictTy ty
                            else 1 + countNonDictTypes tys
 
 typeIn :: Type -> Type -> Bool
-typeIn t ty = 
-    if t `eqType` ty 
+typeIn t ty =
+    if t `eqType` ty
     then True
     else
       let (tyCon, tys') = splitTyConApp ty in

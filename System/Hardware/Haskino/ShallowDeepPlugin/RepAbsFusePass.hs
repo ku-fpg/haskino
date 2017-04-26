@@ -56,7 +56,18 @@ changeFuse bndr@(NonRec b e) = do
   e'' <- changeFuseExpr e'
   let e''' = mkLams bs e''
   return (NonRec b e''')
-changeFuse bndr@(Rec bs) = return bndr 
+changeFuse bndr@(Rec bs) = do
+  bs' <- changeFuse' bs
+  return $ Rec bs'
+
+changeFuse' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
+changeFuse' [] = return []
+changeFuse' ((b, e) : bs) = do
+  let (lbs, e') = collectBinders e
+  e'' <- changeFuseExpr e'
+  let e''' = mkLams lbs e''
+  bs' <- changeFuse' bs
+  return $ (b, e''') : bs'
 
 changeFuseExpr :: CoreExpr -> BindM CoreExpr
 changeFuseExpr e = do
@@ -69,9 +80,24 @@ changeFuseExpr e = do
     Lit l -> return $ Lit l
     Type ty -> return $ Type ty
     Coercion co -> return $ Coercion co
+    -- Look for case of rep_(abs_(x))
+    (Var fv) :$ (Type _) :$ _ :$ ((Var fv') :$ (Type _) :$ e') | fv == repId && fv' == absId -> do
+        e'' <- changeFuseExpr e'
+        return e''
+    -- Look for case of rep_ <$> (abs_ <$> m)
+    (Var fv) :$ (Type _) :$ (Type _) :$ (Type _) :$ _ :$ ((Var fv1) :$ Type _ :$ _) :$ ((Var fv2) :$ (Type _) :$ (Type _) :$ (Type _) :$ _ :$ (Var fv3 :$ Type _) :$ e'' )| fv == fmapId && fv1 == repId && fv2 == fmapId && fv3 == absId -> do
+        e''' <- changeFuseExpr e''
+        return e'''
+    App e1 e2 -> do
+        e1' <- changeFuseExpr e1
+        e2' <- changeFuseExpr e2
+        return $ App e1' e2'
+{-
     App e1 e2 -> do
         let (f, args) = collectArgs e
         let defaultReturn = do
+--              args' <- mapM changeFuseExpr args
+--              return $ mkCoreApps f args'
               e1' <- changeFuseExpr e1
               e2' <- changeFuseExpr e2
               return $ App e1' e2'
@@ -98,12 +124,15 @@ changeFuseExpr e = do
               then do
                 case args of
                     [Type _, Type _, Type _, _, e1, e2] -> do
+                      liftCoreM $ putMsgS "%%%%%%%%%%%%%"
                       let (f1, args1) = collectArgs e1
                       let (f2, args2) = collectArgs e2
                       case f1 of
                         Var f1v -> do
+                          liftCoreM $ putMsg $ ppr f1v
                           case f2 of
                             Var f2v -> do
+                              liftCoreM $ putMsg $ ppr f2v
                               if f1v == repId && f2v == fmapId
                               then do
                                 case args2 of
@@ -111,8 +140,11 @@ changeFuseExpr e = do
                                     let (f3, _) = collectArgs e3
                                     case f3 of
                                       Var f3v -> do
+                                        liftCoreM $ putMsg $ ppr f3v
                                         if f3v == absId
-                                        then return e4
+                                        then do
+                                          liftCoreM $ putMsgS "Got here"
+                                          return e4
                                         else defaultReturn
                                       _ -> defaultReturn
                               else defaultReturn
@@ -121,6 +153,7 @@ changeFuseExpr e = do
                     _ -> defaultReturn
               else defaultReturn
           _ -> defaultReturn
+-}
     Lam tb e -> do
       e' <- changeFuseExpr e
       return $ Lam tb e'

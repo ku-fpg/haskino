@@ -63,7 +63,9 @@ commProcBind :: CoreBind -> BindM CoreBind
 commProcBind bndr@(NonRec b e) = do
   e' <- commProcExpr e
   return (NonRec b e')
-commProcBind bndr@(Rec bs) = return bndr
+commProcBind (Rec bs) = do
+  bs' <- commProcExpr' bs
+  return $ Rec bs'
 
 funcInXlatList :: Id -> BindM (Maybe XlatEntry)
 funcInXlatList id = do
