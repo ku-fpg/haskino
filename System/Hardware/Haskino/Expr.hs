@@ -262,26 +262,10 @@ data Expr a where
 deriving instance Show a => Show (Expr a)
 
 data ExprEither a b where
-  ExprLeftUnit   :: ExprB b => Expr ()       -> ExprEither () b
-  ExprRightUnit  :: ExprB a => Expr ()       -> ExprEither a ()
-  ExprLeftB      :: ExprB b => Expr Bool     -> ExprEither Bool b
-  ExprRightB     :: ExprB a => Expr Bool     -> ExprEither a Bool
-  ExprLeftW8     :: ExprB b => Expr Word8    -> ExprEither Word8 b
-  ExprRightW8    :: ExprB a => Expr Word8    -> ExprEither a Word8
-  ExprLeftW16    :: ExprB b => Expr Word16   -> ExprEither Word16 b
-  ExprRightW16   :: ExprB a => Expr Word16   -> ExprEither a Word16
-  ExprLeftW32    :: ExprB b => Expr Word32   -> ExprEither Word32 b
-  ExprRightW32   :: ExprB a => Expr Word32   -> ExprEither a Word32
-  ExprLeftI8     :: ExprB b => Expr Int8     -> ExprEither Int8 b
-  ExprRightI8    :: ExprB a => Expr Int8     -> ExprEither a Int8
-  ExprLeftI16    :: ExprB b => Expr Int16    -> ExprEither Int16 b
-  ExprRightI16   :: ExprB a => Expr Int16    -> ExprEither a Int16
-  ExprLeftI32    :: ExprB b => Expr Int32    -> ExprEither Int32 b
-  ExprRightI32   :: ExprB a => Expr Int32    -> ExprEither a Int32
-  ExprLeftFloat  :: ExprB b => Expr Float    -> ExprEither Float b
-  ExprRightFloat :: ExprB a => Expr Float    -> ExprEither a Float
-  ExprLeftL8     :: ExprB b => Expr [Word8]  -> ExprEither [Word8] b
-  ExprRightL8    :: ExprB a => Expr [Word8]  -> ExprEither a [Word8]
+    ExprLeft   :: (ExprB a, ExprB b) => Expr a -> ExprEither a b
+    ExprRight  :: (ExprB a, ExprB b) => Expr b -> ExprEither a b
+
+deriving instance (Show a, Show b) => Show (ExprEither a b)
 
 class ExprB a where
     lit      :: a -> Expr a
@@ -302,8 +286,6 @@ class ExprB a where
     {-# INLINE neqE #-}
     neqE a b = notB (eqE a b)
     ifBE     :: Expr Bool -> Expr a -> Expr a -> Expr a
-    leftE    :: ExprB b => Expr a -> ExprEither a b
-    rightE   :: ExprB b => Expr a -> ExprEither b a
 
 instance ExprB () where
     lit _ = LitUnit
@@ -315,8 +297,6 @@ instance ExprB () where
     eqE _ _ = true
     {-# INLINE ifBE #-}
     ifBE _ _ _ = LitUnit
-    leftE = ExprLeftUnit
-    rightE b = ExprRightUnit b
 
 instance ExprB Word8 where
     lit = LitW8
@@ -328,8 +308,6 @@ instance ExprB Word8 where
     eqE = (==*)
     {-# INLINE ifBE #-}
     ifBE = ifB
-    leftE = ExprLeftW8
-    rightE b = ExprRightW8 b
 
 instance ExprB Word16 where
     lit = LitW16
@@ -341,8 +319,6 @@ instance ExprB Word16 where
     eqE = (==*)
     {-# INLINE ifBE #-}
     ifBE = ifB
-    leftE = ExprLeftW16
-    rightE = ExprRightW16
 
 instance ExprB Word32 where
     lit = LitW32
@@ -354,8 +330,6 @@ instance ExprB Word32 where
     eqE = (==*)
     {-# INLINE ifBE #-}
     ifBE = ifB
-    leftE = ExprLeftW32
-    rightE = ExprRightW32
 
 instance ExprB Int8 where
     lit = LitI8
@@ -367,8 +341,6 @@ instance ExprB Int8 where
     eqE = (==*)
     {-# INLINE ifBE #-}
     ifBE = ifB
-    leftE = ExprLeftI8
-    rightE = ExprRightI8
 
 instance ExprB Int16 where
     lit = LitI16
@@ -380,8 +352,6 @@ instance ExprB Int16 where
     eqE = (==*)
     {-# INLINE ifBE #-}
     ifBE = ifB
-    leftE = ExprLeftI16
-    rightE = ExprRightI16
 
 instance ExprB Int32 where
     lit = LitI32
@@ -393,8 +363,6 @@ instance ExprB Int32 where
     eqE = (==*)
     {-# INLINE ifBE #-}
     ifBE = ifB
-    leftE = ExprLeftI32
-    rightE = ExprRightI32
 
 instance ExprB Bool where
     lit = LitB
@@ -406,8 +374,6 @@ instance ExprB Bool where
     eqE = (==*)
     {-# INLINE ifBE #-}
     ifBE = ifB
-    leftE = ExprLeftB
-    rightE = ExprRightB
 
 instance ExprB [Word8] where
     lit = LitList8
@@ -419,8 +385,6 @@ instance ExprB [Word8] where
     eqE = (==*)
     {-# INLINE ifBE #-}
     ifBE = ifB
-    leftE = ExprLeftL8
-    rightE = ExprRightL8
 
 instance ExprB Float where
     lit = LitFloat
@@ -432,8 +396,6 @@ instance ExprB Float where
     eqE = (==*)
     {-# INLINE ifBE #-}
     ifBE = ifB
-    leftE = ExprLeftFloat
-    rightE = ExprRightFloat
 
 litString :: String -> Expr [Word8]
 litString s = LitList8 $ stringToBytes s

@@ -40,6 +40,7 @@ data CompileState = CompileState {level :: Int
                      , tasksToDo :: [(Arduino (), String, Bool)]
                      , tasksDone :: [String]
                      , errors :: [String]
+                     , iterBinds :: [(Int, Int)]
                      }
 
 data CompileType =
@@ -55,6 +56,7 @@ data CompileType =
   | FloatType
 
 compileTypeToString :: CompileType -> String
+compileTypeToString UnitType   = "uint8_t"
 compileTypeToString BoolType   = "bool"
 compileTypeToString Word8Type  = "uint8_t"
 compileTypeToString Word16Type = "uint16_t"
@@ -110,7 +112,7 @@ compileProgram p f = do
     mapM_ putStrLn $ errors st
   where
     (_, st) = runState compileTasks
-                (CompileState 0 False 0 0 "" "" "" "" [] [] [(p, mainEntry, False)] [] [] )
+                (CompileState 0 False 0 0 "" "" "" "" [] [] [(p, mainEntry, False)] [] [] [])
     prog = "#include \"HaskinoRuntime.h\"\n\n" ++
            forwards st ++ "\n" ++
            "void setup()\n" ++
@@ -202,7 +204,7 @@ compileStrongProcedureError :: String -> State CompileState ()
 compileStrongProcedureError s =
     compileError ("/* " ++ errmsg ++ " */") errmsg
   where
-    errmsg = "ERROR - " ++ s ++ " is a Strong procedure, use Deep version instead."
+    errmsg = "ERROR - " ++ s ++ " is a Shallow procedure, use Deep version instead."
 
 compileUnsupportedError :: String -> State CompileState ()
 compileUnsupportedError s =
@@ -693,6 +695,8 @@ compileProcedure (IfThenElseL8E e cb1 cb2) =
     compileIfThenElseProcedure List8Type e cb1 cb2
 compileProcedure (IfThenElseFloatE e cb1 cb2) =
     compileIfThenElseProcedure FloatType e cb1 cb2
+compileProcedure (IfThenElseW8Unit e cb1 cb2) =
+    compileIfThenElseEitherProcedure Word8Type UnitType e cb1 cb2
 compileProcedure (WhileBoolE iv bf bdf) = do
     i <- nextBind
     let bi = RemBindB i
@@ -783,16 +787,44 @@ compileIfThenElseProcedure t e cb1 cb2 = do
     compileLineIndent "}"
     return $ remBind b
 
+compileIfThenElseEitherProcedure :: (ExprB a, ExprB b) => CompileType -> CompileType -> Expr Bool -> Arduino (ExprEither a b) -> Arduino (ExprEither a b) -> State CompileState (ExprEither a b)
+compileIfThenElseEitherProcedure t1 t2 e cb1 cb2 = do
+    s <- get
+    let ibs = head $ iterBinds s
+    compileLine $ "if (" ++ compileExpr e ++ ")"
+    r1 <- compileCodeBlock cb1
+    case r1 of
+        ExprLeft a -> do
+            compileLineIndent $ bindName ++ show (fst ibs) ++ " = " ++ compileExpr a ++ ";"
+        ExprRight b -> do
+            compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ compileExpr b ++ ";"
+            compileLineIndent "break;"
+    compileLineIndent "}"
+    compileLine "else"
+    r2 <- compileCodeBlock cb2
+    case r2 of
+        ExprLeft a -> do
+            compileLineIndent $ bindName ++ show (fst ibs) ++ " = " ++ compileExpr a ++ ";"
+        ExprRight b -> do
+            compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ compileExpr b ++ ";"
+            compileLineIndent "break;"
+    compileLineIndent "}"
+    return $ r2
+
 compileIterateProcedure :: (ExprB a, ExprB b) => CompileType -> CompileType ->
                            Int -> Expr a -> Int -> Expr b -> Expr a ->
                            (Expr a -> Arduino(ExprEither a b)) -> State CompileState (Expr b)
 compileIterateProcedure ta tb b1 b1e b2 b2e iv bf = do
+    s <- get
+    put s {iterBinds = (b1, b2):iterBinds s}
     compileAllocBind $ compileTypeToString ta ++ " " ++ bindName ++ show b1 ++ ";"
     compileAllocBind $ compileTypeToString tb ++ " " ++ bindName ++ show b2 ++ ";"
     compileLine $ bindName ++ show b1 ++ " = " ++ compileExpr iv ++ ";"
     compileLine $ "while (1)"
     r <- compileCodeBlock $ bf b1e
     compileLineIndent "}"
+    s <- get
+    put s {iterBinds = tail $ iterBinds s}
     return b2e
 
 compileWhileProcedure :: ExprB a => CompileType -> Int -> Expr a -> Expr a -> (Expr a -> Expr Bool) -> (Expr a -> Arduino (Expr a)) -> State CompileState (Expr a)
@@ -927,6 +959,7 @@ compileRef :: Int -> String
 compileRef n = refName ++ show n
 
 compileExpr :: Expr a -> String
+compileExpr LitUnit = "0"
 compileExpr (LitB b) = if b then "1" else "0"
 compileExpr (ShowB e) = compileSubExpr "showBool" e
 compileExpr (RefB n) = compileRef n
