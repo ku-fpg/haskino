@@ -52,3 +52,16 @@ firmware/EEPROMErase/build-*
 
 # Editor temporary files
 .*.swp
+
+# Tempoarary Ignore
+System/Hardware/Haskino/SamplePrograms/Rewrite/Example.hs
+System/Hardware/Haskino/SamplePrograms/Rewrite/TwoButton
+System/Hardware/Haskino/SamplePrograms/Rewrite/TwoButtonFunc
+System/Hardware/Haskino/SamplePrograms/Rewrite/TwoButtonIf
+System/Hardware/Haskino/SamplePrograms/Rewrite/TwoButtonIter
+System/Hardware/Haskino/SamplePrograms/Rewrite/TwoButtonIter.hs
+System/Hardware/Haskino/SamplePrograms/Rewrite/TwoButtonLess.hs
+System/Hardware/Haskino/SamplePrograms/Rewrite/TwoButtonLet
+System/Hardware/Haskino/SamplePrograms/Rewrite/TwoButtonRecur
+System/Hardware/Haskino/ShallowDeepPlugin/RecurPass.hs.4-23.backup.hs
+System/Hardware/Haskino/ShallowDeepPlugin/Utils.hs.backup
