@@ -1,0 +1,282 @@
+\documentclass[11pt]{article}
+
+\usepackage{changepage}
+\usepackage{fancyvrb}
+\usepackage{hyperref}
+% \usepackage{graphicx}
+\usepackage[pdftex]{graphicx}
+\usepackage{setspace}
+\usepackage{verbatim}
+\usepackage[letterpaper, margin=1in]{geometry}
+\usepackage{natbib}
+
+\usepackage[cmex10]{amsmath}
+\usepackage{array}
+\usepackage{stmaryrd}
+\usepackage{amssymb}
+\usepackage{color}
+\usepackage{ifthen}
+\usepackage[all]{xy}
+
+\usepackage{float,subfig}
+
+\usepackage{amssymb}
+\usepackage{fancyvrb}
+\usepackage{tikz}
+\usetikzlibrary{calc,trees,positioning,arrows,chains,shapes.geometric,%
+    decorations.pathreplacing,decorations.pathmorphing,shapes,%
+    matrix,shapes.symbols}
+
+\DefineVerbatimEnvironment{Code}{Verbatim}{samepage=true,commandchars=\\\{\},fontsize=\small,xleftmargin=3em}
+
+\DefineShortVerb{\|}
+\SaveVerb{Slash}|\|
+\newcommand{\lam}{\UseVerb{Slash}} % for use inside {Code}
+\SaveVerb{OpenSB}|[|
+\newcommand{\opensb}{\UseVerb{OpenSB}} % for use inside {Code}
+\SaveVerb{CloseSB}|]|
+\newcommand{\closesb}{\UseVerb{CloseSB}} % for use inside {Code}
+\SaveVerb{OpenCB}|{|
+\newcommand{\opencb}{\UseVerb{OpenCB}} % for use inside {Code}
+\SaveVerb{CloseCB}|}|
+\newcommand{\closecb}{\UseVerb{CloseCB}} % for use inside {Code}
+\SaveVerb{Equiv}|≡|
+\newcommand{\equivalence} {\UseVerb{Equiv}} % for use inside {Code}
+\UndefineShortVerb{\|}
+\newcommand{\todo}[2][0pt]{%
+\marginpar[\raggedleft\vskip #1\tiny\color{red} #2]{\raggedright\vskip #1\tiny\color{red} #2}%
+}
+
+\title{Haskino Recursion Notes}
+\author{Mark Grebe}
+%\date{}							% Activate to display a given date or no date
+
+\begin{document}
+\maketitle
+
+\section{Overview}
+
+These notes document applying the Step/Done/IterLoop transformations
+to the Haskino DSL and transformation plugin.  We show the recursion
+transformations in the shallow DSL, applying the pass doing the recursion
+pass before we handle the shallow to deep transformations
+later in the process.
+
+\section{First Example}
+
+Starting with a typical iteration example on the Arduino, we will blink an LED
+a specified number of times in Haskino.  
+\begin{Code}
+led = 13
+button1 = 2
+button2 = 3
+
+blink :: Word8 -> Arduino ()
+blink 0 = return ()
+blink t = do 
+    digitalWrite led True
+    delayMillis 1000
+    digitalWrite led False
+    delayMillis 1000
+    blink $ t-1
+\end{Code}
+
+Using the methodology David developed, we start the transformation
+of the recursive bind to an imperative while loop.  We need to modify 
+the data structures and functions used for transformation slightly
+due to the monadic nature of the Haskino DSL.  The base types are
+the following:
+
+\begin{Code}
+data Iter a b
+    = Step a
+    | Done b
+
+step :: a -> Iter a b
+step s = Step s
+
+done :: b -> Iter a b
+done d = Done d
+
+iterLoop :: (a -> Arduino (Iter a b)) -> Arduino a -> Arduino b
+\end{Code}
+
+We start by adding a wrapper function to insert our
+\verb|IterLoop| function:
+
+\begin{Code}
+blink :: Word8 -> Arduino ()
+blink = iterLoop blink2
+
+blinkI :: Word8 -> Arduino (Iter Word8 ())
+blinkI 0 = done <$> return ()
+blinkI t = done <$> do
+    digitalWrite led True
+    delayMillis 1000
+    digitalWrite led False
+    delayMillis 1000
+    blink $ return $ t-1
+\end{Code}
+
+Now we can translate the \verb|done| and recursive call
+to a \verb|step| using the following rule:
+
+\begin{Code}
+forall f x.    done <$> (g >>= (f x))
+        =
+    step <$> (g >>= (return x))\end{Code}
+
+With our example, it then becomes:
+
+\begin{Code}
+blinkI :: Word8 -> Arduino (Iter Word8 ())
+blinkI 0 = done <$> return ()
+blinkI t = step <$> do
+    digitalWrite led True
+    delayMillis 1000
+    digitalWrite led False
+    delayMillis 1000
+    return $ t-1
+\end{Code}
+
+Now we can translate to the shallow Haskino DSL's imperative
+while command:
+
+\begin{Code}
+blink2' t = do
+    t' <- while t (\lam x -> not(x == 0)) (\lam x -> do
+        if (x==0) 
+          then
+            digitalWrite led True
+            delayMillis 1000
+            digitalWrite led False
+            delayMillis 1000
+            return $ x-1
+          else
+            return 0
+        )
+    if (t' == 0) 
+      then return ()
+      else return ()
+\end{Code}
+
+As this example only has one \verb|done| instance and one \verb|step| instance,
+the \verb|if| structures in the body of the \verb|while| and at the end of the function
+are redundant.  Had there been multiple \verb|done| or \verb|step| instances,
+additional conditional tests would be required in the body of the loop to 
+determine which instance's code would be executed.  The transformation
+could determine if there are single instances and optimize the redundant
+\verb|if| structures out.
+
+\section{Second Example}
+
+Our second example deals with another form of iteration that
+is typical in systems that deal with hardware response.  In 
+this example we want a function that waits for a button to
+be pressed.  This is detected by the return from a Haskino
+read of a digital pin becoming True.  The function would
+be written in a shallow, tail recursive style as follows:
+
+\begin{Code}
+wait :: Arduino ()
+wait = do
+  b <- digitalRead button1
+  if b then return () else wait 
+\end{Code}
+
+Functions of these type require us to use another wrapper
+function, so that a loop binding is created that may be tracked
+and used to determine when the iteration terminates.  This
+is unique to our monadic example, since the termination 
+condition is being determined based on an effect that
+is input during the iteration.
+
+We add a boolean parameter to the work function, and
+call it with a wrapper function which uses an initial value
+of \verb|True| for the parameter.
+
+\begin{Code}
+wait :: Arduino ()
+wait = wait' True
+
+wait' :: Bool -> Arduino ()
+wait' i = do
+     b <- digitalRead button1
+     if b then return () else wait' True
+\end{Code}
+
+As we did with the first example, we can add a wrapper
+function and our iterative data structure:
+
+\begin{Code}
+wait :: Arduino ()
+wait = wait' True
+
+wait' :: Bool -> Arduino ()
+wait' = iterLoop $ waitI
+
+waitI :: Bool -> Arduino (Iter Bool ())
+waitI i = done <$> do
+     b <- digitalRead button1
+     if b then return () else wait' True
+\end{Code}
+
+An additional rule allows us to move the done through
+the monadic binds.
+
+\begin{Code}
+forall (f :: Arduino a) (k :: a -> Arduino b).
+     done <$> (f >>= k)
+            =
+     f >>= (done <$> k)
+\end{Code}
+
+Applying the rule transforms the wrapped function to:
+
+\begin{Code}
+waitI :: Bool -> Arduino (Iter Bool ())
+waitI i =  do
+     b <- digitalRead button1
+     done <$> if b then return () else wait2' True
+\end{Code}
+
+We can then use the following rule to move the \verb|done| into
+the \verb|then| and \verb|else| branches of the conditional:
+
+\begin{Code}
+forall (c :: Bool) (t :: Arduino a) (f :: Arduino a).     done <$> (if c then t else f)           =     if c then done <$> t else done <$> f
+\end{Code}
+
+Which leaves the example as follows:
+
+\begin{Code}
+waitI :: Bool -> Arduino (Iter Bool ())
+waitI i = do
+     b <- digitalRead button1
+     if b then done <$> return () else done <$> wait2' True
+\end{Code}
+
+Once again we can translate the \verb|done| and recursive call
+to a \verb|step| to give us:
+
+\begin{Code}
+waitI :: Bool -> Arduino (Iter Bool ())
+waitI i = do
+     b <- digitalRead button1
+     if b then done <$> return () else step <$> return True
+\end{Code}
+
+Now we can translate to the shallow Haskino DSL's imperative
+while command:
+
+\begin{Code}
+wait'' t = do
+    b' < - while True (\lam x -> x) (\lam x -> do
+        b <- digitalRead button1
+        if b then return False else return True)
+    if b'
+      then return ()
+      else return ()
+\end{Code}
+
+\end{document}  

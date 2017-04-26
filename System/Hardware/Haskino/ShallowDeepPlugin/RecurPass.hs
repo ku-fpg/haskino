@@ -28,6 +28,8 @@ data BindEnv
         dicts         :: [CoreExpr]
       }
 
+data StepBelow = Yes Type | Immed Type | No
+
 newtype BindM a = BindM { runBindM :: StateT BindEnv CoreM a }
     deriving (Functor, Applicative, Monad
              ,MonadIO, MonadState BindEnv)
@@ -79,13 +81,13 @@ recurBind' ((b, e) : bs) = do
                 let arg = head lbs
 
                 -- Build the step body of the While
-                (e'', hasAp)  <- checkForRecur True e'
+                (e'', _)  <- checkForRecur True e'
                 newStepB <- buildId ("x") argTy
                 stepE <- changeVarExpr arg newStepB e''
                 let stepLam = mkLams [newStepB] stepE
 
                 -- Build the done body which executes after the while
-                (e''', hasAp) <- checkForRecur False e'
+                (e''', _) <- checkForRecur False e'
                 newDoneB <- buildId ("x'") argTy
                 doneE <- changeVarExpr arg newDoneB e'''
                 let doneLam = mkLams [newDoneB] doneE
@@ -95,11 +97,7 @@ recurBind' ((b, e) : bs) = do
                 cond <- genWhileCond conds
                 newCondB <- buildId ("x") argTy
                 cond' <- changeVarExpr arg newCondB cond
-                -- condDeep <- repExpr cond'
                 let condLam = mkLams [newCondB] cond'
-
-                -- Build the initialization argument
-                -- initArg <- repExpr (Var arg)
 
                 -- Build the while expression
                 whileId <- thNameToId whileTH
@@ -134,7 +132,7 @@ recurBind' ((b, e) : bs) = do
         _ -> defaultRet
 
 
-checkForRecur :: Bool -> CoreExpr -> BindM (CoreExpr, Bool)
+checkForRecur :: Bool -> CoreExpr -> BindM (CoreExpr, StepBelow)
 checkForRecur step e = do
     funcId <- gets funcId
     df <- liftCoreM getDynFlags
@@ -155,38 +153,75 @@ checkForRecur step e = do
               s <- get               
               put s {dicts = [args !! 1]}              
               -- Check if the next level has a recur
-              (e'', recurFlag) <- checkForRecur step $ last args
-              let e''' = mkCoreApps f ((init args) ++ [e''])
-              return $ (mkLams bs e''', recurFlag)
+              (e'', stepBelow) <- checkForRecur step $ last args
+              case stepBelow of
+                  Immed ty -> do
+                      let [arg1, arg2, arg3 , arg4, arg5, arg6] = args
+
+                      let e''' = mkCoreApps f ([arg1, arg2, arg3, Type ty, arg5, e''])
+                      return $ (mkLams bs e''', Yes ty)
+                  _ -> do
+                      let e''' = mkCoreApps f ((init args) ++ [e''])
+                      return $ (mkLams bs e''', stepBelow)                   
           else
               -- We are at the bottom of the bind chain.....
               -- Check for recursive call.
               -- Either in the form of (Var funcId) arg ...
               if fv == head funcId
               then do
+                  -- TBD Save type on case
                   ret_e <- genReturn $ head args
-                  return (mkLams bs ret_e, True)
+                  let (tyCon, [tyArg]) = splitTyConApp $ exprType ret_e
+                  return (mkLams bs ret_e, Immed tyArg)
               -- ... Or in the form of (Var funcId) $ arg
               else if fv == apId
                    then case args of
                        [_, _, _, Var fv', arg] | fv' == head funcId -> do
+                           -- TBD Save type on case
                            ret_e <- genReturn arg
-                           return (mkLams bs ret_e, True)
-                       _ -> return (e, False)
-                   else return (e, False)
+                           let (tyCon, [tyArg]) = splitTyConApp $ exprType ret_e
+                           return (mkLams bs ret_e, Immed tyArg)
+                       _ -> return (e, No)
+                   else return (e, No)
       Case e' tb ty alts -> do
-          alts' <- checkAltsForRecur step e' alts
-          return (Case e' tb ty alts', False)
-      _ -> return (e, False)
+          (alts', stepBelow) <- checkAltsForRecur step e' alts
+          monadTyConId <- thNameToTyCon monadTyConTH
+          case stepBelow of
+              No        -> do
+                liftCoreM $ putMsgS "***No"
+                return (Case e' tb ty  alts', stepBelow)
+              Yes ty'   -> do
+                liftCoreM $ putMsgS "***Yes"
+                liftCoreM $ putMsg $ ppr ty'
+                liftCoreM $ putMsg $ ppr step
+                if step 
+                then do
+                    let ty'' = mkTyConApp monadTyConId [ty']
+                    return (Case e' tb ty'' alts', stepBelow)
+                else return (Case e' tb ty  alts', stepBelow)
+              Immed ty' -> do
+                liftCoreM $ putMsgS "***Immed"
+                liftCoreM $ putMsg $ ppr ty'
+                if step 
+                then do
+                    let ty'' = mkTyConApp monadTyConId [ty']
+                    return (Case e' tb ty'' alts', stepBelow)
+                else return (Case e' tb ty  alts', stepBelow)
+      _ -> return (e, No)
 
 
-checkAltsForRecur :: Bool -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> BindM [GhcPlugins.Alt CoreBndr]
-checkAltsForRecur _ _ [] = return []
+checkAltsForRecur :: Bool -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> BindM ([GhcPlugins.Alt CoreBndr], StepBelow)
+checkAltsForRecur _ _ [] = return ([], No)
 checkAltsForRecur step e ((ac, b, a) : as) = do
     recurErrName <- thNameToId recurErrNameTH
-    (a', hasAp) <- checkForRecur step a
-    a'' <- if hasAp
-           then do
+    (a', hasStep ) <- checkForRecur step a
+    a'' <- case hasStep of
+           No -> do
+              if step
+              then return (Var recurErrName)
+              else return a'
+           -- TBD Factor out function for Immed and Yes branches
+           Immed ty -> do
               -- For a Step branch, save the conditional
               e' <- case ac of
                       DataAlt d -> do
@@ -207,11 +242,48 @@ checkAltsForRecur step e ((ac, b, a) : as) = do
                   put s {conds = e' : conds s}
                   return a'
               else return (Var recurErrName)
-           else if step
-                then return (Var recurErrName)
-                else return a'
-    bs' <- checkAltsForRecur step e as
-    return $ (ac, b, a'') : bs'
+           Yes ty -> do
+              -- For a Step branch, save the conditional
+              e' <- case ac of
+                      DataAlt d -> do
+                        Just falseName <- liftCoreM $ thNameToGhcName falseNameTH
+                        -- if d == falseName
+                        if (getName d) == falseName
+                        then do
+                          -- If we are in the False branch of the case, we
+                          -- need to negate the conditional
+                          notName <- thNameToId notNameTH
+                          return $ mkCoreApps (Var notName) [e]
+                        else return e
+              if step
+              then do
+                  -- Add conditional to list to generate while conditional
+                  -- during the Step phase.
+                  s <- get
+                  put s {conds = e' : conds s}
+                  return a'
+              else return (Var recurErrName)
+
+    (bs', hasStep') <- checkAltsForRecur step e as
+    liftCoreM $ putMsgS "++++"
+    outStep hasStep
+    outStep hasStep'
+
+    case hasStep' of
+        No -> return ((ac, b, a'') : bs', hasStep)
+        _  -> return ((ac, b, a'') : bs', hasStep')
+  where
+    outStep h = do
+      case h of 
+        No -> liftCoreM $ putMsgS "No"
+        Yes ty -> do
+          liftCoreM $ putMsgS "Yes"
+          liftCoreM $ putMsg $ ppr ty
+        Immed ty -> do
+          liftCoreM $ putMsgS "Immed"
+          liftCoreM $ putMsg $ ppr ty
+
+
 
 genReturn :: CoreExpr -> BindM CoreExpr
 genReturn e = do
