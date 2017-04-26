@@ -526,6 +526,10 @@ data ArduinoProcedure :: * -> * where
      IfThenElseL8E     :: Expr Bool -> Arduino (Expr [Word8]) -> Arduino (Expr [Word8]) -> ArduinoProcedure (Expr [Word8])
      IfThenElseFloat   :: Bool -> Arduino Float -> Arduino Float -> ArduinoProcedure Float
      IfThenElseFloatE  :: Expr Bool -> Arduino (Expr Float) -> Arduino (Expr Float) -> ArduinoProcedure (Expr Float)
+     IfThenElseW8Unit  :: Expr Bool -> Arduino(ExprEither Word8 ()) -> Arduino(ExprEither Word8 ()) -> ArduinoProcedure (ExprEither Word8 ())
+     IfThenElseW8W8    :: Expr Bool -> Arduino(ExprEither Word8 Word8) -> Arduino(ExprEither Word8 Word8) -> ArduinoProcedure (ExprEither Word8 Word8)
+     IfThenElseUnitUnit :: Expr Bool -> Arduino(ExprEither () ()) -> Arduino(ExprEither () ()) -> ArduinoProcedure (ExprEither () ())
+     IfThenElseUnitW8  :: Expr Bool -> Arduino(ExprEither () Word8) -> Arduino(ExprEither () Word8) -> ArduinoProcedure (ExprEither () Word8)
      WhileBool         :: Bool -> (Bool -> Bool) -> (Bool -> Arduino Bool) -> ArduinoProcedure Bool
      WhileBoolE        :: (Expr Bool) -> (Expr Bool -> Expr Bool) -> (Expr Bool -> Arduino (Expr Bool)) -> ArduinoProcedure (Expr Bool)
      WhileWord8        :: Word8 -> (Word8 -> Bool) -> (Word8 -> Arduino Word8) -> ArduinoProcedure Word8
@@ -912,18 +916,23 @@ instance ArduinoConditional Float where
 class (ExprB a, ExprB b) => ArduinoIterate a b where
     -- iterate   :: a -> (a -> Arduino (Either a b)) -> Arduino b
     iterateE  :: Expr a -> (Expr a -> Arduino (ExprEither a b)) -> Arduino (Expr b)
+    ifThenElseEither   :: Expr Bool -> Arduino (ExprEither a b) -> Arduino (ExprEither a b) -> Arduino (ExprEither a b)
 
 instance ArduinoIterate Word8 Word8 where
     iterateE iv bf = Arduino $ procedure $ IterateW8W8E iv bf
+    ifThenElseEither be te ee = Arduino $ procedure $ IfThenElseW8W8 be te ee
 
 instance ArduinoIterate Word8 () where
     iterateE iv bf = Arduino $ procedure $ IterateW8UnitE iv bf
+    ifThenElseEither be te ee = Arduino $ procedure $ IfThenElseW8Unit be te ee
 
 instance ArduinoIterate () Word8 where
     iterateE iv bf = Arduino $ procedure $ IterateUnitW8E iv bf
+    ifThenElseEither be te ee = Arduino $ procedure $ IfThenElseUnitW8 be te ee
 
 instance ArduinoIterate () () where
-    iterateE iv bf = Arduino $ procedure $ IterateUnitUnitE iv bf
+    iterateE iv bf  = Arduino $ procedure $ IterateUnitUnitE iv bf
+    ifThenElseEither be te ee = Arduino $ procedure $ IfThenElseUnitUnit be te ee
 
 -- | A response, as returned from the Arduino
 data Response = DelayResp
