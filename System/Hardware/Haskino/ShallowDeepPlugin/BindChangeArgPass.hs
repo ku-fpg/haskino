@@ -45,7 +45,22 @@ bindChangeArgRetPass guts = do
     return (guts { mg_binds = concat bindsL' })
 
 changeBind :: CoreBind -> BindM [CoreBind]
-changeBind bndr@(NonRec b e) = do
+changeBind (NonRec b e) = do
+  (b', e') <- changeSubBind b e
+  return [NonRec b' e']
+changeBind bndr@(Rec bs) = do
+  bs' <- changeBind' bs
+  return $ [Rec bs']
+
+changeBind' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
+changeBind' [] = return []
+changeBind' ((b, e) : bs) = do
+  (subB, subE) <- changeSubBind b e
+  bs' <- changeBind' bs
+  return $ (subB, subE) : bs'
+
+changeSubBind :: Id -> CoreExpr -> BindM (Id, CoreExpr)
+changeSubBind b e = do
   df <- liftCoreM getDynFlags
   let (argTys, retTy) = splitFunTys $ varType b
   let (bs, e') = collectBinders e
@@ -87,7 +102,7 @@ changeBind bndr@(NonRec b e) = do
               -- absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' shallowE
 
               -- return [NonRec b absExpr, NonRec b' $ mkLams bs' e''']
-              return [NonRec b' $ mkLams bs' e''']
+              return (b', mkLams bs' e''')
           else if length bs > 0 
               then do
                   -- Change the top level bind type
@@ -95,10 +110,9 @@ changeBind bndr@(NonRec b e) = do
 
                   -- let shallowE = mkCoreApps (Var b') deepArgs
                   -- return [NonRec b shallowE, NonRec b' $ mkLams bs' e'']
-                  return [NonRec b' $ mkLams bs' e'']
-              else return [bndr]
-      _ -> return [bndr]
-changeBind bndr@(Rec bs) = return [bndr]
+                  return (b', mkLams bs' e'')
+              else return (b, e)
+      _ -> return (b, e)
 
 changeArg :: (CoreBndr, Type) -> BindM (CoreBndr, Type)
 changeArg (b, ty) = do

@@ -46,6 +46,23 @@ bindChangeAppPass guts = do
 findCmdsProcs :: [CoreBind] -> CoreM ([CoreBndr],[CoreBndr])
 findCmdsProcs [] = return ([], [])
 findCmdsProcs (bndr@(NonRec b e) : bndrs) = do
+    (cmds, procs) <- findCmdsProcs bndrs
+    (c, p) <- findCmdsProcsInBind b e
+    return (c ++ cmds, p ++ procs)
+findCmdsProcs ((Rec bs) : bndrs) = do
+    (cmds, procs) <- findCmdsProcs bndrs
+    (c, p) <- findCmdsProcs' bs
+    return (c ++ cmds, p ++ procs)
+
+findCmdsProcs' :: [(Id, CoreExpr)] -> CoreM ([CoreBndr],[CoreBndr])
+findCmdsProcs' [] = return ([], [])
+findCmdsProcs' ((b, e) : bs) = do
+    (cmds, procs) <- findCmdsProcs' bs
+    (c, p) <- findCmdsProcsInBind b e
+    return (c ++ cmds, p ++ procs)
+
+findCmdsProcsInBind :: Id -> CoreExpr -> CoreM ([CoreBndr],[CoreBndr])
+findCmdsProcsInBind b e = do
     df <- getDynFlags
     let (argTys, retTy) = splitFunTys $ varType b
     let tyCon_m = splitTyConApp_maybe retTy
@@ -57,18 +74,14 @@ findCmdsProcs (bndr@(NonRec b e) : bndrs) = do
     case tyCon_m of
         -- We are looking for return types of Arduino a
         Just (retTyCon, [retTy']) | retTyCon == monadTyCon &&
-                                    retTy' `eqType` unitTyConTy -> do
-            (cmds, procs) <- findCmdsProcs bndrs
-            return (b:cmds, procs)
+                                    retTy' `eqType` unitTyConTy ->
+            return ([b],[])
         Just (retTyCon, [retTy']) | retTyCon == monadTyCon -> do
           let tyCon_m' = splitTyConApp_maybe retTy'
           case tyCon_m' of
-              Just (retTyCon', [retTy'']) -> do
-                  (cmds, procs) <- findCmdsProcs bndrs
-                  return (cmds, b:procs)
-              _ -> findCmdsProcs bndrs
-        _ -> findCmdsProcs bndrs
-findCmdsProcs ((Rec bs) : bndrs) = findCmdsProcs bndrs
+              Just (retTyCon', [retTy'']) -> return ([], [b])
+              _ -> return ([], [])
+        _ -> return ([], [])
 
 changeAppBind :: CoreBind -> BindM CoreBind
 changeAppBind bndr@(NonRec b e) = do
