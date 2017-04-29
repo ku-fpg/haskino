@@ -46,10 +46,10 @@ install _ todo = do
   let repAbsFuseToDo = [CoreDoPluginPass "RepAbsFuse" repAbsFusePass]
   let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
   let showToDo = [CoreDoPluginPass "ShowPass" showPass]
-  return $ [simplPass] ++ condToDo ++ commProcToDo ++ returnsToDo ++
+  return $ [simplPass] ++ dumpToDo ++ condToDo ++ commProcToDo ++ returnsToDo ++
            bindArgRetToDo ++ bindAppToDo ++
            repPushToDo ++ absLambdaToDo ++
-           repAbsFuseToDo ++ todo ++ dumpToDo
+           repAbsFuseToDo ++ recurToDo ++ dumpToDo ++ todo -- ++ dumpToDo
 {-
   -- The following version of the return uses rules passes to do the repPush
   -- and repAbsFuse passes.  This version only works with optimization off

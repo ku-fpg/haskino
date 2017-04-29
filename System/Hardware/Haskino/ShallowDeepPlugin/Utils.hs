@@ -23,20 +23,27 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            thNameToId,
                                            thNameToTyCon,
                                            thNameTyToDict,
+                                           thNameTysToDict,
                                            thNameTyToTyConApp,
                                            PassCoreM(..),
                                            pattern (:$),
                                            -- DSL specific names
+                                           eitherTyConTH,
                                            exprClassTyConTH,
                                            exprTyConTH,
                                            monadCondTyConTH,
+                                           monadIterateTyConTH,
                                            monadTyConTH,
                                            absNameTH,
                                            repNameTH,
                                            ifThenElseNameTH,
+                                           ifThenElseEitherNameTH,
                                            ifThenElseUnitNameTH,
                                            whileTH,
                                            whileETH,
+                                           iterateETH,
+                                           leftNameTH,
+                                           rightNameTH,
                                            -- General Haskell names
                                            apNameTH,
                                            andNameTH,
@@ -46,6 +53,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            bindThenNameTH,
                                            falseNameTH,
                                            fmapNameTH,
+                                           monadClassTyConTH,
                                            notNameTH,
                                            recurErrNameTH,
                                            returnNameTH) where
@@ -76,21 +84,28 @@ import System.Hardware.Haskino.ShallowDeepPlugin.Typechecker (initTcFromModGuts)
 -- and names of the conditionals in the DSL.
 import qualified System.Hardware.Haskino
 
-exprClassTyConTH     = ''System.Hardware.Haskino.ExprB
-exprTyConTH          = ''System.Hardware.Haskino.Expr
-monadCondTyConTH     = ''System.Hardware.Haskino.ArduinoConditional
-monadTyConTH         = ''System.Hardware.Haskino.Arduino
-absNameTH            = 'System.Hardware.Haskino.abs_
-repNameTH            = 'System.Hardware.Haskino.rep_
-ifThenElseNameTH     = 'System.Hardware.Haskino.ifThenElseE
-ifThenElseUnitNameTH = 'System.Hardware.Haskino.ifThenElseUnitE
-recurErrNameTH       = 'System.Hardware.Haskino.recurErr
-whileTH              = 'System.Hardware.Haskino.while
-whileETH             = 'System.Hardware.Haskino.whileE
+eitherTyConTH          = ''System.Hardware.Haskino.ExprEither
+exprClassTyConTH       = ''System.Hardware.Haskino.ExprB
+exprTyConTH            = ''System.Hardware.Haskino.Expr
+monadCondTyConTH       = ''System.Hardware.Haskino.ArduinoConditional
+monadTyConTH           = ''System.Hardware.Haskino.Arduino
+monadIterateTyConTH    = ''System.Hardware.Haskino.ArduinoIterate
+absNameTH              = 'System.Hardware.Haskino.abs_
+repNameTH              = 'System.Hardware.Haskino.rep_
+ifThenElseNameTH       = 'System.Hardware.Haskino.ifThenElseE
+ifThenElseUnitNameTH   = 'System.Hardware.Haskino.ifThenElseUnitE
+ifThenElseEitherNameTH = 'System.Hardware.Haskino.ifThenElseEither
+recurErrNameTH         = 'System.Hardware.Haskino.recurErr
+whileTH                = 'System.Hardware.Haskino.while
+whileETH               = 'System.Hardware.Haskino.whileE
+iterateETH             = 'System.Hardware.Haskino.iterateE
+leftNameTH             = 'System.Hardware.Haskino.ExprLeft
+rightNameTH            = 'System.Hardware.Haskino.ExprRight
 
 -- The following lines contain definitions of Template Haskell namde
 -- for standard Haskell functions.
 functTyConTH         = ''Data.Functor.Functor
+monadClassTyConTH    = ''Prelude.Monad
 unitTyConTH          = ''()
 bindNameTH           = '(>>=)
 bindThenNameTH       = '(>>)
@@ -153,6 +168,11 @@ thNameTyToDict :: PassCoreM m => TH.Name -> Type -> m CoreExpr
 thNameTyToDict n ty = do
   tyCon <- thNameToTyCon n
   buildDictionaryTyConT tyCon ty
+
+thNameTysToDict :: PassCoreM m => TH.Name -> [Type] -> m CoreExpr
+thNameTysToDict n tys = do
+  tyCon <- thNameToTyCon n
+  buildDictionaryTyConTs tyCon tys
 
 thNameTyToTyConApp :: PassCoreM m => TH.Name -> Type -> m Type
 thNameTyToTyConApp n ty = do
@@ -276,4 +296,8 @@ buildDictionaryT ty = do
 
 buildDictionaryTyConT :: PassCoreM m => TyCon -> Type -> m CoreExpr
 buildDictionaryTyConT tyCon ty =
-    buildDictionaryT $ GhcPlugins.mkTyConApp tyCon [ty]
+    buildDictionaryTyConTs tyCon [ty]
+
+buildDictionaryTyConTs :: PassCoreM m => TyCon -> [Type] -> m CoreExpr
+buildDictionaryTyConTs tyCon tys =
+    buildDictionaryT $ GhcPlugins.mkTyConApp tyCon tys
