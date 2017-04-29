@@ -20,7 +20,7 @@ import Data.Word
 import Data.Boolean
 import System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonE
 
-led = 13
+led = 6
 button1 = 2
 button2 = 3
 
@@ -45,7 +45,6 @@ recurProg = do
     setPinMode button2 INPUT
     wait button1
     blink 3
-
 
 main :: IO ()
 main = do
