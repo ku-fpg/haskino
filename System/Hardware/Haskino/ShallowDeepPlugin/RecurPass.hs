@@ -58,36 +58,36 @@ recurBind' ((b, e) : bs) = do
     s <- get
     put s {funcId = [b], conds = []}
     let (argTys, retTy) = splitFunTys $ exprType e
-    let tyCon_m = splitTyConApp_maybe retTy
+    let retTyCon_m = splitTyConApp_maybe retTy
     monadTyCon <- thNameToTyCon monadTyConTH
-    case tyCon_m of
-        Just (tyCon, tyArgs) -> do
-            if length argTys == 1 && tyCon == monadTyCon && length tyArgs == 1
-            then do
-                let argTy = head argTys
-                let retTyArg = head tyArgs
+    case retTyCon_m of
+      Just (retTyCon, retTyArgs) -> do
+        if length argTys == 1 && retTyCon == monadTyCon && length retTyArgs == 1
+        then do
+          let argTyCon_m = splitTyConApp_maybe $ head argTys
+          case argTyCon_m of
+            Just (argTyCon, argTyArgs) -> do
+                let argTyArg = head argTyArgs
+                let retTyArg = head retTyArgs
+                liftCoreM $ putMsgS "%%%%%%%%%%%%%"
+                liftCoreM $ putMsg $ ppr argTyArg
+                liftCoreM $ putMsg $ ppr retTyArg
                 s <- get
                 put s {funcId = [b]}
-{-
-                liftCoreM $ putMsgS "One Arg Arudino Rec Bind"
-                liftCoreM $ putMsg $ ppr b
-                liftCoreM $ putMsg $ ppr argTys
-                liftCoreM $ putMsg $ ppr retTy
--}
 
                 let (lbs, e') = collectBinders e
                 let arg = head lbs
 
                 -- Build the step body of the While
-                e''  <- checkForRecur argTy retTy e'
-                newStepB <- buildId ("x") argTy
+                e''  <- checkForRecur argTyArg retTyArg e'
+                newStepB <- buildId ("x") argTyArg
                 stepE <- changeVarExpr arg newStepB e''
                 let stepLam = mkLams [newStepB] stepE
 
                 -- Build the iterate expression
                 iterateEId <- thNameToId iterateETH
-                eitherDict <- thNameTysToDict monadIterateTyConTH [argTy, retTy]
-                let iterateExpr = mkCoreApps (Var iterateEId) [Type argTy, Type retTy, eitherDict, Var arg, stepLam]
+                eitherDict <- thNameTysToDict monadIterateTyConTH [argTyArg, retTyArg]
+                let iterateExpr = mkCoreApps (Var iterateEId) [Type argTyArg, Type retTyArg, eitherDict, Var arg, stepLam]
 
                 -- Create the transformed non-recursive bind
                 let nonrecBind = NonRec b (mkLams lbs iterateExpr)
@@ -106,8 +106,9 @@ recurBind' ((b, e) : bs) = do
                 -- Recursively call for the other binds in the array
                 (nonrecs, bs') <- recurBind' bs
                 return $ (nonrecBind : nonrecs, bs')
-            else defaultRet
-        _ -> defaultRet
+            _ -> defaultRet
+          else defaultRet
+      _ -> defaultRet
 
 
 checkForRecur :: Type -> Type -> CoreExpr -> BindM CoreExpr
