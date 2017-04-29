@@ -24,6 +24,11 @@ led = 13
 button1 = 2
 button2 = 3
 
+wait :: Word8 -> Arduino ()
+wait button = do
+    b <- digitalRead button
+    if b then return () else wait button
+
 blink :: Word8 -> Arduino ()
 blink 0 = return ()
 blink t = do
@@ -38,6 +43,7 @@ recurProg = do
     setPinMode led OUTPUT
     setPinMode button1 INPUT
     setPinMode button2 INPUT
+    wait button1
     blink 3
 
 

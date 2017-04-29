@@ -69,9 +69,6 @@ recurBind' ((b, e) : bs) = do
             Just (argTyCon, argTyArgs) -> do
                 let argTyArg = head argTyArgs
                 let retTyArg = head retTyArgs
-                liftCoreM $ putMsgS "%%%%%%%%%%%%%"
-                liftCoreM $ putMsg $ ppr argTyArg
-                liftCoreM $ putMsg $ ppr retTyArg
                 s <- get
                 put s {funcId = [b]}
 
@@ -91,18 +88,7 @@ recurBind' ((b, e) : bs) = do
 
                 -- Create the transformed non-recursive bind
                 let nonrecBind = NonRec b (mkLams lbs iterateExpr)
-{-
-                liftCoreM $ putMsgS "Cond Lam = "
-                liftCoreM $ putMsg $ ppr condLam
-                liftCoreM $ putMsgS "Step Lam = "
-                liftCoreM $ putMsg $ ppr stepLam
-                liftCoreM $ putMsgS "Done Lam = "
-                liftCoreM $ putMsg $ ppr stepLam
-                liftCoreM $ putMsgS "While Expr = "
-                liftCoreM $ putMsg $ ppr whileExpr
-                liftCoreM $ putMsgS "----------------"
-                liftCoreM $ putMsg $ ppr $ mkLams lbs bindExpr
--}
+
                 -- Recursively call for the other binds in the array
                 (nonrecs, bs') <- recurBind' bs
                 return $ (nonrecBind : nonrecs, bs')
