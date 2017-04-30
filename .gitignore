@@ -59,7 +59,6 @@ System/Hardware/Haskino/SamplePrograms/Rewrite/TwoButton
 System/Hardware/Haskino/SamplePrograms/Rewrite/TwoButtonFunc
 System/Hardware/Haskino/SamplePrograms/Rewrite/TwoButtonIf
 System/Hardware/Haskino/SamplePrograms/Rewrite/TwoButtonIter
-System/Hardware/Haskino/SamplePrograms/Rewrite/TwoButtonIter.hs
 System/Hardware/Haskino/SamplePrograms/Rewrite/TwoButtonLess.hs
 System/Hardware/Haskino/SamplePrograms/Rewrite/TwoButtonLet
 System/Hardware/Haskino/SamplePrograms/Rewrite/TwoButtonRecur
