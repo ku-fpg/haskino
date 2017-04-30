@@ -20,10 +20,45 @@ import Data.Word
 import Data.Boolean
 import System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonE
 
+data Key = KeyNone
+         | KeyRight
+         | KeyLeft
+         | KeyUp
+         | KeyDown
+         | KeySelect
+  deriving (Enum)
+
+keyValue :: Key -> Word8
+keyValue k = fromIntegral $ fromEnum k
+
 led = 6
 button1 = 2
 button2 = 3
 
+analogKey :: () -> Arduino Word8
+analogKey _ = do
+    v <- analogRead button2
+    case v of
+      _ | v < 30  -> return 1
+      _ | v < 150 -> return 3
+      _ | v < 350 -> return 4
+      _ | v < 535 -> return 2
+      _ | v < 760 -> return 5
+      _           -> analogKey ()
+{-
+analogKey :: () -> Arduino Word8
+analogKey _ = do
+    v <- analogRead button2
+    case v of
+      _ | v < 30  -> return (keyValue KeyRight)
+      _ | v < 150 -> return (keyValue KeyUp)
+      _ | v < 350 -> return (keyValue KeyDown)
+      _ | v < 535 -> return (keyValue KeyLeft)
+      _ | v < 760 -> return (keyValue KeyLeft)
+      _ | v < 150 -> return (keyValue KeySelect)
+      _           -> analogKey ()
+-}
+{-
 wait :: Word8 -> Arduino ()
 wait button = do
     b <- digitalRead button
@@ -37,14 +72,16 @@ blink t = do
     digitalWrite led False
     delayMillis 1000
     blink ( t-1 )
-
+-}
 recurProg :: Arduino ()
 recurProg = do
     setPinMode led OUTPUT
     setPinMode button1 INPUT
     setPinMode button2 INPUT
-    wait button1
-    blink 3
+    -- wait button1
+    -- blink 3
+    analogKey ()
+    return ()
 
 main :: IO ()
 main = do
