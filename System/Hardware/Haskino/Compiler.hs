@@ -776,6 +776,13 @@ compileProcedure (IterateW8UnitE iv bf) = do
     let bj = RemBindUnit j
     compileIterateProcedure Word8Type UnitType i bi j bj iv bf
     return bj
+compileProcedure (IterateW8BoolE iv bf) = do
+    i <- nextBind
+    let bi = RemBindW8 i
+    j <- nextBind
+    let bj = RemBindB j
+    compileIterateProcedure Word8Type BoolType i bi j bj iv bf
+    return bj
 
 compileIfThenElseProcedure :: ExprB a => CompileType -> Expr Bool -> Arduino (Expr a) -> Arduino (Expr a) -> State CompileState (Expr a)
 compileIfThenElseProcedure t e cb1 cb2 = do

@@ -41,7 +41,7 @@ blink t = iterateE t (\x -> do
 
 blink2 :: Expr Word8 -> Arduino (Expr Bool)
 blink2 t = iterateE t (\x -> do
-            ifThenElseEither (x `eqE` 0) (ExprRight <$> (digitalReadE 2)) (do
+            ifThenElseEither (x `eqE` 0) (ExprRight <$> (digitalReadE (lit 2))) (do
                                                                 digitalWriteE led true
                                                                 delayMillisE 1000
                                                                 digitalWriteE led false
@@ -55,7 +55,7 @@ recurProg = do
     setPinModeE led OUTPUT
     setPinModeE button1 INPUT
     setPinModeE button2 INPUT
-    blink 3
+    blink2 3
     return ()
 
 main :: IO ()

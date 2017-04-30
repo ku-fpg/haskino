@@ -189,21 +189,23 @@ checkForRecur argTy retTy e = do
                 let returnExpr = mkCoreApps (Var returnId) [Type monadTyConTy, monadDict, Type eitherTyp, rightExpr]
                 return $ mkLams bs returnExpr        
             _ -> return e
-      -- This is another Arduino function, so we need to fmap 
-      -- _ ->
-      _ -> return e -- TBD do other left with <$>
-
-
-{-
-(<$>
-  @ Arduino
-  @ (Expr Bool)
-  @ (ExprEither Word8 Bool)
-  System.Hardware.Haskino.Data.$fFunctorArduino
-
--}
-
-
+      -- This is another Arduino function, so we need to fmap ExprRight to it. 
+      _ -> do
+          -- Generate "Expr retTy"
+          exprTyConApp <- thNameTyToTyConApp exprTyConTH retTy
+          -- Generate functorArduino ditctionary 
+          monadTyConId <- thNameToTyCon monadTyConTH
+          let monadTyConTy = mkTyConTy monadTyConId
+          functDict <- thNameTyToDict functTyConTH monadTyConTy
+          -- Generate the ExprRight expression with the function arg
+          argDict <- thNameTyToDict exprClassTyConTH argTy
+          retDict <- thNameTyToDict exprClassTyConTH retTy
+          rightId <- thNameToId rightNameTH
+          let rightExpr = mkCoreApps (Var rightId) [Type argTy, Type retTy, argDict, retDict]
+          -- Generate the fmapExpr
+          fmapId <- thNameToId fmapNameTH
+          let fmapExpr = mkCoreApps (Var fmapId) [Type monadTyConTy, Type exprTyConApp, Type eitherTyp, functDict, rightExpr, e']
+          return $ mkLams bs fmapExpr
 
 changeVarExpr :: CoreBndr -> CoreBndr -> CoreExpr -> BindM CoreExpr
 changeVarExpr f t e = do

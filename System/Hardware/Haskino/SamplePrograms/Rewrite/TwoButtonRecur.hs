@@ -79,7 +79,7 @@ recurProg = do
     setPinMode button1 INPUT
     setPinMode button2 INPUT
     wait
-    blink 3
+    blink2 3
     analogKey ()
     return ()
 
