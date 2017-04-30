@@ -13,6 +13,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin.RecurPass (recurPass) where
 
 import CoreMonad
 import GhcPlugins
+import Var
 import Data.List
 import Data.Functor
 import Control.Monad.State
@@ -54,6 +55,10 @@ recurBind' ((b, e) : bs) = do
     s <- get
     put s {funcId = [b]}
     let (argTys, retTy) = splitFunTys $ exprType e
+    liftCoreM $ putMsgS "**************"
+    liftCoreM $ putMsg $ ppr b 
+    liftCoreM $ putMsg $ ppr argTys 
+    liftCoreM $ putMsg $ ppr retTy 
     let retTyCon_m = splitTyConApp_maybe retTy
     monadTyCon <- thNameToTyCon monadTyConTH
     case retTyCon_m of
@@ -92,7 +97,48 @@ recurBind' ((b, e) : bs) = do
                 (nonrecs, bs') <- recurBind' bs
                 return $ (nonrecBind : nonrecs, bs')
             _ -> defaultRet
-          else defaultRet
+        else if length argTys == 0 && retTyCon == monadTyCon && length retTyArgs == 1
+        then do
+            let retTyArg = case splitTyConApp_maybe $ head retTyArgs of
+                              Just (rTyCon, [])      -> mkTyConTy rTyCon
+                              Just (rTyCon, rTyArgs) -> head rTyArgs
+                              Nothing                -> head retTyArgs
+            
+            unitTyCon <- thNameToTyCon unitTyConTH
+            let unitTyConTy = mkTyConTy unitTyCon
+            -- Generate "Expr retTy"
+            exprTyConApp <- thNameTyToTyConApp exprTyConTH unitTyConTy
+            let newBTy = mkFunTy exprTyConApp retTy
+            newStepB <- buildId ((varString b) ++ "'") newBTy
+            -- Create body of wrapper function
+            unitValueId <- thNameToId unitValueTH
+            let wrapperB = mkCoreApps (Var newStepB) [(Var unitValueId)]
+
+            -- Create new function argument
+            newArgB <- buildId "p" unitTyConTy
+
+            -- Build the step body of the While
+            e'  <- transformRecur unitTyConTy retTyArg e
+            newStepLamB <- buildId ("x") unitTyConTy
+            let stepLam = mkLams [newStepLamB] e'
+
+            -- Build the iterate expression
+            iterateEId <- thNameToId iterateETH
+            eitherDict <- thNameTysToDict monadIterateTyConTH [unitTyConTy, retTyArg]
+            let iterateExpr = mkCoreApps (Var iterateEId) [Type unitTyConTy, Type retTyArg, eitherDict, Var newArgB, stepLam]
+
+            -- Create the transformed non-recursive bind
+            let nonrecBind = NonRec newStepB (mkLams [newArgB] iterateExpr)
+            -- Create the wrapper bind
+            let wrapperBind = NonRec b wrapperB
+
+            liftCoreM $ putMsgS "$$$$$$$$$$$$$$$$$$"
+            liftCoreM $ putMsg $ ppr nonrecBind
+
+            -- Recursively call for the other binds in the array
+            (nonrecs, bs') <- recurBind' bs
+            return $ ([nonrecBind, wrapperBind] ++ nonrecs, bs')
+        else defaultRet
       _ -> defaultRet
 
 
@@ -146,11 +192,16 @@ transformRecur argTy retTy e = do
       -- Check for recursive call.
       -- Either in the form of (Var funcId) arg ...
       Var fv | fv == head funcId -> do
+          -- Find the argument for the Left call
+          unitValueId <- thNameToId unitValueTH
+          let leftArg = if length args == 0 
+                        then Var unitValueId
+                        else head args
           -- Generate the ExprLeft expression with the function arg
           argDict <- thNameTyToDict exprClassTyConTH argTy
           retDict <- thNameTyToDict exprClassTyConTH retTy
           leftId <- thNameToId leftNameTH
-          let leftExpr = mkCoreApps (Var leftId) [Type argTy, Type retTy, argDict, retDict, head args]
+          let leftExpr = mkCoreApps (Var leftId) [Type argTy, Type retTy, argDict, retDict, leftArg]
           -- Generate the return expression
           monadTyConId <- thNameToTyCon monadTyConTH
           let monadTyConTy = mkTyConTy monadTyConId
@@ -259,4 +310,6 @@ changeVarExprAlts f t ((ac, b, a) : as) = do
   bs' <- changeVarExprAlts f t as
   return $ (ac, b, a') : bs'
 
+varString :: Id -> String
+varString = occNameString . nameOccName . Var.varName
 

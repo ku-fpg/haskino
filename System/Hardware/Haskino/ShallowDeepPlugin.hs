@@ -50,7 +50,7 @@ install _ todo = do
   return $ [simplPass] ++ condToDo ++ commProcToDo ++ returnsToDo ++
            bindArgRetToDo ++ bindAppToDo ++
            repPushToDo ++ absLambdaToDo ++
-           repAbsFuseToDo ++ recurToDo ++ todo ++ dumpToDo
+           repAbsFuseToDo ++ recurToDo ++ todo -- ++ dumpToDo
 {-
   -- The following version of the return uses rules passes to do the repPush
   -- and repAbsFuse passes.  This version only works with optimization off
