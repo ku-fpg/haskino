@@ -75,7 +75,7 @@ recurBind' ((b, e) : bs) = do
                 let arg = head lbs
 
                 -- Build the step body of the While
-                e''  <- checkForRecur argTyArg retTyArg e'
+                e''  <- transformRecur argTyArg retTyArg e'
                 newStepB <- buildId ("x") argTyArg
                 stepE <- changeVarExpr arg newStepB e''
                 let stepLam = mkLams [newStepB] stepE
@@ -96,8 +96,8 @@ recurBind' ((b, e) : bs) = do
       _ -> defaultRet
 
 
-checkForRecur :: Type -> Type -> CoreExpr -> BindM CoreExpr
-checkForRecur argTy retTy e = do
+transformRecur :: Type -> Type -> CoreExpr -> BindM CoreExpr
+transformRecur argTy retTy e = do
     funcId <- gets funcId
     df <- liftCoreM getDynFlags
     let (bs, e') = collectBinders e
@@ -118,7 +118,7 @@ checkForRecur argTy retTy e = do
       Var fv | fv == bindId || fv == thenId -> do
           case args of
             [Type monadTy, dict, Type arg1Ty, Type arg2Ty, e1, e2] -> do
-               e2' <- checkForRecur argTy retTy e2
+               e2' <- transformRecur argTy retTy e2
                let e'' = mkCoreApps (Var fv) [Type monadTy, dict, Type arg1Ty, Type eitherTyp, e1, e2']
                return $ (mkLams bs e'')
             _ -> return e
@@ -126,8 +126,8 @@ checkForRecur argTy retTy e = do
       Var fv | fv == ifThenElseUnitId -> do
           case args of
             [cond, thenE, elseE] -> do
-                thenE' <- checkForRecur argTy retTy thenE
-                elseE' <- checkForRecur argTy retTy elseE
+                thenE' <- transformRecur argTy retTy thenE
+                elseE' <- transformRecur argTy retTy elseE
                 eitherDict <- thNameTysToDict monadIterateTyConTH [argTy, retTy]
                 let e'' = mkCoreApps (Var ifThenElseEitherId) [Type argTy, Type retTy, eitherDict, cond, thenE', elseE']
                 return $ (mkLams bs e'')
@@ -136,8 +136,8 @@ checkForRecur argTy retTy e = do
       Var fv | fv == ifThenElseId -> do
           case args of
             [Type _, _, cond, thenE, elseE] -> do
-                thenE' <- checkForRecur argTy retTy thenE
-                elseE' <- checkForRecur argTy retTy elseE
+                thenE' <- transformRecur argTy retTy thenE
+                elseE' <- transformRecur argTy retTy elseE
                 eitherDict <- thNameTysToDict monadIterateTyConTH [argTy, retTy]
                 let e'' = mkCoreApps (Var ifThenElseEitherId) [Type argTy, Type retTy, eitherDict, cond, thenE', elseE']
                 return $ (mkLams bs e'')
