@@ -146,31 +146,31 @@ checkForRecur argTy retTy e = do
       -- Check for recursive call.
       -- Either in the form of (Var funcId) arg ...
       Var fv | fv == head funcId -> do
-          -- Generate the ExprRight expression with the function arg
+          -- Generate the ExprLeft expression with the function arg
           argDict <- thNameTyToDict exprClassTyConTH argTy
           retDict <- thNameTyToDict exprClassTyConTH retTy
-          rightId <- thNameToId rightNameTH
-          let rightExpr = mkCoreApps (Var rightId) [Type argTy, Type retTy, argDict, retDict, head args]
+          leftId <- thNameToId leftNameTH
+          let leftExpr = mkCoreApps (Var leftId) [Type argTy, Type retTy, argDict, retDict, head args]
           -- Generate the return expression
           monadTyConId <- thNameToTyCon monadTyConTH
           let monadTyConTy = mkTyConTy monadTyConId
           monadDict <- thNameTyToDict monadClassTyConTH monadTyConTy
-          let returnExpr = mkCoreApps (Var returnId) [Type monadTyConTy, monadDict, Type eitherTyp, rightExpr]
+          let returnExpr = mkCoreApps (Var returnId) [Type monadTyConTy, monadDict, Type eitherTyp, leftExpr]
           return $ mkLams bs returnExpr
           -- ... Or in the form of (Var funcId) $ arg
       Var fv | fv == apId -> do
           case args of
               [_, _, _, _, Var fv', arg] | fv' == head funcId -> do
-                -- Generate the ExprRight expression with the function arg
+                -- Generate the ExprLeft expression with the function arg
                 argDict <- thNameTyToDict exprClassTyConTH argTy
                 retDict <- thNameTyToDict exprClassTyConTH retTy
-                rightId <- thNameToId rightNameTH
-                let rightExpr = mkCoreApps (Var rightId) [Type argTy, Type retTy, argDict, retDict, arg]
+                leftId <- thNameToId leftNameTH
+                let leftExpr = mkCoreApps (Var leftId) [Type argTy, Type retTy, argDict, retDict, arg]
                 -- Generate the return expression
                 monadTyConId <- thNameToTyCon monadTyConTH
                 let monadTyConTy = mkTyConTy monadTyConId
                 monadDict <- thNameTyToDict monadClassTyConTH monadTyConTy
-                let returnExpr = mkCoreApps (Var returnId) [Type monadTyConTy, monadDict, Type eitherTyp, rightExpr]
+                let returnExpr = mkCoreApps (Var returnId) [Type monadTyConTy, monadDict, Type eitherTyp, leftExpr]
                 return $ mkLams bs returnExpr
               _ -> return e -- TBD non-recursive call
       -- This branch is not a recursive call
@@ -180,16 +180,29 @@ checkForRecur argTy retTy e = do
                 -- Generate the ExprRight expression with the function arg
                 argDict <- thNameTyToDict exprClassTyConTH argTy
                 retDict <- thNameTyToDict exprClassTyConTH retTy
-                leftId <- thNameToId leftNameTH
-                let leftExpr = mkCoreApps (Var leftId) [Type argTy, Type retTy, argDict, retDict, retE]
+                rightId <- thNameToId rightNameTH
+                let rightExpr = mkCoreApps (Var rightId) [Type argTy, Type retTy, argDict, retDict, retE]
                 -- Generate the return expression
                 monadTyConId <- thNameToTyCon monadTyConTH
                 let monadTyConTy = mkTyConTy monadTyConId
                 monadDict <- thNameTyToDict monadClassTyConTH monadTyConTy
-                let returnExpr = mkCoreApps (Var returnId) [Type monadTyConTy, monadDict, Type eitherTyp, leftExpr]
+                let returnExpr = mkCoreApps (Var returnId) [Type monadTyConTy, monadDict, Type eitherTyp, rightExpr]
                 return $ mkLams bs returnExpr        
             _ -> return e
+      -- This is another Arduino function, so we need to fmap 
+      -- _ ->
       _ -> return e -- TBD do other left with <$>
+
+
+{-
+(<$>
+  @ Arduino
+  @ (Expr Bool)
+  @ (ExprEither Word8 Bool)
+  System.Hardware.Haskino.Data.$fFunctorArduino
+
+-}
+
 
 
 changeVarExpr :: CoreBndr -> CoreBndr -> CoreExpr -> BindM CoreExpr
