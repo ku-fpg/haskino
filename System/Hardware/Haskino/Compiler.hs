@@ -697,6 +697,8 @@ compileProcedure (IfThenElseFloatE e cb1 cb2) =
     compileIfThenElseProcedure FloatType e cb1 cb2
 compileProcedure (IfThenElseW8Unit e cb1 cb2) =
     compileIfThenElseEitherProcedure Word8Type UnitType e cb1 cb2
+compileProcedure (IfThenElseUnitW8 e cb1 cb2) =
+    compileIfThenElseEitherProcedure UnitType Word8Type e cb1 cb2
 compileProcedure (WhileBoolE iv bf bdf) = do
     i <- nextBind
     let bi = RemBindB i
