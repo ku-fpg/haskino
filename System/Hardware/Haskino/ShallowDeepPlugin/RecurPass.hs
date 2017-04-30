@@ -53,8 +53,6 @@ recurBind' ((b, e) : bs) = do
         return $ (nonrec, (b, e) : bs')
     s <- get
     put s {funcId = [b]}
-    liftCoreM $ putMsgS "---------------"
-    liftCoreM $ putMsg $ ppr b
     let (argTys, retTy) = splitFunTys $ exprType e
     let retTyCon_m = splitTyConApp_maybe retTy
     monadTyCon <- thNameToTyCon monadTyConTH

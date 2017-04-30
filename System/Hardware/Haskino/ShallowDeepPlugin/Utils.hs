@@ -50,6 +50,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            bindNameTH,
                                            functTyConTH,
                                            unitTyConTH,
+                                           unitValueTH,
                                            bindThenNameTH,
                                            falseNameTH,
                                            fmapNameTH,
@@ -107,6 +108,7 @@ rightNameTH            = 'System.Hardware.Haskino.ExprRight
 functTyConTH         = ''Data.Functor.Functor
 monadClassTyConTH    = ''Prelude.Monad
 unitTyConTH          = ''()
+unitValueTH          = '()
 bindNameTH           = '(>>=)
 bindThenNameTH       = '(>>)
 falseNameTH          = 'Prelude.False
