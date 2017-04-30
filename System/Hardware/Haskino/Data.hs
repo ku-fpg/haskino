@@ -530,6 +530,7 @@ data ArduinoProcedure :: * -> * where
      IfThenElseW8W8    :: Expr Bool -> Arduino(ExprEither Word8 Word8) -> Arduino(ExprEither Word8 Word8) -> ArduinoProcedure (ExprEither Word8 Word8)
      IfThenElseUnitUnit :: Expr Bool -> Arduino(ExprEither () ()) -> Arduino(ExprEither () ()) -> ArduinoProcedure (ExprEither () ())
      IfThenElseUnitW8  :: Expr Bool -> Arduino(ExprEither () Word8) -> Arduino(ExprEither () Word8) -> ArduinoProcedure (ExprEither () Word8)
+     IfThenElseW8Bool  :: Expr Bool -> Arduino(ExprEither Word8 Bool) -> Arduino(ExprEither Word8 Bool) -> ArduinoProcedure (ExprEither Word8 Bool)
      WhileBool         :: Bool -> (Bool -> Bool) -> (Bool -> Arduino Bool) -> ArduinoProcedure Bool
      WhileBoolE        :: (Expr Bool) -> (Expr Bool -> Expr Bool) -> (Expr Bool -> Arduino (Expr Bool)) -> ArduinoProcedure (Expr Bool)
      WhileWord8        :: Word8 -> (Word8 -> Bool) -> (Word8 -> Arduino Word8) -> ArduinoProcedure Word8
@@ -552,6 +553,7 @@ data ArduinoProcedure :: * -> * where
      IterateW8UnitE    :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 () )) -> ArduinoProcedure (Expr () )
      IterateUnitW8E    :: Expr () -> (Expr () -> Arduino (ExprEither () Word8)) -> ArduinoProcedure (Expr Word8)
      IterateUnitUnitE  :: Expr () -> (Expr () -> Arduino (ExprEither () () )) -> ArduinoProcedure (Expr () )
+     IterateW8BoolE    :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Bool)) -> ArduinoProcedure (Expr Bool)
      LiftIO            :: IO a -> ArduinoProcedure a
      Debug             :: String -> ArduinoProcedure ()
      DebugE            :: Expr [Word8] -> ArduinoProcedure ()
@@ -933,6 +935,10 @@ instance ArduinoIterate () Word8 where
 instance ArduinoIterate () () where
     iterateE iv bf  = Arduino $ procedure $ IterateUnitUnitE iv bf
     ifThenElseEither be te ee = Arduino $ procedure $ IfThenElseUnitUnit be te ee
+
+instance ArduinoIterate Word8 Bool where
+    iterateE iv bf  = Arduino $ procedure $ IterateW8BoolE iv bf
+    ifThenElseEither be te ee = Arduino $ procedure $ IfThenElseW8Bool be te ee
 
 -- | A response, as returned from the Arduino
 data Response = DelayResp

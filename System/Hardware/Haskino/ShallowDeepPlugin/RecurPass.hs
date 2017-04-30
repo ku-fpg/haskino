@@ -64,7 +64,10 @@ recurBind' ((b, e) : bs) = do
           case argTyCon_m of
             Just (argTyCon, argTyArgs) -> do
                 let argTyArg = head argTyArgs
-                let retTyArg = head retTyArgs
+                let retTyArg = case splitTyConApp_maybe $ head retTyArgs of
+                                  Just (rTyCon, [])      -> mkTyConTy rTyCon
+                                  Just (rTyCon, rTyArgs) -> head rTyArgs
+                                  Nothing                -> head retTyArgs
                 s <- get
                 put s {funcId = [b]}
 

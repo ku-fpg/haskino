@@ -64,6 +64,15 @@ blink t = do
     delayMillis 1000
     blink ( t-1 )
 
+blink2 :: Word8 -> Arduino Bool
+blink2 0 = digitalRead 3
+blink2 t = do
+    digitalWrite led True
+    delayMillis 1000
+    digitalWrite led False
+    delayMillis 1000
+    blink2 ( t-1 )
+
 recurProg :: Arduino ()
 recurProg = do
     setPinMode led OUTPUT
