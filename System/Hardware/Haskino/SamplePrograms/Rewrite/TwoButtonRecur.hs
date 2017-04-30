@@ -47,10 +47,13 @@ analogKey _ = do
       _ | v < 150 -> return (keyValue KeySelect)
       _           -> analogKey ()
 
-wait :: Word8 -> Arduino ()
-wait button = do
-    b <- digitalRead button
-    if b then return () else wait button
+wait :: Arduino ()
+wait = wait' ()
+
+wait' :: () -> Arduino ()
+wait' p = do
+    b <- digitalRead button1
+    if b then return () else wait' ()
 
 blink :: Word8 -> Arduino ()
 blink 0 = return ()
@@ -66,7 +69,7 @@ recurProg = do
     setPinMode led OUTPUT
     setPinMode button1 INPUT
     setPinMode button2 INPUT
-    wait button1
+    wait
     blink 3
     analogKey ()
     return ()
