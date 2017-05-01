@@ -55,10 +55,6 @@ recurBind' ((b, e) : bs) = do
     s <- get
     put s {funcId = [b]}
     let (argTys, retTy) = splitFunTys $ exprType e
-    liftCoreM $ putMsgS "**************"
-    liftCoreM $ putMsg $ ppr b 
-    liftCoreM $ putMsg $ ppr argTys 
-    liftCoreM $ putMsg $ ppr retTy 
     let retTyCon_m = splitTyConApp_maybe retTy
     monadTyCon <- thNameToTyCon monadTyConTH
     case retTyCon_m of
@@ -131,9 +127,6 @@ recurBind' ((b, e) : bs) = do
             let nonrecBind = NonRec newStepB (mkLams [newArgB] iterateExpr)
             -- Create the wrapper bind
             let wrapperBind = NonRec b wrapperB
-
-            liftCoreM $ putMsgS "$$$$$$$$$$$$$$$$$$"
-            liftCoreM $ putMsg $ ppr nonrecBind
 
             -- Recursively call for the other binds in the array
             (nonrecs, bs') <- recurBind' bs
