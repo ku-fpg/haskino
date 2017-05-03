@@ -19,8 +19,31 @@ import Control.Monad.Fix
 import Data.Word
 import Data.Boolean
 
+data Key = KeyNone
+         | KeyRight
+         | KeyLeft
+         | KeyUp
+         | KeyDown
+         | KeySelect
+  deriving (Enum)
+
+keyValue :: Key -> Word8
+keyValue k = fromIntegral $ fromEnum k
+
 led = 6
 button1 = 2
+button2 = 3
+
+analogKey :: Arduino Word8
+analogKey = do
+    v <- analogRead button2
+    case v of
+      _ | v < 30  -> return (keyValue KeyRight)
+      _ | v < 150 -> return (keyValue KeyUp)
+      _ | v < 350 -> return (keyValue KeyDown)
+      _ | v < 535 -> return (keyValue KeyLeft)
+      _ | v < 760 -> return (keyValue KeySelect)
+      _           -> analogKey
 
 wait :: Arduino ()
 wait = do
@@ -42,6 +65,7 @@ recurProg = do
     setPinMode button1 INPUT
     wait
     blink 3
+    ak <- analogKey
     return ()
 
 main :: IO ()

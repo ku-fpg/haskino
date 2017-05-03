@@ -141,14 +141,18 @@ changeAppExpr e = do
               let (Var vb) = b
               if vb `elem` chngArgs
               then do
+                  liftCoreM $ putMsgS "#####################"
+                  liftCoreM $ putMsg $ ppr vb
                   args' <- mapM repExpr args
+                  liftCoreM $ putMsg $ ppr args
+                  liftCoreM $ putMsg $ ppr args'
                   if vb `elem` chngRet
                   then do
                       -- Rebuild the original nested app
                       let e' = mkCoreApps b args'
                       absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' e'
                       return $ absExpr
-                  else defaultRet
+                  else return $ mkCoreApps b args'
               else defaultRet
           _ -> defaultRet
     Lam tb e -> do
