@@ -41,9 +41,6 @@ instance PassCoreM BindM where
 bindChangeAppPass :: ModGuts -> CoreM ModGuts
 bindChangeAppPass guts = do
     (cmds, procs) <- findCmdsProcs $ mg_binds guts
-    liftCoreM $ putMsgS "~~~~~~~~~~~~~~~~~~~~~"
-    liftCoreM $ putMsg $ ppr cmds
-    liftCoreM $ putMsg $ ppr procs
     bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM changeAppBind) x) (BindEnv guts procs (cmds ++ procs)))) guts
 
 findCmdsProcs :: [CoreBind] -> CoreM ([CoreBndr],[CoreBndr])
@@ -141,11 +138,7 @@ changeAppExpr e = do
               let (Var vb) = b
               if vb `elem` chngArgs
               then do
-                  liftCoreM $ putMsgS "#####################"
-                  liftCoreM $ putMsg $ ppr vb
                   args' <- mapM repExpr args
-                  liftCoreM $ putMsg $ ppr args
-                  liftCoreM $ putMsg $ ppr args'
                   if vb `elem` chngRet
                   then do
                       -- Rebuild the original nested app
@@ -153,6 +146,10 @@ changeAppExpr e = do
                       absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' e'
                       return $ absExpr
                   else return $ mkCoreApps b args'
+              else if vb `elem` chngRet
+              then do
+                  absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' e
+                  return $ absExpr
               else defaultRet
           _ -> defaultRet
     Lam tb e -> do
