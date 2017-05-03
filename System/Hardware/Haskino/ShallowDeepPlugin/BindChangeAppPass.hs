@@ -41,6 +41,9 @@ instance PassCoreM BindM where
 bindChangeAppPass :: ModGuts -> CoreM ModGuts
 bindChangeAppPass guts = do
     (cmds, procs) <- findCmdsProcs $ mg_binds guts
+    liftCoreM $ putMsgS "~~~~~~~~~~~~~~~~~~~~~"
+    liftCoreM $ putMsg $ ppr cmds
+    liftCoreM $ putMsg $ ppr procs
     bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM changeAppBind) x) (BindEnv guts procs (cmds ++ procs)))) guts
 
 findCmdsProcs :: [CoreBind] -> CoreM ([CoreBndr],[CoreBndr])
@@ -108,9 +111,20 @@ changeAppExpr e = do
   df <- liftCoreM getDynFlags
   chngRet <- gets chngRet
   chngArgs <- gets chngArgs
+  monadTyConId <- thNameToTyCon monadTyConTH
   s <- get
   case e of
-    Var v -> return $ Var v
+    Var v -> do -- return $ Var v
+      let tyCon_m = splitTyConApp_maybe $ varType v
+      let defaultRet = return $ Var v
+      case tyCon_m of
+          Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
+              if v `elem` chngRet
+              then do
+                  absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' e
+                  return $ absExpr
+              else defaultRet
+          _ -> defaultRet
     Lit l -> return $ Lit l
     Type ty -> return $ Type ty
     Coercion co -> return $ Coercion co
@@ -122,7 +136,6 @@ changeAppExpr e = do
             e1' <- changeAppExpr e1
             e2' <- changeAppExpr e2
             return $ App e1' e2'
-      monadTyConId <- thNameToTyCon monadTyConTH
       case tyCon_m of
           Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
               let (Var vb) = b
@@ -135,7 +148,7 @@ changeAppExpr e = do
                       let e' = mkCoreApps b args'
                       absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' e'
                       return $ absExpr
-                  else return $ mkCoreApps b args'
+                  else defaultRet
               else defaultRet
           _ -> defaultRet
     Lam tb e -> do
