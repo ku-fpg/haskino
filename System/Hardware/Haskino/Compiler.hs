@@ -54,6 +54,7 @@ data CompileType =
   | Int32Type
   | List8Type
   | FloatType
+  deriving (Show, Eq)
 
 compileTypeToString :: CompileType -> String
 compileTypeToString UnitType   = "uint8_t"
@@ -808,18 +809,22 @@ compileIfThenElseEitherProcedure t1 t2 e cb1 cb2 = do
     r1 <- compileCodeBlock cb1
     case r1 of
         ExprLeft a -> do
-            compileLineIndent $ bindName ++ show (fst ibs) ++ " = " ++ compileExpr a ++ ";"
+            if (t1 == UnitType) then return ()
+            else compileLineIndent $ bindName ++ show (fst ibs) ++ " = " ++ compileExpr a ++ ";"
         ExprRight b -> do
-            compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ compileExpr b ++ ";"
+            if (t2 == UnitType) then return ()
+            else compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ compileExpr b ++ ";"
             compileLineIndent "break;"
     compileLineIndent "}"
     compileLine "else"
     r2 <- compileCodeBlock cb2
     case r2 of
         ExprLeft a -> do
-            compileLineIndent $ bindName ++ show (fst ibs) ++ " = " ++ compileExpr a ++ ";"
+            if (t1 == UnitType) then return ()
+            else compileLineIndent $ bindName ++ show (fst ibs) ++ " = " ++ compileExpr a ++ ";"
         ExprRight b -> do
-            compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ compileExpr b ++ ";"
+            if (t2 == UnitType) then return ()
+            else compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ compileExpr b ++ ";"
             compileLineIndent "break;"
     compileLineIndent "}"
     return $ r2
