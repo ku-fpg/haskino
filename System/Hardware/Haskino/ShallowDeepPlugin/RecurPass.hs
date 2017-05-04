@@ -131,6 +131,8 @@ recurBind' ((b, e) : bs) = do
             -- Recursively call for the other binds in the array
             (nonrecs, bs') <- recurBind' bs
             return $ ([nonrecBind, wrapperBind] ++ nonrecs, bs')
+        else if retTyCon == monadTyCon
+        then error $ "*** Haskiono RecurPass: " ++ getOccString b ++ ": Unable to translate recursive function with\ngreater than one arguments" 
         else defaultRet
       _ -> defaultRet
 
