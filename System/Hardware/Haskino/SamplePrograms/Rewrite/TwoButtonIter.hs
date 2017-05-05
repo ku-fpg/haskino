@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -fplugin=System.Hardware.Haskino.ShallowDeepPlugin #-}
+-- {-# OPTIONS_GHC -fplugin=System.Hardware.Haskino.ShallowDeepPlugin #-}
 -- {-# OPTIONS_GHC -fenable-rewrite-rules #-}
 -------------------------------------------------------------------------------
 -- |
@@ -60,6 +60,6 @@ recurProg = do
 
 main :: IO ()
 main = do
-  compileProgram recurProg "recur.ino"
-
+--  compileProgram recurProg "recur.ino"
+    putStrLn $ show recurProg
 

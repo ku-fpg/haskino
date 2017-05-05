@@ -18,7 +18,7 @@ import Control.Monad
 import Control.Monad.Fix
 import Data.Word
 import Data.Boolean
-import System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonE
+import System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonRecurE
 
 data Key = KeyNone
          | KeyRight
@@ -47,17 +47,9 @@ analogKey _ = do
       _           -> analogKey ()
 
 wait :: Arduino ()
-wait = wait' ()
-
-wait' :: () -> Arduino ()
-wait' p = do
+wait = do
     b <- digitalRead button1
-    if b then return () else wait' ()
-
-wait2 :: Arduino ()
-wait2 = do
-    b <- digitalRead button1
-    if b then return () else wait2
+    if b then return () else wait
 
 blink :: Word8 -> Arduino ()
 blink 0 = return ()
@@ -82,13 +74,22 @@ recurProg = do
     setPinMode led OUTPUT
     setPinMode button1 INPUT
     setPinMode button2 INPUT
-    wait2
-    blink2 3
+    wait
+    blink 3
     analogKey ()
     return ()
 
+test1 :: Bool
+test1 = (show recurProg) == (show recurProg)
+
 main :: IO ()
 main = do
---  putStrLn $ show recurProg
-    compileProgram recurProg "iterBlink.ino"
+  if test1
+  then putStrLn "*** Test1 Passed"
+  else do
+      putStrLn "*** Test1 Failed"
+      putStrLn $ show recurProg
+      putStrLn "-----------------"
+      putStrLn $ show recurProg
+--    compileProgram recurProg "iterBlink.ino"
 

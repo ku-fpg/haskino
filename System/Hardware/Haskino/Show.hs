@@ -3,11 +3,10 @@
 -- Module      :  System.Hardware.Haskino.Protocol
 --                Based on System.Hardware.Arduino.Protocol
 -- Copyright   :  (c) University of Kansas
---                System.Hardware.Arduino (c) Levent Erkok
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Internal representation of the Haskino Firmware protocol.
+-- String representation of the Haskino monad.
 -------------------------------------------------------------------------------
 {-# LANGUAGE GADTs #-}
 
@@ -30,16 +29,17 @@ import System.Hardware.Haskino.Utils
 instance Show (Arduino a) where
   show = showArduino
 
-data ShowState = ShowState {ix :: Int  
+data ShowState = ShowState {ix :: Int
                           , ib :: Int
-                          , block :: String    
+                          , block :: String
                           , blocks :: [String]
-                          , indent :: Int}    
+                          , indent :: Int
+                          , iterBinds :: [(Int, Int)]}
 
 showArduino :: Arduino a -> String
-showArduino a = as    
+showArduino a = as
   where
-    ((_, as), _) = runState (showCodeBlock a) (ShowState 0 0 "" [] 0)
+    ((_, as), _) = runState (showCodeBlock a) (ShowState 0 0 "" [] 0 [])
 
 nextBind :: State ShowState Int
 nextBind = do
@@ -153,7 +153,7 @@ addToBlock bs = do
 
 showCodeBlock :: Arduino a -> State ShowState (a, String)
 showCodeBlock (Arduino commands) = do
-    startNewBlock 
+    startNewBlock
     ret <- showMonad commands
     str <- endCurrentBlock
     return (ret, str)
@@ -192,38 +192,38 @@ showCodeBlock (Arduino commands) = do
       showShallow0Procedure p r = showShallowProcedure [p] r
 
       showShallow1Procedure :: Show a => String -> a -> b -> State ShowState b
-      showShallow1Procedure p e1 r = 
+      showShallow1Procedure p e1 r =
         showShallowProcedure [p, show e1] r
 
       showShallow2Procedure :: (Show a, Show b) => String -> a -> b -> c -> State ShowState c
-      showShallow2Procedure p e1 e2 r = 
+      showShallow2Procedure p e1 e2 r =
         showShallowProcedure [p, show e1, show e2] r
 
       showShallow3Procedure :: (Show a, Show b, Show c) => String -> a -> b -> c -> d -> State ShowState d
-      showShallow3Procedure p e1 e2 e3 r = 
+      showShallow3Procedure p e1 e2 e3 r =
         showShallowProcedure [p, show e1, show e2, show e3] r
 
       showShallow5Procedure :: (Show a, Show b, Show c, Show d, Show e) => String -> a -> b -> c -> d -> e -> f -> State ShowState f
-      showShallow5Procedure p e1 e2 e3 e4 e5 r = 
+      showShallow5Procedure p e1 e2 e3 e4 e5 r =
         showShallowProcedure [p, show e1, show e2, show e3, show e4, show e5] r
 
       showDeep0Procedure :: String -> State ShowState Int
       showDeep0Procedure p = showDeepProcedure [p]
 
       showDeep1Procedure :: Show a => String -> Expr a -> State ShowState Int
-      showDeep1Procedure p e1 = 
+      showDeep1Procedure p e1 =
         showDeepProcedure [p, show e1]
 
       showDeep2Procedure :: (Show a, Show b) => String -> Expr a -> Expr b -> State ShowState Int
-      showDeep2Procedure p e1 e2 = 
+      showDeep2Procedure p e1 e2 =
         showDeepProcedure [p, show e1, show e2]
 
       showDeep3Procedure :: (Show a, Show b, Show c) => String -> Expr a -> Expr b -> Expr c -> State ShowState Int
-      showDeep3Procedure p e1 e2 e3 = 
+      showDeep3Procedure p e1 e2 e3 =
         showDeepProcedure [p, show e1, show e2, show e3]
 
       showDeep5Procedure :: (Show a, Show b, Show c, Show d, Show e) => String -> Expr a -> Expr b -> Expr c -> Expr d -> Expr e -> State ShowState Int
-      showDeep5Procedure p e1 e2 e3 e4 e5 = 
+      showDeep5Procedure p e1 e2 e3 e4 e5 =
         showDeepProcedure [p, show e1, show e2, show e3, show e4, show e5]
 
       showIfThenElseProcedure :: Show a => Expr Bool -> Arduino a -> Arduino a -> State ShowState Int
@@ -238,12 +238,44 @@ showCodeBlock (Arduino commands) = do
           addToBlock $ "RemBind " ++ show (ib s) ++ " <- " ++ "If " ++ show b ++ " Then\n" ++ cs1' ++ replicate (indent s) ' ' ++ "Else\n" ++ cs2'
           return $ ib s
 
+      showIfThenElseEitherProcedure :: (Show a, Show b, ExprB a, ExprB b) => Expr Bool -> Arduino (ExprEither a b) -> Arduino (ExprEither a b) -> State ShowState (ExprEither a b)
+      showIfThenElseEitherProcedure b cb1 cb2 = do
+          s <- get
+          let ibs = head $ iterBinds s
+          (r1, cs1) <- showCodeBlock cb1
+          let cs1' = case r1 of
+                        ExprLeft a ->
+                            cs1 ++ replicate (indent s + 2) ' ' ++ "return ExprLeft (" ++ show a ++ ")\n"
+                        ExprRight b ->
+                            cs1 ++ replicate (indent s + 2) ' ' ++ "return ExprRight (" ++ show b ++ ")\n"
+          (r2, cs2) <- showCodeBlock cb2
+          let cs2' = case r2 of
+                        ExprLeft a ->
+                            cs2 ++ replicate (indent s + 2) ' ' ++ "return ExprLeft (" ++ show a ++ ")\n"
+                        ExprRight b ->
+                            cs2 ++ replicate (indent s + 2) ' ' ++ "return ExprRight (" ++ show b ++ ")\n"
+          addToBlock $ "If " ++ show b ++ " Then\n" ++ cs1' ++ replicate (indent s) ' ' ++ "Else\n" ++ cs2'
+          (r2, cs2) <- showCodeBlock cb2
+          return r2
+
       showWhileProcedure :: Show a => Int -> Expr a -> Expr a -> (Expr a -> Expr Bool) -> (Expr a -> Arduino (Expr a)) -> State ShowState ()
       showWhileProcedure b be iv bf bdf = do
           s <- get
           (r, cs) <- showCodeBlock (bdf be)
           let cs' = cs ++ replicate (indent s + 2) ' ' ++ "return " ++ show r ++ "\n"
           addToBlock $ "RemBind " ++ show b ++ " <- " ++ "While (" ++ show iv ++ ") (" ++ show (bf be) ++ ")\n" ++ cs'
+
+      showIterateProcedure :: (Show a, Show b, ExprB a, ExprB b) => Int -> Expr a -> Int -> Expr b -> Expr a ->
+                              (Expr a -> Arduino(ExprEither a b)) -> State ShowState Int
+      showIterateProcedure b1 b1e b2 b2e iv bf = do
+          s <- get
+          put s {iterBinds = (b1, b2):iterBinds s}
+          (r, cs) <- showCodeBlock (bf b1e)
+          let cs' = cs ++ replicate (indent s + 2) ' ' ++ "return " ++ show r ++ "\n"
+          addToBlock $ "RemBind " ++ show b2 ++ " <- " ++ "Iterate (" ++ show iv ++ ")\n" ++ cs
+          s <- get
+          put s {iterBinds = tail $ iterBinds s}
+          return b2
 
       showNewRef :: String -> Expr a -> b -> State ShowState b
       showNewRef p e r = do
@@ -291,7 +323,7 @@ showCodeBlock (Arduino commands) = do
           return $ RemBindList8 i
       showProcedure (Stepper2Pin s p1 p2) = showShallow3Procedure "Stepper2Pin" s p1 p2 0
       showProcedure (Stepper2PinE s p1 p2) = do
-          i <- showDeep3Procedure "Stepper2PinE" s p1 p2 
+          i <- showDeep3Procedure "Stepper2PinE" s p1 p2
           return $ RemBindW8 i
       showProcedure (Stepper4Pin s p1 p2 p3 p4) = showShallow5Procedure "Stepper4Pin" s p1 p2 p3 p4 0
       showProcedure (Stepper4PinE s p1 p2 p3 p4) = do
@@ -404,51 +436,94 @@ showCodeBlock (Arduino commands) = do
       showProcedure (IfThenElseFloatE e cb1 cb2) = do
           i <- showIfThenElseProcedure e cb1 cb2
           return $ RemBindFloat i
+      showProcedure (IfThenElseW8Unit e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseUnitW8 e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseUnitUnit e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseW8Bool e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (WhileBoolE iv bf bdf) = do
           i <- nextBind
-          let bi = RemBindB i 
+          let bi = RemBindB i
           showWhileProcedure i bi iv bf bdf
           return bi
       showProcedure (WhileWord8E iv bf bdf) = do
           i <- nextBind
-          let bi = RemBindW8 i 
+          let bi = RemBindW8 i
           showWhileProcedure i bi iv bf bdf
           return bi
       showProcedure (WhileWord16E iv bf bdf) = do
           i <- nextBind
-          let bi = RemBindW16 i 
+          let bi = RemBindW16 i
           showWhileProcedure i bi iv bf bdf
           return bi
       showProcedure (WhileWord32E iv bf bdf) = do
           i <- nextBind
-          let bi = RemBindW32 i 
+          let bi = RemBindW32 i
           showWhileProcedure i bi iv bf bdf
           return bi
       showProcedure (WhileInt8E iv bf bdf) = do
           i <- nextBind
-          let bi = RemBindI8 i 
+          let bi = RemBindI8 i
           showWhileProcedure i bi iv bf bdf
           return bi
       showProcedure (WhileInt16E iv bf bdf) = do
           i <- nextBind
-          let bi = RemBindI16 i 
+          let bi = RemBindI16 i
           showWhileProcedure i bi iv bf bdf
           return bi
       showProcedure (WhileInt32E iv bf bdf) = do
           i <- nextBind
-          let bi = RemBindI32 i 
+          let bi = RemBindI32 i
           showWhileProcedure i bi iv bf bdf
           return bi
       showProcedure (WhileL8E iv bf bdf) = do
           i <- nextBind
-          let bi = RemBindList8 i 
+          let bi = RemBindList8 i
           showWhileProcedure i bi iv bf bdf
           return bi
       showProcedure (WhileFloatE iv bf bdf) = do
           i <- nextBind
-          let bi = RemBindFloat i 
+          let bi = RemBindFloat i
           showWhileProcedure i bi iv bf bdf
           return bi
+      showProcedure (IterateUnitW8E iv bf) = do
+          i <- nextBind
+          let bi = RemBindUnit i
+          j <- nextBind
+          let bj = RemBindW8 j
+          showIterateProcedure i bi j bj iv bf
+          return bj
+      showProcedure (IterateUnitUnitE iv bf) = do
+          i <- nextBind
+          let bi = RemBindUnit i
+          j <- nextBind
+          let bj = RemBindUnit j
+          showIterateProcedure i bi j bj iv bf
+          return bj
+      showProcedure (IterateW8W8E iv bf) = do
+          i <- nextBind
+          let bi = RemBindW8 i
+          j <- nextBind
+          let bj = RemBindW8 j
+          showIterateProcedure i bi j bj iv bf
+          return bj
+      showProcedure (IterateW8UnitE iv bf) = do
+          i <- nextBind
+          let bi = RemBindW8 i
+          j <- nextBind
+          let bj = RemBindUnit j
+          showIterateProcedure i bi j bj iv bf
+          return bj
+      showProcedure (IterateW8BoolE iv bf) = do
+          i <- nextBind
+          let bi = RemBindW8 i
+          j <- nextBind
+          let bj = RemBindB j
+          showIterateProcedure i bi j bj iv bf
+          return bj
       showProcedure (DebugE ws) = showShallow1Procedure "DebugE" ws ()
       showProcedure (Debug s) = showShallow1Procedure "Debug" s ()
       showProcedure DebugListen = showShallow0Procedure "DebugListen" ()
