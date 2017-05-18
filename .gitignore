@@ -34,6 +34,7 @@
 # Sandbox
 .cabal-sandbox
 cabal.sandbox.config
+.stack-work/
 
 # Arduino Makefile
 firmware/Arduino-Makefile

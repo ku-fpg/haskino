@@ -19,10 +19,9 @@ module System.Hardware.Haskino.Parts.ShiftRegisters(
    , SR_74HC595(..)
    ) where
 
-import Data.Foldable (forM_)
+import           Data.Foldable           (forM_)
 
-import System.Hardware.Haskino
-import System.Hardware.Haskino.Data (die)
+import           System.Hardware.Haskino
 
 -- | A shift-register class as supported by the Haskino library.
 class ShiftRegister a where

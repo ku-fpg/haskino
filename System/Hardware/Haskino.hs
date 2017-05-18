@@ -7,7 +7,7 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Haskino allows Haskell programs to control Arduino boards 
+-- Haskino allows Haskell programs to control Arduino boards
 -- (<http://www.arduino.cc>) and peripherals
 --
 -- For details, see: <http://kufpg.github.com/Haskino>.
@@ -15,17 +15,17 @@
 module System.Hardware.Haskino (
   -- * Communication functions
   openArduino, closeArduino, withArduino, send, ArduinoConnection
-  , withArduinoWeak , withArduinoStrong, withArduinoApp
-  , sendWeak, sendStrong, sendApp
+  , withArduinoWeak ,{- withArduinoStrong,-} withArduinoApp
+  , sendWeak, {-sendStrong,-} sendApp
   -- * Deep embeddings
-  , Arduino(..) , ArduinoCommand(..), ArduinoProcedure(..), Processor(..)
+  , Arduino(..) , ArduinoPrimitive(..), Processor(..)
   -- * Programming the Arduino
   -- ** Pins
   , Pin, PinMode(..), IntMode(..), setPinMode, setPinModeE
   -- ** Gereral utils
   , systemReset, queryFirmware
   -- ** Digital IO
-  , digitalWrite, digitalRead, digitalWriteE, digitalReadE  
+  , digitalWrite, digitalRead, digitalWriteE, digitalReadE
   -- ** Analog IO
   , analogWrite, analogRead, analogWriteE, analogReadE
   -- ** I2C
@@ -34,7 +34,7 @@ module System.Hardware.Haskino (
   , servoDetach, servoDetachE, servoWrite, servoWriteE, servoWriteMicros
   , servoWriteMicrosE, servoAttach, servoAttachE, servoAttachMixMax
   , servoAttachMixMaxE, servoRead, servoReadE, servoReadMicros, servoReadMicrosE
-  -- ** Time 
+  -- ** Time
   , millis, micros, millisE, microsE, delayMillis, delayMicros,delayMillisE, delayMicrosE
   -- ** Scheduler
   , TaskLength, TaskID, TimeMillis, TimeMicros, TaskPos, queryAllTasks, queryTask
@@ -47,7 +47,7 @@ module System.Hardware.Haskino (
   --, StepDevice, StepType(..), NumSteps, StepSpeed, StepAccel, StepPerRev
   --, StepDelay(..), StepDir(..), stepperConfig, stepperStep
   , stepper2Pin, stepper2PinE, stepper4Pin, stepper4PinE, stepperSetSpeed
-  , stepperSetSpeedE, stepperStep ,stepperStepE 
+  , stepperSetSpeedE, stepperStep ,stepperStepE
   -- ** Control structures
   , loop, while, ifThenElse, loopE, forInE
   -- ** Expressions
@@ -60,11 +60,8 @@ module System.Hardware.Haskino (
  )
  where
 
-import System.Hardware.Haskino.Data
-import System.Hardware.Haskino.Comm
-import System.Hardware.Haskino.Expr
-import System.Hardware.Haskino.Utils
-import System.Hardware.Haskino.Decode
-import System.Hardware.Haskino.Compiler
-import System.Hardware.Haskino.Show
-import Data.Boolean
+import           System.Hardware.Haskino.Comm
+import           System.Hardware.Haskino.Compiler
+import           System.Hardware.Haskino.Data
+import           System.Hardware.Haskino.Decode
+import           System.Hardware.Haskino.Expr

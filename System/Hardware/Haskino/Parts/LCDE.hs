@@ -41,24 +41,16 @@ module System.Hardware.Haskino.Parts.LCDE(
   , lcdFlashE, lcdBacklightOnE, lcdBacklightOffE
   )  where
 
-import Control.Monad       (when)
-import Control.Monad.State (gets, liftIO)
 -- import Data.Bits           (testBit, (.|.), (.&.), setBit, clearBit, shiftL, bit, complement)
-import Data.Char           (ord, isSpace)
-import Data.Maybe          (fromMaybe, isJust)
-import Data.Word           (Word8, Word32)
-import qualified Data.Bits as B
-import Data.Boolean
-import Data.Boolean.Bits
+import qualified Data.Bits                    as B
+import           Data.Boolean
+import           Data.Boolean.Bits
+import           Data.Char                    (isSpace)
+import           Data.Maybe                   (isJust)
+import           Data.Word                    (Word32, Word8)
 
-import qualified Data.Map as M
-
-import System.Hardware.Haskino.Comm
-import System.Hardware.Haskino.Data
-import System.Hardware.Haskino.Expr
-import System.Hardware.Haskino.Protocol
-
-import qualified System.Hardware.Haskino.Utils as U
+import           System.Hardware.Haskino.Data
+import           System.Hardware.Haskino.Expr
 
 ---------------------------------------------------------------------------------------
 -- Low level interface, not available to the user
@@ -106,7 +98,7 @@ initLCD :: LCDE -> Arduino ()
 initLCD lcd = do
     let c = lcdControllerE lcd
     debug "Starting the LCD initialization sequence"
-    case c of 
+    case c of
         Hitachi44780{} -> initLCDDigital c
         I2CHitachi44780{} -> i2cConfig
     -- Wait for 50ms, data-sheet says at least 40ms for 2.7V version, so be safe
@@ -128,7 +120,7 @@ initLCD lcd = do
 initLCDDigital :: LCDController -> Arduino ()
 initLCDDigital c@Hitachi44780{lcdRS, lcdEN, lcdD4, lcdBL} = do
     if isJust lcdBL then let Just p = lcdBL in setPinModeE (lit p) OUTPUT else return ()
-    mapM_ (`setPinModeE` OUTPUT) [lit lcdRS, lit lcdEN, lit lcdD4, 
+    mapM_ (`setPinModeE` OUTPUT) [lit lcdRS, lit lcdEN, lit lcdD4,
                                   lit $ lcdD4 + 1, lit $ lcdD4 + 2, lit $ lcdD4 + 3]
 
 -- | Send a command to the LCD controller
@@ -172,7 +164,7 @@ transmitDig mode c@Hitachi44780{lcdRS, lcdEN, lcdD4} val = do
   pulseEnableDig c
 
 data LCD_I2C_Bits =
-  LCD_I2C_BACKLIGHT | 
+  LCD_I2C_BACKLIGHT |
   LCD_I2C_ENABLE |
   LCD_I2C_RS
 
@@ -186,7 +178,7 @@ transmitI2C :: Expr Bool -> LCDE -> LCDController -> Expr Word8 -> Arduino ()
 transmitI2C mode lcd c@I2CHitachi44780{address} val = do
     let lcds = lcdStateE lcd
     bls <- readRemoteRef (lcdBacklightStateE lcds)
-    let bl = ifB bls (lcdI2CBitsToVal LCD_I2C_BACKLIGHT) 0 
+    let bl = ifB bls (lcdI2CBitsToVal LCD_I2C_BACKLIGHT) 0
         lors = lo .|. rs .|. bl
         hirs = hi .|. rs .|. bl
     i2cWriteE (lit address) $ pack [hirs]
@@ -211,7 +203,7 @@ pulseEnableI2C c@I2CHitachi44780{address} d = do
 -- | Helper function to simplify library programming, not exposed to the user.
 withLCD :: LCDE -> String -> (LCDController -> Arduino a) -> Arduino a
 withLCD lcd what action = do
-        let c = lcdControllerE lcd 
+        let c = lcdControllerE lcd
         debug what
         action c
 
@@ -263,10 +255,10 @@ lcdBacklightOffE lcd = lcdBacklight lcd false
 lcdBacklight :: LCDE -> Expr Bool -> Arduino ()
 lcdBacklight lcd on = do
    let lcdc = lcdControllerE lcd
-   case lcdc of 
+   case lcdc of
       Hitachi44780{} -> do
         let bl = lcdBL lcdc
-        if isJust bl 
+        if isJust bl
             then let Just p = bl in digitalWriteE (lit p) on
             else return()
       I2CHitachi44780{} -> do
@@ -316,11 +308,11 @@ lcdSetCursorE lcd (givenCol, givenRow) = withLCD lcd ("Sending the cursor to Row
                     -- The magic row-offsets come from various web sources
                     -- I don't follow the logic in these numbers, but it seems to work
                     offset = col + ifB (row ==* 0) 0
-                                        (ifB (row ==* 1) 0x40 
+                                        (ifB (row ==* 1) 0x40
                                               (ifB (row ==* 2) 0x14 0x54))
 
 -- | Scroll the display to the left by 1 character. Project idea: Using a tilt sensor, scroll the contents of the display
--- left/right depending on the tilt. 
+-- left/right depending on the tilt.
 lcdScrollDisplayLeftE :: LCDE -> Arduino ()
 lcdScrollDisplayLeftE lcd = withLCD lcd "Scrolling display to the left by 1" $ \c -> sendCmd lcd c (LCD_CURSORSHIFT lcdMoveLeft)
   where lcdMoveLeft = 0x00
@@ -332,7 +324,7 @@ lcdScrollDisplayRightE lcd = withLCD lcd "Scrolling display to the right by 1" $
 
 -- | Update the display control word
 updateDisplayControl :: String -> (Expr Word8 -> Expr Word8) -> LCDE -> Arduino ()
-updateDisplayControl what f lcd = do 
+updateDisplayControl what f lcd = do
   let c = lcdControllerE lcd
   let lcds = lcdStateE lcd
   debug what
@@ -463,7 +455,7 @@ newtype LCDSymbolE = LCDSymbolE (Expr Word8)
 -- >
 lcdCreateSymE :: LCDE -> Expr [Word8] -> Arduino LCDSymbolE
 lcdCreateSymE lcd glyph =
-    do let c = lcdControllerE lcd 
+    do let c = lcdControllerE lcd
        let lcds = lcdStateE lcd
        i <- readRemoteRef (lcdGlyphCountE lcds)
        modifyRemoteRef (lcdGlyphCountE lcds) (\x -> x + 1)

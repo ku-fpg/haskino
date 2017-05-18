@@ -13,35 +13,36 @@
 
 module System.Hardware.Haskino.Show where
 
-import Data.Bits (xor,shiftR)
-import Data.Int (Int8, Int16, Int32)
-import Data.List
-import Data.Word (Word8, Word16, Word32)
+import           Data.Bits                        (shiftR, xor)
+import           Data.Int                         (Int16, Int32, Int8)
+import           Data.List
+import           Data.Word                        (Word16, Word32, Word8)
 
-import Control.Monad.State
+import           Control.Monad.State
 
-import Control.Remote.Monad
-import Control.Remote.Monad.Types as T
+import           Control.Remote.Applicative.Types as T
+import           Control.Remote.Monad
+import           Control.Remote.Monad.Types       as T
 
-import System.Hardware.Haskino.Data
-import System.Hardware.Haskino.Expr
-import System.Hardware.Haskino.Utils
+import           System.Hardware.Haskino.Data
+import           System.Hardware.Haskino.Expr
+import           System.Hardware.Haskino.Utils
 
 instance Show (Arduino a) where
   show = showArduino
 
-data ShowState = ShowState {ix :: Int  
-                          , ib :: Int
-                          , block :: String    
+data ShowState = ShowState {ix     :: Int
+                          , ib     :: Int
+                          , block  :: String
                           , blocks :: [String]
-                          , indent :: Int}    
+                          , indent :: Int}
 
 showArduino :: Arduino a -> String
-showArduino a = as    
+showArduino a = as
   where
     (as, _) = runState (showCodeBlock a) (ShowState 0 0 "" [] 0)
 
-showCommand :: ArduinoCommand -> State ShowState String
+showCommand :: ArduinoPrimitive a -> State ShowState String
 showCommand SystemReset = showCommand0 "SystemReset"
 showCommand (SetPinModeE p m) = showCommand2 "SetPinModeE" p m
 showCommand (DigitalWriteE p b) = showCommand2 "DigitalWriteE" p b
@@ -120,7 +121,7 @@ showCommand (WhileRemoteRefI32 (RemoteRefI32 i) iv bf uf cb) =
     showWhileCommand (RefI32 i) i iv bf uf cb
 showCommand (WhileRemoteRefFloat (RemoteRefFloat i) iv bf uf cb) =
     showWhileCommand (RefFloat i) i iv bf uf cb
-showCommand (WhileRemoteRefL8 (RemoteRefL8 i) iv bf uf cb) = 
+showCommand (WhileRemoteRefL8 (RemoteRefL8 i) iv bf uf cb) =
     showWhileCommand (RefList8 i) i iv bf uf cb
 showCommand (Loop cb) = do
     c <- showCodeBlock cb
@@ -144,7 +145,7 @@ showCommandAndArgs ss = do
     let c = head ss
     let as = tail ss
     let cmdAndArgs = c ++ " (" ++ intercalate ") (" as ++ ")"
-    addToBlock cmdAndArgs 
+    addToBlock cmdAndArgs
     return cmdAndArgs
 
 showCommand0 :: String -> State ShowState String
@@ -171,7 +172,7 @@ addToBlock bs = do
 
 showCodeBlock :: Arduino a -> State ShowState String
 showCodeBlock (Arduino commands) = do
-    startNewBlock 
+    startNewBlock
     showMonad commands
     endCurrentBlock
   where
@@ -209,38 +210,38 @@ showCodeBlock (Arduino commands) = do
       showShallow0Procedure p r = showShallowProcedure [p] r
 
       showShallow1Procedure :: Show a => String -> a -> b -> State ShowState b
-      showShallow1Procedure p e1 r = 
+      showShallow1Procedure p e1 r =
         showShallowProcedure [p, show e1] r
 
       showShallow2Procedure :: (Show a, Show b) => String -> a -> b -> c -> State ShowState c
-      showShallow2Procedure p e1 e2 r = 
+      showShallow2Procedure p e1 e2 r =
         showShallowProcedure [p, show e1, show e2] r
 
       showShallow3Procedure :: (Show a, Show b, Show c) => String -> a -> b -> c -> d -> State ShowState d
-      showShallow3Procedure p e1 e2 e3 r = 
+      showShallow3Procedure p e1 e2 e3 r =
         showShallowProcedure [p, show e1, show e2, show e3] r
 
       showShallow5Procedure :: (Show a, Show b, Show c, Show d, Show e) => String -> a -> b -> c -> d -> e -> f -> State ShowState f
-      showShallow5Procedure p e1 e2 e3 e4 e5 r = 
+      showShallow5Procedure p e1 e2 e3 e4 e5 r =
         showShallowProcedure [p, show e1, show e2, show e3, show e4, show e5] r
 
       showDeep0Procedure :: String -> State ShowState Int
       showDeep0Procedure p = showDeepProcedure [p]
 
       showDeep1Procedure :: Show a => String -> Expr a -> State ShowState Int
-      showDeep1Procedure p e1 = 
+      showDeep1Procedure p e1 =
         showDeepProcedure [p, show e1]
 
       showDeep2Procedure :: (Show a, Show b) => String -> Expr a -> Expr b -> State ShowState Int
-      showDeep2Procedure p e1 e2 = 
+      showDeep2Procedure p e1 e2 =
         showDeepProcedure [p, show e1, show e2]
 
       showDeep3Procedure :: (Show a, Show b, Show c) => String -> Expr a -> Expr b -> Expr c -> State ShowState Int
-      showDeep3Procedure p e1 e2 e3 = 
+      showDeep3Procedure p e1 e2 e3 =
         showDeepProcedure [p, show e1, show e2, show e3]
 
       showDeep5Procedure :: (Show a, Show b, Show c, Show d, Show e) => String -> Expr a -> Expr b -> Expr c -> Expr d -> Expr e -> State ShowState Int
-      showDeep5Procedure p e1 e2 e3 e4 e5 = 
+      showDeep5Procedure p e1 e2 e3 e4 e5 =
         showDeepProcedure [p, show e1, show e2, show e3, show e4, show e5]
 
       showNewRef :: String -> Expr a -> b -> State ShowState b
@@ -250,7 +251,7 @@ showCodeBlock (Arduino commands) = do
           put s {ib = (ib s) + 1, ix = (ix s) + 1}
           return r
 
-      showProcedure :: ArduinoProcedure a -> State ShowState a
+      showProcedure :: ArduinoPrimitive a -> State ShowState a
       showProcedure QueryFirmware = showShallow0Procedure "QueryFirmware" 0
       showProcedure QueryFirmwareE = do
           i <- showDeep0Procedure "QueryFirmwareE"
@@ -289,7 +290,7 @@ showCodeBlock (Arduino commands) = do
           return $ RemBindList8 i
       showProcedure (Stepper2Pin s p1 p2) = showShallow3Procedure "Stepper2Pin" s p1 p2 0
       showProcedure (Stepper2PinE s p1 p2) = do
-          i <- showDeep3Procedure "Stepper2PinE" s p1 p2 
+          i <- showDeep3Procedure "Stepper2PinE" s p1 p2
           return $ RemBindW8 i
       showProcedure (Stepper4Pin s p1 p2 p3 p4) = showShallow5Procedure "Stepper4Pin" s p1 p2 p3 p4 0
       showProcedure (Stepper4PinE s p1 p2 p3 p4) = do
@@ -381,12 +382,13 @@ showCodeBlock (Arduino commands) = do
       showProcedure (Die msg msgs) = showShallow2Procedure "Die" msg msgs ()
       -- showProcedure (LiftIO _) = showShallow0Procedure "LiftIO m" ()
 
-      showAppl :: RemoteApplicative ArduinoCommand ArduinoProcedure a -> State ShowState a
-      showAppl (T.Command cmd) = do
-          sc <- showCommand cmd
-          addToBlock sc
-          return ()
-      showAppl (T.Procedure p) = showProcedure p
+      showAppl :: RemoteApplicative ArduinoPrimitive a -> State ShowState a
+      showAppl (T.Primitive p) = case knownResult p of
+                                   Just a -> do
+                                     sc <- showCommand p
+                                     addToBlock sc
+                                     return a
+                                   Nothing -> showProcedure p
       showAppl (T.Ap a1 a2) = do
           f <- showAppl a1
           g <- showAppl a2
@@ -394,7 +396,7 @@ showCodeBlock (Arduino commands) = do
       showAppl (T.Pure a) = do
           return a
 
-      showMonad :: RemoteMonad ArduinoCommand ArduinoProcedure a -> State ShowState a
+      showMonad :: RemoteMonad ArduinoPrimitive a -> State ShowState a
       showMonad (T.Appl app) = showAppl app
       showMonad (T.Bind m k) = do
           r <- showMonad m

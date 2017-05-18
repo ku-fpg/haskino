@@ -1,4 +1,4 @@
-Name:          Haskino
+Name:          haskino
 Version:       0.5
 Category:      Hardware
 Synopsis:      Control your Arduino board from Haskell using Deep Embedding
@@ -31,9 +31,10 @@ Library
                     , containers
                     , time
                     , base16-bytestring
-                    , natural-transformation
+                    , natural-transformation >=0.4 && < 0.5
                     , Boolean
                     , cereal
+                    , remote-monad >= 0.5 && < 0.6
                     , transformers
   Exposed-modules   : System.Hardware.Haskino
                     , System.Hardware.Haskino.Parts.Eeprom

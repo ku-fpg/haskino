@@ -7,7 +7,7 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Abstractions for piezo speakers. 
+-- Abstractions for piezo speakers.
 -------------------------------------------------------------------------------------------------
 
 {-# LANGUAGE NamedFieldPuns #-}
@@ -22,13 +22,10 @@ module System.Hardware.Haskino.Parts.Piezo(
    , playNotes
    ) where
 
-import Data.Bits  (shiftR, (.&.))
-import Data.Maybe (fromMaybe)
-import Data.Word (Word8, Word16, Word32)
+import           Data.Maybe              (fromMaybe)
+import           Data.Word               (Word16, Word32)
 
-import System.Hardware.Haskino
-import System.Hardware.Haskino.Comm
-import System.Hardware.Haskino.Data
+import           System.Hardware.Haskino
 
 -- | A piezo speaker. Note that this type is abstract, use 'speaker' to
 -- create an instance.

@@ -41,19 +41,17 @@ module System.Hardware.Haskino.Parts.LCD(
   , lcdFlash, lcdBacklightOn, lcdBacklightOff
   )  where
 
-import Control.Concurrent  (modifyMVar, withMVar, newMVar, readMVar)
-import Control.Monad       (when)
-import Control.Monad.State (gets, liftIO)
-import Data.Bits           (testBit, (.|.), (.&.), setBit, clearBit, shiftL, shiftR, bit, complement)
-import Data.Char           (ord, isSpace)
-import Data.Maybe          (fromMaybe, isJust)
-import Data.Word           (Word8)
+import           Control.Concurrent            (modifyMVar, newMVar, readMVar)
+import           Control.Monad                 (when)
+import           Control.Monad.State           (liftIO)
+import           Data.Bits                     (bit, clearBit, complement,
+                                                setBit, shiftL, shiftR, (.&.),
+                                                (.|.))
+import           Data.Char                     (isSpace, ord)
+import           Data.Maybe                    (fromMaybe, isJust)
+import           Data.Word                     (Word8)
 
-import qualified Data.Map as M
-
-import System.Hardware.Haskino.Comm
-import System.Hardware.Haskino.Data
-import System.Hardware.Haskino.Protocol
+import           System.Hardware.Haskino.Data
 
 import qualified System.Hardware.Haskino.Utils as U
 
@@ -102,7 +100,7 @@ initLCD :: LCD -> Arduino ()
 initLCD lcd = do
     let c = lcdController lcd
     debug "Starting the LCD initialization sequence"
-    case c of 
+    case c of
         Hitachi44780{} -> initLCDDigital c
         I2CHitachi44780{} -> i2cConfig
     -- Wait for 50ms, data-sheet says at least 40ms for 2.7V version, so be safe
@@ -167,7 +165,7 @@ transmitDig mode c@Hitachi44780{lcdRS, lcdEN, lcdD4, lcdD5, lcdD6, lcdD7} val = 
   pulseEnableDig c
 
 data LCD_I2C_Bits =
-  LCD_I2C_BACKLIGHT | 
+  LCD_I2C_BACKLIGHT |
   LCD_I2C_ENABLE |
   LCD_I2C_RS
 
@@ -180,7 +178,7 @@ lcdI2CBitsToVal LCD_I2C_RS        = 1
 transmitI2C :: Bool -> LCD -> LCDController -> Word8 -> Arduino ()
 transmitI2C mode lcd c@I2CHitachi44780{address} val = do
     lcdd <- liftIO $ readMVar (lcdState lcd)
-    let bl = if lcdBacklightState lcdd 
+    let bl = if lcdBacklightState lcdd
                 then lcdI2CBitsToVal LCD_I2C_BACKLIGHT
                 else 0
         lors = lo .|. rs .|. bl
@@ -207,7 +205,7 @@ pulseEnableI2C c@I2CHitachi44780{address} d = do
 -- | Helper function to simplify library programming, not exposed to the user.
 withLCD :: LCD -> String -> (LCDController -> Arduino a) -> Arduino a
 withLCD lcd what action = do
-        let c = lcdController lcd 
+        let c = lcdController lcd
         debug what
         action c
 
@@ -256,10 +254,10 @@ lcdBacklightOff lcd = lcdBacklight lcd False
 lcdBacklight :: LCD -> Bool -> Arduino ()
 lcdBacklight lcd on = do
    let lcdc = lcdController lcd
-   case lcdc of 
+   case lcdc of
       Hitachi44780{} -> do
         let bl = lcdBL lcdc
-        if isJust bl 
+        if isJust bl
             then let Just p = bl in digitalWrite p on
             else return()
       I2CHitachi44780{} -> do
@@ -317,7 +315,7 @@ lcdSetCursor lcd (givenCol, givenRow) = withLCD lcd ("Sending the cursor to Row:
                     offset = col + fromMaybe 0x54 (row `lookup` rowOffsets)
 
 -- | Scroll the display to the left by 1 character. Project idea: Using a tilt sensor, scroll the contents of the display
--- left/right depending on the tilt. 
+-- left/right depending on the tilt.
 lcdScrollDisplayLeft :: LCD -> Arduino ()
 lcdScrollDisplayLeft lcd = withLCD lcd "Scrolling display to the left by 1" $ \c -> sendCmd lcd c (LCD_CURSORSHIFT lcdMoveLeft)
   where lcdMoveLeft = 0x00
@@ -470,9 +468,9 @@ lcdCreateSymbol lcd glyph
   = do die "Haskino: lcdCreateSymbol: Invalid glyph description: must be 8x5!" ("Received:" : glyph)
        return $ LCDSymbol 255
   | True
-  = do let c = lcdController lcd 
+  = do let c = lcdController lcd
        let lcds = lcdState lcd
-       i <- liftIO $ modifyMVar lcds $ \lcdst -> 
+       i <- liftIO $ modifyMVar lcds $ \lcdst ->
               do let lcdst' = lcdst { lcdGlyphCount = (lcdGlyphCount lcdst) + 1 }
                  return (lcdst', lcdGlyphCount lcdst)
        let create = do
