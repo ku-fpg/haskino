@@ -226,8 +226,8 @@ runAP c pkt =
                   AP.Pure a      -> pure a
                   AP.Zip f g h   -> f <$> runAP c g <*> runAP c h
   where
-      batchCommands :: ArduinoConnection -> ApplicativePacket ArduinoPrimitive a -> B.ByteString -> IO B.ByteString
-      batchCommands c pkt cmds =
+    batchCommands :: forall a . ArduinoConnection -> ApplicativePacket ArduinoPrimitive a -> B.ByteString -> IO B.ByteString
+    batchCommands c pkt cmds =
           case pkt of
               AP.Primitive p -> case knownResult p of
                                   Just _ -> frameCommand c p cmds
