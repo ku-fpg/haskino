@@ -15,7 +15,7 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
-module System.Hardware.Haskino.ShallowDeepPlugin.BindChangeArgPass (bindChangeArgRetPass) where
+module System.Hardware.Haskino.ShallowDeepPlugin.BindChangeArgPass (bindChangeArgRetAppPass) where
 
 import CoreMonad
 import GhcPlugins
@@ -30,7 +30,6 @@ data BindEnv
     = BindEnv
       { pluginModGuts :: ModGuts,
         args :: [CoreBndr],
-        shallowDeeps :: [(Id, Id)],
         shallowDeepMap :: M.Map Id Id
       }
 
@@ -45,11 +44,11 @@ instance PassCoreM BindM where
 deepSuffix :: String
 deepSuffix = "_deep'"
 
-bindChangeArgRetPass :: ModGuts -> CoreM ModGuts
-bindChangeArgRetPass guts = do
-    (bindsL', s) <- (\x -> (runStateT (runBindM $ (mapM changeArgBind) x) (BindEnv guts [] [] (M.fromList [])))) (mg_binds guts)
+bindChangeArgRetAppPass :: ModGuts -> CoreM ModGuts
+bindChangeArgRetAppPass guts = do
+    (bindsL', s) <- (\x -> (runStateT (runBindM $ (mapM changeArgBind) x) (BindEnv guts [] M.empty))) (mg_binds guts)
     let guts' = guts { mg_binds = concat bindsL' }
-    bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM changeAppBind) x) (BindEnv guts' [] [] (M.fromList $ shallowDeeps s)))) guts'
+    bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM changeAppBind) x) (BindEnv guts' [] (shallowDeepMap s)))) guts'
 
 changeArgBind :: CoreBind -> BindM [CoreBind]
 changeArgBind (NonRec b e) = do
@@ -117,7 +116,7 @@ changeSubBind b e = do
 
               -- Put id pair into state
               s <- get
-              put s{shallowDeeps = (b, b') : shallowDeeps s}
+              put s{shallowDeepMap = M.insert b b' (shallowDeepMap s)}
 
               return [(b, mkLams bs absExpr), (b', mkLams bs' e''')]
           else if length bs > 0 
@@ -130,7 +129,7 @@ changeSubBind b e = do
 
                   -- Put id pair into state
                   s <- get
-                  put s{shallowDeeps = (b, b') : shallowDeeps s}
+                  put s{shallowDeepMap = M.insert b  b' (shallowDeepMap s)}
 
                   return [(b, mkLams bs shallowE), (b', mkLams bs' e'')]
               else return [(b, e)]
