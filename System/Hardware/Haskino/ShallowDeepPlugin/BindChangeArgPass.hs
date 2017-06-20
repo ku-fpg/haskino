@@ -42,6 +42,9 @@ instance PassCoreM BindM where
   liftCoreM m = BindM $ lift m
   getModGuts = gets pluginModGuts
 
+deepSuffix :: String
+deepSuffix = "_deep'"
+
 bindChangeArgRetPass :: ModGuts -> CoreM ModGuts
 bindChangeArgRetPass guts = do
     (bindsL', s) <- (\x -> (runStateT (runBindM $ (mapM changeArgBind) x) (BindEnv guts [] [] (M.fromList [])))) (mg_binds guts)
@@ -54,15 +57,20 @@ changeArgBind (NonRec b e) = do
   let bs = map (\ide -> NonRec (fst ide) (snd ide)) ides
   return bs
 changeArgBind bndr@(Rec bs) = do
-  bs' <- changeArgBind' bs
-  return $ [Rec bs']
+  (nrbs', rbs') <- changeArgBind' bs
+  return $ nrbs' ++ [Rec rbs']
 
-changeArgBind' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
-changeArgBind' [] = return []
+changeArgBind' :: [(Id, CoreExpr)] -> BindM ([CoreBind], [(Id, CoreExpr)])
+changeArgBind' [] = return ([], [])
 changeArgBind' ((b, e) : bs) = do
   ides <- changeSubBind b e
-  bs' <- changeArgBind' bs
-  return $ ides ++ bs'
+  (nrbs', rbs') <- changeArgBind' bs
+  if length ides == 1
+  then return (nrbs', ides ++ rbs')
+  else do
+    let [nrb, rb] = ides
+    let (b', e')  = nrb
+    return ((NonRec b' e') : nrbs', rb : rbs')
 
 changeSubBind :: Id -> CoreExpr -> BindM [(Id, CoreExpr)]
 changeSubBind b e = do
@@ -100,7 +108,7 @@ changeSubBind b e = do
               e''' <- fmapRepBindReturn e''
 
               -- Create a new top level bind type with the deep tyep
-              bDeep <- modId b "_deep"
+              bDeep <- modId b deepSuffix
               let b' = setVarType bDeep $ mkFunTys argTys (mkTyConApp retTyCon [exprTyConApp])
 
               -- Apply the abs <$> to the new shallow body
@@ -115,7 +123,7 @@ changeSubBind b e = do
           else if length bs > 0 
               then do
                   -- Create a new top level bind type with the deep tyep
-                  bDeep <- modId b "_deep"
+                  bDeep <- modId b deepSuffix
                   let b' = setVarType bDeep $ mkFunTys argTys' retTy
 
                   let shallowE = mkCoreApps (Var b') deepArgs
