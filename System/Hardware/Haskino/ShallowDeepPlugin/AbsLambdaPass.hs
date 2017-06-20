@@ -145,9 +145,6 @@ changeLambdaExpr e = do
       e' <- changeLambdaExpr e
       return $ Cast e' co
 
-varString :: Id -> String
-varString = occNameString . nameOccName . Var.varName
-
 changeLambdaExpr' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
 changeLambdaExpr' [] = return []
 changeLambdaExpr' ((b, e) : bs) = do

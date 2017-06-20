@@ -304,7 +304,3 @@ changeVarExprAlts f t ((ac, b, a) : as) = do
   a' <- changeVarExpr f t a
   bs' <- changeVarExprAlts f t as
   return $ (ac, b, a') : bs'
-
-varString :: Id -> String
-varString = occNameString . nameOccName . Var.varName
-

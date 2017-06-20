@@ -48,7 +48,7 @@ install _ todo = do
   let showToDo = [CoreDoPluginPass "ShowPass" showPass]
 --  return $ todo ++ dumpToDo
   return $ [simplPass] ++ condToDo ++ commProcToDo ++ returnsToDo ++
-           bindArgRetToDo ++ bindAppToDo ++
+           bindArgRetToDo ++ dumpToDo ++ 
            repPushToDo ++ absLambdaToDo ++
            repAbsFuseToDo ++ recurToDo ++ todo -- ++ dumpToDo
 {-

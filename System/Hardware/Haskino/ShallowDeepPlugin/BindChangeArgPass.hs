@@ -21,6 +21,7 @@ import CoreMonad
 import GhcPlugins
 import Var
 import Data.Functor
+import qualified Data.Map as M
 import Control.Monad.State
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils
@@ -28,7 +29,9 @@ import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 data BindEnv
     = BindEnv
       { pluginModGuts :: ModGuts,
-        args :: [CoreBndr]
+        args :: [CoreBndr],
+        shallowDeeps :: [(Id, Id)],
+        shallowDeepMap :: M.Map Id Id
       }
 
 newtype BindM a = BindM { runBindM :: StateT BindEnv CoreM a }
@@ -41,25 +44,27 @@ instance PassCoreM BindM where
 
 bindChangeArgRetPass :: ModGuts -> CoreM ModGuts
 bindChangeArgRetPass guts = do
-    bindsL' <- (\x -> fst <$> (runStateT (runBindM $ (mapM changeBind) x) (BindEnv guts []))) (mg_binds guts)
-    return (guts { mg_binds = concat bindsL' })
+    (bindsL', s) <- (\x -> (runStateT (runBindM $ (mapM changeArgBind) x) (BindEnv guts [] [] (M.fromList [])))) (mg_binds guts)
+    let guts' = guts { mg_binds = concat bindsL' }
+    bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM changeAppBind) x) (BindEnv guts' [] [] (M.fromList $ shallowDeeps s)))) guts'
 
-changeBind :: CoreBind -> BindM [CoreBind]
-changeBind (NonRec b e) = do
-  (b', e') <- changeSubBind b e
-  return [NonRec b' e']
-changeBind bndr@(Rec bs) = do
-  bs' <- changeBind' bs
+changeArgBind :: CoreBind -> BindM [CoreBind]
+changeArgBind (NonRec b e) = do
+  ides <- changeSubBind b e
+  let bs = map (\ide -> NonRec (fst ide) (snd ide)) ides
+  return bs
+changeArgBind bndr@(Rec bs) = do
+  bs' <- changeArgBind' bs
   return $ [Rec bs']
 
-changeBind' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
-changeBind' [] = return []
-changeBind' ((b, e) : bs) = do
-  (subB, subE) <- changeSubBind b e
-  bs' <- changeBind' bs
-  return $ (subB, subE) : bs'
+changeArgBind' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
+changeArgBind' [] = return []
+changeArgBind' ((b, e) : bs) = do
+  ides <- changeSubBind b e
+  bs' <- changeArgBind' bs
+  return $ ides ++ bs'
 
-changeSubBind :: Id -> CoreExpr -> BindM (Id, CoreExpr)
+changeSubBind :: Id -> CoreExpr -> BindM [(Id, CoreExpr)]
 changeSubBind b e = do
   df <- liftCoreM getDynFlags
   let (argTys, retTy) = splitFunTys $ varType b
@@ -83,7 +88,7 @@ changeSubBind b e = do
           e'' <- changeArgAppsExpr e'
 
           -- Generate args for new shallow body
-          -- deepArgs <- mapM repExpr (map Var bs)
+          deepArgs <- mapM repExpr (map Var bs)
 
           -- If it is not a unit type return, change return type
           if not (retTy' `eqType` unitTyConTy)
@@ -94,25 +99,34 @@ changeSubBind b e = do
               -- Change the return
               e''' <- fmapRepBindReturn e''
 
-              -- Change the top level bind type
-              let b' = setVarType b $ mkFunTys argTys (mkTyConApp retTyCon [exprTyConApp])
+              -- Create a new top level bind type with the deep tyep
+              bDeep <- modId b "_deep"
+              let b' = setVarType bDeep $ mkFunTys argTys (mkTyConApp retTyCon [exprTyConApp])
 
               -- Apply the abs <$> to the new shallow body
-              -- let shallowE = mkCoreApps (Var b') deepArgs
-              -- absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' shallowE
+              let shallowE = mkCoreApps (Var b') deepArgs
+              absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' shallowE
 
-              -- return [NonRec b absExpr, NonRec b' $ mkLams bs' e''']
-              return (b', mkLams bs' e''')
+              -- Put id pair into state
+              s <- get
+              put s{shallowDeeps = (b, b') : shallowDeeps s}
+
+              return [(b, mkLams bs absExpr), (b', mkLams bs' e''')]
           else if length bs > 0 
               then do
-                  -- Change the top level bind type
-                  let b' = setVarType b $ mkFunTys argTys' retTy
+                  -- Create a new top level bind type with the deep tyep
+                  bDeep <- modId b "_deep"
+                  let b' = setVarType bDeep $ mkFunTys argTys' retTy
 
-                  -- let shallowE = mkCoreApps (Var b') deepArgs
-                  -- return [NonRec b shallowE, NonRec b' $ mkLams bs' e'']
-                  return (b', mkLams bs' e'')
-              else return (b, e)
-      _ -> return (b, e)
+                  let shallowE = mkCoreApps (Var b') deepArgs
+
+                  -- Put id pair into state
+                  s <- get
+                  put s{shallowDeeps = (b, b') : shallowDeeps s}
+
+                  return [(b, mkLams bs shallowE), (b', mkLams bs' e'')]
+              else return [(b, e)]
+      _ -> return [(b, e)]
 
 changeArg :: (CoreBndr, Type) -> BindM (CoreBndr, Type)
 changeArg (b, ty) = do
@@ -182,3 +196,108 @@ changeArgAppsExprAlts ((ac, b, a) : as) = do
   bs' <- changeArgAppsExprAlts as
   return $ (ac, b, a') : bs'
 
+changeAppBind :: CoreBind -> BindM CoreBind
+changeAppBind bndr@(NonRec b e) = do
+  df <- liftCoreM getDynFlags
+  let (bs, e') = collectBinders e
+  e'' <- changeAppExpr e'
+  let e''' = mkLams bs e''
+  return (NonRec b e''')
+changeAppBind bndr@(Rec bs) = do
+  bs' <- changeAppBind' bs
+  return $ Rec bs'
+
+changeAppBind' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
+changeAppBind' [] = return []
+changeAppBind' ((b, e) : bs) = do
+  let (lbs, e') = collectBinders e
+  e'' <- changeAppExpr e'
+  let e''' = mkLams lbs e''
+  bs' <- changeAppBind' bs
+  return $ (b, e''') : bs'
+
+changeAppExpr :: CoreExpr -> BindM CoreExpr
+changeAppExpr e = do
+  df <- liftCoreM getDynFlags
+  monadTyConId <- thNameToTyCon monadTyConTH
+  unitTyConId <- thNameToTyCon ''()
+  let unitTyConTy = mkTyConTy unitTyConId
+  s <- get
+  let sdMap = shallowDeepMap s
+  case e of
+    Var v -> do
+      let tyCon_m = splitTyConApp_maybe $ varType v
+      let defaultRet = return $ Var v
+      case tyCon_m of
+          Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
+              if v `M.member` sdMap
+              then do
+                  let (Just v') = M.lookup v sdMap
+                  absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' (Var v')
+                  return $ absExpr
+              else defaultRet
+          _ -> defaultRet
+    Lit l -> return $ Lit l
+    Type ty -> return $ Type ty
+    Coercion co -> return $ Coercion co
+    App e1 e2 -> do
+      let (b, args) = collectArgs e
+      let (argTys, retTy) = splitFunTys $ exprType b
+      let tyCon_m = splitTyConApp_maybe retTy
+      let defaultRet = do
+            e1' <- changeAppExpr e1
+            e2' <- changeAppExpr e2
+            return $ App e1' e2'
+      case tyCon_m of
+          Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
+              let (Var vb) = b
+              if vb `M.member` sdMap
+              then do
+                  args' <- mapM repExpr args
+                  let (Just vb') = M.lookup vb sdMap
+                  if not (retTy' `eqType` unitTyConTy)
+                  then do
+                      let e' = mkCoreApps (Var vb') args'
+                      absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' e'
+                      return $ absExpr
+                  else do
+                      return $ mkCoreApps (Var vb') args'
+              else defaultRet
+          _ -> defaultRet
+    Lam tb e -> do
+      e' <- changeAppExpr e
+      return $ Lam tb e'
+    Let bind body -> do
+      body' <- changeAppExpr body
+      bind' <- case bind of
+                  (NonRec v e) -> do
+                    e' <- changeAppExpr e
+                    return $ NonRec v e'
+                  (Rec rbs) -> do
+                    rbs' <- changeAppExpr' rbs
+                    return $ Rec rbs'
+      return $ Let bind' body'
+    Case e tb ty alts -> do
+      e' <- changeAppExpr e
+      alts' <- changeAppExprAlts alts
+      return $ Case e' tb ty alts'
+    Tick t e -> do
+      e' <- changeAppExpr e
+      return $ Tick t e'
+    Cast e co -> do
+      e' <- changeAppExpr e
+      return $ Cast e' co
+
+changeAppExpr' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
+changeAppExpr' [] = return []
+changeAppExpr' ((b, e) : bs) = do
+  e' <- changeAppExpr e
+  bs' <- changeAppExpr' bs
+  return $ (b, e') : bs'
+
+changeAppExprAlts :: [GhcPlugins.Alt CoreBndr] -> BindM [GhcPlugins.Alt CoreBndr]
+changeAppExprAlts [] = return []
+changeAppExprAlts ((ac, b, a) : as) = do
+  a' <- changeAppExpr a
+  bs' <- changeAppExprAlts as
+  return $ (ac, b, a') : bs'

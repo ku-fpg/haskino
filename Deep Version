@@ -1,0 +1,145 @@
+Deep Version 
+====================
+
+ blink =
+   \ (ds_ds0B :: Expr Word8) ->
+     ifThenElseUnitE
+       (eqE
+          @ (Expr Bool)
+          System.Hardware.Haskino.Expr.$fExprBWord8
+          ds_ds0B
+          (rep_
+             @ Word8
+             System.Hardware.Haskino.Expr.$fExprBWord8
+             (fromInteger @ Word8 GHC.Word.$fNumWord8 0)))
+       (return
+          @ Arduino
+          System.Hardware.Haskino.Data.$fMonadArduino
+          @ ()
+          GHC.Tuple.())
+       (>>
+          @ Arduino
+          System.Hardware.Haskino.Data.$fMonadArduino
+          @ ()
+          @ ()
+          (digitalWriteE
+             (rep_ @ Pin System.Hardware.Haskino.Expr.$fExprBWord8 led)
+             (rep_
+                @ Bool System.Hardware.Haskino.Expr.$fExprBBool GHC.Types.True))
+          (>>
+             @ Arduino
+             System.Hardware.Haskino.Data.$fMonadArduino
+             @ ()
+             @ ()
+             (delayMillisE
+                (rep_
+                   @ TimeMillis
+                   System.Hardware.Haskino.Expr.$fExprBWord32
+                   (fromInteger @ TimeMillis GHC.Word.$fNumWord32 1000)))
+             (>>
+                @ Arduino
+                System.Hardware.Haskino.Data.$fMonadArduino
+                @ ()
+                @ ()
+                (digitalWriteE
+                   (rep_ @ Pin System.Hardware.Haskino.Expr.$fExprBWord8 led)
+                   (rep_
+                      @ Bool System.Hardware.Haskino.Expr.$fExprBBool GHC.Types.False))
+                (>>
+                   @ Arduino
+                   System.Hardware.Haskino.Data.$fMonadArduino
+                   @ ()
+                   @ ()
+                   (delayMillisE
+                      (rep_
+                         @ TimeMillis
+                         System.Hardware.Haskino.Expr.$fExprBWord32
+                         (fromInteger @ TimeMillis GHC.Word.$fNumWord32 1000)))
+                   (blink
+                      (- @ (Expr Word8)
+                         System.Hardware.Haskino.Expr.$fNumExpr5
+                         ds_ds0B
+                         (rep_
+                            @ Word8
+                            System.Hardware.Haskino.Expr.$fExprBWord8
+                            (fromInteger @ Word8 GHC.Word.$fNumWord8 1))))))));,
+
+Iter Version
+====================
+
+ blink =
+   \ (t :: Expr Word8) ->
+     iterateE
+       @ Word8
+       @ ()
+       System.Hardware.Haskino.Data.$fArduinoIterateWord8()
+       t
+       (\ (x :: Expr Word8) ->
+          ifThenElseEither
+            @ Word8
+            @ ()
+            System.Hardware.Haskino.Data.$fArduinoIterateWord8()
+            (eqE
+               @ Word8
+               System.Hardware.Haskino.Expr.$fExprBWord8
+               x
+               (fromInteger
+                  @ (Expr Word8) System.Hardware.Haskino.Expr.$fNumExpr5 0))
+            (return
+               @ Arduino
+               System.Hardware.Haskino.Data.$fMonadArduino
+               @ (ExprEither Word8 ())
+               (System.Hardware.Haskino.Expr.ExprRight
+                  @ Word8
+                  @ ()
+                  System.Hardware.Haskino.Expr.$fExprBWord8
+                  System.Hardware.Haskino.Expr.$fExprB()
+                  System.Hardware.Haskino.Expr.$WLitUnit))
+            (>>
+               @ Arduino
+               System.Hardware.Haskino.Data.$fMonadArduino
+               @ ()
+               @ (ExprEither Word8 ())
+               (digitalWrite led GHC.Types.True)
+               (>>
+                  @ Arduino
+                  System.Hardware.Haskino.Data.$fMonadArduino
+                  @ ()
+                  @ (ExprEither Word8 ())
+                  (delayMillisE
+                     (fromInteger
+                        @ System.Hardware.Haskino.Data.TimeMillisE
+                        System.Hardware.Haskino.Expr.$fNumExpr3
+                        1000))
+                  (>>
+                     @ Arduino
+                     System.Hardware.Haskino.Data.$fMonadArduino
+                     @ ()
+                     @ (ExprEither Word8 ())
+                     (digitalWrite led GHC.Types.False)
+                     (>>
+                        @ Arduino
+                        System.Hardware.Haskino.Data.$fMonadArduino
+                        @ ()
+                        @ (ExprEither Word8 ())
+                        (delayMillisE
+                           (fromInteger
+                              @ System.Hardware.Haskino.Data.TimeMillisE
+                              System.Hardware.Haskino.Expr.$fNumExpr3
+                              1000))
+                        (return
+                           @ Arduino
+                           System.Hardware.Haskino.Data.$fMonadArduino
+                           @ (ExprEither Word8 ())
+                           (System.Hardware.Haskino.Expr.ExprLeft
+                              @ Word8
+                              @ ()
+                              System.Hardware.Haskino.Expr.$fExprBWord8
+                              System.Hardware.Haskino.Expr.$fExprB()
+                              (- @ (Expr Word8)
+                                 System.Hardware.Haskino.Expr.$fNumExpr5
+                                 x
+                                 (fromInteger
+                                    @ (Expr Word8)
+                                    System.Hardware.Haskino.Expr.$fNumExpr5
+                                    1))))))))),
