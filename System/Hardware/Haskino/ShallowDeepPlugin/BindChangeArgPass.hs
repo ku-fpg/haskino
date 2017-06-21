@@ -19,12 +19,23 @@ module System.Hardware.Haskino.ShallowDeepPlugin.BindChangeArgPass (bindChangeAr
 
 import CoreMonad
 import GhcPlugins
+import Avail
 import Var
 import Data.Functor
+import Data.List
 import qualified Data.Map as M
 import Control.Monad.State
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils
+
+-- ToDo: Cleanup and Unify
+comProcList = [ "loopE"
+              , "setPinModeE"
+              , "analogReadE"
+              , "digitalReadE"
+              , "digitalWriteE"
+              , "delayMillisE"
+              ]
 
 data BindEnv
     = BindEnv
@@ -46,8 +57,10 @@ deepSuffix = "_deep'"
 
 bindChangeArgRetAppPass :: ModGuts -> CoreM ModGuts
 bindChangeArgRetAppPass guts = do
+    dumpAvail $ mg_exports guts
     (bindsL', s) <- (\x -> (runStateT (runBindM $ (mapM changeArgBind) x) (BindEnv guts [] M.empty))) (mg_binds guts)
-    let guts' = guts { mg_binds = concat bindsL' }
+    let es = M.elems $ shallowDeepMap s
+    let guts' = guts { mg_binds = concat bindsL', mg_exports = mg_exports guts ++ (map (Avail NotPatSyn)(map varName es)) }
     bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM changeAppBind) x) (BindEnv guts' [] (shallowDeepMap s)))) guts'
 
 changeArgBind :: CoreBind -> BindM [CoreBind]
@@ -235,15 +248,17 @@ changeAppExpr e = do
     Var v -> do
       let tyCon_m = splitTyConApp_maybe $ varType v
       let defaultRet = return $ Var v
-      case tyCon_m of
-          Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
-              if v `M.member` sdMap
-              then do
-                  let (Just v') = M.lookup v sdMap
-                  absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' (Var v')
-                  return $ absExpr
-              else defaultRet
-          _ -> defaultRet
+      let vs = varString v
+      if isSuffixOf deepSuffix vs || vs `elem` comProcList
+      then defaultRet
+      else case tyCon_m of
+            Just (retTyCon, [retTy']) | retTyCon == monadTyConId &&
+                                        not (retTy' `eqType` unitTyConTy) -> do
+                v' <- if v `M.member` sdMap
+                      then return $ sdMap M.! v
+                      else stringToId $ (varString v) ++ deepSuffix
+                fmapAbsExpr (mkTyConTy retTyCon) retTy' (Var v')
+            _ -> defaultRet
     Lit l -> return $ Lit l
     Type ty -> return $ Type ty
     Coercion co -> return $ Coercion co
@@ -255,22 +270,24 @@ changeAppExpr e = do
             e1' <- changeAppExpr e1
             e2' <- changeAppExpr e2
             return $ App e1' e2'
-      case tyCon_m of
-          Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
-              let (Var vb) = b
-              if vb `M.member` sdMap
-              then do
-                  args' <- mapM repExpr args
-                  let (Just vb') = M.lookup vb sdMap
-                  if not (retTy' `eqType` unitTyConTy)
-                  then do
-                      let e' = mkCoreApps (Var vb') args'
-                      absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' e'
-                      return $ absExpr
-                  else do
-                      return $ mkCoreApps (Var vb') args'
-              else defaultRet
-          _ -> defaultRet
+      let (Var vb) = b
+      let vbs = varString vb
+      if isSuffixOf deepSuffix vbs || vbs `elem` comProcList
+      then defaultRet
+      else case tyCon_m of
+            Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
+                vb' <- if vb `M.member` sdMap
+                       then return $ sdMap M.! vb
+                       else stringToId $ (varString vb) ++ deepSuffix
+                args' <- mapM repExpr args
+                if not (retTy' `eqType` unitTyConTy)
+                then do
+                    let e' = mkCoreApps (Var vb') args'
+                    absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' e'
+                    return $ absExpr
+                else do
+                    return $ mkCoreApps (Var vb') args'
+            _ -> defaultRet
     Lam tb e -> do
       e' <- changeAppExpr e
       return $ Lam tb e'
@@ -308,3 +325,9 @@ changeAppExprAlts ((ac, b, a) : as) = do
   a' <- changeAppExpr a
   bs' <- changeAppExprAlts as
   return $ (ac, b, a') : bs'
+
+dumpAvail :: [Avail.AvailInfo] -> CoreM ()
+dumpAvail [] = return ()
+dumpAvail (a : as) = do
+    putMsg $ ppr a
+    dumpAvail as
