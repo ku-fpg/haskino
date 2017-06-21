@@ -196,8 +196,10 @@ buildId varName typ = do
 modId :: PassCoreM m => Id -> String -> m Id
 modId v s = do
   dunique <- liftCoreM getUniqueM
-  let modName = (varString v) ++ s
-  let name = mkInternalName dunique (mkOccName OccName.varName modName) noSrcSpan
+  guts <- getModGuts
+  let newString = (varString v) ++ s
+  let newName = mkOccName OccName.varName newString
+  let name = mkExternalName dunique (mg_module guts) newName noSrcSpan
   let v' = setIdUnique (setVarName v name) dunique
   return v'
 

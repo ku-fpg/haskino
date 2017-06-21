@@ -59,6 +59,7 @@ bindChangeArgRetAppPass :: ModGuts -> CoreM ModGuts
 bindChangeArgRetAppPass guts = do
     dumpAvail $ mg_exports guts
     (bindsL', s) <- (\x -> (runStateT (runBindM $ (mapM changeArgBind) x) (BindEnv guts [] M.empty))) (mg_binds guts)
+    -- TBD - Only export deeps of shallows that are exported
     let es = M.elems $ shallowDeepMap s
     let guts' = guts { mg_binds = concat bindsL', mg_exports = mg_exports guts ++ (map (Avail NotPatSyn)(map varName es)) }
     bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM changeAppBind) x) (BindEnv guts' [] (shallowDeepMap s)))) guts'
