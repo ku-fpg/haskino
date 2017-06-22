@@ -12,6 +12,12 @@
 -- changed argument itself.
 -- It does this by inserting a rep_ <$> to the last expresion of the bind
 -- chain for the local bind to change the return type.
+-- 
+-- Local bind call site type change pass:
+-- forall (f: a -> .. b -> Arduino a).
+-- f aa .. ab
+--   =
+-- abs_ <$> f (rep aa) .. (rep ab)
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -20,6 +26,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin.BindChangeArgPass (bindChangeAr
 import CoreMonad
 import GhcPlugins
 import Avail
+import NameSet
 import Var
 import Data.Functor
 import Data.List
@@ -57,12 +64,15 @@ deepSuffix = "_deep'"
 
 bindChangeArgRetAppPass :: ModGuts -> CoreM ModGuts
 bindChangeArgRetAppPass guts = do
-    dumpAvail $ mg_exports guts
     (bindsL', s) <- (\x -> (runStateT (runBindM $ (mapM changeArgBind) x) (BindEnv guts [] M.empty))) (mg_binds guts)
-    -- TBD - Only export deeps of shallows that are exported
-    let es = M.elems $ shallowDeepMap s
+    let availNames = nameSetElems $ availsToNameSet $ mg_exports guts
+    let shallowDeepMap' = M.filterWithKey (keyExported availNames) (shallowDeepMap s)
+    let es = M.elems $ shallowDeepMap'
     let guts' = guts { mg_binds = concat bindsL', mg_exports = mg_exports guts ++ (map (Avail NotPatSyn)(map varName es)) }
     bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM changeAppBind) x) (BindEnv guts' [] (shallowDeepMap s)))) guts'
+  where
+    keyExported :: [Name] -> Id  -> Id -> Bool
+    keyExported ns sId _ = (varName sId) `elem` ns
 
 changeArgBind :: CoreBind -> BindM [CoreBind]
 changeArgBind (NonRec b e) = do
@@ -326,9 +336,3 @@ changeAppExprAlts ((ac, b, a) : as) = do
   a' <- changeAppExpr a
   bs' <- changeAppExprAlts as
   return $ (ac, b, a') : bs'
-
-dumpAvail :: [Avail.AvailInfo] -> CoreM ()
-dumpAvail [] = return ()
-dumpAvail (a : as) = do
-    putMsg $ ppr a
-    dumpAvail as

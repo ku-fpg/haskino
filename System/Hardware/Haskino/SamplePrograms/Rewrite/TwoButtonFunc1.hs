@@ -11,7 +11,7 @@
 -- Two button example used for rewrite
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonFunc1 where
+module System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonFunc1 (myRead1, myRead2, myRead3, myWrite) where
 
 import System.Hardware.Haskino
 import Control.Monad
@@ -38,4 +38,7 @@ myWrite :: Word8 -> Bool -> Arduino ()
 myWrite p b = do
     delayMillis 100
     digitalWrite (p+1) (not b)
+
+extraFunc :: Word32 -> Arduino ()
+extraFunc a = delayMillis (a * 100)
 
