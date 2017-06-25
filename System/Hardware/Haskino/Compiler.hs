@@ -554,11 +554,11 @@ compileProcedure (ServoAttachE p) = do
     b <- compile1ExprProcedure Word8Type "servoAttach" p
     return $ remBind b
 compileProcedure (ServoAttachMinMax p min max) = do
-    compileStrongProcedureError $ "servoAttachMixMax " ++
+    compileStrongProcedureError $ "servoAttachMinMax " ++
                                   show min ++ " " ++ show max
     return 0
 compileProcedure (ServoAttachMinMaxE p min max) = do
-    b <- compile3ExprProcedure Word8Type "servoAttachMixMax" p min max
+    b <- compile3ExprProcedure Word8Type "servoAttachMinMax" p min max
     return $ remBind b
 compileProcedure (ServoRead sv) = do
     compileStrongProcedureError $ "servoRead " ++ show sv

@@ -647,11 +647,11 @@ servoAttach p = Arduino $ procedure $ ServoAttach p
 servoAttachE :: PinE -> Arduino (Expr Word8)
 servoAttachE p = Arduino $ procedure $ ServoAttachE p
 
-servoAttachMixMax :: Pin -> Int16 -> Int16 -> Arduino Word8
-servoAttachMixMax p min max = Arduino $ procedure $ ServoAttachMinMax p min max
+servoAttachMinMax :: Pin -> Int16 -> Int16 -> Arduino Word8
+servoAttachMinMax p min max = Arduino $ procedure $ ServoAttachMinMax p min max
 
-servoAttachMixMaxE :: PinE -> Expr Int16 -> Expr Int16 -> Arduino (Expr Word8)
-servoAttachMixMaxE p min max = Arduino $ procedure $ ServoAttachMinMaxE p min max
+servoAttachMinMaxE :: PinE -> Expr Int16 -> Expr Int16 -> Arduino (Expr Word8)
+servoAttachMinMaxE p min max = Arduino $ procedure $ ServoAttachMinMaxE p min max
 
 servoRead :: Word8 -> Arduino Int16
 servoRead s = Arduino $ procedure $ ServoRead s

@@ -23,17 +23,20 @@ module System.Hardware.Haskino (
   -- ** Pins
   , Pin, PinMode(..), IntMode(..), setPinMode, setPinModeE
   -- ** Gereral utils
-  , systemReset, queryFirmware
+  , systemReset, queryFirmware, queryProcessor, queryFirmwareE, queryProcessorE
   -- ** Digital IO
-  , digitalWrite, digitalRead, digitalWriteE, digitalReadE
+  , digitalWrite, digitalPortWrite, digitalRead, digitalPortRead
+  , digitalWriteE, digitalPortWriteE, digitalReadE, digitalPortReadE
   -- ** Analog IO
   , analogWrite, analogRead, analogWriteE, analogReadE
+  -- ** Speaker
+  , tone, noTone, toneE, noToneE
   -- ** I2C
-  , SlaveAddress, i2cRead, i2cWrite, i2cConfig
+  , SlaveAddress, i2cRead, i2cWrite, i2cConfig, i2cReadE, i2cWriteE 
   -- ** Servo
   , servoDetach, servoDetachE, servoWrite, servoWriteE, servoWriteMicros
-  , servoWriteMicrosE, servoAttach, servoAttachE, servoAttachMixMax
-  , servoAttachMixMaxE, servoRead, servoReadE, servoReadMicros, servoReadMicrosE
+  , servoWriteMicrosE, servoAttach, servoAttachE, servoAttachMinMax
+  , servoAttachMinMaxE, servoRead, servoReadE, servoReadMicros, servoReadMicrosE
   -- ** Time
   , millis, micros, millisE, microsE, delayMillis, delayMicros,delayMillisE, delayMicrosE
   -- ** Scheduler
