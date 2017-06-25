@@ -30,7 +30,10 @@ import Var
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 
+import Data.Bits as DB
 import Data.Boolean
+import Data.Boolean.Numbers as BN
+import Data.Boolean.Bits as BB
 import System.Hardware.Haskino
 
 data XlatEntry = XlatEntry {  fromId         :: BindM Id
@@ -56,13 +59,58 @@ xlatList = [  XlatEntry (thNameToId 'not)
                         (thNameToId 'lessE)
             , XlatEntry (thNameToId '(>=))
                         (thNameToId 'greateqE)
-            , XlatEntry (thNameToId '(<))
+            , XlatEntry (thNameToId '(<=))
                         (thNameToId 'lesseqE)
             , XlatEntry (thNameToId '(+))
                         (thNameToId '(+))
             , XlatEntry (thNameToId '(-))
                         (thNameToId '(-))
+            , XlatEntry (thNameToId '(/))
+                        (thNameToId '(/))
+            , XlatEntry (thNameToId '(*))
+                        (thNameToId '(*))
+            , XlatEntry (thNameToId 'Prelude.div)
+                        (thNameToId 'BN.div)
+            , XlatEntry (thNameToId 'Prelude.rem)
+                        (thNameToId 'BN.rem)
+            , XlatEntry (thNameToId 'Prelude.quot)
+                        (thNameToId 'BN.quot)
+            , XlatEntry (thNameToId 'Prelude.mod)
+                        (thNameToId 'BN.mod)
+            , XlatEntry (thNameToId 'negate)
+                        (thNameToId 'negate)
+            , XlatEntry (thNameToId 'abs)
+                        (thNameToId 'abs)
+            , XlatEntry (thNameToId 'signum)
+                        (thNameToId 'signum)
+            , XlatEntry (thNameToId '(DB..&.))
+                        (thNameToId '(BB..&.))
+            , XlatEntry (thNameToId '(DB..|.))
+                        (thNameToId '(BB..|.))
+            , XlatEntry (thNameToId 'DB.xor)
+                        (thNameToId 'BB.xor)
+            , XlatEntry (thNameToId 'DB.complement)
+                        (thNameToId 'BB.complement)
+            , XlatEntry (thNameToId 'DB.setBit)
+                        (thNameToId 'BB.setBit)
+            , XlatEntry (thNameToId 'DB.clearBit)
+                        (thNameToId 'BB.clearBit)
+            , XlatEntry (thNameToId 'DB.testBit)
+                        (thNameToId 'BB.testBit)
+            , XlatEntry (thNameToId 'DB.bitSize)
+                        (thNameToId 'BB.bitSize)
+            , XlatEntry (thNameToId 'DB.isSigned)
+                        (thNameToId 'BB.isSigned)
+            , XlatEntry (thNameToId 'DB.shiftL)
+                        (thNameToId 'BB.shiftL)
+            , XlatEntry (thNameToId 'DB.shiftR)
+                        (thNameToId 'BB.shiftR)
+            , XlatEntry (thNameToId 'DB.rotateL)
+                        (thNameToId 'BB.rotateL)
+            , XlatEntry (thNameToId 'DB.rotateR)
+                        (thNameToId 'BB.rotateR)
            ]
+-- TBD add floating to above
 
 data BindEnv
     = BindEnv
