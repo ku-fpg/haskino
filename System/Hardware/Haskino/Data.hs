@@ -527,10 +527,17 @@ data ArduinoProcedure :: * -> * where
      IfThenElseFloat   :: Bool -> Arduino Float -> Arduino Float -> ArduinoProcedure Float
      IfThenElseFloatE  :: Expr Bool -> Arduino (Expr Float) -> Arduino (Expr Float) -> ArduinoProcedure (Expr Float)
      IfThenElseW8Unit  :: Expr Bool -> Arduino(ExprEither Word8 ()) -> Arduino(ExprEither Word8 ()) -> ArduinoProcedure (ExprEither Word8 ())
+     IfThenElseW8Bool  :: Expr Bool -> Arduino(ExprEither Word8 Bool) -> Arduino(ExprEither Word8 Bool) -> ArduinoProcedure (ExprEither Word8 Bool)
      IfThenElseW8W8    :: Expr Bool -> Arduino(ExprEither Word8 Word8) -> Arduino(ExprEither Word8 Word8) -> ArduinoProcedure (ExprEither Word8 Word8)
+     IfThenElseW8W16   :: Expr Bool -> Arduino(ExprEither Word8 Word16) -> Arduino(ExprEither Word8 Word16) -> ArduinoProcedure (ExprEither Word8 Word16)
+     IfThenElseW8W32   :: Expr Bool -> Arduino(ExprEither Word8 Word32) -> Arduino(ExprEither Word8 Word32) -> ArduinoProcedure (ExprEither Word8 Word32)
+     IfThenElseW8I8    :: Expr Bool -> Arduino(ExprEither Word8 Int8) -> Arduino(ExprEither Word8 Int8) -> ArduinoProcedure (ExprEither Word8 Int8)
+     IfThenElseW8I16   :: Expr Bool -> Arduino(ExprEither Word8 Int16) -> Arduino(ExprEither Word8 Int16) -> ArduinoProcedure (ExprEither Word8 Int16)
+     IfThenElseW8I32   :: Expr Bool -> Arduino(ExprEither Word8 Int32) -> Arduino(ExprEither Word8 Int32) -> ArduinoProcedure (ExprEither Word8 Int32)
+     IfThenElseW8L8    :: Expr Bool -> Arduino(ExprEither Word8 [Word8]) -> Arduino(ExprEither Word8 [Word8]) -> ArduinoProcedure (ExprEither Word8 [Word8])
+     IfThenElseW8Float :: Expr Bool -> Arduino(ExprEither Word8 Float) -> Arduino(ExprEither Word8 Float) -> ArduinoProcedure (ExprEither Word8 Float)
      IfThenElseUnitUnit :: Expr Bool -> Arduino(ExprEither () ()) -> Arduino(ExprEither () ()) -> ArduinoProcedure (ExprEither () ())
      IfThenElseUnitW8  :: Expr Bool -> Arduino(ExprEither () Word8) -> Arduino(ExprEither () Word8) -> ArduinoProcedure (ExprEither () Word8)
-     IfThenElseW8Bool  :: Expr Bool -> Arduino(ExprEither Word8 Bool) -> Arduino(ExprEither Word8 Bool) -> ArduinoProcedure (ExprEither Word8 Bool)
      WhileBool         :: Bool -> (Bool -> Bool) -> (Bool -> Arduino Bool) -> ArduinoProcedure Bool
      WhileBoolE        :: (Expr Bool) -> (Expr Bool -> Expr Bool) -> (Expr Bool -> Arduino (Expr Bool)) -> ArduinoProcedure (Expr Bool)
      WhileWord8        :: Word8 -> (Word8 -> Bool) -> (Word8 -> Arduino Word8) -> ArduinoProcedure Word8
@@ -549,11 +556,18 @@ data ArduinoProcedure :: * -> * where
      WhileFloatE       :: (Expr Float) -> (Expr Float -> Expr Bool) -> (Expr Float -> Arduino (Expr Float)) -> ArduinoProcedure (Expr Float)
      WhileL8           :: [Word8] -> ([Word8] -> Bool) -> ([Word8] -> Arduino [Word8]) -> ArduinoProcedure [Word8]
      WhileL8E          :: (Expr [Word8]) -> (Expr [Word8] -> Expr Bool) -> (Expr [Word8] -> Arduino (Expr [Word8])) -> ArduinoProcedure (Expr [Word8])
-     IterateW8W8E      :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Word8)) -> ArduinoProcedure (Expr Word8)
      IterateW8UnitE    :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 () )) -> ArduinoProcedure (Expr () )
+     IterateW8BoolE    :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Bool )) -> ArduinoProcedure (Expr Bool )
+     IterateW8W8E      :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Word8)) -> ArduinoProcedure (Expr Word8)
+     IterateW8W16E     :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Word16)) -> ArduinoProcedure (Expr Word16)
+     IterateW8W32E     :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Word32)) -> ArduinoProcedure (Expr Word32)
+     IterateW8I8E      :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Int8)) -> ArduinoProcedure (Expr Int8)
+     IterateW8I16E     :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Int16)) -> ArduinoProcedure (Expr Int16)
+     IterateW8I32E     :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Int32)) -> ArduinoProcedure (Expr Int32)
+     IterateW8L8E      :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 [Word8])) -> ArduinoProcedure (Expr [Word8])
+     IterateW8FloatE   :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Float)) -> ArduinoProcedure (Expr Float)
      IterateUnitW8E    :: Expr () -> (Expr () -> Arduino (ExprEither () Word8)) -> ArduinoProcedure (Expr Word8)
      IterateUnitUnitE  :: Expr () -> (Expr () -> Arduino (ExprEither () () )) -> ArduinoProcedure (Expr () )
-     IterateW8BoolE    :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Bool)) -> ArduinoProcedure (Expr Bool)
      LiftIO            :: IO a -> ArduinoProcedure a
      Debug             :: String -> ArduinoProcedure ()
      DebugE            :: Expr [Word8] -> ArduinoProcedure ()
@@ -916,17 +930,48 @@ instance ArduinoConditional Float where
     whileE = whileFloatE
 
 class (ExprB a, ExprB b) => ArduinoIterate a b where
-    -- iterate   :: a -> (a -> Arduino (Either a b)) -> Arduino b
     iterateE  :: Expr a -> (Expr a -> Arduino (ExprEither a b)) -> Arduino (Expr b)
     ifThenElseEither   :: Expr Bool -> Arduino (ExprEither a b) -> Arduino (ExprEither a b) -> Arduino (ExprEither a b)
+
+instance ArduinoIterate Word8 () where
+    iterateE iv bf = Arduino $ procedure $ IterateW8UnitE iv bf
+    ifThenElseEither be te ee = Arduino $ procedure $ IfThenElseW8Unit be te ee
+
+instance ArduinoIterate Word8 Bool where
+    iterateE iv bf = Arduino $ procedure $ IterateW8BoolE iv bf
+    ifThenElseEither be te ee = Arduino $ procedure $ IfThenElseW8Bool be te ee
 
 instance ArduinoIterate Word8 Word8 where
     iterateE iv bf = Arduino $ procedure $ IterateW8W8E iv bf
     ifThenElseEither be te ee = Arduino $ procedure $ IfThenElseW8W8 be te ee
 
-instance ArduinoIterate Word8 () where
-    iterateE iv bf = Arduino $ procedure $ IterateW8UnitE iv bf
-    ifThenElseEither be te ee = Arduino $ procedure $ IfThenElseW8Unit be te ee
+instance ArduinoIterate Word8 Word16 where
+    iterateE iv bf = Arduino $ procedure $ IterateW8W16E iv bf
+    ifThenElseEither be te ee = Arduino $ procedure $ IfThenElseW8W16 be te ee
+
+instance ArduinoIterate Word8 Word32 where
+    iterateE iv bf = Arduino $ procedure $ IterateW8W32E iv bf
+    ifThenElseEither be te ee = Arduino $ procedure $ IfThenElseW8W32 be te ee
+
+instance ArduinoIterate Word8 Int8 where
+    iterateE iv bf = Arduino $ procedure $ IterateW8I8E iv bf
+    ifThenElseEither be te ee = Arduino $ procedure $ IfThenElseW8I8 be te ee
+
+instance ArduinoIterate Word8 Int16 where
+    iterateE iv bf = Arduino $ procedure $ IterateW8I16E iv bf
+    ifThenElseEither be te ee = Arduino $ procedure $ IfThenElseW8I16 be te ee
+
+instance ArduinoIterate Word8 Int32 where
+    iterateE iv bf = Arduino $ procedure $ IterateW8I32E iv bf
+    ifThenElseEither be te ee = Arduino $ procedure $ IfThenElseW8I32 be te ee
+
+instance ArduinoIterate Word8 [Word8] where
+    iterateE iv bf = Arduino $ procedure $ IterateW8L8E iv bf
+    ifThenElseEither be te ee = Arduino $ procedure $ IfThenElseW8L8 be te ee
+
+instance ArduinoIterate Word8 Float where
+    iterateE iv bf = Arduino $ procedure $ IterateW8FloatE iv bf
+    ifThenElseEither be te ee = Arduino $ procedure $ IfThenElseW8Float be te ee
 
 instance ArduinoIterate () Word8 where
     iterateE iv bf = Arduino $ procedure $ IterateUnitW8E iv bf
@@ -935,10 +980,6 @@ instance ArduinoIterate () Word8 where
 instance ArduinoIterate () () where
     iterateE iv bf  = Arduino $ procedure $ IterateUnitUnitE iv bf
     ifThenElseEither be te ee = Arduino $ procedure $ IfThenElseUnitUnit be te ee
-
-instance ArduinoIterate Word8 Bool where
-    iterateE iv bf  = Arduino $ procedure $ IterateW8BoolE iv bf
-    ifThenElseEither be te ee = Arduino $ procedure $ IfThenElseW8Bool be te ee
 
 -- | A response, as returned from the Arduino
 data Response = DelayResp
@@ -1257,9 +1298,6 @@ step s = Step s
 
 done :: b -> Iter a b
 done d = Done d
-
--- iterLoop :: (a -> Iter (Arduino a) (Arduino b)) -> Arduino a -> Arduino b
--- iterLoop _ _ = error "Cannot execute iterLoop"
 
 iterLoop :: (a -> Arduino (Iter a b)) -> Arduino a -> Arduino b
 iterLoop _ _ = error "Cannot execute iterLoop"

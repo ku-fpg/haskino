@@ -698,12 +698,28 @@ compileProcedure (IfThenElseFloatE e cb1 cb2) =
     compileIfThenElseProcedure FloatType e cb1 cb2
 compileProcedure (IfThenElseW8Unit e cb1 cb2) =
     compileIfThenElseEitherProcedure Word8Type UnitType e cb1 cb2
+compileProcedure (IfThenElseW8Bool e cb1 cb2) =
+    compileIfThenElseEitherProcedure Word8Type BoolType e cb1 cb2
+compileProcedure (IfThenElseW8W8 e cb1 cb2) =
+    compileIfThenElseEitherProcedure Word8Type Word8Type e cb1 cb2
+compileProcedure (IfThenElseW8W16 e cb1 cb2) =
+    compileIfThenElseEitherProcedure Word8Type Word16Type e cb1 cb2
+compileProcedure (IfThenElseW8W32 e cb1 cb2) =
+    compileIfThenElseEitherProcedure Word8Type Word32Type e cb1 cb2
+compileProcedure (IfThenElseW8I8 e cb1 cb2) =
+    compileIfThenElseEitherProcedure Word8Type Int8Type e cb1 cb2
+compileProcedure (IfThenElseW8I16 e cb1 cb2) =
+    compileIfThenElseEitherProcedure Word8Type Int8Type e cb1 cb2
+compileProcedure (IfThenElseW8I32 e cb1 cb2) =
+    compileIfThenElseEitherProcedure Word8Type Int32Type e cb1 cb2
+compileProcedure (IfThenElseW8L8 e cb1 cb2) =
+    compileIfThenElseEitherProcedure Word8Type List8Type e cb1 cb2
+compileProcedure (IfThenElseW8Float e cb1 cb2) =
+    compileIfThenElseEitherProcedure Word8Type FloatType e cb1 cb2
 compileProcedure (IfThenElseUnitW8 e cb1 cb2) =
     compileIfThenElseEitherProcedure UnitType Word8Type e cb1 cb2
 compileProcedure (IfThenElseUnitUnit e cb1 cb2) =
     compileIfThenElseEitherProcedure UnitType UnitType e cb1 cb2
-compileProcedure (IfThenElseW8Bool e cb1 cb2) =
-    compileIfThenElseEitherProcedure Word8Type BoolType e cb1 cb2
 compileProcedure (WhileBoolE iv bf bdf) = do
     i <- nextBind
     let bi = RemBindB i
@@ -763,13 +779,6 @@ compileProcedure (IterateUnitUnitE iv bf) = do
     let bj = RemBindUnit j
     compileIterateProcedure UnitType UnitType i bi j bj iv bf
     return bj
-compileProcedure (IterateW8W8E iv bf) = do
-    i <- nextBind
-    let bi = RemBindW8 i
-    j <- nextBind
-    let bj = RemBindW8 j
-    compileIterateProcedure Word8Type Word8Type i bi j bj iv bf
-    return bj
 compileProcedure (IterateW8UnitE iv bf) = do
     i <- nextBind
     let bi = RemBindW8 i
@@ -783,6 +792,62 @@ compileProcedure (IterateW8BoolE iv bf) = do
     j <- nextBind
     let bj = RemBindB j
     compileIterateProcedure Word8Type BoolType i bi j bj iv bf
+    return bj
+compileProcedure (IterateW8W8E iv bf) = do
+    i <- nextBind
+    let bi = RemBindW8 i
+    j <- nextBind
+    let bj = RemBindW8 j
+    compileIterateProcedure Word8Type Word8Type i bi j bj iv bf
+    return bj
+compileProcedure (IterateW8W16E iv bf) = do
+    i <- nextBind
+    let bi = RemBindW8 i
+    j <- nextBind
+    let bj = RemBindW16 j
+    compileIterateProcedure Word8Type Word16Type i bi j bj iv bf
+    return bj
+compileProcedure (IterateW8W32E iv bf) = do
+    i <- nextBind
+    let bi = RemBindW8 i
+    j <- nextBind
+    let bj = RemBindW32 j
+    compileIterateProcedure Word8Type Word32Type i bi j bj iv bf
+    return bj
+compileProcedure (IterateW8I8E iv bf) = do
+    i <- nextBind
+    let bi = RemBindW8 i
+    j <- nextBind
+    let bj = RemBindI8 j
+    compileIterateProcedure Word8Type Int8Type i bi j bj iv bf
+    return bj
+compileProcedure (IterateW8I16E iv bf) = do
+    i <- nextBind
+    let bi = RemBindW8 i
+    j <- nextBind
+    let bj = RemBindI16 j
+    compileIterateProcedure Word8Type Int16Type i bi j bj iv bf
+    return bj
+compileProcedure (IterateW8I32E iv bf) = do
+    i <- nextBind
+    let bi = RemBindW8 i
+    j <- nextBind
+    let bj = RemBindI32 j
+    compileIterateProcedure Word8Type Int32Type i bi j bj iv bf
+    return bj
+compileProcedure (IterateW8L8E iv bf) = do
+    i <- nextBind
+    let bi = RemBindW8 i
+    j <- nextBind
+    let bj = RemBindList8 j
+    compileIterateProcedure Word8Type List8Type i bi j bj iv bf
+    return bj
+compileProcedure (IterateW8FloatE iv bf) = do
+    i <- nextBind
+    let bi = RemBindW8 i
+    j <- nextBind
+    let bj = RemBindFloat j
+    compileIterateProcedure Word8Type FloatType i bi j bj iv bf
     return bj
 
 compileIfThenElseProcedure :: ExprB a => CompileType -> Expr Bool -> Arduino (Expr a) -> Arduino (Expr a) -> State CompileState (Expr a)
