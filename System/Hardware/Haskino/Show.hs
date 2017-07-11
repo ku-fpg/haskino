@@ -12,28 +12,27 @@
 
 module System.Hardware.Haskino.Show where
 
-import Data.Bits (xor,shiftR)
-import Data.Int (Int8, Int16, Int32)
-import Data.List
-import Data.Word (Word8, Word16, Word32)
+import           Data.Bits                        (shiftR, xor)
+import           Data.Int                         (Int8, Int16, Int32)
+import           Data.List
+import           Data.Word                        (Word8, Word16, Word32)
+import           Control.Remote.Applicative.Types as T
+import           Control.Monad.State
+import           Control.Remote.Monad
+import           Control.Remote.Monad.Types       as T
 
-import Control.Monad.State
-
-import Control.Remote.Monad
-import Control.Remote.Monad.Types as T
-
-import System.Hardware.Haskino.Data
-import System.Hardware.Haskino.Expr
-import System.Hardware.Haskino.Utils
+import           System.Hardware.Haskino.Data
+import           System.Hardware.Haskino.Expr
+import           System.Hardware.Haskino.Utils
 
 instance Show (Arduino a) where
   show = showArduino
 
-data ShowState = ShowState {ix :: Int
-                          , ib :: Int
-                          , block :: String
-                          , blocks :: [String]
-                          , indent :: Int
+data ShowState = ShowState {ix        :: Int
+                          , ib        :: Int
+                          , block     :: String
+                          , blocks    :: [String]
+                          , indent    :: Int
                           , iterBinds :: [(Int, Int)]}
 
 showArduino :: Arduino a -> String
@@ -47,7 +46,7 @@ nextBind = do
     put s {ib = (ib s) + 1}
     return (ib s)
 
-showCommand :: ArduinoCommand -> State ShowState String
+showCommand :: ArduinoPrimitive a -> State ShowState String
 showCommand SystemReset = showCommand0 "SystemReset"
 showCommand (SetPinModeE p m) = showCommand2 "SetPinModeE" p m
 showCommand (DigitalWriteE p b) = showCommand2 "DigitalWriteE" p b
@@ -93,23 +92,23 @@ showCommand (WriteRemoteRefL8 (RemoteRefL8 i) e) =
 showCommand (WriteRemoteRefFloat (RemoteRefFloat i) e) =
     showCommand2 "WriteRemoteRefFloat" i e
 showCommand (ModifyRemoteRefB (RemoteRefB i) f) =
-    return $ "ModifyRemoteRefB " ++ show i ++ " " ++ show (f (RefB i))
+    showCommand2 "ModifyRemoteRefB" i f
 showCommand (ModifyRemoteRefW8 (RemoteRefW8 i) f) =
-    return $ "ModifyRemoteRefW8 " ++ show i ++ " " ++ show (f (RefW8 i))
+    showCommand2 "ModifyRemoteRefW8" i f
 showCommand (ModifyRemoteRefW16 (RemoteRefW16 i) f) =
-    return $ "ModifyRemoteRefW16 " ++ show i ++ " " ++ show (f (RefW16 i))
+    showCommand2 "ModifyRemoteRefW16" i f
 showCommand (ModifyRemoteRefW32 (RemoteRefW32 i) f) =
-    return $ "ModifyRemoteRefW32 " ++ show i ++ " " ++ show (f (RefW32 i))
+    showCommand2 "ModifyRemoteRefW32" i f
 showCommand (ModifyRemoteRefI8 (RemoteRefI8 i) f) =
-    return $ "ModifyRemoteRefI8 " ++ show i ++ " " ++ show (f (RefI8 i))
+    showCommand2 "ModifyRemoteRefI8" i f
 showCommand (ModifyRemoteRefI16 (RemoteRefI16 i) f) =
-    return $ "ModifyRemoteRefI16 " ++ show i ++ " " ++ show (f (RefI16 i))
+    showCommand2 "ModifyRemoteRefI16" i f
 showCommand (ModifyRemoteRefI32 (RemoteRefI32 i) f) =
-    return $ "ModifyRemoteRefI32 " ++ show i ++ " " ++ show (f (RefI32 i))
+    showCommand2 "ModifyRemoteRefI32" i f
 showCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) =
-    return $ "ModifyRemoteRefL8 " ++ show i ++ " " ++ show (f (RefList8 i))
+    showCommand2 "ModifyRemoteRefL8" i f
 showCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) =
-    return $ "ModifyRemoteRefFloat " ++ show i ++ " " ++ show (f (RefFloat i))
+    showCommand2 "ModifyRemoteRefFloat" i f
 showCommand (Loop cb) = do
     (_, c) <- showCodeBlock cb
     return $ "Loop\n" ++ c
@@ -284,7 +283,7 @@ showCodeBlock (Arduino commands) = do
           put s {ib = (ib s) + 1, ix = (ix s) + 1}
           return r
 
-      showProcedure :: ArduinoProcedure a -> State ShowState a
+      showProcedure :: ArduinoPrimitive a -> State ShowState a
       showProcedure QueryFirmware = showShallow0Procedure "QueryFirmware" 0
       showProcedure QueryFirmwareE = do
           i <- showDeep0Procedure "QueryFirmwareE"
@@ -595,12 +594,13 @@ showCodeBlock (Arduino commands) = do
       showProcedure (Die msg msgs) = showShallow2Procedure "Die" msg msgs ()
       -- showProcedure (LiftIO _) = showShallow0Procedure "LiftIO m" ()
 
-      showAppl :: RemoteApplicative ArduinoCommand ArduinoProcedure a -> State ShowState a
-      showAppl (T.Command cmd) = do
-          sc <- showCommand cmd
-          addToBlock sc
-          return ()
-      showAppl (T.Procedure p) = showProcedure p
+      showAppl :: RemoteApplicative ArduinoPrimitive a -> State ShowState a
+      showAppl (T.Primitive p) = case knownResult p of
+                                   Just a -> do
+                                     sc <- showCommand p
+                                     addToBlock sc
+                                     return a
+                                   Nothing -> showProcedure p
       showAppl (T.Ap a1 a2) = do
           f <- showAppl a1
           g <- showAppl a2
@@ -608,7 +608,7 @@ showCodeBlock (Arduino commands) = do
       showAppl (T.Pure a) = do
           return a
 
-      showMonad :: RemoteMonad ArduinoCommand ArduinoProcedure a -> State ShowState a
+      showMonad :: RemoteMonad ArduinoPrimitive a -> State ShowState a
       showMonad (T.Appl app) = showAppl app
       showMonad (T.Bind m k) = do
           r <- showMonad m

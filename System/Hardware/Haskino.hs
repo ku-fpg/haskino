@@ -15,10 +15,10 @@
 module System.Hardware.Haskino (
   -- * Communication functions
   openArduino, closeArduino, withArduino, send, ArduinoConnection
-  , withArduinoWeak , withArduinoStrong, withArduinoApp
-  , sendWeak, sendStrong, sendApp
+  , withArduinoWeak, withArduinoApp
+  , sendWeak, sendApp
   -- * Deep embeddings
-  , Arduino(..) , ArduinoCommand(..), ArduinoProcedure(..), Processor(..)
+  , Arduino(..) , ArduinoPrimitive(..), Processor(..)
   -- * Programming the Arduino
   -- ** Pins
   , Pin, PinMode(..), IntMode(..), setPinMode, setPinModeE
@@ -68,11 +68,11 @@ module System.Hardware.Haskino (
  )
  where
 
-import System.Hardware.Haskino.Data
-import System.Hardware.Haskino.Comm
-import System.Hardware.Haskino.Expr
-import System.Hardware.Haskino.Utils
-import System.Hardware.Haskino.Decode
-import System.Hardware.Haskino.Compiler
-import System.Hardware.Haskino.Show
-import Data.Boolean
+import            Data.Boolean
+import            System.Hardware.Haskino.Comm
+import            System.Hardware.Haskino.Compiler
+import            System.Hardware.Haskino.Data
+import            System.Hardware.Haskino.Decode
+import            System.Hardware.Haskino.Expr
+import            System.Hardware.Haskino.Show
+import            System.Hardware.Haskino.Utils

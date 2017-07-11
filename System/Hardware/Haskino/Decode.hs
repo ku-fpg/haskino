@@ -9,15 +9,15 @@
 --
 -- Internal utilities
 -------------------------------------------------------------------------------
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module System.Hardware.Haskino.Decode where
 
 import           Data.Bits
-import qualified Data.ByteString  as B 
-import           Data.ByteString.Base16 (encode)
-import           Data.Foldable (foldMap)
+import qualified Data.ByteString                  as B
+import           Data.ByteString.Base16           (encode)
+import           Data.Foldable                    (foldMap)
 import           Data.Int
 import           Data.Word
 import           System.Hardware.Haskino.Data
@@ -41,13 +41,13 @@ deframe bs = map unescape (deframe' bs [])
 
     deframe' :: B.ByteString -> [B.ByteString] -> [B.ByteString]
     deframe' Empty        xs = xs
-    deframe' bs           xs = deframe' (tailFrame bs) (xs ++ [headFrame bs])
+    deframe' bs'           xs = deframe' (tailFrame bs') (xs ++ [headFrame bs'])
 
     headFrame :: B.ByteString -> B.ByteString  
-    headFrame bs = B.init $ B.takeWhile notFrameChar bs
+    headFrame bs' = B.init $ B.takeWhile notFrameChar bs'
 
     tailFrame :: B.ByteString -> B.ByteString  
-    tailFrame bs = B.tail $ B.dropWhile notFrameChar bs
+    tailFrame bs' = B.tail $ B.dropWhile notFrameChar bs'
 
     unescape :: B.ByteString -> B.ByteString
     unescape Empty        = B.empty
@@ -205,8 +205,8 @@ decodeRefCmd cnt bs =
 decodeRefProc :: Int -> B.ByteString -> (String, B.ByteString)
 decodeRefProc cnt bs = 
   case bs of
-    Empty         -> decodeErr bs
-    (x :< Empty) -> decodeErr bs
+    Empty          -> decodeErr bs
+    (_x :< Empty)  -> decodeErr bs
     (x :< y :< xs) -> ("-" ++ (show ((toEnum (fromIntegral x))::RefType)) ++ " (Bind " ++ show y ++ ") <-"++ dec, bs')
   where
     (dec, bs') = decodeExprCmd cnt (B.tail $ B.tail bs)
@@ -214,10 +214,10 @@ decodeRefProc cnt bs =
 decodeRefNew :: Int -> B.ByteString -> (String, B.ByteString)
 decodeRefNew cnt bs = 
   case bs of
-    Empty               -> decodeErr bs
-    (x :< Empty)        -> decodeErr bs
-    (x :< y :< Empty)   -> decodeErr bs
-    (x :< _ :< z :< xs) -> ("-" ++ (show ((toEnum (fromIntegral x))::RefType)) ++ " (Ref Index " ++ show z ++ ") "++ dec, bs')
+    Empty                -> decodeErr bs
+    (_x :< Empty)        -> decodeErr bs
+    (_x :< _y :< Empty)  -> decodeErr bs
+    (x :< _ :< z :< xs)  -> ("-" ++ (show ((toEnum (fromIntegral x))::RefType)) ++ " (Ref Index " ++ show z ++ ") "++ dec, bs')
   where
     (dec, bs') = decodeExprCmd cnt (B.drop 3 bs)
 

@@ -9,7 +9,8 @@
 --
 -- Internal representation of the Haskino Firmware protocol.
 -------------------------------------------------------------------------------
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs               #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module System.Hardware.Haskino.Protocol(framePackage, packageCommand, 
                                             packageProcedure, packageRemoteBinding,
@@ -17,23 +18,19 @@ module System.Hardware.Haskino.Protocol(framePackage, packageCommand,
                                             maxFirmwareSize, packageExpr,
                                             CommandState(..) ) where
 
-import Data.Bits (xor,shiftR)
-import Data.Int (Int8, Int16, Int32)
-import Data.Word (Word8, Word16, Word32)
-
-import Control.Concurrent (modifyMVar_, readMVar)
-
-import Control.Monad.State
-
+import           Control.Monad.State
+import           Control.Remote.Applicative.Types as T
 import           Control.Remote.Monad
-import           Control.Remote.Monad.Types as T
+import           Control.Remote.Monad.Types       as T
+import           Data.Bits                        (xor,shiftR)
+import qualified Data.ByteString                  as B
+import           Data.Int                         (Int8, Int16, Int32)
+import qualified Data.Map                         as M
+import           Data.Word                        (Word8, Word16, Word32)
 
-import qualified Data.ByteString as B
-import qualified Data.Map        as M
-
-import System.Hardware.Haskino.Data
-import System.Hardware.Haskino.Expr
-import System.Hardware.Haskino.Utils
+import           System.Hardware.Haskino.Data
+import           System.Hardware.Haskino.Expr
+import           System.Hardware.Haskino.Utils
 
 -- | Maximum size of a Haskino Firmware message
 maxFirmwareSize :: Int
@@ -68,7 +65,7 @@ buildCommand cmd bs = B.pack $ firmwareCmdVal cmd : bs
 
 -- | Package a request as a sequence of bytes to be sent to the board
 -- using the Haskino Firmware protocol.
-packageCommand :: ArduinoCommand -> State CommandState B.ByteString
+packageCommand :: forall a . ArduinoPrimitive a -> State CommandState B.ByteString
 packageCommand SystemReset =
     addCommand BC_CMD_SYSTEM_RESET []
 packageCommand (SetPinModeE p m) = 
@@ -152,23 +149,23 @@ packageCommand (WriteRemoteRefL8 (RemoteRefL8 i) e) =
 packageCommand (WriteRemoteRefFloat (RemoteRefFloat i) e) =
     addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_FLOAT, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e)
 packageCommand (ModifyRemoteRefB (RemoteRefB i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_BOOL, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefB i)))
+    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_BOOL, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
 packageCommand (ModifyRemoteRefW8 (RemoteRefW8 i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD8, exprCmdVal EXPR_WORD8 EXPR_LIT,fromIntegral i] ++ packageExpr (f (RefW8 i)))
+    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD8, exprCmdVal EXPR_WORD8 EXPR_LIT,fromIntegral i] ++ packageExpr f)
 packageCommand (ModifyRemoteRefW16 (RemoteRefW16 i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD16, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefW16 i)))
+    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD16, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
 packageCommand (ModifyRemoteRefW32 (RemoteRefW32 i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD32, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefW32 i)))
+    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD32, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
 packageCommand (ModifyRemoteRefI8 (RemoteRefI8 i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT8, exprCmdVal EXPR_WORD8 EXPR_LIT,fromIntegral i] ++ packageExpr (f (RefI8 i)))
+    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT8, exprCmdVal EXPR_WORD8 EXPR_LIT,fromIntegral i] ++ packageExpr f)
 packageCommand (ModifyRemoteRefI16 (RemoteRefI16 i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT16, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefI16 i)))
+    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT16, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
 packageCommand (ModifyRemoteRefI32 (RemoteRefI32 i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT32, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefI32 i)))
+    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT32, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
 packageCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_LIST8, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefList8 i)))
+    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_LIST8, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
 packageCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_FLOAT, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr (f (RefFloat i)))
+    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_FLOAT, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
 packageCommand (LoopE cb) = do
     (_, p) <- packageCodeBlock cb
     l <- addCommand BC_CMD_LOOP (B.unpack p)
@@ -185,6 +182,7 @@ packageCommand (IfThenElseUnitE e cb1 cb2) = do
     let thenSize = word16ToBytes $ fromIntegral (B.length pc1)
     i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum REF_UNIT, 0] ++ thenSize ++ (packageExpr e))
     return $ B.append i (B.append pc1 pc2)
+packageCommand _ = error $ "packageCommand: Error Command not supported (It may have been a procedure)"
 
 packageCodeBlock :: Arduino a -> State CommandState (a, B.ByteString)
 packageCodeBlock (Arduino commands) = do
@@ -209,13 +207,13 @@ packageCodeBlock (Arduino commands) = do
           s <- get
           put s {block = B.append (block s) bs}
 
-      packShallowProcedure :: ArduinoProcedure a -> a -> State CommandState a
+      packShallowProcedure :: ArduinoPrimitive a -> a -> State CommandState a
       packShallowProcedure p r = do
           pp <- packageProcedure p
           addToBlock $ lenPackage pp
           return r
 
-      packDeepProcedure :: ArduinoProcedure a -> State CommandState Int
+      packDeepProcedure :: ArduinoPrimitive a -> State CommandState Int
       packDeepProcedure p = do
           pp <- packageProcedure p
           addToBlock $ lenPackage pp
@@ -223,7 +221,7 @@ packageCodeBlock (Arduino commands) = do
           put s {ib = (ib s) + 1}
           return $ ib s
 
-      packNewRef :: ArduinoProcedure a -> a -> State CommandState a
+      packNewRef :: ArduinoPrimitive a -> a -> State CommandState a
       packNewRef p r = do
           prb <- packageRemoteBinding p
           addToBlock $ lenPackage prb
@@ -231,7 +229,7 @@ packageCodeBlock (Arduino commands) = do
           put s {ib = (ib s) + 1, ix = (ix s) + 1}
           return r
 
-      packProcedure :: ArduinoProcedure a -> State CommandState a
+      packProcedure :: ArduinoPrimitive a -> State CommandState a
       packProcedure QueryFirmware = packShallowProcedure QueryFirmware 0
       packProcedure QueryFirmwareE = do
           i <- packDeepProcedure QueryFirmwareE 
@@ -302,32 +300,32 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (BootTaskE tids) = do
           i <- packDeepProcedure (BootTaskE tids)
           return $ RemBindB i
-      packProcedure (ReadRemoteRefB (RemoteRefB i)) = do
-          i <- packDeepProcedure (ReadRemoteRefB (RemoteRefB i))
+      packProcedure (ReadRemoteRefB (RemoteRefB i')) = do
+          i <- packDeepProcedure (ReadRemoteRefB (RemoteRefB i'))
           return $ RemBindB i
-      packProcedure (ReadRemoteRefW8 (RemoteRefW8 i)) = do
-          i <- packDeepProcedure (ReadRemoteRefW8 (RemoteRefW8 i))
+      packProcedure (ReadRemoteRefW8 (RemoteRefW8 i')) = do
+          i <- packDeepProcedure (ReadRemoteRefW8 (RemoteRefW8 i'))
           return $ RemBindW8 i
-      packProcedure (ReadRemoteRefW16 (RemoteRefW16 i)) = do
-          i <- packDeepProcedure (ReadRemoteRefW16 (RemoteRefW16 i))
+      packProcedure (ReadRemoteRefW16 (RemoteRefW16 i')) = do
+          i <- packDeepProcedure (ReadRemoteRefW16 (RemoteRefW16 i'))
           return $ RemBindW16 i
-      packProcedure (ReadRemoteRefW32 (RemoteRefW32 i)) = do
-          i <- packDeepProcedure (ReadRemoteRefW32 (RemoteRefW32 i))
+      packProcedure (ReadRemoteRefW32 (RemoteRefW32 i')) = do
+          i <- packDeepProcedure (ReadRemoteRefW32 (RemoteRefW32 i'))
           return $ RemBindW32 i
-      packProcedure (ReadRemoteRefI8 (RemoteRefI8 i)) = do
-          i <- packDeepProcedure (ReadRemoteRefI8 (RemoteRefI8 i))
+      packProcedure (ReadRemoteRefI8 (RemoteRefI8 i')) = do
+          i <- packDeepProcedure (ReadRemoteRefI8 (RemoteRefI8 i'))
           return $ RemBindI8 i
-      packProcedure (ReadRemoteRefI16 (RemoteRefI16 i)) = do
-          i <- packDeepProcedure (ReadRemoteRefI16 (RemoteRefI16 i))
+      packProcedure (ReadRemoteRefI16 (RemoteRefI16 i')) = do
+          i <- packDeepProcedure (ReadRemoteRefI16 (RemoteRefI16 i'))
           return $ RemBindI16 i
-      packProcedure (ReadRemoteRefI32 (RemoteRefI32 i)) = do
-          i <- packDeepProcedure (ReadRemoteRefI32 (RemoteRefI32 i))
+      packProcedure (ReadRemoteRefI32 (RemoteRefI32 i')) = do
+          i <- packDeepProcedure (ReadRemoteRefI32 (RemoteRefI32 i'))
           return $ RemBindI32 i
-      packProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) = do
-          i <- packDeepProcedure (ReadRemoteRefL8 (RemoteRefL8 i))
+      packProcedure (ReadRemoteRefL8 (RemoteRefL8 i')) = do
+          i <- packDeepProcedure (ReadRemoteRefL8 (RemoteRefL8 i'))
           return $ RemBindList8 i
-      packProcedure (ReadRemoteRefFloat (RemoteRefFloat i)) = do
-          i <- packDeepProcedure (ReadRemoteRefFloat (RemoteRefFloat i))
+      packProcedure (ReadRemoteRefFloat (RemoteRefFloat i')) = do
+          i <- packDeepProcedure (ReadRemoteRefFloat (RemoteRefFloat i'))
           return $ RemBindFloat i
       packProcedure (NewRemoteRefB e) = do
           s <- get
@@ -416,20 +414,24 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (Debug _) = return ()
       packProcedure DebugListen = return ()
       packProcedure (Die _ _) = return ()
+      packProcedure _ = error "packProcedure: unsupported Procedure (it may have been a command)"
 
-      packAppl :: RemoteApplicative ArduinoCommand ArduinoProcedure a -> State CommandState a
-      packAppl (T.Command cmd) = do
-          pc <- packageCommand cmd
-          addToBlock $ lenPackage pc
-          return ()
-      packAppl (T.Procedure p) = packProcedure p
+      packAppl :: RemoteApplicative ArduinoPrimitive a -> State CommandState a
+      packAppl (T.Primitive p) = case knownResult p of
+                                   Just a -> do
+                                              pc <- packageCommand p
+                                              addToBlock $ lenPackage pc
+                                              return a
+                                   Nothing -> packProcedure p
       packAppl (T.Ap a1 a2) = do
           f <- packAppl a1
           g <- packAppl a2
           return $ f g
-      packAppl (T.Pure a) = return a
+      packAppl (T.Pure a)  = return a
+      packAppl (T.Alt _ _) = error "packAppl: \"Alt\" is not supported"
+      packAppl  T.Empty    = error "packAppl: \"Empty\" is not supported"
 
-      packMonad :: RemoteMonad ArduinoCommand ArduinoProcedure a -> State CommandState a
+      packMonad :: RemoteMonad  ArduinoPrimitive a -> State CommandState a
       packMonad (T.Appl app) = packAppl app
       packMonad (T.Bind m k) = do
           r <- packMonad m
@@ -438,6 +440,10 @@ packageCodeBlock (Arduino commands) = do
           f <- packMonad m1
           g <- packMonad m2
           return $ f g
+      packMonad (T.Alt' _ _)  = error "packMonad: \"Alt\" is not supported"
+      packMonad T.Empty'      = error "packMonad: \"Alt\" is not supported"
+      packMonad (T.Catch _ _) = error "packMonad: \"Catch\" is not supported"
+      packMonad (T.Throw  _)  = error "packMonad: \"Throw\" is not supported"
 
 lenPackage :: B.ByteString -> B.ByteString
 lenPackage package = B.append (lenEncode $ B.length package) package      
@@ -452,12 +458,12 @@ lenEncode l = if l < 255
               then B.singleton $ fromIntegral l 
               else B.pack $ 0xFF : (word16ToBytes $ fromIntegral l)
 
-packageProcedure :: ArduinoProcedure a -> State CommandState B.ByteString
+packageProcedure :: ArduinoPrimitive a -> State CommandState B.ByteString
 packageProcedure p = do
     s <- get
-    packageProcedure' p (ib s)
+    packageProcedure' p (fromIntegral (ib s))
   where
-    packageProcedure' :: ArduinoProcedure a -> Int -> State CommandState B.ByteString
+    packageProcedure' :: ArduinoPrimitive a -> Int -> State CommandState B.ByteString
     packageProcedure' QueryFirmware ib    = addCommand BS_CMD_REQUEST_VERSION [fromIntegral ib]
     packageProcedure' QueryFirmwareE ib   = addCommand BS_CMD_REQUEST_VERSION [fromIntegral ib]
     packageProcedure' QueryProcessor ib   = addCommand BS_CMD_REQUEST_TYPE [fromIntegral ib]
@@ -553,7 +559,7 @@ packageRemoteBinding' rt e = do
     s <- get
     addCommand REF_CMD_NEW ([fromIntegral $ fromEnum rt, fromIntegral (ib s), fromIntegral (ix s)] ++ (packageExpr e))
 
-packageRemoteBinding :: ArduinoProcedure a -> State CommandState B.ByteString
+packageRemoteBinding :: ArduinoPrimitive a -> State CommandState B.ByteString
 packageRemoteBinding (NewRemoteRefB e) =  packageRemoteBinding' REF_BOOL e
 packageRemoteBinding (NewRemoteRefW8 e) =  packageRemoteBinding' REF_WORD8 e
 packageRemoteBinding (NewRemoteRefW16 e) =  packageRemoteBinding' REF_WORD16 e
@@ -563,6 +569,7 @@ packageRemoteBinding (NewRemoteRefI16 e) =  packageRemoteBinding' REF_INT16 e
 packageRemoteBinding (NewRemoteRefI32 e) =  packageRemoteBinding' REF_INT32 e
 packageRemoteBinding (NewRemoteRefL8 e) =  packageRemoteBinding' REF_LIST8 e
 packageRemoteBinding (NewRemoteRefFloat e) =  packageRemoteBinding' REF_FLOAT e
+packageRemoteBinding _ = error "packageRemoteBinding: Unsupported primitive"
 
 packageSubExpr :: Word8 -> Expr a -> [Word8]
 packageSubExpr ec e = ec : packageExpr e
@@ -856,17 +863,17 @@ unpackageResponse (cmdWord:args)
       (BS_RESP_MICROS, [m0,m1,m2,m3]) -> MicrosReply (bytesToWord32 (m0,m1,m2,m3))
       (BS_RESP_MILLIS, [m0,m1,m2,m3]) -> MillisReply (bytesToWord32 (m0,m1,m2,m3))
       (BS_RESP_STRING, rest)            -> StringMessage (getString rest)
-      (DIG_RESP_READ_PIN, [l,b])        -> DigitalReply b
-      (DIG_RESP_READ_PORT, [l,b])       -> DigitalPortReply b
-      (ALG_RESP_READ_PIN, [l,bl,bh])    -> AnalogReply (bytesToWord16 (bl,bh))
+      (DIG_RESP_READ_PIN, [_l,b])       -> DigitalReply b
+      (DIG_RESP_READ_PORT, [_l,b])      -> DigitalPortReply b
+      (ALG_RESP_READ_PIN, [_l,bl,bh])   -> AnalogReply (bytesToWord16 (bl,bh))
       (I2C_RESP_READ, _:_:xs)           -> I2CReply xs
-      (STEP_RESP_2PIN, [l,st])          -> Stepper2PinReply st
-      (STEP_RESP_4PIN, [l,st])          -> Stepper4PinReply st
+      (STEP_RESP_2PIN, [_l,st])         -> Stepper2PinReply st
+      (STEP_RESP_4PIN, [_l,st])         -> Stepper4PinReply st
       (STEP_RESP_STEP, [])              -> StepperStepReply
-      (SRVO_RESP_ATTACH, [l,sv])        -> ServoAttachReply sv
-      (SRVO_RESP_READ, [l,il,ih])       -> ServoReadReply (fromIntegral (bytesToWord16 (il,ih)))
-      (SRVO_RESP_READ_MICROS, [l,il,ih]) -> ServoReadMicrosReply (fromIntegral (bytesToWord16 (il,ih)))
-      (SCHED_RESP_BOOT, [l,b])          -> BootTaskResp b
+      (SRVO_RESP_ATTACH, [_l,sv])       -> ServoAttachReply sv
+      (SRVO_RESP_READ, [_l,il,ih])      -> ServoReadReply (fromIntegral (bytesToWord16 (il,ih)))
+      (SRVO_RESP_READ_MICROS, [_l,il,ih]) -> ServoReadMicrosReply (fromIntegral (bytesToWord16 (il,ih)))
+      (SCHED_RESP_BOOT, [_l,b])         -> BootTaskResp b
       (SCHED_RESP_QUERY_ALL, _:_:ts)    -> QueryAllTasksReply ts
       (SCHED_RESP_QUERY, ts) | length ts == 0 -> 
           QueryTaskReply Nothing
@@ -894,14 +901,14 @@ unpackageResponse (cmdWord:args)
                                       -> ReadRefL8Reply bs
       (REF_RESP_READ , [l,b1,b2,b3,b4]) | l == exprFCmdVal EXPRF_LIT
                                       -> ReadRefFloatReply $ bytesToFloat (b1, b2, b3, b4)
-      (REF_RESP_NEW , [l,w])          -> NewReply w
+      (REF_RESP_NEW , [_l,w])         -> NewReply w
       (REF_RESP_NEW , [])             -> FailedNewRef
       _                               -> Unimplemented (Just (show cmd)) args
   | True
   = Unimplemented Nothing (cmdWord : args)
 
 -- This is how we match responses with queries
-parseQueryResult :: ArduinoProcedure a -> Response -> Maybe a
+parseQueryResult :: ArduinoPrimitive a -> Response -> Maybe a
 parseQueryResult QueryFirmware (Firmware v) = Just v
 parseQueryResult QueryFirmwareE (Firmware v) = Just (lit v)
 parseQueryResult QueryProcessor (ProcessorType pt) = Just $ toEnum $ fromIntegral pt
@@ -969,4 +976,4 @@ parseQueryResult (WhileInt16E _ _ _) (WhileI16Reply r) = Just $ lit r
 parseQueryResult (WhileInt32E _ _ _) (WhileI32Reply r) = Just $ lit r
 parseQueryResult (WhileL8E _ _ _) (WhileL8Reply r) = Just $ lit r
 parseQueryResult (WhileFloatE _ _ _) (WhileFloatReply r) = Just $ lit r
-parseQueryResult q r = Nothing
+parseQueryResult _q _r = Nothing

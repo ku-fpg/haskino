@@ -9,38 +9,36 @@
 -- 'C' code generator for the Haskino Library.
 -------------------------------------------------------------------------------
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module System.Hardware.Haskino.Compiler(compileProgram) where
 
-import Data.Int (Int8, Int16, Int32)
-import Data.Word (Word8, Word16, Word32)
-import Data.Boolean
-import Data.Char
+import           Control.Monad.State
+import           Control.Remote.Applicative.Types as T
+import           Control.Remote.Monad
+import           Control.Remote.Monad.Types       as T
+import           Data.Boolean
+import           Data.Char
+import           Data.Int                         (Int8, Int16, Int32)
+import           Data.Word                        (Word32, Word8)
+import           System.Hardware.Haskino.Data
+import           System.Hardware.Haskino.Expr
+import           System.Hardware.Haskino.Utils
 
-import Control.Monad.State
-
-import Control.Remote.Monad
-import Control.Remote.Monad.Types as T
-
-import System.Hardware.Haskino.Data
-import System.Hardware.Haskino.Expr
-import System.Hardware.Haskino.Utils
-import Debug.Trace
 data CompileState = CompileState {level :: Int
-                     , intTask :: Bool
-                     , ix :: Int
-
-                     , ib :: Int
-                     , cmds :: String
-                     , binds :: String
-                     , refs :: String
-                     , forwards :: String
-                     , cmdList :: [String]
-                     , bindList :: [String]
-                     , tasksToDo :: [(Arduino (), String, Bool)]
-                     , tasksDone :: [String]
-                     , errors :: [String]
-                     , iterBinds :: [(Int, Int)]
+                     , intTask          :: Bool
+                     , ix               :: Int
+                     , ib               :: Int
+                     , cmds             :: String
+                     , binds            :: String
+                     , refs             :: String
+                     , forwards         :: String
+                     , cmdList          :: [String]
+                     , bindList         :: [String]
+                     , tasksToDo        :: [(Arduino (), String, Bool)]
+                     , tasksDone        :: [String]
+                     , errors           :: [String]
+                     , iterBinds        :: [(Int, Int)]
                      }
 
 data CompileType =
@@ -240,7 +238,13 @@ compileWriteListRef :: Int -> Expr a -> State CompileState ()
 compileWriteListRef ix e = compileLine $ "listAssign(&" ++ refName ++ show ix ++
                            ", " ++ compileExpr e ++ ");"
 
-compileCommand :: ArduinoCommand -> State CompileState ()
+compilePrimitive :: forall a . ArduinoPrimitive a -> State CompileState a
+compilePrimitive prim = case knownResult prim of
+                          Just _ -> compileCommand prim
+
+                          Nothing -> compileProcedure prim
+
+compileCommand :: ArduinoPrimitive a -> State CompileState a
 compileCommand SystemReset = return ()
 compileCommand (SetPinModeE p m) = compile2ExprCommand "pinMode" p m
 compileCommand (DigitalWriteE p b) = compile2ExprCommand "digitalWrite" p b
@@ -310,24 +314,15 @@ compileCommand (WriteRemoteRefI16 (RemoteRefI16 i) e) = compileWriteRef i e
 compileCommand (WriteRemoteRefI32 (RemoteRefI32 i) e) = compileWriteRef i e
 compileCommand (WriteRemoteRefL8 (RemoteRefL8 i) e) = compileWriteListRef i e
 compileCommand (WriteRemoteRefFloat (RemoteRefFloat i) e) = compileWriteRef i e
-compileCommand (ModifyRemoteRefB (RemoteRefB i) f) =
-    compileWriteRef i (f (RefB i))
-compileCommand (ModifyRemoteRefW8 (RemoteRefW8 i) f) =
-    compileWriteRef i (f (RefW8 i))
-compileCommand (ModifyRemoteRefW16 (RemoteRefW16 i) f) =
-    compileWriteRef i (f (RefW16 i))
-compileCommand (ModifyRemoteRefW32 (RemoteRefW32 i) f) =
-    compileWriteRef i (f (RefW32 i))
-compileCommand (ModifyRemoteRefI8 (RemoteRefI8 i) f) =
-    compileWriteRef i (f (RefI8 i))
-compileCommand (ModifyRemoteRefI16 (RemoteRefI16 i) f) =
-    compileWriteRef i (f (RefI16 i))
-compileCommand (ModifyRemoteRefI32 (RemoteRefI32 i) f) =
-    compileWriteRef i (f (RefI32 i))
-compileCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) =
-    compileWriteListRef i (f (RefList8 i))
-compileCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) =
-    compileWriteRef i (f (RefFloat i))
+compileCommand (ModifyRemoteRefB (RemoteRefB i) f) = compileWriteRef i f
+compileCommand (ModifyRemoteRefW8 (RemoteRefW8 i) f) = compileWriteRef i f
+compileCommand (ModifyRemoteRefW16 (RemoteRefW16 i) f) = compileWriteRef i f
+compileCommand (ModifyRemoteRefW32 (RemoteRefW32 i) f) = compileWriteRef i f
+compileCommand (ModifyRemoteRefI8 (RemoteRefI8 i) f) = compileWriteRef i f
+compileCommand (ModifyRemoteRefI16 (RemoteRefI16 i) f) = compileWriteRef i f
+compileCommand (ModifyRemoteRefI32 (RemoteRefI32 i) f) = compileWriteRef i f
+compileCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) = compileWriteListRef i f
+compileCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) = compileWriteRef i f
 compileCommand (LoopE cb) = do
     compileLine "while (1)"
     compileCodeBlock cb
@@ -468,7 +463,7 @@ compileReadListRef ix = do
                        bindName ++ show b ++ " = NULL;"
     return b
 
-compileProcedure :: ArduinoProcedure a -> State CompileState a
+compileProcedure :: ArduinoPrimitive a -> State CompileState a
 compileProcedure QueryFirmware = do
     compileStrongProcedureError "queryFirmware"
     return 0
@@ -942,7 +937,7 @@ compileCodeBlock (Arduino commands) = do
       body [] cs = cs
       body bs cs = bs ++ "\n" ++ cs
 
-      compileMonad :: RemoteMonad ArduinoCommand ArduinoProcedure a ->
+      compileMonad :: RemoteMonad ArduinoPrimitive a ->
                       State CompileState a
       compileMonad (T.Appl app) = compileAppl app
       compileMonad (T.Bind m k) = do
@@ -952,16 +947,21 @@ compileCodeBlock (Arduino commands) = do
         f <- compileMonad m1
         g <- compileMonad m2
         return (f g)
+      compileMonad (T.Alt' _ _)  = error "compileMonad: \"Alt\" not supported"
+      compileMonad T.Empty'      = error "compileMonad: \"Empty\" not supported"
+      compileMonad (T.Throw _)   = error "compileMonad: \"Throw\" not supported"
+      compileMonad (T.Catch _ _) = error "compileMonad: \"Catch\" not supported"
 
-      compileAppl :: RemoteApplicative ArduinoCommand ArduinoProcedure a ->
+      compileAppl :: RemoteApplicative ArduinoPrimitive a ->
                      State CompileState a
-      compileAppl (T.Command cmd) = compileCommand cmd
-      compileAppl (T.Procedure p) = compileProcedure p
+      compileAppl (T.Primitive p) = compilePrimitive p
       compileAppl (T.Ap a1 a2) = do
         f <- compileAppl a1
         g <- compileAppl a2
         return (f g)
       compileAppl (T.Pure a) = return a
+      compileAppl (T.Alt _ _) = error "compileAppl: \"Alt\" not supported"
+      compileAppl  T.Empty = error "compileAppl: \"Empty\" not supported"
 
 compileSubExpr :: String -> Expr a -> String
 compileSubExpr ec e = ec ++ "(" ++ compileExpr e ++ ")"
