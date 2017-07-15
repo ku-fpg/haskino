@@ -205,127 +205,127 @@ data ArduinoPrimitive :: * -> * where
      IfThenElseUnitE      :: Expr Bool -> Arduino () -> Arduino ()       -> ArduinoPrimitive ()
      -- ToDo: add SPI commands
      -- Procedures
-     QueryFirmware  :: ArduinoPrimitive Word16                   -- ^ Query the Firmware version installed
-     QueryFirmwareE :: ArduinoPrimitive (Expr Word16)                  -- ^ Query the Firmware version installed
-     QueryProcessor :: ArduinoPrimitive Processor                -- ^ Query the type of processor on
-     QueryProcessorE :: ArduinoPrimitive (Expr Word8)
-     Micros         :: ArduinoPrimitive Word32
-     MicrosE        :: ArduinoPrimitive (Expr Word32)
-     Millis         :: ArduinoPrimitive Word32
-     MillisE        :: ArduinoPrimitive (Expr Word32)
-     DelayMillis    :: TimeMillis -> ArduinoPrimitive ()
-     DelayMicros    :: TimeMicros -> ArduinoPrimitive ()
-     DelayMillisE   :: TimeMillisE -> ArduinoPrimitive ()
-     DelayMicrosE   :: TimeMicrosE -> ArduinoPrimitive ()
-     DigitalRead    :: Pin -> ArduinoPrimitive Bool            -- ^ Read the avlue ona pin digitally
-     DigitalReadE   :: PinE -> ArduinoPrimitive (Expr Bool)         -- ^ Read the avlue ona pin digitally
-     DigitalPortRead  :: Pin -> Word8 -> ArduinoPrimitive Word8          -- ^ Read the values on a port digitally
-     DigitalPortReadE :: PinE -> Expr Word8 -> ArduinoPrimitive (Expr Word8)
-     AnalogRead     :: Pin -> ArduinoPrimitive Word16          -- ^ Read the analog value on a pin
-     AnalogReadE    :: PinE -> ArduinoPrimitive (Expr Word16)
-     I2CRead :: SlaveAddress -> Word8 -> ArduinoPrimitive [Word8]
-     I2CReadE :: SlaveAddressE -> Expr Word8 -> ArduinoPrimitive (Expr [Word8])
-     Stepper2Pin :: Word16 -> Pin -> Pin -> ArduinoPrimitive Word8
-     Stepper2PinE :: Expr Word16 -> PinE -> PinE -> ArduinoPrimitive (Expr Word8)
-     Stepper4Pin :: Word16 -> Pin -> Pin -> Pin -> Pin -> ArduinoPrimitive Word8
-     Stepper4PinE :: Expr Word16 -> PinE -> PinE -> PinE -> PinE -> ArduinoPrimitive (Expr Word8)
-     StepperStepE :: Expr Word8 -> Expr Int16 -> ArduinoPrimitive ()
-     ServoAttach :: Pin -> ArduinoPrimitive Word8
-     ServoAttachE :: PinE -> ArduinoPrimitive (Expr Word8)
-     ServoAttachMinMax :: Pin -> Int16 -> Int16 -> ArduinoPrimitive Word8
-     ServoAttachMinMaxE :: PinE -> Expr Int16 -> Expr Int16 -> ArduinoPrimitive (Expr Word8)
-     ServoRead :: Word8 -> ArduinoPrimitive Int16
-     ServoReadE :: Expr Word8 -> ArduinoPrimitive (Expr Int16)
-     ServoReadMicros :: Word8 -> ArduinoPrimitive Int16
-     ServoReadMicrosE :: Expr Word8 -> ArduinoPrimitive (Expr Int16)
-     QueryAllTasks  :: ArduinoPrimitive [TaskID]
-     QueryAllTasksE :: ArduinoPrimitive (Expr [TaskID])
-     QueryTask  :: TaskID -> ArduinoPrimitive (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
-     QueryTaskE :: TaskIDE -> ArduinoPrimitive (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
-     BootTaskE :: Expr [Word8] -> ArduinoPrimitive (Expr Bool)
-     ReadRemoteRefB  :: RemoteRef Bool   -> ArduinoPrimitive (Expr Bool)
-     ReadRemoteRefW8  :: RemoteRef Word8  -> ArduinoPrimitive (Expr Word8)
-     ReadRemoteRefW16 :: RemoteRef Word16 -> ArduinoPrimitive (Expr Word16)
-     ReadRemoteRefW32 :: RemoteRef Word32 -> ArduinoPrimitive (Expr Word32)
-     ReadRemoteRefI8  :: RemoteRef Int8  -> ArduinoPrimitive (Expr Int8)
-     ReadRemoteRefI16 :: RemoteRef Int16 -> ArduinoPrimitive (Expr Int16)
-     ReadRemoteRefI32 :: RemoteRef Int32 -> ArduinoPrimitive (Expr Int32)
-     ReadRemoteRefL8 :: RemoteRef [Word8] -> ArduinoPrimitive (Expr [Word8])
-     ReadRemoteRefFloat :: RemoteRef Float -> ArduinoPrimitive (Expr Float)
-     NewRemoteRefB    :: Expr Bool   -> ArduinoPrimitive (RemoteRef Bool)
-     NewRemoteRefW8   :: Expr Word8  -> ArduinoPrimitive (RemoteRef Word8)
-     NewRemoteRefW16  :: Expr Word16 -> ArduinoPrimitive (RemoteRef Word16)
-     NewRemoteRefW32  :: Expr Word32 -> ArduinoPrimitive (RemoteRef Word32)
-     NewRemoteRefI8   :: Expr Int8  -> ArduinoPrimitive (RemoteRef Int8)
-     NewRemoteRefI16  :: Expr Int16 -> ArduinoPrimitive (RemoteRef Int16)
-     NewRemoteRefI32  :: Expr Int32 -> ArduinoPrimitive (RemoteRef Int32)
-     NewRemoteRefL8   :: Expr [Word8] -> ArduinoPrimitive (RemoteRef [Word8])
-     NewRemoteRefFloat :: Expr Float -> ArduinoPrimitive (RemoteRef Float)
-     IfThenElseBool    :: Bool -> Arduino Bool -> Arduino Bool -> ArduinoPrimitive Bool
-     IfThenElseBoolE   :: Expr Bool -> Arduino (Expr Bool) -> Arduino (Expr Bool) -> ArduinoPrimitive (Expr Bool)
-     IfThenElseWord8   :: Bool -> Arduino Word8 -> Arduino Word8 -> ArduinoPrimitive Word8
-     IfThenElseWord8E  :: Expr Bool -> Arduino (Expr Word8) -> Arduino (Expr Word8) -> ArduinoPrimitive (Expr Word8)
-     IfThenElseWord16  :: Bool -> Arduino Word16 -> Arduino Word16 -> ArduinoPrimitive Word16
-     IfThenElseWord16E :: Expr Bool -> Arduino (Expr Word16) -> Arduino (Expr Word16) -> ArduinoPrimitive (Expr Word16)
-     IfThenElseWord32  :: Bool -> Arduino Word32 -> Arduino Word32 -> ArduinoPrimitive Word32
-     IfThenElseWord32E :: Expr Bool -> Arduino (Expr Word32) -> Arduino (Expr Word32) -> ArduinoPrimitive (Expr Word32)
-     IfThenElseInt8    :: Bool -> Arduino Int8 -> Arduino Int8 -> ArduinoPrimitive Int8
-     IfThenElseInt8E   :: Expr Bool -> Arduino (Expr Int8) -> Arduino (Expr Int8) -> ArduinoPrimitive (Expr Int8)
-     IfThenElseInt16   :: Bool -> Arduino Int16 -> Arduino Int16 -> ArduinoPrimitive Int16
-     IfThenElseInt16E  :: Expr Bool -> Arduino (Expr Int16) -> Arduino (Expr Int16) -> ArduinoPrimitive (Expr Int16)
-     IfThenElseInt32   :: Bool -> Arduino Int32 -> Arduino Int32 -> ArduinoPrimitive Int32
-     IfThenElseInt32E  :: Expr Bool -> Arduino (Expr Int32) -> Arduino (Expr Int32) -> ArduinoPrimitive (Expr Int32)
-     IfThenElseL8      :: Bool -> Arduino [Word8] -> Arduino [Word8] -> ArduinoPrimitive [Word8]
-     IfThenElseL8E     :: Expr Bool -> Arduino (Expr [Word8]) -> Arduino (Expr [Word8]) -> ArduinoPrimitive (Expr [Word8])
-     IfThenElseFloat   :: Bool -> Arduino Float -> Arduino Float -> ArduinoPrimitive Float
-     IfThenElseFloatE  :: Expr Bool -> Arduino (Expr Float) -> Arduino (Expr Float) -> ArduinoPrimitive (Expr Float)
-     IfThenElseW8Unit  :: Expr Bool -> Arduino(ExprEither Word8 ()) -> Arduino(ExprEither Word8 ()) -> ArduinoPrimitive (ExprEither Word8 ())
-     IfThenElseW8Bool  :: Expr Bool -> Arduino(ExprEither Word8 Bool) -> Arduino(ExprEither Word8 Bool) -> ArduinoPrimitive (ExprEither Word8 Bool)
-     IfThenElseW8W8    :: Expr Bool -> Arduino(ExprEither Word8 Word8) -> Arduino(ExprEither Word8 Word8) -> ArduinoPrimitive (ExprEither Word8 Word8)
-     IfThenElseW8W16   :: Expr Bool -> Arduino(ExprEither Word8 Word16) -> Arduino(ExprEither Word8 Word16) -> ArduinoPrimitive (ExprEither Word8 Word16)
-     IfThenElseW8W32   :: Expr Bool -> Arduino(ExprEither Word8 Word32) -> Arduino(ExprEither Word8 Word32) -> ArduinoPrimitive (ExprEither Word8 Word32)
-     IfThenElseW8I8    :: Expr Bool -> Arduino(ExprEither Word8 Int8) -> Arduino(ExprEither Word8 Int8) -> ArduinoPrimitive (ExprEither Word8 Int8)
-     IfThenElseW8I16   :: Expr Bool -> Arduino(ExprEither Word8 Int16) -> Arduino(ExprEither Word8 Int16) -> ArduinoPrimitive (ExprEither Word8 Int16)
-     IfThenElseW8I32   :: Expr Bool -> Arduino(ExprEither Word8 Int32) -> Arduino(ExprEither Word8 Int32) -> ArduinoPrimitive (ExprEither Word8 Int32)
-     IfThenElseW8L8    :: Expr Bool -> Arduino(ExprEither Word8 [Word8]) -> Arduino(ExprEither Word8 [Word8]) -> ArduinoPrimitive (ExprEither Word8 [Word8])
-     IfThenElseW8Float :: Expr Bool -> Arduino(ExprEither Word8 Float) -> Arduino(ExprEither Word8 Float) -> ArduinoPrimitive (ExprEither Word8 Float)
-     IfThenElseUnitUnit :: Expr Bool -> Arduino(ExprEither () ()) -> Arduino(ExprEither () ()) -> ArduinoPrimitive (ExprEither () ())
-     IfThenElseUnitW8  :: Expr Bool -> Arduino(ExprEither () Word8) -> Arduino(ExprEither () Word8) -> ArduinoPrimitive (ExprEither () Word8)
-     WhileBool         :: Bool -> (Bool -> Bool) -> (Bool -> Arduino Bool) -> ArduinoPrimitive Bool
-     WhileBoolE        :: (Expr Bool) -> (Expr Bool -> Expr Bool) -> (Expr Bool -> Arduino (Expr Bool)) -> ArduinoPrimitive (Expr Bool)
-     WhileWord8        :: Word8 -> (Word8 -> Bool) -> (Word8 -> Arduino Word8) -> ArduinoPrimitive Word8
-     WhileWord8E       :: (Expr Word8) -> (Expr Word8 -> Expr Bool) -> (Expr Word8 -> Arduino (Expr Word8)) -> ArduinoPrimitive (Expr Word8)
-     WhileWord16       :: Word16 -> (Word16 -> Bool) -> (Word16 -> Arduino Word16) -> ArduinoPrimitive Word16
-     WhileWord16E      :: (Expr Word16) -> (Expr Word16 -> Expr Bool) -> (Expr Word16 -> Arduino (Expr Word16)) -> ArduinoPrimitive (Expr Word16)
-     WhileWord32       :: Word32 -> (Word32 -> Bool) -> (Word32 -> Arduino Word32) -> ArduinoPrimitive Word32
-     WhileWord32E      :: (Expr Word32) -> (Expr Word32 -> Expr Bool) -> (Expr Word32 -> Arduino (Expr Word32)) -> ArduinoPrimitive (Expr Word32)
-     WhileInt8         :: Int8 -> (Int8 -> Bool) -> (Int8 -> Arduino Int8) -> ArduinoPrimitive Int8
-     WhileInt8E        :: (Expr Int8) -> (Expr Int8 -> Expr Bool) -> (Expr Int8 -> Arduino (Expr Int8)) -> ArduinoPrimitive (Expr Int8)
-     WhileInt16        :: Int16 -> (Int16 -> Bool) -> (Int16 -> Arduino Int16) -> ArduinoPrimitive Int16
-     WhileInt16E       :: (Expr Int16) -> (Expr Int16 -> Expr Bool) -> (Expr Int16 -> Arduino (Expr Int16)) -> ArduinoPrimitive (Expr Int16)
-     WhileInt32        :: Int32 -> (Int32 -> Bool) -> (Int32 -> Arduino Int32) -> ArduinoPrimitive Int32
-     WhileInt32E       :: (Expr Int32) -> (Expr Int32 -> Expr Bool) -> (Expr Int32 -> Arduino (Expr Int32)) -> ArduinoPrimitive (Expr Int32)
-     WhileFloat        :: Float -> (Float -> Bool) -> (Float -> Arduino Float) -> ArduinoPrimitive Float
-     WhileFloatE       :: (Expr Float) -> (Expr Float -> Expr Bool) -> (Expr Float -> Arduino (Expr Float)) -> ArduinoPrimitive (Expr Float)
-     WhileL8           :: [Word8] -> ([Word8] -> Bool) -> ([Word8] -> Arduino [Word8]) -> ArduinoPrimitive [Word8]
-     WhileL8E          :: (Expr [Word8]) -> (Expr [Word8] -> Expr Bool) -> (Expr [Word8] -> Arduino (Expr [Word8])) -> ArduinoPrimitive (Expr [Word8])
-     IterateW8UnitE    :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 () )) -> ArduinoPrimitive (Expr () )
-     IterateW8BoolE    :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Bool )) -> ArduinoPrimitive (Expr Bool )
-     IterateW8W8E      :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Word8)) -> ArduinoPrimitive (Expr Word8)
-     IterateW8W16E     :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Word16)) -> ArduinoPrimitive (Expr Word16)
-     IterateW8W32E     :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Word32)) -> ArduinoPrimitive (Expr Word32)
-     IterateW8I8E      :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Int8)) -> ArduinoPrimitive (Expr Int8)
-     IterateW8I16E     :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Int16)) -> ArduinoPrimitive (Expr Int16)
-     IterateW8I32E     :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Int32)) -> ArduinoPrimitive (Expr Int32)
-     IterateW8L8E      :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 [Word8])) -> ArduinoPrimitive (Expr [Word8])
-     IterateW8FloatE   :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Float)) -> ArduinoPrimitive (Expr Float)
-     IterateUnitW8E    :: Expr () -> (Expr () -> Arduino (ExprEither () Word8)) -> ArduinoPrimitive (Expr Word8)
-     IterateUnitUnitE  :: Expr () -> (Expr () -> Arduino (ExprEither () () )) -> ArduinoPrimitive (Expr () )
-     LiftIO            :: IO a -> ArduinoPrimitive a
-     Debug             :: String -> ArduinoPrimitive ()
-     DebugE            :: Expr [Word8] -> ArduinoPrimitive ()
-     DebugListen       :: ArduinoPrimitive ()
-     Die               :: String -> [String] -> ArduinoPrimitive ()
+     QueryFirmware        :: ArduinoPrimitive Word16                   -- ^ Query the Firmware version installed
+     QueryFirmwareE       :: ArduinoPrimitive (Expr Word16)                  -- ^ Query the Firmware version installed
+     QueryProcessor       :: ArduinoPrimitive Processor                -- ^ Query the type of processor on
+     QueryProcessorE      :: ArduinoPrimitive (Expr Word8)
+     Micros               :: ArduinoPrimitive Word32
+     MicrosE              :: ArduinoPrimitive (Expr Word32)
+     Millis               :: ArduinoPrimitive Word32
+     MillisE              :: ArduinoPrimitive (Expr Word32)
+     DelayMillis          :: TimeMillis -> ArduinoPrimitive ()
+     DelayMicros          :: TimeMicros -> ArduinoPrimitive ()
+     DelayMillisE         :: TimeMillisE -> ArduinoPrimitive ()
+     DelayMicrosE         :: TimeMicrosE -> ArduinoPrimitive ()
+     DigitalRead          :: Pin -> ArduinoPrimitive Bool            -- ^ Read the avlue ona pin digitally
+     DigitalReadE         :: PinE -> ArduinoPrimitive (Expr Bool)         -- ^ Read the avlue ona pin digitally
+     DigitalPortRead      :: Pin -> Word8 -> ArduinoPrimitive Word8          -- ^ Read the values on a port digitally
+     DigitalPortReadE     :: PinE -> Expr Word8 -> ArduinoPrimitive (Expr Word8)
+     AnalogRead           :: Pin -> ArduinoPrimitive Word16          -- ^ Read the analog value on a pin
+     AnalogReadE          :: PinE -> ArduinoPrimitive (Expr Word16)
+     I2CRead              :: SlaveAddress -> Word8 -> ArduinoPrimitive [Word8]
+     I2CReadE             :: SlaveAddressE -> Expr Word8 -> ArduinoPrimitive (Expr [Word8])
+     Stepper2Pin          :: Word16 -> Pin -> Pin -> ArduinoPrimitive Word8
+     Stepper2PinE         :: Expr Word16 -> PinE -> PinE -> ArduinoPrimitive (Expr Word8)
+     Stepper4Pin          :: Word16 -> Pin -> Pin -> Pin -> Pin -> ArduinoPrimitive Word8
+     Stepper4PinE         :: Expr Word16 -> PinE -> PinE -> PinE -> PinE -> ArduinoPrimitive (Expr Word8)
+     StepperStepE         :: Expr Word8 -> Expr Int16 -> ArduinoPrimitive ()
+     ServoAttach          :: Pin -> ArduinoPrimitive Word8
+     ServoAttachE         :: PinE -> ArduinoPrimitive (Expr Word8)
+     ServoAttachMinMax    :: Pin -> Int16 -> Int16 -> ArduinoPrimitive Word8
+     ServoAttachMinMaxE   :: PinE -> Expr Int16 -> Expr Int16 -> ArduinoPrimitive (Expr Word8)
+     ServoRead            :: Word8 -> ArduinoPrimitive Int16
+     ServoReadE           :: Expr Word8 -> ArduinoPrimitive (Expr Int16)
+     ServoReadMicros      :: Word8 -> ArduinoPrimitive Int16
+     ServoReadMicrosE     :: Expr Word8 -> ArduinoPrimitive (Expr Int16)
+     QueryAllTasks        :: ArduinoPrimitive [TaskID]
+     QueryAllTasksE       :: ArduinoPrimitive (Expr [TaskID])
+     QueryTask            :: TaskID -> ArduinoPrimitive (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
+     QueryTaskE           :: TaskIDE -> ArduinoPrimitive (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
+     BootTaskE            :: Expr [Word8] -> ArduinoPrimitive (Expr Bool)
+     ReadRemoteRefB       :: RemoteRef Bool   -> ArduinoPrimitive (Expr Bool)
+     ReadRemoteRefW8      :: RemoteRef Word8  -> ArduinoPrimitive (Expr Word8)
+     ReadRemoteRefW16     :: RemoteRef Word16 -> ArduinoPrimitive (Expr Word16)
+     ReadRemoteRefW32     :: RemoteRef Word32 -> ArduinoPrimitive (Expr Word32)
+     ReadRemoteRefI8      :: RemoteRef Int8  -> ArduinoPrimitive (Expr Int8)
+     ReadRemoteRefI16     :: RemoteRef Int16 -> ArduinoPrimitive (Expr Int16)
+     ReadRemoteRefI32     :: RemoteRef Int32 -> ArduinoPrimitive (Expr Int32)
+     ReadRemoteRefL8      :: RemoteRef [Word8] -> ArduinoPrimitive (Expr [Word8])
+     ReadRemoteRefFloat   :: RemoteRef Float -> ArduinoPrimitive (Expr Float)
+     NewRemoteRefB        :: Expr Bool   -> ArduinoPrimitive (RemoteRef Bool)
+     NewRemoteRefW8       :: Expr Word8  -> ArduinoPrimitive (RemoteRef Word8)
+     NewRemoteRefW16      :: Expr Word16 -> ArduinoPrimitive (RemoteRef Word16)
+     NewRemoteRefW32      :: Expr Word32 -> ArduinoPrimitive (RemoteRef Word32)
+     NewRemoteRefI8       :: Expr Int8  -> ArduinoPrimitive (RemoteRef Int8)
+     NewRemoteRefI16      :: Expr Int16 -> ArduinoPrimitive (RemoteRef Int16)
+     NewRemoteRefI32      :: Expr Int32 -> ArduinoPrimitive (RemoteRef Int32)
+     NewRemoteRefL8       :: Expr [Word8] -> ArduinoPrimitive (RemoteRef [Word8])
+     NewRemoteRefFloat    :: Expr Float -> ArduinoPrimitive (RemoteRef Float)
+     IfThenElseBool       :: Bool -> Arduino Bool -> Arduino Bool -> ArduinoPrimitive Bool
+     IfThenElseBoolE      :: Expr Bool -> Arduino (Expr Bool) -> Arduino (Expr Bool) -> ArduinoPrimitive (Expr Bool)
+     IfThenElseWord8      :: Bool -> Arduino Word8 -> Arduino Word8 -> ArduinoPrimitive Word8
+     IfThenElseWord8E     :: Expr Bool -> Arduino (Expr Word8) -> Arduino (Expr Word8) -> ArduinoPrimitive (Expr Word8)
+     IfThenElseWord16     :: Bool -> Arduino Word16 -> Arduino Word16 -> ArduinoPrimitive Word16
+     IfThenElseWord16E    :: Expr Bool -> Arduino (Expr Word16) -> Arduino (Expr Word16) -> ArduinoPrimitive (Expr Word16)
+     IfThenElseWord32     :: Bool -> Arduino Word32 -> Arduino Word32 -> ArduinoPrimitive Word32
+     IfThenElseWord32E    :: Expr Bool -> Arduino (Expr Word32) -> Arduino (Expr Word32) -> ArduinoPrimitive (Expr Word32)
+     IfThenElseInt8       :: Bool -> Arduino Int8 -> Arduino Int8 -> ArduinoPrimitive Int8
+     IfThenElseInt8E      :: Expr Bool -> Arduino (Expr Int8) -> Arduino (Expr Int8) -> ArduinoPrimitive (Expr Int8)
+     IfThenElseInt16      :: Bool -> Arduino Int16 -> Arduino Int16 -> ArduinoPrimitive Int16
+     IfThenElseInt16E     :: Expr Bool -> Arduino (Expr Int16) -> Arduino (Expr Int16) -> ArduinoPrimitive (Expr Int16)
+     IfThenElseInt32      :: Bool -> Arduino Int32 -> Arduino Int32 -> ArduinoPrimitive Int32
+     IfThenElseInt32E     :: Expr Bool -> Arduino (Expr Int32) -> Arduino (Expr Int32) -> ArduinoPrimitive (Expr Int32)
+     IfThenElseL8         :: Bool -> Arduino [Word8] -> Arduino [Word8] -> ArduinoPrimitive [Word8]
+     IfThenElseL8E        :: Expr Bool -> Arduino (Expr [Word8]) -> Arduino (Expr [Word8]) -> ArduinoPrimitive (Expr [Word8])
+     IfThenElseFloat      :: Bool -> Arduino Float -> Arduino Float -> ArduinoPrimitive Float
+     IfThenElseFloatE     :: Expr Bool -> Arduino (Expr Float) -> Arduino (Expr Float) -> ArduinoPrimitive (Expr Float)
+     IfThenElseW8Unit     :: Expr Bool -> Arduino(ExprEither Word8 ()) -> Arduino(ExprEither Word8 ()) -> ArduinoPrimitive (ExprEither Word8 ())
+     IfThenElseW8Bool     :: Expr Bool -> Arduino(ExprEither Word8 Bool) -> Arduino(ExprEither Word8 Bool) -> ArduinoPrimitive (ExprEither Word8 Bool)
+     IfThenElseW8W8       :: Expr Bool -> Arduino(ExprEither Word8 Word8) -> Arduino(ExprEither Word8 Word8) -> ArduinoPrimitive (ExprEither Word8 Word8)
+     IfThenElseW8W16      :: Expr Bool -> Arduino(ExprEither Word8 Word16) -> Arduino(ExprEither Word8 Word16) -> ArduinoPrimitive (ExprEither Word8 Word16)
+     IfThenElseW8W32      :: Expr Bool -> Arduino(ExprEither Word8 Word32) -> Arduino(ExprEither Word8 Word32) -> ArduinoPrimitive (ExprEither Word8 Word32)
+     IfThenElseW8I8       :: Expr Bool -> Arduino(ExprEither Word8 Int8) -> Arduino(ExprEither Word8 Int8) -> ArduinoPrimitive (ExprEither Word8 Int8)
+     IfThenElseW8I16      :: Expr Bool -> Arduino(ExprEither Word8 Int16) -> Arduino(ExprEither Word8 Int16) -> ArduinoPrimitive (ExprEither Word8 Int16)
+     IfThenElseW8I32      :: Expr Bool -> Arduino(ExprEither Word8 Int32) -> Arduino(ExprEither Word8 Int32) -> ArduinoPrimitive (ExprEither Word8 Int32)
+     IfThenElseW8L8       :: Expr Bool -> Arduino(ExprEither Word8 [Word8]) -> Arduino(ExprEither Word8 [Word8]) -> ArduinoPrimitive (ExprEither Word8 [Word8])
+     IfThenElseW8Float    :: Expr Bool -> Arduino(ExprEither Word8 Float) -> Arduino(ExprEither Word8 Float) -> ArduinoPrimitive (ExprEither Word8 Float)
+     IfThenElseUnitUnit   :: Expr Bool -> Arduino(ExprEither () ()) -> Arduino(ExprEither () ()) -> ArduinoPrimitive (ExprEither () ())
+     IfThenElseUnitW8     :: Expr Bool -> Arduino(ExprEither () Word8) -> Arduino(ExprEither () Word8) -> ArduinoPrimitive (ExprEither () Word8)
+     WhileBool            :: Bool -> (Bool -> Bool) -> (Bool -> Arduino Bool) -> ArduinoPrimitive Bool
+     WhileBoolE           :: (Expr Bool) -> (Expr Bool -> Expr Bool) -> (Expr Bool -> Arduino (Expr Bool)) -> ArduinoPrimitive (Expr Bool)
+     WhileWord8           :: Word8 -> (Word8 -> Bool) -> (Word8 -> Arduino Word8) -> ArduinoPrimitive Word8
+     WhileWord8E          :: (Expr Word8) -> (Expr Word8 -> Expr Bool) -> (Expr Word8 -> Arduino (Expr Word8)) -> ArduinoPrimitive (Expr Word8)
+     WhileWord16          :: Word16 -> (Word16 -> Bool) -> (Word16 -> Arduino Word16) -> ArduinoPrimitive Word16
+     WhileWord16E         :: (Expr Word16) -> (Expr Word16 -> Expr Bool) -> (Expr Word16 -> Arduino (Expr Word16)) -> ArduinoPrimitive (Expr Word16)
+     WhileWord32          :: Word32 -> (Word32 -> Bool) -> (Word32 -> Arduino Word32) -> ArduinoPrimitive Word32
+     WhileWord32E         :: (Expr Word32) -> (Expr Word32 -> Expr Bool) -> (Expr Word32 -> Arduino (Expr Word32)) -> ArduinoPrimitive (Expr Word32)
+     WhileInt8            :: Int8 -> (Int8 -> Bool) -> (Int8 -> Arduino Int8) -> ArduinoPrimitive Int8
+     WhileInt8E           :: (Expr Int8) -> (Expr Int8 -> Expr Bool) -> (Expr Int8 -> Arduino (Expr Int8)) -> ArduinoPrimitive (Expr Int8)
+     WhileInt16           :: Int16 -> (Int16 -> Bool) -> (Int16 -> Arduino Int16) -> ArduinoPrimitive Int16
+     WhileInt16E          :: (Expr Int16) -> (Expr Int16 -> Expr Bool) -> (Expr Int16 -> Arduino (Expr Int16)) -> ArduinoPrimitive (Expr Int16)
+     WhileInt32           :: Int32 -> (Int32 -> Bool) -> (Int32 -> Arduino Int32) -> ArduinoPrimitive Int32
+     WhileInt32E          :: (Expr Int32) -> (Expr Int32 -> Expr Bool) -> (Expr Int32 -> Arduino (Expr Int32)) -> ArduinoPrimitive (Expr Int32)
+     WhileFloat           :: Float -> (Float -> Bool) -> (Float -> Arduino Float) -> ArduinoPrimitive Float
+     WhileFloatE          :: (Expr Float) -> (Expr Float -> Expr Bool) -> (Expr Float -> Arduino (Expr Float)) -> ArduinoPrimitive (Expr Float)
+     WhileL8              :: [Word8] -> ([Word8] -> Bool) -> ([Word8] -> Arduino [Word8]) -> ArduinoPrimitive [Word8]
+     WhileL8E             :: (Expr [Word8]) -> (Expr [Word8] -> Expr Bool) -> (Expr [Word8] -> Arduino (Expr [Word8])) -> ArduinoPrimitive (Expr [Word8])
+     IterateW8UnitE       :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 () )) -> ArduinoPrimitive (Expr () )
+     IterateW8BoolE       :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Bool )) -> ArduinoPrimitive (Expr Bool )
+     IterateW8W8E         :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Word8)) -> ArduinoPrimitive (Expr Word8)
+     IterateW8W16E        :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Word16)) -> ArduinoPrimitive (Expr Word16)
+     IterateW8W32E        :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Word32)) -> ArduinoPrimitive (Expr Word32)
+     IterateW8I8E         :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Int8)) -> ArduinoPrimitive (Expr Int8)
+     IterateW8I16E        :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Int16)) -> ArduinoPrimitive (Expr Int16)
+     IterateW8I32E        :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Int32)) -> ArduinoPrimitive (Expr Int32)
+     IterateW8L8E         :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 [Word8])) -> ArduinoPrimitive (Expr [Word8])
+     IterateW8FloatE      :: Expr Word8 -> (Expr Word8 -> Arduino (ExprEither Word8 Float)) -> ArduinoPrimitive (Expr Float)
+     IterateUnitW8E       :: Expr () -> (Expr () -> Arduino (ExprEither () Word8)) -> ArduinoPrimitive (Expr Word8)
+     IterateUnitUnitE     :: Expr () -> (Expr () -> Arduino (ExprEither () () )) -> ArduinoPrimitive (Expr () )
+     LiftIO               :: IO a -> ArduinoPrimitive a
+     Debug                :: String -> ArduinoPrimitive ()
+     DebugE               :: Expr [Word8] -> ArduinoPrimitive ()
+     DebugListen          :: ArduinoPrimitive ()
+     Die                  :: String -> [String] -> ArduinoPrimitive ()
      -- ToDo: add SPI procedures
 
 instance KnownResult ArduinoPrimitive where
