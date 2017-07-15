@@ -507,78 +507,6 @@ loopE ps = Arduino $ primitive $ LoopE ps
 forInE :: Expr [Word8] -> (Expr Word8 -> Arduino ()) -> Arduino ()
 forInE ws f = Arduino $ primitive $ ForInE ws f
 
-writeRemoteRefB :: RemoteRef Bool -> Expr Bool -> Arduino ()
-writeRemoteRefB r e = Arduino $ primitive $ WriteRemoteRefB r e
-
-writeRemoteRefW8 :: RemoteRef Word8 -> Expr Word8 -> Arduino ()
-writeRemoteRefW8 r e = Arduino $ primitive $ WriteRemoteRefW8 r e
-
-writeRemoteRefW16 :: RemoteRef Word16 -> Expr Word16 -> Arduino ()
-writeRemoteRefW16 r e = Arduino $ primitive $ WriteRemoteRefW16 r e
-
-writeRemoteRefW32 :: RemoteRef Word32 -> Expr Word32 -> Arduino ()
-writeRemoteRefW32 r e = Arduino $ primitive $ WriteRemoteRefW32 r e
-
-writeRemoteRefI8 :: RemoteRef Int8 -> Expr Int8 -> Arduino ()
-writeRemoteRefI8 r e = Arduino $ primitive $ WriteRemoteRefI8 r e
-
-writeRemoteRefI16 :: RemoteRef Int16 -> Expr Int16 -> Arduino ()
-writeRemoteRefI16 r e = Arduino $ primitive $ WriteRemoteRefI16 r e
-
-writeRemoteRefI32 :: RemoteRef Int32 -> Expr Int32 -> Arduino ()
-writeRemoteRefI32 r e = Arduino $ primitive $ WriteRemoteRefI32 r e
-
-writeRemoteRefL8 :: RemoteRef [Word8] -> Expr [Word8] -> Arduino ()
-writeRemoteRefL8 r e = Arduino $ primitive $ WriteRemoteRefL8 r e
-
-writeRemoteRefFloat :: RemoteRef Float -> Expr Float -> Arduino ()
-writeRemoteRefFloat r e = Arduino $ primitive $ WriteRemoteRefFloat r e
-
-modifyRemoteRefB :: RemoteRef Bool -> (Expr Bool -> Expr Bool) -> Arduino ()
-modifyRemoteRefB (RemoteRefB i) f = Arduino $ primitive $ ModifyRemoteRefB (RemoteRefB i) (f rr)
-  where
-    rr = RefB i
-
-modifyRemoteRefW8 :: RemoteRef Word8 -> (Expr Word8 -> Expr Word8) -> Arduino ()
-modifyRemoteRefW8 (RemoteRefW8 i) f = Arduino $ primitive $ ModifyRemoteRefW8 (RemoteRefW8 i) (f rr)
-  where
-    rr = RefW8 i
-
-modifyRemoteRefW16 :: RemoteRef Word16 -> (Expr Word16 -> Expr Word16) -> Arduino ()
-modifyRemoteRefW16 (RemoteRefW16 i) f = Arduino $ primitive $ ModifyRemoteRefW16 (RemoteRefW16 i) (f rr)
-  where
-    rr = RefW16 i
-
-modifyRemoteRefW32 :: RemoteRef Word32 -> (Expr Word32 -> Expr Word32) -> Arduino ()
-modifyRemoteRefW32 (RemoteRefW32 i) f = Arduino $ primitive $ ModifyRemoteRefW32 (RemoteRefW32 i) (f rr)
-  where
-    rr = RefW32 i
-
-modifyRemoteRefI8 :: RemoteRef Int8 -> (Expr Int8 -> Expr Int8) -> Arduino ()
-modifyRemoteRefI8 (RemoteRefI8 i) f = Arduino $ primitive $ ModifyRemoteRefI8 (RemoteRefI8 i) (f rr)
-  where
-    rr = RefI8 i
-
-modifyRemoteRefI16 :: RemoteRef Int16 -> (Expr Int16 -> Expr Int16) -> Arduino ()
-modifyRemoteRefI16 (RemoteRefI16 i) f = Arduino $ primitive $ ModifyRemoteRefI16 (RemoteRefI16 i) (f rr)
-  where
-    rr = RefI16 i
-
-modifyRemoteRefI32 :: RemoteRef Int32 -> (Expr Int32 -> Expr Int32) -> Arduino ()
-modifyRemoteRefI32 (RemoteRefI32 i) f = Arduino $ primitive $ ModifyRemoteRefI32 (RemoteRefI32 i) (f rr)
-  where
-    rr = RefI32 i
-
-modifyRemoteRefL8 :: RemoteRef [Word8] -> (Expr [Word8] -> Expr [Word8]) -> Arduino ()
-modifyRemoteRefL8 (RemoteRefL8 i) f = Arduino $ primitive $ ModifyRemoteRefL8 (RemoteRefL8 i) (f rr)
-  where
-    rr = RefList8 i
-
-modifyRemoteRefFloat :: RemoteRef Float -> (Expr Float -> Expr Float) -> Arduino ()
-modifyRemoteRefFloat (RemoteRefFloat i) f = Arduino $ primitive $ ModifyRemoteRefFloat (RemoteRefFloat i) (f rr)
-  where
-    rr = RefFloat i
-
 ifThenElseUnit :: Bool -> Arduino () -> Arduino () -> Arduino ()
 ifThenElseUnit b tps eps = Arduino $ primitive $ IfThenElseUnit b tps eps
 
@@ -586,65 +514,74 @@ ifThenElseUnitE :: Expr Bool -> Arduino () -> Arduino () -> Arduino ()
 ifThenElseUnitE be tps eps = Arduino $ primitive $ IfThenElseUnitE be tps eps
 
 class ExprB a => RemoteReference a where
-    newRemoteRef          :: Expr a -> Arduino (RemoteRef a)
-    readRemoteRef         :: RemoteRef a -> Arduino (Expr a)
-    writeRemoteRef        :: RemoteRef a -> Expr a -> Arduino ()
-    modifyRemoteRef       :: RemoteRef a -> (Expr a -> Expr a) ->
+    newRemoteRef    :: Expr a -> Arduino (RemoteRef a)
+    readRemoteRef   :: RemoteRef a -> Arduino (Expr a)
+    writeRemoteRef  :: RemoteRef a -> Expr a -> Arduino ()
+    modifyRemoteRef :: RemoteRef a -> (Expr a -> Expr a) ->
                              Arduino ()
 
 instance RemoteReference Bool where
-    newRemoteRef = newRemoteRefB
-    readRemoteRef = readRemoteRefB
-    writeRemoteRef = writeRemoteRefB
-    modifyRemoteRef = modifyRemoteRefB
+    newRemoteRef n      = Arduino $ primitive $ NewRemoteRefB n
+    readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefB n
+    writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefB r e
+    modifyRemoteRef (RemoteRefB i) f = 
+        Arduino $ primitive $ ModifyRemoteRefB (RemoteRefB i) (f $ RefB i)
 
 instance RemoteReference Word8 where
-    newRemoteRef = newRemoteRefW8
-    readRemoteRef = readRemoteRefW8
-    writeRemoteRef = writeRemoteRefW8
-    modifyRemoteRef = modifyRemoteRefW8
+    newRemoteRef n      = Arduino $ primitive $ NewRemoteRefW8 n
+    readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefW8 n
+    writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefW8 r e
+    modifyRemoteRef (RemoteRefW8 i) f = 
+        Arduino $ primitive $ ModifyRemoteRefW8 (RemoteRefW8 i) (f $ RefW8 i)
 
 instance RemoteReference Word16 where
-    newRemoteRef = newRemoteRefW16
-    readRemoteRef = readRemoteRefW16
-    writeRemoteRef = writeRemoteRefW16
-    modifyRemoteRef = modifyRemoteRefW16
+    newRemoteRef n      = Arduino $ primitive $ NewRemoteRefW16 n
+    readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefW16 n
+    writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefW16 r e
+    modifyRemoteRef (RemoteRefW16 i) f = 
+        Arduino $ primitive $ ModifyRemoteRefW16 (RemoteRefW16 i) (f $ RefW16 i)
 
 instance RemoteReference Word32 where
-    newRemoteRef = newRemoteRefW32
-    readRemoteRef = readRemoteRefW32
-    writeRemoteRef = writeRemoteRefW32
-    modifyRemoteRef = modifyRemoteRefW32
+    newRemoteRef n      = Arduino $ primitive $ NewRemoteRefW32 n
+    readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefW32 n
+    writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefW32 r e
+    modifyRemoteRef (RemoteRefW32 i) f = 
+        Arduino $ primitive $ ModifyRemoteRefW32 (RemoteRefW32 i) (f $ RefW32 i)
 
 instance RemoteReference Int8 where
-    newRemoteRef = newRemoteRefI8
-    readRemoteRef = readRemoteRefI8
-    writeRemoteRef = writeRemoteRefI8
-    modifyRemoteRef = modifyRemoteRefI8
+    newRemoteRef n      = Arduino $ primitive $ NewRemoteRefI8 n
+    readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefI8 n
+    writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefI8 r e
+    modifyRemoteRef (RemoteRefI8 i) f = 
+        Arduino $ primitive $ ModifyRemoteRefI8 (RemoteRefI8 i) (f $ RefI8 i)
 
 instance RemoteReference Int16 where
-    newRemoteRef = newRemoteRefI16
-    readRemoteRef = readRemoteRefI16
-    writeRemoteRef = writeRemoteRefI16
-    modifyRemoteRef = modifyRemoteRefI16
+    newRemoteRef n      = Arduino $ primitive $ NewRemoteRefI16 n
+    readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefI16 n
+    writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefI16 r e
+    modifyRemoteRef (RemoteRefI16 i) f = 
+        Arduino $ primitive $ ModifyRemoteRefI16 (RemoteRefI16 i) (f $ RefI16 i)
 
 instance RemoteReference Int32 where
-    newRemoteRef = newRemoteRefI32
-    readRemoteRef = readRemoteRefI32
-    writeRemoteRef = writeRemoteRefI32
-    modifyRemoteRef = modifyRemoteRefI32
+    newRemoteRef n      = Arduino $ primitive $ NewRemoteRefI32 n
+    readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefI32 n
+    writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefI32 r e
+    modifyRemoteRef (RemoteRefI32 i) f = 
+        Arduino $ primitive $ ModifyRemoteRefI32 (RemoteRefI32 i) (f $ RefI32 i)
 
 instance RemoteReference [Word8] where
-    newRemoteRef = newRemoteRefL8
-    readRemoteRef = readRemoteRefL8
-    writeRemoteRef = writeRemoteRefL8
-    modifyRemoteRef = modifyRemoteRefL8
+    newRemoteRef n      = Arduino $ primitive $ NewRemoteRefL8 n
+    readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefL8 n
+    writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefL8 r e
+    modifyRemoteRef (RemoteRefL8 i) f = 
+        Arduino $ primitive $ ModifyRemoteRefL8 (RemoteRefL8 i) (f $ RefList8 i)
 
 instance RemoteReference Float where
-    newRemoteRef = newRemoteRefFloat
-    readRemoteRef = readRemoteRefFloat
-    writeRemoteRef = writeRemoteRefFloat
-    modifyRemoteRef = modifyRemoteRefFloat
+    newRemoteRef n      = Arduino $ primitive $ NewRemoteRefFloat n
+    readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefFloat n
+    writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefFloat r e
+    modifyRemoteRef (RemoteRefFloat i) f = 
+        Arduino $ primitive $ ModifyRemoteRefFloat (RemoteRefFloat i) (f $ RefFloat i)
 
 loop :: Arduino () -> Arduino ()
 loop m = Arduino $ primitive $ Loop m
@@ -766,60 +703,6 @@ queryTaskE tid = Arduino $ primitive $ QueryTaskE tid
 bootTaskE :: Expr [Word8] -> Arduino (Expr Bool)
 bootTaskE tids = Arduino $ primitive $ BootTaskE tids
 
-readRemoteRefB :: RemoteRef Bool -> Arduino (Expr Bool)
-readRemoteRefB n = Arduino $ primitive $ ReadRemoteRefB n
-
-readRemoteRefW8 :: RemoteRef Word8 -> Arduino (Expr Word8)
-readRemoteRefW8 n = Arduino $ primitive $ ReadRemoteRefW8 n
-
-readRemoteRefW16 :: RemoteRef Word16 -> Arduino (Expr Word16)
-readRemoteRefW16 n = Arduino $ primitive $ ReadRemoteRefW16 n
-
-readRemoteRefW32 :: RemoteRef Word32 -> Arduino (Expr Word32)
-readRemoteRefW32 n = Arduino $ primitive $ ReadRemoteRefW32 n
-
-readRemoteRefI8 :: RemoteRef Int8 -> Arduino (Expr Int8)
-readRemoteRefI8 n = Arduino $ primitive $ ReadRemoteRefI8 n
-
-readRemoteRefI16 :: RemoteRef Int16 -> Arduino (Expr Int16)
-readRemoteRefI16 n = Arduino $ primitive $ ReadRemoteRefI16 n
-
-readRemoteRefI32 :: RemoteRef Int32 -> Arduino (Expr Int32)
-readRemoteRefI32 n = Arduino $ primitive $ ReadRemoteRefI32 n
-
-readRemoteRefL8 :: RemoteRef [Word8] -> Arduino (Expr [Word8])
-readRemoteRefL8 n = Arduino $ primitive $ ReadRemoteRefL8 n
-
-readRemoteRefFloat :: RemoteRef Float -> Arduino (Expr Float)
-readRemoteRefFloat n = Arduino $ primitive $ ReadRemoteRefFloat n
-
-newRemoteRefB :: Expr Bool -> Arduino (RemoteRef Bool)
-newRemoteRefB n = Arduino $ primitive $ NewRemoteRefB n
-
-newRemoteRefW8 :: Expr Word8 -> Arduino (RemoteRef Word8)
-newRemoteRefW8 n = Arduino $ primitive $ NewRemoteRefW8 n
-
-newRemoteRefW16 :: Expr Word16 -> Arduino (RemoteRef Word16)
-newRemoteRefW16 n = Arduino $ primitive $ NewRemoteRefW16 n
-
-newRemoteRefW32 :: Expr Word32 -> Arduino (RemoteRef Word32)
-newRemoteRefW32 n = Arduino $ primitive $ NewRemoteRefW32 n
-
-newRemoteRefI8 :: Expr Int8 -> Arduino (RemoteRef Int8)
-newRemoteRefI8 n = Arduino $ primitive $ NewRemoteRefI8 n
-
-newRemoteRefI16 :: Expr Int16 -> Arduino (RemoteRef Int16)
-newRemoteRefI16 n = Arduino $ primitive $ NewRemoteRefI16 n
-
-newRemoteRefI32 :: Expr Int32 -> Arduino (RemoteRef Int32)
-newRemoteRefI32 n = Arduino $ primitive $ NewRemoteRefI32 n
-
-newRemoteRefL8 :: Expr [Word8] -> Arduino (RemoteRef [Word8])
-newRemoteRefL8 n = Arduino $ primitive $ NewRemoteRefL8 n
-
-newRemoteRefFloat :: Expr Float -> Arduino (RemoteRef Float)
-newRemoteRefFloat n = Arduino $ primitive $ NewRemoteRefFloat n
-
 debug :: String -> Arduino ()
 debug msg = Arduino $ primitive $ Debug msg
 
@@ -832,174 +715,67 @@ debugListen = Arduino $ primitive $ DebugListen
 die :: String -> [String] -> Arduino ()
 die msg msgs = Arduino $ primitive $ Die msg msgs
 
-ifThenElseBool :: Bool -> Arduino Bool -> Arduino Bool -> Arduino Bool
-ifThenElseBool b tps eps = Arduino $ primitive $ IfThenElseBool b tps eps
-
-ifThenElseBoolE :: Expr Bool -> Arduino (Expr Bool) -> Arduino (Expr Bool) -> Arduino (Expr Bool)
-ifThenElseBoolE be tps eps = Arduino $ primitive $ IfThenElseBoolE be tps eps
-
-ifThenElseWord8 :: Bool -> Arduino Word8 -> Arduino Word8 -> Arduino Word8
-ifThenElseWord8 b tps eps = Arduino $ primitive $ IfThenElseWord8 b tps eps
-
-ifThenElseWord8E :: Expr Bool -> Arduino (Expr Word8) -> Arduino (Expr Word8) -> Arduino (Expr Word8)
-ifThenElseWord8E be tps eps = Arduino $ primitive $ IfThenElseWord8E be tps eps
-
-ifThenElseWord16 :: Bool -> Arduino Word16 -> Arduino Word16 -> Arduino Word16
-ifThenElseWord16 b tps eps = Arduino $ primitive $ IfThenElseWord16 b tps eps
-
-ifThenElseWord16E :: Expr Bool -> Arduino (Expr Word16) -> Arduino (Expr Word16) -> Arduino (Expr Word16)
-ifThenElseWord16E be tps eps = Arduino $ primitive $ IfThenElseWord16E be tps eps
-
-ifThenElseWord32 :: Bool -> Arduino Word32 -> Arduino Word32 -> Arduino Word32
-ifThenElseWord32 b tps eps = Arduino $ primitive $ IfThenElseWord32 b tps eps
-
-ifThenElseWord32E :: Expr Bool -> Arduino (Expr Word32) -> Arduino (Expr Word32) -> Arduino (Expr Word32)
-ifThenElseWord32E be tps eps = Arduino $ primitive $ IfThenElseWord32E be tps eps
-
-ifThenElseInt8 :: Bool -> Arduino Int8 -> Arduino Int8 -> Arduino Int8
-ifThenElseInt8 b tps eps = Arduino $ primitive $ IfThenElseInt8 b tps eps
-
-ifThenElseInt8E :: Expr Bool -> Arduino (Expr Int8) -> Arduino (Expr Int8) -> Arduino (Expr Int8)
-ifThenElseInt8E be tps eps = Arduino $ primitive $ IfThenElseInt8E be tps eps
-
-ifThenElseInt16 :: Bool -> Arduino Int16 -> Arduino Int16 -> Arduino Int16
-ifThenElseInt16 b tps eps = Arduino $ primitive $ IfThenElseInt16 b tps eps
-
-ifThenElseInt16E :: Expr Bool -> Arduino (Expr Int16) -> Arduino (Expr Int16) -> Arduino (Expr Int16)
-ifThenElseInt16E be tps eps = Arduino $ primitive $ IfThenElseInt16E be tps eps
-
-ifThenElseInt32 :: Bool -> Arduino Int32 -> Arduino Int32 -> Arduino Int32
-ifThenElseInt32 b tps eps = Arduino $ primitive $ IfThenElseInt32 b tps eps
-
-ifThenElseInt32E :: Expr Bool -> Arduino (Expr Int32) -> Arduino (Expr Int32) -> Arduino (Expr Int32)
-ifThenElseInt32E be tps eps = Arduino $ primitive $ IfThenElseInt32E be tps eps
-
-ifThenElseL8 :: Bool -> Arduino [Word8] -> Arduino [Word8] -> Arduino [Word8]
-ifThenElseL8 b tps eps = Arduino $ primitive $ IfThenElseL8 b tps eps
-
-ifThenElseL8E :: Expr Bool -> Arduino (Expr [Word8]) -> Arduino (Expr [Word8]) -> Arduino (Expr [Word8])
-ifThenElseL8E be tps eps = Arduino $ primitive $ IfThenElseL8E be tps eps
-
-ifThenElseFloat :: Bool -> Arduino Float -> Arduino Float -> Arduino Float
-ifThenElseFloat b tps eps = Arduino $ primitive $ IfThenElseFloat b tps eps
-
-ifThenElseFloatE :: Expr Bool -> Arduino (Expr Float) -> Arduino (Expr Float) -> Arduino (Expr Float)
-ifThenElseFloatE be tps eps = Arduino $ primitive $ IfThenElseFloatE be tps eps
-
-whileBool :: Bool -> (Bool -> Bool) -> (Bool -> Arduino Bool) -> Arduino Bool
-whileBool iv bf bdf  = Arduino $ primitive $ WhileBool iv bf bdf
-
-whileBoolE :: Expr Bool -> (Expr Bool -> Expr Bool) -> (Expr Bool -> Arduino (Expr Bool)) -> Arduino (Expr Bool)
-whileBoolE iv bf bdf  = Arduino $ primitive $ WhileBoolE iv bf bdf
-
-whileWord8 :: Word8 -> (Word8 -> Bool) -> (Word8 -> Arduino Word8) -> Arduino Word8
-whileWord8 iv bf bdf  = Arduino $ primitive $ WhileWord8 iv bf bdf
-
-whileWord8E :: Expr Word8 -> (Expr Word8 -> Expr Bool) -> (Expr Word8 -> Arduino (Expr Word8)) -> Arduino (Expr Word8)
-whileWord8E iv bf bdf = Arduino $ primitive $ WhileWord8E iv bf bdf
-
-whileWord16 :: Word16 -> (Word16 -> Bool) -> (Word16 -> Arduino Word16) -> Arduino Word16
-whileWord16 iv bf bdf  = Arduino $ primitive $ WhileWord16 iv bf bdf
-
-whileWord16E :: Expr Word16 -> (Expr Word16 -> Expr Bool) -> (Expr Word16 -> Arduino (Expr Word16)) -> Arduino (Expr Word16)
-whileWord16E iv bf bdf = Arduino $ primitive $ WhileWord16E iv bf bdf
-
-whileWord32 :: Word32 -> (Word32 -> Bool) -> (Word32 -> Arduino Word32) -> Arduino Word32
-whileWord32 iv bf bdf  = Arduino $ primitive $ WhileWord32 iv bf bdf
-
-whileWord32E :: Expr Word32 -> (Expr Word32 -> Expr Bool) -> (Expr Word32 -> Arduino (Expr Word32)) -> Arduino (Expr Word32)
-whileWord32E iv bf bdf = Arduino $ primitive $ WhileWord32E iv bf bdf
-
-whileInt8 :: Int8 -> (Int8 -> Bool) -> (Int8 -> Arduino Int8) -> Arduino Int8
-whileInt8 iv bf bdf = Arduino $ primitive $ WhileInt8 iv bf bdf
-
-whileInt8E :: Expr Int8 -> (Expr Int8 -> Expr Bool) -> (Expr Int8 -> Arduino (Expr Int8)) -> Arduino (Expr Int8)
-whileInt8E iv bf bdf = Arduino $ primitive $ WhileInt8E iv bf bdf
-
-whileInt16 :: Int16 -> (Int16 -> Bool) -> (Int16 -> Arduino Int16) -> Arduino Int16
-whileInt16 iv bf bdf = Arduino $ primitive $ WhileInt16 iv bf bdf
-
-whileInt16E :: Expr Int16 -> (Expr Int16 -> Expr Bool) -> (Expr Int16 -> Arduino (Expr Int16)) -> Arduino (Expr Int16)
-whileInt16E iv bf bdf = Arduino $ primitive $ WhileInt16E iv bf bdf
-
-whileInt32 :: Int32 -> (Int32 -> Bool) -> (Int32 -> Arduino Int32) -> Arduino Int32
-whileInt32 iv bf bdf = Arduino $ primitive $ WhileInt32 iv bf bdf
-
-whileInt32E :: Expr Int32 -> (Expr Int32 -> Expr Bool) -> (Expr Int32 -> Arduino (Expr Int32)) -> Arduino (Expr Int32)
-whileInt32E iv bf bdf = Arduino $ primitive $ WhileInt32E iv bf bdf
-
-whileL8 :: [Word8] -> ([Word8] ->Bool) -> ([Word8] -> Arduino [Word8]) -> Arduino [Word8]
-whileL8 iv bf bdf = Arduino $ primitive $ WhileL8 iv bf bdf
-
-whileL8E :: Expr [Word8] -> (Expr [Word8] -> Expr Bool) -> (Expr [Word8] -> Arduino (Expr [Word8])) -> Arduino (Expr [Word8])
-whileL8E iv bf bdf = Arduino $ primitive $ WhileL8E iv bf bdf
-
-whileFloat :: Float -> (Float -> Bool) -> (Float -> Arduino Float) -> Arduino Float
-whileFloat iv bf bdf = Arduino $ primitive $ WhileFloat iv bf bdf
-
-whileFloatE :: Expr Float -> (Expr Float -> Expr Bool) -> (Expr Float -> Arduino (Expr Float)) -> Arduino (Expr Float)
-whileFloatE iv bf bdf = Arduino $ primitive $ WhileFloatE iv bf bdf
-
 class ExprB a => ArduinoConditional a where
-    ifThenElse          :: Bool -> Arduino a -> Arduino a -> Arduino a
-    ifThenElseE         :: Expr Bool -> Arduino (Expr a) -> Arduino (Expr a) -> Arduino (Expr a)
-    while               :: a -> (a -> Bool) -> (a -> Arduino a) -> Arduino a
-    whileE              :: Expr a -> (Expr a -> Expr Bool) ->
-                             (Expr a -> Arduino (Expr a)) -> Arduino (Expr a)
+    ifThenElse   :: Bool -> Arduino a -> Arduino a -> Arduino a
+    ifThenElseE  :: Expr Bool -> Arduino (Expr a) -> 
+                        Arduino (Expr a) -> Arduino (Expr a)
+    while        :: a -> (a -> Bool) -> (a -> Arduino a) -> Arduino a
+    whileE       :: Expr a -> (Expr a -> Expr Bool) ->
+                        (Expr a -> Arduino (Expr a)) -> Arduino (Expr a)
 
 instance ArduinoConditional Bool where
-    ifThenElse = ifThenElseBool
-    ifThenElseE = ifThenElseBoolE
-    while  = whileBool
-    whileE = whileBoolE
+    ifThenElse b tps eps   = Arduino $ primitive $ IfThenElseBool b tps eps
+    ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseBoolE be tps eps
+    while iv bf bdf        = Arduino $ primitive $ WhileBool iv bf bdf
+    whileE iv bf bdf       = Arduino $ primitive $ WhileBoolE iv bf bdf
 
 instance ArduinoConditional Word8 where
-    ifThenElse = ifThenElseWord8
-    ifThenElseE = ifThenElseWord8E
-    while  = whileWord8
-    whileE = whileWord8E
+    ifThenElse b tps eps   = Arduino $ primitive $ IfThenElseWord8 b tps eps
+    ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseWord8E be tps eps
+    while iv bf bdf        = Arduino $ primitive $ WhileWord8 iv bf bdf
+    whileE iv bf bdf       = Arduino $ primitive $ WhileWord8E iv bf bdf
 
 instance ArduinoConditional Word16 where
-    ifThenElse = ifThenElseWord16
-    ifThenElseE = ifThenElseWord16E
-    while  = whileWord16
-    whileE = whileWord16E
+    ifThenElse b tps eps   = Arduino $ primitive $ IfThenElseWord16 b tps eps
+    ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseWord16E be tps eps
+    while iv bf bdf        = Arduino $ primitive $ WhileWord16 iv bf bdf
+    whileE iv bf bdf       = Arduino $ primitive $ WhileWord16E iv bf bdf
 
 instance ArduinoConditional Word32 where
-    ifThenElse = ifThenElseWord32
-    ifThenElseE = ifThenElseWord32E
-    while  = whileWord32
-    whileE = whileWord32E
+    ifThenElse b tps eps   = Arduino $ primitive $ IfThenElseWord32 b tps eps
+    ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseWord32E be tps eps
+    while iv bf bdf        = Arduino $ primitive $ WhileWord32 iv bf bdf
+    whileE iv bf bdf       = Arduino $ primitive $ WhileWord32E iv bf bdf
 
 instance ArduinoConditional Int8 where
-    ifThenElse = ifThenElseInt8
-    ifThenElseE = ifThenElseInt8E
-    while  = whileInt8
-    whileE = whileInt8E
+    ifThenElse b tps eps   = Arduino $ primitive $ IfThenElseInt8 b tps eps
+    ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseInt8E be tps eps
+    while iv bf bdf        = Arduino $ primitive $ WhileInt8 iv bf bdf
+    whileE iv bf bdf       = Arduino $ primitive $ WhileInt8E iv bf bdf
 
 instance ArduinoConditional Int16 where
-    ifThenElse = ifThenElseInt16
-    ifThenElseE = ifThenElseInt16E
-    while  = whileInt16
-    whileE = whileInt16E
+    ifThenElse b tps eps   = Arduino $ primitive $ IfThenElseInt16 b tps eps
+    ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseInt16E be tps eps
+    while iv bf bdf        = Arduino $ primitive $ WhileInt16 iv bf bdf
+    whileE iv bf bdf       = Arduino $ primitive $ WhileInt16E iv bf bdf
 
 instance ArduinoConditional Int32 where
-    ifThenElse = ifThenElseInt32
-    ifThenElseE = ifThenElseInt32E
-    while  = whileInt32
-    whileE = whileInt32E
+    ifThenElse b tps eps   = Arduino $ primitive $ IfThenElseInt32 b tps eps
+    ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseInt32E be tps eps
+    while iv bf bdf        = Arduino $ primitive $ WhileInt32 iv bf bdf
+    whileE iv bf bdf       = Arduino $ primitive $ WhileInt32E iv bf bdf
 
 instance ArduinoConditional [Word8] where
-    ifThenElse = ifThenElseL8
-    ifThenElseE = ifThenElseL8E
-    while  = whileL8
-    whileE = whileL8E
+    ifThenElse b tps eps   = Arduino $ primitive $ IfThenElseL8 b tps eps
+    ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseL8E be tps eps
+    while iv bf bdf        = Arduino $ primitive $ WhileL8 iv bf bdf
+    whileE iv bf bdf       = Arduino $ primitive $ WhileL8E iv bf bdf
 
 instance ArduinoConditional Float where
-    ifThenElse = ifThenElseFloat
-    ifThenElseE = ifThenElseFloatE
-    while  = whileFloat
-    whileE = whileFloatE
+    ifThenElse b tps eps   = Arduino $ primitive $ IfThenElseFloat b tps eps
+    ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseFloatE be tps eps
+    while iv bf bdf        = Arduino $ primitive $ WhileFloat iv bf bdf
+    whileE iv bf bdf       = Arduino $ primitive $ WhileFloatE iv bf bdf
 
 class (ExprB a, ExprB b) => ArduinoIterate a b where
     iterateE  :: Expr a -> (Expr a -> Arduino (ExprEither a b)) -> Arduino (Expr b)
