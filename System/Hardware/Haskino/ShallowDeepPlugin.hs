@@ -21,7 +21,6 @@ import System.Hardware.Haskino.ShallowDeepPlugin.RecurPass
 import System.Hardware.Haskino.ShallowDeepPlugin.RepAbsFusePass
 import System.Hardware.Haskino.ShallowDeepPlugin.RepPushPass
 import System.Hardware.Haskino.ShallowDeepPlugin.ReturnsPass
-import System.Hardware.Haskino.ShallowDeepPlugin.WhilePass
 import System.Hardware.Haskino.ShallowDeepPlugin.CoreShow
 
 plugin :: Plugin
@@ -36,7 +35,6 @@ install _ todo = do
   let absLambdaToDo = [CoreDoPluginPass "AbsLambda" absLambdaPass]
   let condToDo = [CoreDoPluginPass "CondTransform" condPass]
   let recurToDo = [CoreDoPluginPass "RecursionTransform" recurPass]
-  let whileToDo = [CoreDoPluginPass "WhileTransform" whilePass]
   let returnsToDo = [CoreDoPluginPass "ReturnsTransform" returnsPass]
   let bindArgRetAppToDo = [CoreDoPluginPass "BindArgRetAppTransform" bindChangeArgRetAppPass]
   let commProcToDo = [CoreDoPluginPass "CommProcTransform" commProcPass]

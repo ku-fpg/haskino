@@ -41,8 +41,6 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            ifThenElseNameTH,
                                            ifThenElseEitherNameTH,
                                            ifThenElseUnitNameTH,
-                                           whileTH,
-                                           whileETH,
                                            iterateETH,
                                            leftNameTH,
                                            rightNameTH,
@@ -98,8 +96,6 @@ repNameTH              = 'System.Hardware.Haskino.rep_
 ifThenElseNameTH       = 'System.Hardware.Haskino.ifThenElseE
 ifThenElseUnitNameTH   = 'System.Hardware.Haskino.ifThenElseUnitE
 ifThenElseEitherNameTH = 'System.Hardware.Haskino.ifThenElseEither
-whileTH                = 'System.Hardware.Haskino.while
-whileETH               = 'System.Hardware.Haskino.whileE
 iterateETH             = 'System.Hardware.Haskino.iterateE
 leftNameTH             = 'System.Hardware.Haskino.ExprLeft
 rightNameTH            = 'System.Hardware.Haskino.ExprRight

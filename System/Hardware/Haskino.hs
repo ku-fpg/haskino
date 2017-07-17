@@ -52,9 +52,7 @@ module System.Hardware.Haskino (
   , stepper2Pin, stepper2PinE, stepper4Pin, stepper4PinE, stepperSetSpeed
   , stepperSetSpeedE, stepperStep ,stepperStepE
   -- ** Control structures
-  -- ToDo: Cleanup IfThenElse's
-  --, loop, ifThenElseUnit, ifThenElseUnitE, loopE, forInE, ArduinoConditional(..)
-  , loop, loopE, ArduinoConditional(..), ifThenElseUnit, ifThenElseUnitE, forInE
+  , loop, loopE, ArduinoConditional(..), ifThenElseUnitE, forInE
   -- ** Expressions
   , Expr(..), RemoteRef, lit, newRemoteRef, readRemoteRef, writeRemoteRef
   , modifyRemoteRef, (++*), (*:), (!!*), len, pack, litString, showE, showFFloatE

@@ -507,9 +507,6 @@ loopE ps = Arduino $ primitive $ LoopE ps
 forInE :: Expr [Word8] -> (Expr Word8 -> Arduino ()) -> Arduino ()
 forInE ws f = Arduino $ primitive $ ForInE ws f
 
-ifThenElseUnit :: Bool -> Arduino () -> Arduino () -> Arduino ()
-ifThenElseUnit b tps eps = Arduino $ primitive $ IfThenElseUnit b tps eps
-
 ifThenElseUnitE :: Expr Bool -> Arduino () -> Arduino () -> Arduino ()
 ifThenElseUnitE be tps eps = Arduino $ primitive $ IfThenElseUnitE be tps eps
 
@@ -716,65 +713,45 @@ die :: String -> [String] -> Arduino ()
 die msg msgs = Arduino $ primitive $ Die msg msgs
 
 class ExprB a => ArduinoConditional a where
-    ifThenElse   :: Bool -> Arduino a -> Arduino a -> Arduino a
     ifThenElseE  :: Expr Bool -> Arduino (Expr a) -> 
                         Arduino (Expr a) -> Arduino (Expr a)
-    while        :: a -> (a -> Bool) -> (a -> Arduino a) -> Arduino a
     whileE       :: Expr a -> (Expr a -> Expr Bool) ->
                         (Expr a -> Arduino (Expr a)) -> Arduino (Expr a)
 
 instance ArduinoConditional Bool where
-    ifThenElse b tps eps   = Arduino $ primitive $ IfThenElseBool b tps eps
     ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseBoolE be tps eps
-    while iv bf bdf        = Arduino $ primitive $ WhileBool iv bf bdf
     whileE iv bf bdf       = Arduino $ primitive $ WhileBoolE iv bf bdf
 
 instance ArduinoConditional Word8 where
-    ifThenElse b tps eps   = Arduino $ primitive $ IfThenElseWord8 b tps eps
     ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseWord8E be tps eps
-    while iv bf bdf        = Arduino $ primitive $ WhileWord8 iv bf bdf
     whileE iv bf bdf       = Arduino $ primitive $ WhileWord8E iv bf bdf
 
 instance ArduinoConditional Word16 where
-    ifThenElse b tps eps   = Arduino $ primitive $ IfThenElseWord16 b tps eps
     ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseWord16E be tps eps
-    while iv bf bdf        = Arduino $ primitive $ WhileWord16 iv bf bdf
     whileE iv bf bdf       = Arduino $ primitive $ WhileWord16E iv bf bdf
 
 instance ArduinoConditional Word32 where
-    ifThenElse b tps eps   = Arduino $ primitive $ IfThenElseWord32 b tps eps
     ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseWord32E be tps eps
-    while iv bf bdf        = Arduino $ primitive $ WhileWord32 iv bf bdf
     whileE iv bf bdf       = Arduino $ primitive $ WhileWord32E iv bf bdf
 
 instance ArduinoConditional Int8 where
-    ifThenElse b tps eps   = Arduino $ primitive $ IfThenElseInt8 b tps eps
     ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseInt8E be tps eps
-    while iv bf bdf        = Arduino $ primitive $ WhileInt8 iv bf bdf
     whileE iv bf bdf       = Arduino $ primitive $ WhileInt8E iv bf bdf
 
 instance ArduinoConditional Int16 where
-    ifThenElse b tps eps   = Arduino $ primitive $ IfThenElseInt16 b tps eps
     ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseInt16E be tps eps
-    while iv bf bdf        = Arduino $ primitive $ WhileInt16 iv bf bdf
     whileE iv bf bdf       = Arduino $ primitive $ WhileInt16E iv bf bdf
 
 instance ArduinoConditional Int32 where
-    ifThenElse b tps eps   = Arduino $ primitive $ IfThenElseInt32 b tps eps
     ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseInt32E be tps eps
-    while iv bf bdf        = Arduino $ primitive $ WhileInt32 iv bf bdf
     whileE iv bf bdf       = Arduino $ primitive $ WhileInt32E iv bf bdf
 
 instance ArduinoConditional [Word8] where
-    ifThenElse b tps eps   = Arduino $ primitive $ IfThenElseL8 b tps eps
     ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseL8E be tps eps
-    while iv bf bdf        = Arduino $ primitive $ WhileL8 iv bf bdf
     whileE iv bf bdf       = Arduino $ primitive $ WhileL8E iv bf bdf
 
 instance ArduinoConditional Float where
-    ifThenElse b tps eps   = Arduino $ primitive $ IfThenElseFloat b tps eps
     ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseFloatE be tps eps
-    while iv bf bdf        = Arduino $ primitive $ WhileFloat iv bf bdf
     whileE iv bf bdf       = Arduino $ primitive $ WhileFloatE iv bf bdf
 
 class (ExprB a, ExprB b) => ArduinoIterate a b where
@@ -844,6 +821,13 @@ loopE' bf = iterateE LitUnit ibf
     ibf _ = do
         bf
         return $ ExprLeft LitUnit
+
+forInE' :: Expr [Word8] -> (Expr Word8 -> Arduino ()) -> Arduino (Expr ())
+forInE' ws bf = iterateE 0 ibf
+  where
+    ibf i = do
+        bf (ws !!* i)
+        ifThenElseEither (i `lessE` (len ws)) (return $ ExprLeft (i+1)) (return $ ExprRight LitUnit)
 -}
 
 -- | A response, as returned from the Arduino
