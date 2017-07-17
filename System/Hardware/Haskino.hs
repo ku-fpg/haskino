@@ -64,7 +64,7 @@ module System.Hardware.Haskino (
   -- ** Compiler
   , compileProgram
   -- ** Recursion
-  , Iter(..), done, step, iterLoop, recurErr, ExprEither(..), ArduinoIterate(..)  
+  , ArduinoIterate(..), ExprEither(..) 
  )
  where
 

@@ -829,6 +829,23 @@ instance ArduinoIterate () () where
     iterateE iv bf  = Arduino $ primitive $ IterateUnitUnitE iv bf
     ifThenElseEither be te ee = Arduino $ primitive $ IfThenElseUnitUnit be te ee
 
+{-
+whileE' :: ArduinoIterate a a => Expr a -> (Expr a -> Expr Bool) ->
+                     (Expr a -> Arduino (Expr a)) -> Arduino (Expr a)
+whileE' i tf bf = iterateE i ibf
+  where
+    ibf i' = do
+        res <- bf i'
+        ifThenElseEither (tf res) (return $ ExprLeft res) (return $ ExprRight res)
+
+loopE' :: Arduino a -> Arduino (Expr ())
+loopE' bf = iterateE LitUnit ibf
+  where
+    ibf _ = do
+        bf
+        return $ ExprLeft LitUnit
+-}
+
 -- | A response, as returned from the Arduino
 data Response = DelayResp
               | Firmware Word16                      -- ^ Firmware version (maj/min)
@@ -1135,21 +1152,3 @@ data Processor = ATMEGA8
                | QUARK
                | UNKNOWN_PROCESSOR
     deriving (Eq, Show, Enum)
-
--- Recursion Transformer types
-data Iter a b
-    = Step a
-    | Done b
-
-step :: a -> Iter a b
-step s = Step s
-
-done :: b -> Iter a b
-done d = Done d
-
-iterLoop :: (a -> Arduino (Iter a b)) -> Arduino a -> Arduino b
-iterLoop _ _ = error "Cannot execute iterLoop"
-
-recurErr :: Arduino a
-recurErr = error "RecurPass Error"
-

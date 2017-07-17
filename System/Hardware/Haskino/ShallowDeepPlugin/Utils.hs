@@ -58,7 +58,6 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            fmapNameTH,
                                            monadClassTyConTH,
                                            notNameTH,
-                                           recurErrNameTH,
                                            returnNameTH) where
 
 import CoreMonad
@@ -99,7 +98,6 @@ repNameTH              = 'System.Hardware.Haskino.rep_
 ifThenElseNameTH       = 'System.Hardware.Haskino.ifThenElseE
 ifThenElseUnitNameTH   = 'System.Hardware.Haskino.ifThenElseUnitE
 ifThenElseEitherNameTH = 'System.Hardware.Haskino.ifThenElseEither
-recurErrNameTH         = 'System.Hardware.Haskino.recurErr
 whileTH                = 'System.Hardware.Haskino.while
 whileETH               = 'System.Hardware.Haskino.whileE
 iterateETH             = 'System.Hardware.Haskino.iterateE
