@@ -14,7 +14,7 @@ typeNameList       = ["Unit", "Bool", "W8", "W16", "W32",
                       "I8", "I16", "I32", "L8", "Float"]
 typeList           = ["()", "Bool", "Word8", "Word16", "Word32",
                       "Int8", "Int16", "Int32", "[Word8]", "Float"]
-bindList           = ["()", "B", "W8", "W16", "32",
+bindList           = ["Unit", "B", "W8", "W16", "W32",
                       "I8", "I16", "I32", "List8", "Float"]
 compTypeList       = ["Unit", "Bool", "Word8", "Word16", "Word32",
                       "Int8", "Int16", "Int32", "List8", "Float"]
@@ -41,7 +41,7 @@ genIteratePrim :: ((String, String) , (String, String)) -> String
 genIteratePrim ((tyn1,ty1), (tyn2, ty2)) = 
     "     Iterate" ++ tyn1 ++ tyn2 ++ "E" ++ spaces ++ ":: Expr " ++ ty1 ++ 
     " -> (Expr " ++ ty1 ++ " -> Arduino (ExprEither " ++ ty1 ++ " " ++
-    ty2 ++ " )) -> ArduinoPrimitive (Expr " ++ ty2 ++ " )" ++ "\n"
+    ty2 ++ ")) -> ArduinoPrimitive (Expr " ++ ty2 ++ ")" ++ "\n"
   where
     strLens = (length tyn1) + (length tyn2)
     spaces = replicate (13 - strLens) ' '
@@ -63,7 +63,7 @@ genShowIter ((tyn1,ty1), (tyn2, ty2)) =
     "          i <- nextBind\n" ++
     "          let bi = RemBind" ++ ty1 ++ " i\n" ++
     "          j <- nextBind\n" ++
-    "          let bj = RemBind" ++ ty2 ++ " i\n" ++
+    "          let bj = RemBind" ++ ty2 ++ " j\n" ++
     "          showIterateProcedure i bi j bj iv bf\n" ++
     "          return bj\n"
 
@@ -78,7 +78,7 @@ genCompIter ((tyn1, ty1, cty1), (tyn2, ty2, cty2)) =
     "    i <- nextBind\n" ++
     "    let bi = RemBind" ++ ty1 ++ " i\n" ++
     "    j <- nextBind\n" ++
-    "    let bj = RemBind" ++ ty2 ++ " i\n" ++
+    "    let bj = RemBind" ++ ty2 ++ " j\n" ++
     "    compileIterateProcedure " ++ cty1 ++ "Type " ++ cty2 ++ "Type i bi j bj iv bf\n" ++
     "    return bj\n"
 
