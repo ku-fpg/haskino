@@ -1885,31 +1885,31 @@ static bool handleExprRet(int size, const byte *msg, CONTEXT *context)
 
     switch (exprType)
         {
-        case REF_BOOL:
+        case EXPR_BOOL:
             storeBoolBind(expr, context, bind);
             break;
-        case REF_WORD8:
+        case EXPR_WORD8:
             storeWord8Bind(expr, context, bind);
             break;
-        case REF_WORD16:
+        case EXPR_WORD16:
             storeWord16Bind(expr, context, bind);
             break;
-        case REF_WORD32:
+        case EXPR_WORD32:
             storeWord32Bind(expr, context, bind);
             break;
-        case REF_INT8:
+        case EXPR_INT8:
             storeInt8Bind(expr, context, bind);
             break;
-        case REF_INT16:
+        case EXPR_INT16:
             storeInt16Bind(expr, context, bind);
             break;
-        case REF_INT32:
+        case EXPR_INT32:
             storeInt32Bind(expr, context, bind);
             break;
-        case REF_LIST8:
+        case EXPR_LIST8:
             storeList8Bind(expr, context, bind);
             break;
-        case REF_FLOAT:
+        case EXPR_FLOAT:
             storeFloatBind(expr, context, bind);
             break;
         }

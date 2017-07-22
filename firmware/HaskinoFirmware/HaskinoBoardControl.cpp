@@ -119,19 +119,20 @@ static bool handleForIn(int size, const byte *msg, CONTEXT *context)
     bool alloc;
     byte *listPtr = evalList8Expr(&expr, context, &alloc);
     byte listSize = listPtr[1];
-    byte bindIndex = expr[1];
-    byte *codeBlock = expr + 2;
+    byte bindIndex = expr[2];
+    byte *codeBlock = expr + 3;
     int forSize = size - (codeBlock - msg);
     bool rescheduled = context->task && context->task->rescheduled;
     int i;
 
-    context->bind[bindIndex * BIND_SPACING] = EXPR(EXPR_WORD8, EXPR_LIT);
+    context->bind[bindIndex * BIND_SPACING] = EXPR_WORD8;
+    context->bind[bindIndex * BIND_SPACING + 1] = EXPR_LIT;
     for (i=rescheduled ? 
             context->blockStatus[context->recallBlockLevel+1].info.index : 0;
          i<listSize;
          i++)
         {
-        context->bind[bindIndex * BIND_SPACING + 1] = listPtr[i+2];
+        context->bind[bindIndex * BIND_SPACING + 2] = listPtr[i+3];
         context->blockStatus[context->currBlockLevel+1].info.index = i;
         rescheduled = runCodeBlock(forSize, codeBlock, context);
         if (rescheduled)
@@ -153,23 +154,26 @@ static int typeToSize(int type, byte *src)
     {
     switch(type)
         {
-        case REF_BOOL:
-        case REF_WORD16:
-        case REF_INT16:
-            return 3;
-        case REF_WORD8:
-        case REF_INT8:
+        case EXPR_UNIT:
             return 2;
-        case REF_LIST8:
-            return src[1] + 2;
-        case REF_WORD32:
-        case REF_INT32:
-        case REF_FLOAT:
+        case EXPR_BOOL:
+        case EXPR_WORD16:
+        case EXPR_INT16:
+            return 4;
+        case EXPR_WORD8:
+        case EXPR_INT8:
+            return 3;
+        case EXPR_LIST8:
+            return src[2] + 3;
+        case EXPR_WORD32:
+        case EXPR_INT32:
+        case EXPR_FLOAT:
         default:
-            return 5;
+            return 6;
         }
     } 
 
+// TBD MDG - not updated for new expressions
 static bool handleWhile(int size, const byte *msg, CONTEXT *context)
     {
     byte bind = msg[1];
@@ -182,11 +186,10 @@ static bool handleWhile(int size, const byte *msg, CONTEXT *context)
     byte exprType;
     byte *codeBlock;
     int whileSize;
-    byte whileReply[5];
     
     initLength = *expr++;
     initExpr = expr;
-    exprType = *initExpr >> EXPR_TYPE_SHFT;
+    exprType = initExpr[0];
     expr += initLength;
     condExpr = expr;
 
@@ -194,31 +197,31 @@ static bool handleWhile(int size, const byte *msg, CONTEXT *context)
         {
         switch (exprType)
             {
-            case REF_BOOL:
+            case EXPR_BOOL:
                 storeBoolBind(initExpr, context, bind);
                 break;
-            case REF_WORD8:
+            case EXPR_WORD8:
                 storeWord8Bind(initExpr, context, bind);
                 break;
-            case REF_WORD16:
+            case EXPR_WORD16:
                 storeWord16Bind(initExpr, context, bind);
                 break;
-            case REF_WORD32:
+            case EXPR_WORD32:
                 storeWord32Bind(initExpr, context, bind);
                 break;
-            case REF_INT8:
+            case EXPR_INT8:
                 storeInt8Bind(initExpr, context, bind);
                 break;
-            case REF_INT16:
+            case EXPR_INT16:
                 storeInt16Bind(initExpr, context, bind);
                 break;
-            case REF_INT32:
+            case EXPR_INT32:
                 storeInt32Bind(initExpr, context, bind);
                 break;
-            case REF_LIST8:
+            case EXPR_LIST8:
                 storeList8Bind(initExpr, context, bind);
                 break;
-            case REF_FLOAT:
+            case EXPR_FLOAT:
                 storeFloatBind(initExpr, context, bind);
                 break;
             }
@@ -258,7 +261,7 @@ static bool handleIfThenElse(int size, const byte *msg, CONTEXT *context)
     byte *codeBlock = expr;
     bool test;
     bool rescheduled = context->task && context->task->rescheduled;
-    byte ifReply[5];
+    byte ifReply[6];
 
     if (rescheduled)
         {
@@ -282,7 +285,7 @@ static bool handleIfThenElse(int size, const byte *msg, CONTEXT *context)
         rescheduled = runCodeBlock(elseSize, codeBlock + thenSize, context);
         }
 
-    if (!rescheduled && type != REF_UNIT)
+    if (!rescheduled)
         sendReply( typeToSize(type, &context->bind[bind * BIND_SPACING]),
                    BC_RESP_IF_THEN_ELSE, &context->bind[bind * BIND_SPACING],
                    context, bind);

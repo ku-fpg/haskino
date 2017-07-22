@@ -89,11 +89,12 @@ static bool handleRequestMicros(int size, const byte *msg, CONTEXT *context)
     {
     byte bind = msg[1];
     uint32_t ms;
-    byte microReply[5];
+    byte microReply[6];
 
-    microReply[0] = EXPR(EXPR_WORD32, EXPR_LIT);
+    microReply[0] = EXPR_WORD32;
+    microReply[1] = EXPR_LIT;
     ms = micros();
-    memcpy(&microReply[1], &ms, sizeof(ms));
+    memcpy(&microReply[2], &ms, sizeof(ms));
 
     sendReply(sizeof(microReply), BS_RESP_MICROS, 
               (byte *) &microReply, context, bind);
@@ -104,11 +105,12 @@ static bool handleRequestMillis(int size, const byte *msg, CONTEXT *context)
     {
     byte bind = msg[1];
     uint32_t ms;
-    byte milliReply[5];
+    byte milliReply[6];
 
-    milliReply[0] = EXPR(EXPR_WORD32, EXPR_LIT);
+    milliReply[0] = EXPR_WORD32;
+    milliReply[1] = EXPR_LIT;
     ms = millis();
-    memcpy(&milliReply[1], &ms, sizeof(ms));
+    memcpy(&milliReply[2], &ms, sizeof(ms));
 
     sendReply(sizeof(uint32_t), BS_RESP_MILLIS, 
               (byte *) &milliReply, context, bind);
@@ -125,7 +127,7 @@ static bool handleDebug(int size, const byte *msg, CONTEXT *context)
     /* Send the output of the debug with no context, so that it will
      * always go out the serial port, even if we are executing a code 
      * block */
-    sendReply(string[1], BS_RESP_STRING, &string[2], NULL, 0);
+    sendReply(string[2], BS_RESP_STRING, &string[3], NULL, 0);
     /* Send the debug reply so if we are not executing a code block
      * host will continue */
     sendReply(0, BS_RESP_DEBUG, NULL, context, bind);

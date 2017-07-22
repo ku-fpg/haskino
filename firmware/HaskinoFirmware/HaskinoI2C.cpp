@@ -60,11 +60,12 @@ static bool handleRead(int size, const byte *msg, CONTEXT *context)
 #endif
         }
 
-    localMem = (byte *) malloc(byteAvail+2);
-    local = &localMem[2];
+    localMem = (byte *) malloc(byteAvail+3);
+    local = &localMem[3];
 
-    localMem[0] = EXPR_L(EXPR_LIT);
-    localMem[1] = byteAvail;
+    localMem[0] = EXPR_LIST8;
+    localMem[1] = EXPR_LIT;
+    localMem[2] = byteAvail;
 
     for (int i = 0; i < byteAvail; i++)
         { 
@@ -77,7 +78,7 @@ static bool handleRead(int size, const byte *msg, CONTEXT *context)
         }
     else 
         {
-        sendReply(byteAvail+2, I2C_RESP_READ, localMem, context, bind);
+        sendReply(byteAvail+3, I2C_RESP_READ, localMem, context, bind);
         free(localMem);    
         }
     return false;

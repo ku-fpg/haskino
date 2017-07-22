@@ -339,8 +339,8 @@ static bool handleQueryAll(int size, const byte *msg, CONTEXT *context)
     byte bind = msg[1];
     TASK *task = firstTask;
     int taskCount = getTaskCount();
-    byte* localMem = (byte *) malloc(taskCount+2);
-    byte* local = &localMem[2];
+    byte* localMem = (byte *) malloc(taskCount+3);
+    byte* local = &localMem[3];
     int i = 0;
 
     if (!localMem)
@@ -351,7 +351,8 @@ static bool handleQueryAll(int size, const byte *msg, CONTEXT *context)
         return false;
         }
 
-    localMem[0] = EXPR_L(EXPR_LIT);
+    localMem[0] = EXPR_LIST8;
+    localMem[0] = EXPR_LIT;
 
     while(task != NULL && i < taskCount)
         {
@@ -360,7 +361,7 @@ static bool handleQueryAll(int size, const byte *msg, CONTEXT *context)
         i++;
         }
 
-    localMem[1] = i;
+    localMem[2] = i;
 
     if (context->currBlockLevel >= 0)
         {
@@ -368,7 +369,7 @@ static bool handleQueryAll(int size, const byte *msg, CONTEXT *context)
         }
     else
         {
-        sendReply(i+2, SCHED_RESP_QUERY_ALL, localMem, context, bind);
+        sendReply(i+3, SCHED_RESP_QUERY_ALL, localMem, context, bind);
         free(localMem);    
         }
     return false;
@@ -398,7 +399,7 @@ static bool handleBootTask(int size, const byte *msg, CONTEXT *context)
     byte *expr = (byte *) &msg[2];
     bool alloc;
     byte *ids = evalList8Expr(&expr, context, &alloc);
-    byte bootReply[2];
+    byte bootReply[3];
     byte status = 1;
     unsigned int index = BOOT_TASK_INDEX_START;
     unsigned int idsLen = ids[1];
@@ -469,8 +470,9 @@ static bool handleBootTask(int size, const byte *msg, CONTEXT *context)
     /* Write the number of boot tasks */
     EEPROM[ 4 ] = taskCount;
 
-    bootReply[0] = EXPR(EXPR_BOOL, EXPR_LIT);
-    bootReply[1] = status;
+    bootReply[0] = EXPR_BOOL;
+    bootReply[1] = EXPR_LIT;
+    bootReply[2] = status;
 
     sendReply(sizeof(bootReply), SCHED_RESP_BOOT_TASK, 
               bootReply, context, bind);

@@ -36,10 +36,11 @@ static bool handleReadPin(int size, const byte *msg, CONTEXT *context)
     byte bind = msg[1];
     byte *expr = (byte *) &msg[2];
     byte pinNo = evalWord8Expr(&expr, context);
-    byte digitalReply[2];
+    byte digitalReply[3];
 
-    digitalReply[0] = EXPR(EXPR_BOOL, EXPR_LIT);
-    digitalReply[1] = digitalRead(pinNo);
+    digitalReply[0] = EXPR_BOOL;
+    digitalReply[1] = EXPR_LIT;
+    digitalReply[2] = digitalRead(pinNo);
 
     sendReply(sizeof(digitalReply), DIG_RESP_READ_PIN, 
               digitalReply, context, bind);
@@ -64,10 +65,11 @@ static bool handleReadPort(int size, const byte *msg, CONTEXT *context)
     byte *expr = (byte *) &msg[2];
     byte pinNo = evalWord8Expr(&expr, context);
     byte mask = evalWord8Expr(&expr, context);
-    byte digitalReply[2];
+    byte digitalReply[3];
 
-    digitalReply[0] = EXPR(EXPR_WORD8, EXPR_LIT);
-    digitalReply[1] = 0;
+    digitalReply[0] = EXPR_WORD8;
+    digitalReply[1] = EXPR_LIT;
+    digitalReply[2] = 0;
     for (int i=0;i<8;i++)
         {
         if ((bits[i] & mask) && digitalRead(pinNo+i))
