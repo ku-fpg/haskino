@@ -1879,8 +1879,8 @@ uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc)
 
 static bool handleExprRet(int size, const byte *msg, CONTEXT *context)
     {
-    byte bind = msg[2];
-    byte *expr = (byte *) &msg[3];
+    byte bind = msg[1];
+    byte *expr = (byte *) &msg[2];
     byte exprType = expr[0];
 
     switch (exprType)
