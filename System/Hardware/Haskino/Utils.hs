@@ -98,3 +98,6 @@ bytesToFloat (a,b,c,d) = case e of
 
 stringToBytes :: String -> [Word8]
 stringToBytes s = map (\d -> fromIntegral $ ord d) s
+
+toW8 :: Enum a => a -> Word8
+toW8 = fromIntegral . fromEnum

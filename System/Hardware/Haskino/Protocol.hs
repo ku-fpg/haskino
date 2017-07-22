@@ -130,42 +130,24 @@ packageCommand (CreateTaskE tid m) = do
     addToTask tds' = framePackage $ buildCommand SCHED_CMD_ADD_TO_TASK ((packageExpr tid) ++ 
                                                                           (packageExpr (LitW8 (fromIntegral (B.length tds')))) ++ 
                                                                           (B.unpack tds'))
-packageCommand (WriteRemoteRefB (RemoteRefB i) e) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_BOOL, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e)
-packageCommand (WriteRemoteRefW8 (RemoteRefW8 i) e) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD8, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e)
-packageCommand (WriteRemoteRefW16 (RemoteRefW16 i) e) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD16, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e)
-packageCommand (WriteRemoteRefW32 (RemoteRefW32 i) e) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD32, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e)
-packageCommand (WriteRemoteRefI8 (RemoteRefI8 i) e) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT8, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e)
-packageCommand (WriteRemoteRefI16 (RemoteRefI16 i) e) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT16, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e)
-packageCommand (WriteRemoteRefI32 (RemoteRefI32 i) e) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT32, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e)
-packageCommand (WriteRemoteRefL8 (RemoteRefL8 i) e) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_LIST8, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e)
-packageCommand (WriteRemoteRefFloat (RemoteRefFloat i) e) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_FLOAT, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr e)
-packageCommand (ModifyRemoteRefB (RemoteRefB i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_BOOL, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
-packageCommand (ModifyRemoteRefW8 (RemoteRefW8 i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD8, exprCmdVal EXPR_WORD8 EXPR_LIT,fromIntegral i] ++ packageExpr f)
-packageCommand (ModifyRemoteRefW16 (RemoteRefW16 i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD16, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
-packageCommand (ModifyRemoteRefW32 (RemoteRefW32 i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_WORD32, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
-packageCommand (ModifyRemoteRefI8 (RemoteRefI8 i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT8, exprCmdVal EXPR_WORD8 EXPR_LIT,fromIntegral i] ++ packageExpr f)
-packageCommand (ModifyRemoteRefI16 (RemoteRefI16 i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT16, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
-packageCommand (ModifyRemoteRefI32 (RemoteRefI32 i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_INT32, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
-packageCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_LIST8, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
-packageCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) =
-    addCommand REF_CMD_WRITE ([fromIntegral $ fromEnum REF_FLOAT, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i] ++ packageExpr f)
+packageCommand (WriteRemoteRefB (RemoteRefB i) e) = addWriteRefCommand EXPR_BOOL i e
+packageCommand (WriteRemoteRefW8 (RemoteRefW8 i) e) = addWriteRefCommand EXPR_WORD8 i e
+packageCommand (WriteRemoteRefW16 (RemoteRefW16 i) e) = addWriteRefCommand EXPR_WORD16 i e
+packageCommand (WriteRemoteRefW32 (RemoteRefW32 i) e) = addWriteRefCommand EXPR_WORD32 i e
+packageCommand (WriteRemoteRefI8 (RemoteRefI8 i) e) = addWriteRefCommand EXPR_INT8 i e
+packageCommand (WriteRemoteRefI16 (RemoteRefI16 i) e) = addWriteRefCommand EXPR_INT16 i e
+packageCommand (WriteRemoteRefI32 (RemoteRefI32 i) e) = addWriteRefCommand EXPR_INT32 i e
+packageCommand (WriteRemoteRefL8 (RemoteRefL8 i) e) = addWriteRefCommand EXPR_LIST8 i e
+packageCommand (WriteRemoteRefFloat (RemoteRefFloat i) e) = addWriteRefCommand EXPR_FLOAT i e
+packageCommand (ModifyRemoteRefB (RemoteRefB i) f) = addWriteRefCommand EXPR_BOOL i f
+packageCommand (ModifyRemoteRefW8 (RemoteRefW8 i) f) = addWriteRefCommand EXPR_WORD8 i f
+packageCommand (ModifyRemoteRefW16 (RemoteRefW16 i) f) = addWriteRefCommand EXPR_WORD16 i f
+packageCommand (ModifyRemoteRefW32 (RemoteRefW32 i) f) = addWriteRefCommand EXPR_WORD32 i f
+packageCommand (ModifyRemoteRefI8 (RemoteRefI8 i) f) = addWriteRefCommand EXPR_INT8 i f
+packageCommand (ModifyRemoteRefI16 (RemoteRefI16 i) f) = addWriteRefCommand EXPR_INT16 i f
+packageCommand (ModifyRemoteRefI32 (RemoteRefI32 i) f) = addWriteRefCommand EXPR_INT32 i f
+packageCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) = addWriteRefCommand EXPR_LIST8 i f
+packageCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) = addWriteRefCommand EXPR_FLOAT i f
 packageCommand (LoopE cb) = do
     (_, p) <- packageCodeBlock cb
     l <- addCommand BC_CMD_LOOP (B.unpack p)
@@ -180,9 +162,13 @@ packageCommand (IfThenElseUnitE e cb1 cb2) = do
     (_, pc1) <- packageCodeBlock cb1
     (_, pc2) <- packageCodeBlock cb2
     let thenSize = word16ToBytes $ fromIntegral (B.length pc1)
-    i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum REF_UNIT, 0] ++ thenSize ++ (packageExpr e))
+    i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum EXPR_UNIT, 0] ++ thenSize ++ (packageExpr e))
     return $ B.append i (B.append pc1 pc2)
 packageCommand _ = error $ "packageCommand: Error Command not supported (It may have been a procedure)"
+
+addWriteRefCommand :: ExprType -> Int -> Expr a -> State CommandState B.ByteString
+addWriteRefCommand t i e = 
+  addCommand REF_CMD_WRITE ([toW8 t, toW8 EXPR_WORD8, toW8 EXPR_LIT, fromIntegral i] ++ packageExpr e)
 
 packageCodeBlock :: Arduino a -> State CommandState (a, B.ByteString)
 packageCodeBlock (Arduino commands) = do
@@ -502,37 +488,41 @@ packageProcedure p = do
     packageProcedure' (DelayMicros ms) ib  = addCommand BC_CMD_DELAY_MICROS ((fromIntegral ib) : (packageExpr $ lit ms))
     packageProcedure' (DelayMicrosE ms) ib = addCommand BC_CMD_DELAY_MICROS ((fromIntegral ib) : (packageExpr ms))
     packageProcedure' (BootTaskE tids) ib = addCommand SCHED_CMD_BOOT_TASK ((fromIntegral ib) : (packageExpr tids))
-    packageProcedure' (ReadRemoteRefB (RemoteRefB i)) ib = addCommand REF_CMD_READ [fromIntegral $ fromEnum REF_BOOL, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
-    packageProcedure' (ReadRemoteRefW8 (RemoteRefW8 i)) ib = addCommand REF_CMD_READ [fromIntegral $ fromEnum REF_WORD8, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
-    packageProcedure' (ReadRemoteRefW16 (RemoteRefW16 i)) ib = addCommand REF_CMD_READ [fromIntegral $ fromEnum REF_WORD16, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
-    packageProcedure' (ReadRemoteRefW32 (RemoteRefW32 i)) ib = addCommand REF_CMD_READ [fromIntegral $ fromEnum REF_WORD32, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
-    packageProcedure' (ReadRemoteRefI8 (RemoteRefI8 i)) ib = addCommand REF_CMD_READ [fromIntegral $ fromEnum REF_INT8, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
-    packageProcedure' (ReadRemoteRefI16 (RemoteRefI16 i)) ib = addCommand REF_CMD_READ [fromIntegral $ fromEnum REF_INT16, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
-    packageProcedure' (ReadRemoteRefI32 (RemoteRefI32 i)) ib = addCommand REF_CMD_READ [fromIntegral $ fromEnum REF_INT32, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
-    packageProcedure' (ReadRemoteRefL8 (RemoteRefL8 i)) ib = addCommand REF_CMD_READ [fromIntegral $ fromEnum REF_LIST8, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
-    packageProcedure' (ReadRemoteRefFloat (RemoteRefFloat i)) ib = addCommand REF_CMD_READ [fromIntegral $ fromEnum REF_FLOAT, fromIntegral ib, exprCmdVal EXPR_WORD8 EXPR_LIT, fromIntegral i]
+    packageProcedure' (ReadRemoteRefB (RemoteRefB i)) ib = packageReadRefProcedure EXPR_BOOL ib i
+    packageProcedure' (ReadRemoteRefW8 (RemoteRefW8 i)) ib = packageReadRefProcedure EXPR_WORD8 ib i
+    packageProcedure' (ReadRemoteRefW16 (RemoteRefW16 i)) ib = packageReadRefProcedure EXPR_WORD16 ib i
+    packageProcedure' (ReadRemoteRefW32 (RemoteRefW32 i)) ib = packageReadRefProcedure EXPR_WORD32 ib i
+    packageProcedure' (ReadRemoteRefI8 (RemoteRefI8 i)) ib = packageReadRefProcedure EXPR_INT8 ib i
+    packageProcedure' (ReadRemoteRefI16 (RemoteRefI16 i)) ib = packageReadRefProcedure EXPR_INT16 ib i
+    packageProcedure' (ReadRemoteRefI32 (RemoteRefI32 i)) ib = packageReadRefProcedure EXPR_INT32 ib i
+    packageProcedure' (ReadRemoteRefL8 (RemoteRefL8 i)) ib = packageReadRefProcedure EXPR_LIST8 ib i
+    packageProcedure' (ReadRemoteRefFloat (RemoteRefFloat i)) ib = packageReadRefProcedure EXPR_FLOAT ib i
     packageProcedure' (DebugE s) ib = addCommand BS_CMD_DEBUG ((fromIntegral ib) : (packageExpr s))
-    packageProcedure' (IfThenElseBoolE e cb1 cb2) ib = packageIfThenElseProcedure REF_BOOL ib e cb1 cb2
-    packageProcedure' (IfThenElseWord8E e cb1 cb2) ib = packageIfThenElseProcedure REF_WORD8 ib e cb1 cb2
-    packageProcedure' (IfThenElseWord16E e cb1 cb2) ib = packageIfThenElseProcedure REF_WORD16 ib e cb1 cb2
-    packageProcedure' (IfThenElseWord32E e cb1 cb2) ib = packageIfThenElseProcedure REF_WORD32 ib e cb1 cb2
-    packageProcedure' (IfThenElseInt8E e cb1 cb2) ib = packageIfThenElseProcedure REF_INT8 ib e cb1 cb2
-    packageProcedure' (IfThenElseInt16E e cb1 cb2) ib = packageIfThenElseProcedure REF_INT16 ib e cb1 cb2
-    packageProcedure' (IfThenElseInt32E e cb1 cb2) ib = packageIfThenElseProcedure REF_INT32 ib e cb1 cb2
-    packageProcedure' (IfThenElseL8E e cb1 cb2) ib = packageIfThenElseProcedure REF_LIST8 ib e cb1 cb2
-    packageProcedure' (IfThenElseFloatE e cb1 cb2) ib = packageIfThenElseProcedure REF_FLOAT ib e cb1 cb2
-    packageProcedure' (WhileBoolE iv bf bdf) ib = packageWhileProcedure REF_BOOL ib (RemBindB ib) iv bf bdf
-    packageProcedure' (WhileWord8E iv bf bdf) ib = packageWhileProcedure REF_WORD8 ib (RemBindW8 ib) iv bf bdf
-    packageProcedure' (WhileWord16E iv bf bdf) ib = packageWhileProcedure REF_WORD16 ib (RemBindW16 ib) iv bf bdf
-    packageProcedure' (WhileWord32E iv bf bdf) ib = packageWhileProcedure REF_WORD32 ib (RemBindW32 ib) iv bf bdf
-    packageProcedure' (WhileInt8E iv bf bdf) ib = packageWhileProcedure REF_INT8 ib (RemBindI8 ib) iv bf bdf
-    packageProcedure' (WhileInt16E iv bf bdf) ib = packageWhileProcedure REF_INT16 ib (RemBindI16 ib) iv bf bdf
-    packageProcedure' (WhileInt32E iv bf bdf) ib = packageWhileProcedure REF_INT32 ib (RemBindI32 ib) iv bf bdf
-    packageProcedure' (WhileL8E iv bf bdf) ib = packageWhileProcedure REF_LIST8 ib (RemBindList8 ib) iv bf bdf
-    packageProcedure' (WhileFloatE iv bf bdf) ib = packageWhileProcedure REF_FLOAT ib (RemBindFloat ib) iv bf bdf
+    packageProcedure' (IfThenElseBoolE e cb1 cb2) ib = packageIfThenElseProcedure EXPR_BOOL ib e cb1 cb2
+    packageProcedure' (IfThenElseWord8E e cb1 cb2) ib = packageIfThenElseProcedure EXPR_WORD8 ib e cb1 cb2
+    packageProcedure' (IfThenElseWord16E e cb1 cb2) ib = packageIfThenElseProcedure EXPR_WORD16 ib e cb1 cb2
+    packageProcedure' (IfThenElseWord32E e cb1 cb2) ib = packageIfThenElseProcedure EXPR_WORD32 ib e cb1 cb2
+    packageProcedure' (IfThenElseInt8E e cb1 cb2) ib = packageIfThenElseProcedure EXPR_INT8 ib e cb1 cb2
+    packageProcedure' (IfThenElseInt16E e cb1 cb2) ib = packageIfThenElseProcedure EXPR_INT16 ib e cb1 cb2
+    packageProcedure' (IfThenElseInt32E e cb1 cb2) ib = packageIfThenElseProcedure EXPR_INT32 ib e cb1 cb2
+    packageProcedure' (IfThenElseL8E e cb1 cb2) ib = packageIfThenElseProcedure EXPR_LIST8 ib e cb1 cb2
+    packageProcedure' (IfThenElseFloatE e cb1 cb2) ib = packageIfThenElseProcedure EXPR_FLOAT ib e cb1 cb2
+    packageProcedure' (WhileBoolE iv bf bdf) ib = packageWhileProcedure EXPR_BOOL ib (RemBindB ib) iv bf bdf
+    packageProcedure' (WhileWord8E iv bf bdf) ib = packageWhileProcedure EXPR_WORD8 ib (RemBindW8 ib) iv bf bdf
+    packageProcedure' (WhileWord16E iv bf bdf) ib = packageWhileProcedure EXPR_WORD16 ib (RemBindW16 ib) iv bf bdf
+    packageProcedure' (WhileWord32E iv bf bdf) ib = packageWhileProcedure EXPR_WORD32 ib (RemBindW32 ib) iv bf bdf
+    packageProcedure' (WhileInt8E iv bf bdf) ib = packageWhileProcedure EXPR_INT8 ib (RemBindI8 ib) iv bf bdf
+    packageProcedure' (WhileInt16E iv bf bdf) ib = packageWhileProcedure EXPR_INT16 ib (RemBindI16 ib) iv bf bdf
+    packageProcedure' (WhileInt32E iv bf bdf) ib = packageWhileProcedure EXPR_INT32 ib (RemBindI32 ib) iv bf bdf
+    packageProcedure' (WhileL8E iv bf bdf) ib = packageWhileProcedure EXPR_LIST8 ib (RemBindList8 ib) iv bf bdf
+    packageProcedure' (WhileFloatE iv bf bdf) ib = packageWhileProcedure EXPR_FLOAT ib (RemBindFloat ib) iv bf bdf
     packageProcedure' DebugListen ib = return B.empty
 
-packageIfThenElseProcedure :: RefType -> Int -> Expr Bool -> Arduino (Expr a) -> Arduino (Expr a) -> State CommandState B.ByteString
+packageReadRefProcedure :: ExprType -> Int -> Int -> State CommandState B.ByteString
+packageReadRefProcedure t ib i = 
+  addCommand REF_CMD_READ [toW8 t, fromIntegral ib, toW8 EXPR_WORD8, toW8 EXPR_LIT, fromIntegral i]
+
+packageIfThenElseProcedure :: ExprType -> Int -> Expr Bool -> Arduino (Expr a) -> Arduino (Expr a) -> State CommandState B.ByteString
 packageIfThenElseProcedure rt b e cb1 cb2 = do
     (r1, pc1) <- packageCodeBlock cb1
     let rc1 = buildCommand EXPR_CMD_RET $ (fromIntegral b) : packageExpr r1
@@ -544,7 +534,7 @@ packageIfThenElseProcedure rt b e cb1 cb2 = do
     i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum rt, fromIntegral b] ++ thenSize ++ (packageExpr e))
     return $ B.append i (B.append pc1' pc2')
 
-packageWhileProcedure :: RefType -> Int -> Expr a -> Expr a -> (Expr a -> Expr Bool) -> (Expr a -> Arduino (Expr a)) -> State CommandState B.ByteString
+packageWhileProcedure :: ExprType -> Int -> Expr a -> Expr a -> (Expr a -> Expr Bool) -> (Expr a -> Arduino (Expr a)) -> State CommandState B.ByteString
 packageWhileProcedure rt ib be iv bf bdf = do
     (r, pc) <- packageCodeBlock $ (bdf be)
     let rc = buildCommand EXPR_CMD_RET $ (fromIntegral ib) : packageExpr r
@@ -554,31 +544,31 @@ packageWhileProcedure rt ib be iv bf bdf = do
   where
     ive = packageExpr iv
 
-packageRemoteBinding' :: RefType -> Expr a -> State CommandState B.ByteString
+packageRemoteBinding' :: ExprType -> Expr a -> State CommandState B.ByteString
 packageRemoteBinding' rt e = do
     s <- get
     addCommand REF_CMD_NEW ([fromIntegral $ fromEnum rt, fromIntegral (ib s), fromIntegral (ix s)] ++ (packageExpr e))
 
 packageRemoteBinding :: ArduinoPrimitive a -> State CommandState B.ByteString
-packageRemoteBinding (NewRemoteRefB e) =  packageRemoteBinding' REF_BOOL e
-packageRemoteBinding (NewRemoteRefW8 e) =  packageRemoteBinding' REF_WORD8 e
-packageRemoteBinding (NewRemoteRefW16 e) =  packageRemoteBinding' REF_WORD16 e
-packageRemoteBinding (NewRemoteRefW32 e) =  packageRemoteBinding' REF_WORD32 e
-packageRemoteBinding (NewRemoteRefI8 e) =  packageRemoteBinding' REF_INT8 e
-packageRemoteBinding (NewRemoteRefI16 e) =  packageRemoteBinding' REF_INT16 e
-packageRemoteBinding (NewRemoteRefI32 e) =  packageRemoteBinding' REF_INT32 e
-packageRemoteBinding (NewRemoteRefL8 e) =  packageRemoteBinding' REF_LIST8 e
-packageRemoteBinding (NewRemoteRefFloat e) =  packageRemoteBinding' REF_FLOAT e
+packageRemoteBinding (NewRemoteRefB e) =  packageRemoteBinding' EXPR_BOOL e
+packageRemoteBinding (NewRemoteRefW8 e) =  packageRemoteBinding' EXPR_WORD8 e
+packageRemoteBinding (NewRemoteRefW16 e) =  packageRemoteBinding' EXPR_WORD16 e
+packageRemoteBinding (NewRemoteRefW32 e) =  packageRemoteBinding' EXPR_WORD32 e
+packageRemoteBinding (NewRemoteRefI8 e) =  packageRemoteBinding' EXPR_INT8 e
+packageRemoteBinding (NewRemoteRefI16 e) =  packageRemoteBinding' EXPR_INT16 e
+packageRemoteBinding (NewRemoteRefI32 e) =  packageRemoteBinding' EXPR_INT32 e
+packageRemoteBinding (NewRemoteRefL8 e) =  packageRemoteBinding' EXPR_LIST8 e
+packageRemoteBinding (NewRemoteRefFloat e) =  packageRemoteBinding' EXPR_FLOAT e
 packageRemoteBinding _ = error "packageRemoteBinding: Unsupported primitive"
 
-packageSubExpr :: Word8 -> Expr a -> [Word8]
-packageSubExpr ec e = ec : packageExpr e
+packageSubExpr :: [Word8] -> Expr a -> [Word8]
+packageSubExpr ec e = ec ++ packageExpr e
 
-packageTwoSubExpr :: Word8 -> Expr a -> Expr b -> [Word8]
-packageTwoSubExpr ec e1 e2 = ec : (packageExpr e1) ++ (packageExpr e2)
+packageTwoSubExpr :: [Word8] -> Expr a -> Expr b -> [Word8]
+packageTwoSubExpr ec e1 e2 = ec ++ (packageExpr e1) ++ (packageExpr e2)
 
-packageIfBSubExpr :: Word8 -> Expr a -> Expr b -> Expr b -> [Word8]
-packageIfBSubExpr ec e1 e2 e3 = ec : thenSize ++ elseSize ++ pcond ++ pthen ++ pelse
+packageIfBSubExpr :: [Word8] -> Expr a -> Expr b -> Expr b -> [Word8]
+packageIfBSubExpr ec e1 e2 e3 = ec ++ thenSize ++ elseSize ++ pcond ++ pthen ++ pelse
   where
     pcond = packageExpr e1
     pthen = packageExpr e2
@@ -586,20 +576,20 @@ packageIfBSubExpr ec e1 e2 e3 = ec : thenSize ++ elseSize ++ pcond ++ pthen ++ p
     thenSize = word16ToBytes $ fromIntegral $ length pthen
     elseSize = word16ToBytes $ fromIntegral $ length pelse
 
-packageMathExpr :: ExprFloatMathOp -> Expr a -> [Word8]
-packageMathExpr o e = (exprFMathCmdVals o) ++ (packageExpr e)
+packageMathExpr :: ExprFloatOp -> Expr a -> [Word8]
+packageMathExpr o e = (exprFCmdVal o) ++ (packageExpr e)
 
-packageTwoMathExpr :: ExprFloatMathOp -> Expr a -> Expr b -> [Word8]
-packageTwoMathExpr o e1 e2 = (exprFMathCmdVals o) ++ (packageExpr e1) ++ (packageExpr e2)
+packageTwoMathExpr :: ExprFloatOp -> Expr a -> Expr b -> [Word8]
+packageTwoMathExpr o e1 e2 = (exprFCmdVal o) ++ (packageExpr e1) ++ (packageExpr e2)
 
-packageRef :: Int -> Word8 -> [Word8]
-packageRef n ec = [ec, fromIntegral n]
+packageRef :: Int -> [Word8] -> [Word8]
+packageRef n ec = ec ++ [fromIntegral n]
 
 packageExpr :: Expr a -> [Word8]
-packageExpr (LitB b) = [exprCmdVal EXPR_BOOL EXPR_LIT, if b then 1 else 0]
+packageExpr (LitB b) = [toW8 EXPR_BOOL, toW8 EXPR_LIT, if b then 1 else 0]
 packageExpr (ShowB e) = packageSubExpr (exprCmdVal EXPR_BOOL EXPR_SHOW) e 
 packageExpr (RefB n) = packageRef n (exprCmdVal EXPR_BOOL EXPR_REF)
-packageExpr (RemBindB b) = [exprCmdVal EXPR_BOOL EXPR_BIND, fromIntegral b]
+packageExpr (RemBindB b) = (exprCmdVal EXPR_BOOL EXPR_BIND) ++ [fromIntegral b]
 packageExpr (NotB e) = packageSubExpr (exprCmdVal EXPR_BOOL EXPR_NOT) e 
 packageExpr (AndB e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_BOOL EXPR_AND) e1 e2 
 packageExpr (OrB e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_BOOL EXPR_OR) e1 e2 
@@ -622,10 +612,10 @@ packageExpr (EqL8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_EQ) e1 e2
 packageExpr (LessL8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_LESS) e1 e2 
 packageExpr (EqFloat e1 e2) = packageTwoSubExpr (exprFCmdVal EXPRF_EQ) e1 e2 
 packageExpr (LessFloat e1 e2) = packageTwoSubExpr (exprFCmdVal EXPRF_LESS) e1 e2 
-packageExpr (LitW8 w) = [exprCmdVal EXPR_WORD8 EXPR_LIT, w]
+packageExpr (LitW8 w) = (exprCmdVal EXPR_WORD8 EXPR_LIT) ++ [w]
 packageExpr (ShowW8 e) = packageSubExpr (exprCmdVal EXPR_WORD8 EXPR_SHOW) e
 packageExpr (RefW8 n) = packageRef n (exprCmdVal EXPR_WORD8 EXPR_REF)
-packageExpr (RemBindW8 b) = [exprCmdVal EXPR_WORD8 EXPR_BIND, fromIntegral b]
+packageExpr (RemBindW8 b) = (exprCmdVal EXPR_WORD8 EXPR_BIND) ++ [fromIntegral b]
 packageExpr (FromIntW8 e) = packageSubExpr (exprCmdVal EXPR_WORD8 EXPR_FINT) e
 packageExpr (ToIntW8 e) = packageSubExpr (exprCmdVal EXPR_WORD8 EXPR_TINT) e
 packageExpr (NegW8 e) = packageSubExpr (exprCmdVal EXPR_WORD8 EXPR_NEG) e
@@ -647,10 +637,10 @@ packageExpr (IfW8 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_WORD8 EXPR_IF) 
 packageExpr (TestBW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_TSTB) e1 e2 
 packageExpr (SetBW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_SETB) e1 e2 
 packageExpr (ClrBW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_CLRB) e1 e2 
-packageExpr (LitW16 w) = (exprCmdVal EXPR_WORD16 EXPR_LIT) : word16ToBytes w
+packageExpr (LitW16 w) = (exprCmdVal EXPR_WORD16 EXPR_LIT) ++ word16ToBytes w
 packageExpr (ShowW16 e) = packageSubExpr (exprCmdVal EXPR_WORD16 EXPR_SHOW) e
 packageExpr (RefW16 n) = packageRef n (exprCmdVal EXPR_WORD16 EXPR_REF)
-packageExpr (RemBindW16 b) = [exprCmdVal EXPR_WORD16 EXPR_BIND, fromIntegral b]
+packageExpr (RemBindW16 b) = (exprCmdVal EXPR_WORD16 EXPR_BIND) ++ [fromIntegral b]
 packageExpr (FromIntW16 e) = packageSubExpr (exprCmdVal EXPR_WORD16 EXPR_FINT) e
 packageExpr (ToIntW16 e) = packageSubExpr (exprCmdVal EXPR_WORD16 EXPR_TINT) e
 packageExpr (NegW16 e) = packageSubExpr (exprCmdVal EXPR_WORD16 EXPR_NEG) e
@@ -672,10 +662,10 @@ packageExpr (IfW16 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_WORD16 EXPR_IF
 packageExpr (TestBW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_TSTB) e1 e2 
 packageExpr (SetBW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_SETB) e1 e2 
 packageExpr (ClrBW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_CLRB) e1 e2 
-packageExpr (LitW32 w) = (exprCmdVal EXPR_WORD32 EXPR_LIT) : word32ToBytes w
+packageExpr (LitW32 w) = (exprCmdVal EXPR_WORD32 EXPR_LIT) ++ word32ToBytes w
 packageExpr (ShowW32 e) = packageSubExpr (exprCmdVal EXPR_WORD32 EXPR_SHOW) e
 packageExpr (RefW32 n) = packageRef n (exprCmdVal EXPR_WORD32 EXPR_REF)
-packageExpr (RemBindW32 b) = [exprCmdVal EXPR_WORD32 EXPR_BIND, fromIntegral b]
+packageExpr (RemBindW32 b) = (exprCmdVal EXPR_WORD32 EXPR_BIND) ++ [fromIntegral b]
 packageExpr (FromIntW32 e) = packageSubExpr (exprCmdVal EXPR_WORD32 EXPR_FINT) e
 packageExpr (ToIntW32 e) = packageSubExpr (exprCmdVal EXPR_WORD32 EXPR_TINT) e
 packageExpr (NegW32 e) = packageSubExpr (exprCmdVal EXPR_WORD32 EXPR_NEG) e
@@ -697,10 +687,10 @@ packageExpr (IfW32 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_WORD32 EXPR_IF
 packageExpr (TestBW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_TSTB) e1 e2 
 packageExpr (SetBW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_SETB) e1 e2 
 packageExpr (ClrBW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_CLRB) e1 e2 
-packageExpr (LitI8 w) = [exprCmdVal EXPR_INT8 EXPR_LIT, fromIntegral w]
+packageExpr (LitI8 w) = (exprCmdVal EXPR_INT8 EXPR_LIT) ++ [fromIntegral w]
 packageExpr (ShowI8 e) = packageSubExpr (exprCmdVal EXPR_INT8 EXPR_SHOW) e
 packageExpr (RefI8 n) = packageRef n (exprCmdVal EXPR_INT8 EXPR_REF)
-packageExpr (RemBindI8 b) = [exprCmdVal EXPR_INT8 EXPR_BIND, fromIntegral b]
+packageExpr (RemBindI8 b) = (exprCmdVal EXPR_INT8 EXPR_BIND) ++ [fromIntegral b]
 packageExpr (FromIntI8 e) = packageSubExpr (exprCmdVal EXPR_INT8 EXPR_FINT) e
 packageExpr (ToIntI8 e) = packageSubExpr (exprCmdVal EXPR_INT8 EXPR_TINT) e
 packageExpr (NegI8 e) = packageSubExpr (exprCmdVal EXPR_INT8 EXPR_NEG) e
@@ -722,10 +712,10 @@ packageExpr (IfI8 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_INT8 EXPR_IF) e
 packageExpr (TestBI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_TSTB) e1 e2 
 packageExpr (SetBI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_SETB) e1 e2 
 packageExpr (ClrBI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_CLRB) e1 e2 
-packageExpr (LitI16 w) = (exprCmdVal EXPR_INT16 EXPR_LIT) : word16ToBytes (fromIntegral w)
+packageExpr (LitI16 w) = (exprCmdVal EXPR_INT16 EXPR_LIT) ++ word16ToBytes (fromIntegral w)
 packageExpr (ShowI16 e) = packageSubExpr (exprCmdVal EXPR_INT16 EXPR_SHOW) e
 packageExpr (RefI16 n) = packageRef n (exprCmdVal EXPR_INT16 EXPR_REF)
-packageExpr (RemBindI16 b) = [exprCmdVal EXPR_INT16 EXPR_BIND, fromIntegral b]
+packageExpr (RemBindI16 b) = (exprCmdVal EXPR_INT16 EXPR_BIND) ++ [fromIntegral b]
 packageExpr (FromIntI16 e) = packageSubExpr (exprCmdVal EXPR_INT16 EXPR_FINT) e
 packageExpr (ToIntI16 e) = packageSubExpr (exprCmdVal EXPR_INT16 EXPR_TINT) e
 packageExpr (NegI16 e) = packageSubExpr (exprCmdVal EXPR_INT16 EXPR_NEG) e
@@ -747,10 +737,10 @@ packageExpr (IfI16 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_INT16 EXPR_IF)
 packageExpr (TestBI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_TSTB) e1 e2 
 packageExpr (SetBI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_SETB) e1 e2 
 packageExpr (ClrBI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_CLRB) e1 e2 
-packageExpr (LitI32 w) = (exprCmdVal EXPR_INT32 EXPR_LIT) : word32ToBytes (fromIntegral w)
+packageExpr (LitI32 w) = (exprCmdVal EXPR_INT32 EXPR_LIT) ++ word32ToBytes (fromIntegral w)
 packageExpr (ShowI32 e) = packageSubExpr (exprCmdVal EXPR_INT32 EXPR_SHOW) e
 packageExpr (RefI32 n) = packageRef n (exprCmdVal EXPR_INT32 EXPR_REF)
-packageExpr (RemBindI32 b) = [exprCmdVal EXPR_INT32 EXPR_BIND, fromIntegral b]
+packageExpr (RemBindI32 b) = (exprCmdVal EXPR_INT32 EXPR_BIND) ++ [fromIntegral b]
 packageExpr (NegI32 e) = packageSubExpr (exprCmdVal EXPR_INT32 EXPR_NEG) e
 packageExpr (SignI32 e) = packageSubExpr (exprCmdVal EXPR_INT32 EXPR_SIGN) e
 packageExpr (AddI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_ADD) e1 e2 
@@ -770,19 +760,19 @@ packageExpr (IfI32 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_INT32 EXPR_IF)
 packageExpr (TestBI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_TSTB) e1 e2 
 packageExpr (SetBI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_SETB) e1 e2 
 packageExpr (ClrBI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_CLRB) e1 e2 
-packageExpr (LitList8 ws) = [exprLCmdVal EXPRL_LIT, fromIntegral $ length ws] ++ ws
+packageExpr (LitList8 ws) = (exprLCmdVal EXPRL_LIT) ++ [fromIntegral $ length ws] ++ ws
 packageExpr (RefList8 n) = packageRef n (exprLCmdVal EXPRL_REF)
-packageExpr (RemBindList8 b) = [exprLCmdVal EXPRL_BIND, fromIntegral b]
+packageExpr (RemBindList8 b) = (exprLCmdVal EXPRL_BIND) ++ [fromIntegral b]
 packageExpr (IfL8 e1 e2 e3) = packageIfBSubExpr (exprLCmdVal EXPRL_IF) e1 e2 e3
 packageExpr (ElemList8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_ELEM) e1 e2 
 packageExpr (LenList8 e) = packageSubExpr (exprLCmdVal EXPRL_LEN) e
 packageExpr (ConsList8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_CONS) e1 e2 
 packageExpr (ApndList8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_APND) e1 e2
-packageExpr (PackList8 es) = [exprLCmdVal EXPRL_PACK, fromIntegral $ length es] ++ (foldl (++) [] (map packageExpr es))
-packageExpr (LitFloat f) = (exprFCmdVal EXPRF_LIT) : floatToBytes f
+packageExpr (PackList8 es) = (exprLCmdVal EXPRL_PACK) ++ [fromIntegral $ length es] ++ (foldl (++) [] (map packageExpr es))
+packageExpr (LitFloat f) = (exprFCmdVal EXPRF_LIT) ++ floatToBytes f
 packageExpr (ShowFloat e1 e2) = packageTwoSubExpr (exprFCmdVal EXPRF_SHOW) e1 e2
 packageExpr (RefFloat n) = packageRef n (exprFCmdVal EXPRF_REF)
-packageExpr (RemBindFloat b) = [exprFCmdVal EXPRF_BIND, fromIntegral b]
+packageExpr (RemBindFloat b) = (exprFCmdVal EXPRF_BIND) ++ [fromIntegral b]
 packageExpr (FromIntFloat e) = packageSubExpr (exprFCmdVal EXPRF_FINT) e
 packageExpr (NegFloat e) = packageSubExpr (exprFCmdVal EXPRF_NEG) e
 packageExpr (SignFloat e) = packageSubExpr (exprFCmdVal EXPRF_SIGN) e
@@ -796,7 +786,7 @@ packageExpr (FracFloat e) = packageMathExpr EXPRF_FRAC e
 packageExpr (RoundFloat e) = packageMathExpr EXPRF_ROUND e 
 packageExpr (CeilFloat e) = packageMathExpr EXPRF_CEIL e 
 packageExpr (FloorFloat e) = packageMathExpr EXPRF_FLOOR e 
-packageExpr PiFloat = exprFMathCmdVals EXPRF_PI
+packageExpr PiFloat = exprFCmdVal EXPRF_PI
 packageExpr (ExpFloat e) = packageMathExpr EXPRF_EXP e 
 packageExpr (LogFloat e) = packageMathExpr EXPRF_LOG e 
 packageExpr (SqrtFloat e) = packageMathExpr EXPRF_SQRT e 
@@ -821,60 +811,60 @@ unpackageResponse (cmdWord:args)
   | Right cmd <- getFirmwareReply cmdWord
   = case (cmd, args) of
       (BC_RESP_DELAY, [])               -> DelayResp
-      (BC_RESP_IF_THEN_ELSE , [l,b]) | l == exprCmdVal EXPR_BOOL EXPR_LIT
+      (BC_RESP_IF_THEN_ELSE , [t,l,b]) | t == toW8 EXPR_BOOL && l == toW8 EXPR_LIT
                                       -> IfThenElseBReply (if b == 0 then False else True)
-      (BC_RESP_IF_THEN_ELSE , [l,b]) | l == exprCmdVal EXPR_WORD8 EXPR_LIT
+      (BC_RESP_IF_THEN_ELSE , [t,l,b]) | t == toW8 EXPR_WORD8 && l == toW8 EXPR_LIT
                                       -> IfThenElseW8Reply b
-      (BC_RESP_IF_THEN_ELSE , [l,b1,b2]) | l == exprCmdVal EXPR_WORD16 EXPR_LIT
+      (BC_RESP_IF_THEN_ELSE , [t,l,b1,b2]) | t == toW8 EXPR_WORD16 && l == toW8 EXPR_LIT
                                       -> IfThenElseW16Reply (bytesToWord16 (b1, b2))
-      (BC_RESP_IF_THEN_ELSE , [l,b1,b2,b3,b4]) | l == exprCmdVal EXPR_WORD32 EXPR_LIT
+      (BC_RESP_IF_THEN_ELSE , [t,l,b1,b2,b3,b4]) | t == toW8 EXPR_WORD32 && l == toW8 EXPR_LIT
                                       -> IfThenElseW32Reply (bytesToWord32 (b1, b2, b3, b4))
-      (BC_RESP_IF_THEN_ELSE , [l,b]) | l == exprCmdVal EXPR_INT8 EXPR_LIT
+      (BC_RESP_IF_THEN_ELSE , [t,l,b]) | t == toW8 EXPR_INT8 && l == toW8 EXPR_LIT
                                       -> IfThenElseI8Reply $ fromIntegral b
-      (BC_RESP_IF_THEN_ELSE , [l,b1,b2]) | l == exprCmdVal EXPR_INT16 EXPR_LIT
+      (BC_RESP_IF_THEN_ELSE , [t,l,b1,b2]) | t == toW8 EXPR_INT16 && l == toW8 EXPR_LIT
                                       -> IfThenElseI16Reply $ fromIntegral (bytesToWord16 (b1, b2))
-      (BC_RESP_IF_THEN_ELSE , [l,b1,b2,b3,b4]) | l == exprCmdVal EXPR_INT32 EXPR_LIT
+      (BC_RESP_IF_THEN_ELSE , [t,l,b1,b2,b3,b4]) | t == toW8 EXPR_INT32 && l == toW8 EXPR_LIT
                                       -> IfThenElseI32Reply $ fromIntegral (bytesToWord32 (b1, b2, b3, b4))
-      (BC_RESP_IF_THEN_ELSE , l:_:bs) | l == exprLCmdVal EXPRL_LIT
+      (BC_RESP_IF_THEN_ELSE , t:l:_:bs) | t == toW8 EXPR_LIST8 && l == toW8 EXPR_LIT
                                       -> IfThenElseL8Reply bs
-      (BC_RESP_IF_THEN_ELSE , [l,b1,b2,b3,b4]) | l == exprFCmdVal EXPRF_LIT
+      (BC_RESP_IF_THEN_ELSE , [t,l,b1,b2,b3,b4]) | t == toW8 EXPR_FLOAT && l == toW8 EXPR_LIT
                                       -> IfThenElseFloatReply $ bytesToFloat (b1, b2, b3, b4)
-      (BC_RESP_WHILE , [l,b]) | l == exprCmdVal EXPR_BOOL EXPR_LIT
+      (BC_RESP_WHILE , [t,l,b]) | t == toW8 EXPR_BOOL && l == toW8 EXPR_LIT
                                       -> WhileBReply (if b == 0 then False else True)
-      (BC_RESP_WHILE , [l,b]) | l == exprCmdVal EXPR_WORD8 EXPR_LIT
+      (BC_RESP_WHILE , [t,l,b]) | t == toW8 EXPR_WORD8 && l == toW8 EXPR_LIT
                                       -> WhileW8Reply b
-      (BC_RESP_WHILE , [l,b1,b2]) | l == exprCmdVal EXPR_WORD16 EXPR_LIT
+      (BC_RESP_WHILE , [t,l,b1,b2]) | t == toW8 EXPR_WORD16 && l == toW8 EXPR_LIT
                                       -> WhileW16Reply (bytesToWord16 (b1, b2))
-      (BC_RESP_WHILE , [l,b1,b2,b3,b4]) | l == exprCmdVal EXPR_WORD32 EXPR_LIT
+      (BC_RESP_WHILE , [t,l,b1,b2,b3,b4]) | t == toW8 EXPR_WORD32 && l == toW8 EXPR_LIT
                                       -> WhileW32Reply (bytesToWord32 (b1, b2, b3, b4))
-      (BC_RESP_WHILE , [l,b]) | l == exprCmdVal EXPR_INT8 EXPR_LIT
+      (BC_RESP_WHILE , [t,l,b]) | t == toW8 EXPR_INT8 && l == toW8 EXPR_LIT
                                       -> WhileI8Reply $ fromIntegral b
-      (BC_RESP_WHILE , [l,b1,b2]) | l == exprCmdVal EXPR_INT16 EXPR_LIT
+      (BC_RESP_WHILE , [t,l,b1,b2]) | t == toW8 EXPR_INT16 && l == toW8 EXPR_LIT
                                       -> WhileI16Reply $ fromIntegral (bytesToWord16 (b1, b2))
-      (BC_RESP_WHILE , [l,b1,b2,b3,b4]) | l == exprCmdVal EXPR_INT32 EXPR_LIT
+      (BC_RESP_WHILE , [t,l,b1,b2,b3,b4]) | t == toW8 EXPR_INT32 && l == toW8 EXPR_LIT
                                       -> WhileI32Reply $ fromIntegral (bytesToWord32 (b1, b2, b3, b4))
-      (BC_RESP_WHILE , l:_:bs) | l == exprLCmdVal EXPRL_LIT
+      (BC_RESP_WHILE , t:l:_:bs) | t == toW8 EXPR_LIST8 && l == toW8 EXPR_LIT
                                       -> WhileL8Reply bs
-      (BC_RESP_WHILE , [l,b1,b2,b3,b4]) | l == exprFCmdVal EXPRF_LIT
+      (BC_RESP_WHILE , [t,l,b1,b2,b3,b4]) | t == toW8 EXPR_FLOAT && l == toW8 EXPR_LIT
                                       -> WhileFloatReply $ bytesToFloat (b1, b2, b3, b4)
-      (BS_RESP_DEBUG, [])               -> DebugResp
-      (BS_RESP_VERSION, [majV, minV])   -> Firmware (bytesToWord16 (majV,minV))
-      (BS_RESP_TYPE, [p])               -> ProcessorType p
-      (BS_RESP_MICROS, [m0,m1,m2,m3]) -> MicrosReply (bytesToWord32 (m0,m1,m2,m3))
-      (BS_RESP_MILLIS, [m0,m1,m2,m3]) -> MillisReply (bytesToWord32 (m0,m1,m2,m3))
-      (BS_RESP_STRING, rest)            -> StringMessage (getString rest)
-      (DIG_RESP_READ_PIN, [_l,b])       -> DigitalReply b
-      (DIG_RESP_READ_PORT, [_l,b])      -> DigitalPortReply b
-      (ALG_RESP_READ_PIN, [_l,bl,bh])   -> AnalogReply (bytesToWord16 (bl,bh))
-      (I2C_RESP_READ, _:_:xs)           -> I2CReply xs
-      (STEP_RESP_2PIN, [_l,st])         -> Stepper2PinReply st
-      (STEP_RESP_4PIN, [_l,st])         -> Stepper4PinReply st
-      (STEP_RESP_STEP, [])              -> StepperStepReply
-      (SRVO_RESP_ATTACH, [_l,sv])       -> ServoAttachReply sv
-      (SRVO_RESP_READ, [_l,il,ih])      -> ServoReadReply (fromIntegral (bytesToWord16 (il,ih)))
-      (SRVO_RESP_READ_MICROS, [_l,il,ih]) -> ServoReadMicrosReply (fromIntegral (bytesToWord16 (il,ih)))
-      (SCHED_RESP_BOOT, [_l,b])         -> BootTaskResp b
-      (SCHED_RESP_QUERY_ALL, _:_:ts)    -> QueryAllTasksReply ts
+      (BS_RESP_DEBUG, [])                    -> DebugResp
+      (BS_RESP_VERSION, [majV, minV])        -> Firmware (bytesToWord16 (majV,minV))
+      (BS_RESP_TYPE, [p])                    -> ProcessorType p
+      (BS_RESP_MICROS, [m0,m1,m2,m3])        -> MicrosReply (bytesToWord32 (m0,m1,m2,m3))
+      (BS_RESP_MILLIS, [m0,m1,m2,m3])        -> MillisReply (bytesToWord32 (m0,m1,m2,m3))
+      (BS_RESP_STRING, rest)                 -> StringMessage (getString rest)
+      (DIG_RESP_READ_PIN, [_t,_l,b])         -> DigitalReply b
+      (DIG_RESP_READ_PORT, [_t,_l,b])        -> DigitalPortReply b
+      (ALG_RESP_READ_PIN, [_t,_l,bl,bh])     -> AnalogReply (bytesToWord16 (bl,bh))
+      (I2C_RESP_READ, _:_:_:xs)              -> I2CReply xs
+      (STEP_RESP_2PIN, [_t,_l,st])           -> Stepper2PinReply st
+      (STEP_RESP_4PIN, [_t,_l,st])           -> Stepper4PinReply st
+      (STEP_RESP_STEP, [])                   -> StepperStepReply
+      (SRVO_RESP_ATTACH, [_t,_l,sv])         -> ServoAttachReply sv
+      (SRVO_RESP_READ, [_t,_l,il,ih])        -> ServoReadReply (fromIntegral (bytesToWord16 (il,ih)))
+      (SRVO_RESP_READ_MICROS, [_t,_l,il,ih]) -> ServoReadMicrosReply (fromIntegral (bytesToWord16 (il,ih)))
+      (SCHED_RESP_BOOT, [_t,_l,b])           -> BootTaskResp b
+      (SCHED_RESP_QUERY_ALL, _:_:_:ts)       -> QueryAllTasksReply ts
       (SCHED_RESP_QUERY, ts) | length ts == 0 -> 
           QueryTaskReply Nothing
       (SCHED_RESP_QUERY, ts) | length ts >= 9 -> 
@@ -883,25 +873,25 @@ unpackageResponse (cmdWord:args)
                                    bytesToWord16 (tl0,tl1),
                                    bytesToWord16 (tp0,tp1), 
                                    bytesToWord32 (tt0,tt1,tt2,tt3)))  
-      (REF_RESP_READ , [l,b]) | l == exprCmdVal EXPR_BOOL EXPR_LIT
+      (REF_RESP_READ , [t,l,b]) | t == toW8 EXPR_BOOL && l == toW8 EXPR_LIT
                                       -> ReadRefBReply (if b == 0 then False else True)
-      (REF_RESP_READ , [l,b]) | l == exprCmdVal EXPR_WORD8 EXPR_LIT
+      (REF_RESP_READ , [t,l,b]) | t == toW8 EXPR_WORD8 && l == toW8 EXPR_LIT
                                       -> ReadRefW8Reply b
-      (REF_RESP_READ , [l,b1,b2]) | l == exprCmdVal EXPR_WORD16 EXPR_LIT
+      (REF_RESP_READ , [t,l,b1,b2]) | t == toW8 EXPR_WORD16 && l == toW8 EXPR_LIT
                                       -> ReadRefW16Reply (bytesToWord16 (b1, b2))
-      (REF_RESP_READ , [l,b1,b2,b3,b4]) | l == exprCmdVal EXPR_WORD32 EXPR_LIT
+      (REF_RESP_READ , [t,l,b1,b2,b3,b4]) | t == toW8 EXPR_WORD32 && l == toW8 EXPR_LIT
                                       -> ReadRefW32Reply (bytesToWord32 (b1, b2, b3, b4))
-      (REF_RESP_READ , [l,b]) | l == exprCmdVal EXPR_INT8 EXPR_LIT
+      (REF_RESP_READ , [t,l,b]) | t == toW8 EXPR_INT8 && l == toW8 EXPR_LIT
                                       -> ReadRefI8Reply $ fromIntegral b
-      (REF_RESP_READ , [l,b1,b2]) | l == exprCmdVal EXPR_INT16 EXPR_LIT
+      (REF_RESP_READ , [t,l,b1,b2]) | t == toW8 EXPR_INT16 && l == toW8 EXPR_LIT
                                       -> ReadRefI16Reply $ fromIntegral (bytesToWord16 (b1, b2))
-      (REF_RESP_READ , [l,b1,b2,b3,b4]) | l == exprCmdVal EXPR_INT32 EXPR_LIT
+      (REF_RESP_READ , [t,l,b1,b2,b3,b4]) | t == toW8 EXPR_INT32 && l == toW8 EXPR_LIT
                                       -> ReadRefI32Reply $ fromIntegral (bytesToWord32 (b1, b2, b3, b4))
-      (REF_RESP_READ , l:_:bs) | l == exprLCmdVal EXPRL_LIT
+      (REF_RESP_READ , t:l:_:bs) | t == toW8 EXPR_LIST8 && l == toW8 EXPR_LIT
                                       -> ReadRefL8Reply bs
-      (REF_RESP_READ , [l,b1,b2,b3,b4]) | l == exprFCmdVal EXPRF_LIT
+      (REF_RESP_READ , [t,l,b1,b2,b3,b4]) | t == toW8 EXPR_FLOAT && l == toW8 EXPR_LIT
                                       -> ReadRefFloatReply $ bytesToFloat (b1, b2, b3, b4)
-      (REF_RESP_NEW , [_l,w])         -> NewReply w
+      (REF_RESP_NEW , [_t,_l,w])      -> NewReply w
       (REF_RESP_NEW , [])             -> FailedNewRef
       _                               -> Unimplemented (Just (show cmd)) args
   | True

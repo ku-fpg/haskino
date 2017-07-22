@@ -1566,18 +1566,6 @@ firmwareValCmd 0xC2 = REF_CMD_WRITE
 firmwareValCmd 0xD0 = EXPR_CMD_RET
 firmwareValCmd _    = UNKNOWN_COMMAND
 
-data RefType = REF_BOOL
-             | REF_WORD8
-             | REF_WORD16
-             | REF_WORD32
-             | REF_INT8
-             | REF_INT16
-             | REF_INT32
-             | REF_LIST8
-             | REF_FLOAT
-             | REF_UNIT
-            deriving (Show, Enum)
-
 -- | Firmware replies, see:
 -- | https://github.com/ku-fpg/haskino/wiki/Haskino-Firmware-Protocol-Definition
 data FirmwareReply =  BC_RESP_DELAY

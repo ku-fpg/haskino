@@ -40,8 +40,8 @@ deframe bs = map unescape (deframe' bs [])
     notFrameChar b = b /= 0x7e
 
     deframe' :: B.ByteString -> [B.ByteString] -> [B.ByteString]
-    deframe' Empty        xs = xs
-    deframe' bs'           xs = deframe' (tailFrame bs') (xs ++ [headFrame bs'])
+    deframe' Empty xs = xs
+    deframe' bs'   xs = deframe' (tailFrame bs') (xs ++ [headFrame bs'])
 
     headFrame :: B.ByteString -> B.ByteString  
     headFrame bs' = B.init $ B.takeWhile notFrameChar bs'
@@ -119,7 +119,7 @@ decodeCmdArgs BC_CMD_IF_THEN_ELSE _ Empty = decodeErr B.empty
 decodeCmdArgs BC_CMD_IF_THEN_ELSE _ xs | B.length xs < 5 = decodeErr xs
 decodeCmdArgs BC_CMD_IF_THEN_ELSE _ (rt :< b :< xs) = (cmd ++ dec ++ "\n" ++ dec' ++ dec'', B.empty)
   where
-    cmd = "-" ++ (show ((toEnum (fromIntegral rt))::RefType)) ++ " (Bind " ++ show b ++ ") <-"
+    cmd = "-" ++ (show ((toEnum (fromIntegral rt))::ExprType)) ++ " (Bind " ++ show b ++ ") <-"
     thenSize = bytesToWord16 (B.head xs, B.head (B.tail xs))
     (dec, xs') = decodeExprCmd 1 (B.drop 2 xs)
     dec' = decodeCodeBlock (B.take (fromIntegral thenSize) xs') "Then"
@@ -198,7 +198,7 @@ decodeRefCmd :: Int -> B.ByteString -> (String, B.ByteString)
 decodeRefCmd cnt bs =
   case bs of
     Empty     -> decodeErr bs
-    (x :< xs) -> ("-" ++ (show ((toEnum (fromIntegral x))::RefType)) ++ " " ++ dec, bs')
+    (x :< xs) -> ("-" ++ (show ((toEnum (fromIntegral x))::ExprType)) ++ " " ++ dec, bs')
   where
     (dec, bs') = decodeExprCmd cnt (B.tail bs)
 
@@ -207,7 +207,7 @@ decodeRefProc cnt bs =
   case bs of
     Empty          -> decodeErr bs
     (_x :< Empty)  -> decodeErr bs
-    (x :< y :< xs) -> ("-" ++ (show ((toEnum (fromIntegral x))::RefType)) ++ " (Bind " ++ show y ++ ") <-"++ dec, bs')
+    (x :< y :< xs) -> ("-" ++ (show ((toEnum (fromIntegral x))::ExprType)) ++ " (Bind " ++ show y ++ ") <-"++ dec, bs')
   where
     (dec, bs') = decodeExprCmd cnt (B.tail $ B.tail bs)
 
@@ -217,7 +217,7 @@ decodeRefNew cnt bs =
     Empty                -> decodeErr bs
     (_x :< Empty)        -> decodeErr bs
     (_x :< _y :< Empty)  -> decodeErr bs
-    (x :< _ :< z :< xs)  -> ("-" ++ (show ((toEnum (fromIntegral x))::RefType)) ++ " (Ref Index " ++ show z ++ ") "++ dec, bs')
+    (x :< _ :< z :< xs)  -> ("-" ++ (show ((toEnum (fromIntegral x))::ExprType)) ++ " (Ref Index " ++ show z ++ ") "++ dec, bs')
   where
     (dec, bs') = decodeExprCmd cnt (B.drop 3 bs)
 
@@ -242,26 +242,26 @@ decodeCodeBlock bs desc =
           _                      -> cmds
 
 decodeExpr :: B.ByteString -> (String, B.ByteString)
-decodeExpr Empty = decodeErr B.empty
-decodeExpr bs    = (" (" ++ opStr ++ ")", bs') 
+decodeExpr Empty            = decodeErr B.empty
+decodeExpr (ty :< Empty)    = decodeErr $ B.singleton ty
+decodeExpr (ty :< op :< bs) = (" (" ++ opStr ++ ")", bs')
   where
-    (etype, op) = byteToTypeOp $ B.head bs
-    (opStr, bs') = decodeTypeOp etype op (B.tail bs)
+    etype = ty .&. 0x7F
+    left  = ty .&. 0x80 == 0x80
+    (opStr, bs') = decodeTypeOp (toEnum $ fromIntegral etype) (fromIntegral op) bs
 
-decodeTypeOp :: Either ExprType ExprExtType -> Int -> B.ByteString -> (String, B.ByteString)
+decodeTypeOp :: ExprType -> Int -> B.ByteString -> (String, B.ByteString)
 decodeTypeOp etype op bs = 
   case etype of
-    (Left lt)  -> (show lt ++ "-" ++ show eop ++ deop, bs')
-    (Right rt) -> case rt of
-                   EXPR_LIST8 -> (show rt ++ "-" ++ show elop ++ delop, bs'')
-                   EXPR_FLOAT -> (show rt ++ "-" ++ show efop ++ defop, bs''')
+    EXPR_LIST8 -> (show etype ++ "-" ++ show elop ++ delop, bs'')
+    EXPR_FLOAT -> (show etype ++ "-" ++ show efop ++ defop, bs''')
+    _          -> (show etype ++ "-" ++ show eop  ++ deop,  bs')
   where
-    eop = toEnum op::ExprOp
+    eop  = toEnum op::ExprOp
     elop = toEnum op::ExprListOp
     efop = toEnum op::ExprFloatOp
-    (deop, bs') = case etype of
-                    (Left lt) -> decodeOp lt eop bs
-    (delop, bs'') = decodeListOp elop bs
+    (deop, bs')    = decodeOp etype eop bs
+    (delop, bs'')  = decodeListOp elop bs
     (defop, bs''') = decodeFloatOp efop bs
 
 decodeOp :: ExprType -> ExprOp -> B.ByteString -> (String, B.ByteString)
@@ -391,13 +391,6 @@ decodeFloatOp efop bs =
     EXPRF_MULT  -> decodeExprOps 2 "" bs
     EXPRF_DIV   -> decodeExprOps 2 "" bs
     EXPRF_SHOW  -> decodeExprOps 1 "" bs
-    EXPRF_MATH  -> case bs of
-                     Empty     -> decodeErr bs
-                     (x :< xs) -> decodeMathOp (toEnum ((fromIntegral x)::Int)) bs
-
-decodeMathOp :: ExprFloatMathOp -> B.ByteString -> (String, B.ByteString)
-decodeMathOp efmop bs =
-  case efmop of
     EXPRF_TRUNC  -> decodeExprOps 1 "" bs
     EXPRF_FRAC   -> decodeExprOps 1 "" bs
     EXPRF_ROUND  -> decodeExprOps 1 "" bs
@@ -420,22 +413,3 @@ decodeMathOp efmop bs =
     EXPRF_POWER  -> decodeExprOps 2 "" bs
     EXPRF_ISNAN  -> decodeExprOps 1 "" bs
     EXPRF_ISINF  -> decodeExprOps 1 "" bs
-
-byteToTypeOp :: Word8 -> (Either ExprType ExprExtType, Int)
-byteToTypeOp b = if (byteTypeNum b) < 7
-                 then (Left $ toEnum $ fromIntegral $ byteTypeNum b, 
-                       fromIntegral $ byteOpNum b)
-                 else (Right $ exprExtValType $ byteExtTypeNum b, 
-                       fromIntegral $ byteExtOpNum b)
-  where 
-    byteTypeNum :: Word8 -> Word8
-    byteTypeNum b = (b .&. 0xE0) `shiftR` 5
-
-    byteExtTypeNum :: Word8 -> Word8
-    byteExtTypeNum b = (b .&. 0xF0) `shiftR` 4
-
-    byteOpNum :: Word8 -> Word8
-    byteOpNum b = b .&. 0x1F
-
-    byteExtOpNum :: Word8 -> Word8
-    byteExtOpNum b = b .&. 0x0F

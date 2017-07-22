@@ -791,14 +791,21 @@ pack :: [Expr Word8] -> Expr [Word8]
 pack l = PackList8 l
 
 -- | Haskino Firmware expresions, see:tbd
-data ExprType = EXPR_BOOL
+data ExprType = EXPR_UNIT
+              | EXPR_BOOL
               | EXPR_WORD8
               | EXPR_WORD16
               | EXPR_WORD32
               | EXPR_INT8
               | EXPR_INT16
               | EXPR_INT32
+              | EXPR_LIST8
+              | EXPR_FLOAT
               | EXPR_EXT
+            deriving (Show, Enum, Ord, Eq)
+
+data ExprEitherType = EXPR_RIGHT
+              | EXPR_LEFT
             deriving (Show, Enum, Ord, Eq)
 
 data ExprOp = EXPR_LIT
@@ -814,6 +821,7 @@ data ExprOp = EXPR_LIT
             | EXPR_SUB
             | EXPR_MULT
             | EXPR_DIV
+            | EXPR_SHOW
             | EXPR_NOT
             | EXPR_AND
             | EXPR_OR
@@ -828,7 +836,6 @@ data ExprOp = EXPR_LIT
             | EXPR_CLRB
             | EXPR_QUOT
             | EXPR_MOD
-            | EXPR_SHOW
           deriving (Show, Enum, Ord, Eq)
 
 data ExprListOp = EXPRL_LIT
@@ -858,10 +865,7 @@ data ExprFloatOp = EXPRF_LIT
             | EXPRF_MULT
             | EXPRF_DIV
             | EXPRF_SHOW
-            | EXPRF_MATH
-          deriving (Show, Enum, Ord, Eq)
-
-data ExprFloatMathOp = EXPRF_TRUNC
+            | EXPRF_TRUNC
             | EXPRF_FRAC
             | EXPRF_ROUND
             | EXPRF_CEIL
@@ -885,29 +889,14 @@ data ExprFloatMathOp = EXPRF_TRUNC
             | EXPRF_ISINF
           deriving (Show, Enum, Ord, Eq)
 
-data ExprExtType = EXPR_LIST8
-            | EXPR_FLOAT
-          deriving Show
+exprCmdVal :: ExprType -> ExprOp -> [Word8]
+exprCmdVal t o = [toW8 t, toW8 o]
 
-exprExtTypeVal :: ExprExtType -> Word8
-exprExtTypeVal EXPR_LIST8 = (fromIntegral $ fromEnum EXPR_EXT) `DB.shiftL` 5 DB..|. 0 `DB.shiftL` 4
-exprExtTypeVal EXPR_FLOAT = (fromIntegral $ fromEnum EXPR_EXT) `DB.shiftL` 5 DB..|. 1 `DB.shiftL` 4
+exprLCmdVal :: ExprListOp -> [Word8]
+exprLCmdVal o = [toW8 EXPR_LIST8, toW8 o]
 
-exprExtValType :: Word8 -> ExprExtType
-exprExtValType 0x0E = EXPR_LIST8
-exprExtValType 0x0F = EXPR_FLOAT
-
-exprCmdVal :: ExprType -> ExprOp -> Word8
-exprCmdVal t o = (fromIntegral $ fromEnum t) `DB.shiftL` 5 DB..|. (fromIntegral $ fromEnum o)
-
-exprLCmdVal :: ExprListOp -> Word8
-exprLCmdVal o = (exprExtTypeVal EXPR_LIST8) DB..|. (fromIntegral $ fromEnum o)
-
-exprFCmdVal :: ExprFloatOp -> Word8
-exprFCmdVal o = (exprExtTypeVal EXPR_FLOAT) DB..|. (fromIntegral $ fromEnum o)
-
-exprFMathCmdVals :: ExprFloatMathOp -> [Word8]
-exprFMathCmdVals o = [(fromIntegral $ fromEnum EXPRF_MATH), (fromIntegral $ fromEnum o)]
+exprFCmdVal :: ExprFloatOp -> [Word8]
+exprFCmdVal o = [toW8 EXPR_FLOAT, toW8 o]
 
 {-# NOINLINE abs_ #-}
 abs_ :: Expr a -> a

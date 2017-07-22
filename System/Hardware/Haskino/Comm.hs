@@ -112,6 +112,7 @@ openArduino verbose fp = do
               min = ver .&. 0xFF
               id = "Firmware v" ++ show maj ++ "." ++ show min
               versionState = initState {firmwareID = id}
+          if maj == 0 && min >= 6 then return () else error $ "\n*** Haskino:ERROR: Firmware version 0.6 or greater required" 
           putStrLn id
           -- Step 3: Send a processor type request
           p <- send versionState queryProcessor
