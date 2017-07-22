@@ -721,7 +721,7 @@ uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context)
             *ppExpr += 3; // Use Type, Cmd and Bind Index bytes
             break;
         case EXPR_LIT:
-            memcpy((byte *) &val, &pExpr[1], sizeof(uint16_t));
+            memcpy((byte *) &val, &pExpr[2], sizeof(uint16_t));
             *ppExpr += 2 + sizeof(uint16_t); // Use Type, Cmd and Value bytes
             break;
         case EXPR_REF:
@@ -873,7 +873,7 @@ int16_t evalInt16Expr(byte **ppExpr, CONTEXT *context)
             *ppExpr += 3; // Use Type, Cmd and Bind Index bytes
             break;
         case EXPR_LIT:
-            memcpy((byte *) &val, &pExpr[1], sizeof(uint16_t));
+            memcpy((byte *) &val, &pExpr[2], sizeof(uint16_t));
             *ppExpr += 2 + sizeof(uint16_t); // Use Type, Cmd and Value bytes
             break;
         case EXPR_REF:
@@ -1043,7 +1043,7 @@ uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context)
             *ppExpr += 3; // Use Type, Cmd and Bind Index bytes
             break;
         case EXPR_LIT:
-            memcpy((byte *) &val, &pExpr[1], sizeof(uint32_t));
+            memcpy((byte *) &val, &pExpr[2], sizeof(uint32_t));
             *ppExpr += 2 + sizeof(uint32_t); // Use Type, Cmd and Value bytes
             break;
         case EXPR_REF:
@@ -1200,7 +1200,7 @@ int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context)
                 *ppExpr += 3; // Use Type, Cmd and Bind Index bytes
                 break;
             case EXPR_LIT:
-                memcpy((byte *) &val, &pExpr[1], sizeof(uint32_t));
+                memcpy((byte *) &val, &pExpr[2], sizeof(uint32_t));
                 *ppExpr += 2 + sizeof(uint32_t); // Use Type, Cmd and Value bytes
                 break;
             case EXPR_REF:
@@ -1429,7 +1429,7 @@ float evalFloatExpr(byte **ppExpr, CONTEXT *context)
             *ppExpr += 3; // Use Type, Cmd and Bind Index bytes
             break;
         case EXPR_LIT:
-            memcpy((byte *) &val, &pExpr[1], sizeof(float));
+            memcpy((byte *) &val, &pExpr[2], sizeof(float));
             *ppExpr += 2 + sizeof(float); // Use Type, Cmd and Value bytes
             break;
         case EXPR_REF:
