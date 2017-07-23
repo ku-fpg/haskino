@@ -257,8 +257,8 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
             *ppExpr += 2; // Use Type and command byte
             l1 = evalList8Expr(ppExpr, context, &alloc1);
             l2 = evalList8Expr(ppExpr, context, &alloc2);
-            l1len = l1[1];
-            l2len = l2[1];
+            l1len = l1[2];
+            l2len = l2[2];
             if (exprOp == EXPR_EQ)
                 {
                 if (l1len != l2len)
@@ -268,7 +268,7 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                     val = true;
                     for (int i=0;i<l1len;i++)
                         {
-                        if (l1[2+i] != l2[2+i])
+                        if (l1[3+i] != l2[3+i])
                             {
                             val = false;
                             break;
@@ -289,7 +289,7 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                 else if (i == l2len)
                     val = false;
                 else 
-                    val = l1[2+i] < l2[2+i];
+                    val = l1[3+i] < l2[3+i];
                 }
             if (alloc1)
                 free(l1);
@@ -488,16 +488,16 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
                 case EXPRL_LEN:
                     *ppExpr += 2; // Use Type and command byte
                     listMem = evalList8Expr(ppExpr, context, &alloc);
-                    val = listMem[1];
+                    val = listMem[2];
                     if (alloc)
                         free(listMem);
                     break;
                 case EXPRL_ELEM:
-                    *ppExpr += 2; // Use Typecommand byte
+                    *ppExpr += 2; // Use Type and command byte
                     listMem = evalList8Expr(ppExpr, context, &alloc);
                     index = evalWord8Expr(ppExpr, context);
-                    if (index < listMem[1])
-                        val = listMem[2+index];
+                    if (index < listMem[2])
+                        val = listMem[3+index];
                     else // ToDo: handle out of bound index
                         val = 0;
                     if (alloc)
@@ -1641,13 +1641,13 @@ byte sizeList8Expr(byte **ppExpr, CONTEXT *context)
                 }
             break;
         case EXPRL_APND:
-            *ppExpr += 2; // Use command byte
+            *ppExpr += 2; // Use Type and command byte
             size = sizeList8Expr(ppExpr, context) + sizeList8Expr(ppExpr, context);
             break;
         case EXPRL_CONS:
-            *ppExpr += 2; // Use command byte
+            *ppExpr += 2; // Use Type and command byte
             evalWord8Expr(ppExpr, context);
-            size = 2 + sizeList8Expr(ppExpr, context);
+            size = 1 + sizeList8Expr(ppExpr, context);
             break;
         default:
 #ifdef DEBUG
@@ -1688,7 +1688,7 @@ int evalList8SubExpr(byte **ppExpr, CONTEXT *context, byte *listMem, byte index)
             break;
         case EXPR_LIT:
             size = pExpr[2];
-            memcpy(&listMem[index], &pExpr[2], size);
+            memcpy(&listMem[index], &pExpr[3], size);
             *ppExpr += 3 + size; // Use Type, Cmd and size bytes, + list size
             break;
         case EXPRL_PACK:
@@ -1744,7 +1744,7 @@ uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc)
             if (!context || !context->bind)
                 {
                 *alloc = true;
-                listMem = (byte *) malloc(2);
+                listMem = (byte *) malloc(3);
                 listMem[0] = EXPR_LIST8;
                 listMem[1] = EXPR_LIT;
                 listMem[2] = 0;
@@ -2004,10 +2004,10 @@ static bool handleExprRet(int size, const byte *msg, CONTEXT *context)
     else
         {
         // Need to copy expression
-        byte *newLVal = (byte *) malloc(lVal[1]+3);
+        byte *newLVal = (byte *) malloc(lVal[2]+3);
         if (newLVal)
             {
-            memcpy(newLVal, lVal, lVal[1]+3);
+            memcpy(newLVal, lVal, lVal[2]+3);
             putBindListPtr(context, 0, newLVal);
             }
         }
