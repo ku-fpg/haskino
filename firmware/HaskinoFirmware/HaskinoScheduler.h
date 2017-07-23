@@ -39,6 +39,7 @@ typedef struct context_t
     int16_t             recallBlockLevel;
     uint16_t            bindSize;
     byte               *bind;
+    bool                left;
     } CONTEXT;
 
 typedef struct semphore_t

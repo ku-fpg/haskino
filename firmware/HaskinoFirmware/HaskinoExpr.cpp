@@ -41,7 +41,8 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
     bool alloc1, alloc2;
     byte bind;
     byte *bindPtr;
-
+    
+    context->left = false;
     switch (exprType)
         {
         case EXPR_BOOL:
@@ -68,6 +69,11 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                     refNum = pExpr[2];
                     val = readRefBool(refNum);
                     *ppExpr += 3; // Use Type, Cmd and Ref bytes
+                    break;
+                case EXPR_LEFT:
+                    *ppExpr += 2; // Use Type and Cmd bytes
+                    val = evalBoolExpr(ppExpr, context);
+                    context->left = true;
                     break;
                 case EXPR_NOT:
                     *ppExpr += 2; // Use Type and command byte
@@ -346,6 +352,7 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
     byte bind;
     byte *bindPtr;
 
+    context->left = false;
     switch (exprType)
         {
         case EXPR_WORD8:
@@ -372,6 +379,11 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
                     refNum = pExpr[2];
                     val = readRefWord8(refNum);
                      *ppExpr += 3; // Use Type, Cmd and Ref bytes
+                    break;
+                case EXPR_LEFT:
+                    *ppExpr += 2; // Use Type and Cmd bytes
+                    val = evalWord8Expr(ppExpr, context);
+                    context->left = true;
                     break;
                 case EXPR_NEG:
                 case EXPR_SIGN:
@@ -531,6 +543,7 @@ int8_t evalInt8Expr(byte **ppExpr, CONTEXT *context)
     byte bind;
     byte *bindPtr;
 
+    context->left = false;
     switch (exprOp)
         {
         case EXPR_BIND:
@@ -554,6 +567,11 @@ int8_t evalInt8Expr(byte **ppExpr, CONTEXT *context)
             refNum = pExpr[1];
             val = readRefInt8(refNum);
              *ppExpr += 3; // Use Type, Cmd and Ref bytes
+            break;
+        case EXPR_LEFT:
+            *ppExpr += 2; // Use Type and Cmd  bytes
+            val = evalInt8Expr(ppExpr, context);
+            context->left = true;
             break;
         case EXPR_NEG:
         case EXPR_SIGN:
@@ -705,6 +723,7 @@ uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context)
     byte bind;
     byte *bindPtr;
 
+    context->left = false;
     switch (exprOp)
         {
         case EXPR_BIND:
@@ -728,6 +747,11 @@ uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context)
             refNum = pExpr[2];
             val = readRefWord16(refNum);
             *ppExpr += 3; // Use Type, Cmd and Ref bytes
+            break;
+        case EXPR_LEFT:
+            *ppExpr += 2; // Use Type and Cmd  bytes
+            val = evalWord16Expr(ppExpr, context);
+            context->left = true;
             break;
         case EXPR_NEG:
         case EXPR_SIGN:
@@ -857,6 +881,7 @@ int16_t evalInt16Expr(byte **ppExpr, CONTEXT *context)
     byte bind;
     byte *bindPtr;
 
+    context->left = false;
     switch (exprOp)
         {
         case EXPR_BIND:
@@ -880,6 +905,11 @@ int16_t evalInt16Expr(byte **ppExpr, CONTEXT *context)
             refNum = pExpr[2];
             val = readRefInt16(refNum);
             *ppExpr += 3; // Use Type, Cmd and Ref bytes
+            break;
+        case EXPR_LEFT:
+            *ppExpr += 2; // Use Type and Cmd bytes
+            val = evalInt16Expr(ppExpr, context);
+            context->left = true;
             break;
         case EXPR_NEG:
         case EXPR_SIGN:
@@ -1027,6 +1057,7 @@ uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context)
     byte bind;
     byte *bindPtr;
 
+    context->left = false;
     switch (exprOp)
         {
         case EXPR_BIND:
@@ -1050,6 +1081,11 @@ uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context)
             refNum = pExpr[2];
             val = readRefWord32(refNum);
             *ppExpr += 3; // Use Type, Cmd and Ref bytes
+            break;
+        case EXPR_LEFT:
+            *ppExpr += 2; // Use Type and Cmd bytes
+            val = evalWord32Expr(ppExpr, context);
+            context->left = true;
             break;
         case EXPR_NEG:
         case EXPR_SIGN:
@@ -1181,6 +1217,7 @@ int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context)
     byte bind;
     byte *bindPtr;
 
+    context->left = false;
     switch (exprType)
         {
         case EXPR_INT32:
@@ -1207,6 +1244,11 @@ int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context)
                 refNum = pExpr[2];
                 val = readRefInt32(refNum);
                 *ppExpr += 3; // Use Type, Cmd and Ref bytes
+                break;
+            case EXPR_LEFT:
+                *ppExpr += 2; // Use Type and Cmd bytes
+                val = evalInt32Expr(ppExpr, context);
+                context->left = true;
                 break;
             case EXPR_NEG:
             case EXPR_SIGN:
@@ -1413,6 +1455,7 @@ float evalFloatExpr(byte **ppExpr, CONTEXT *context)
     byte bind;
     byte *bindPtr;
 
+    context->left = false;
     switch (exprOp)
         {
         case EXPR_BIND:
@@ -1436,6 +1479,11 @@ float evalFloatExpr(byte **ppExpr, CONTEXT *context)
             refNum = pExpr[2];
             val = readRefFloat(refNum);
             *ppExpr += 3; // Use Type, Cmd and Ref bytes
+            break;
+        case EXPR_LEFT:
+            *ppExpr += 2; // Use Type and Cmd bytes
+            val = evalFloatExpr(ppExpr, context);
+            context->left = true;
             break;
         case EXPR_NEG:
         case EXPR_SIGN:
@@ -1727,6 +1775,7 @@ uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc)
     byte *listMem = NULL;
     byte size, bind, refNum;
 
+    context->left = false;
     if (exprType == EXPR_LIST8)
         {
         // If it is a literal, just return a pointer to the list
@@ -1763,6 +1812,12 @@ uint8_t *evalList8Expr(byte **ppExpr, CONTEXT *context, bool *alloc)
             refNum = pExpr[2];
             listMem = readRefList8(refNum);
             *ppExpr += 3; // Use Type, command byte, byte byte
+            }
+        else if (exprOp == EXPR_LEFT)
+            {
+            *ppExpr += 2; // Use Type and Cmd  bytes
+            listMem = evalList8Expr(ppExpr, context, alloc);
+            context->left = true;
             }
         else if (exprOp == EXPR_IF)
             {
@@ -1882,6 +1937,7 @@ static bool handleExprRet(int size, const byte *msg, CONTEXT *context)
     byte bind = msg[1];
     byte *expr = (byte *) &msg[2];
     byte exprType = expr[0];
+    byte *bind_ptr = &context->bind[bind * BIND_SPACING];
 
     switch (exprType)
         {
@@ -1913,6 +1969,8 @@ static bool handleExprRet(int size, const byte *msg, CONTEXT *context)
             storeFloatBind(expr, context, bind);
             break;
         }
+    if (context->left)
+        bind_ptr[0] |= EXPRE_LEFT_FLAG;
 
     return false;
     }
