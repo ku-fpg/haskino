@@ -346,6 +346,31 @@ prop_ifthenelse c x y = monadicIO $ do
         return v
     assert (local == litEval8 remote)
 
+prop_ifthenelseeitherw8 :: ArduinoConnection -> Word8 -> Word8 -> Property
+prop_ifthenelseeitherw8 c x y = monadicIO $ do
+    let local = if (x < y) then x else y
+    remote <- run $ send c $ do
+        v <- ifThenElseEither ((lit x) <* (lit y)) (return $ ExprLeft $ lit x) (return $ ExprRight $ lit y)
+        return v
+    let remoteEval = case remote of
+            ExprLeft  (LitW8 l) -> l
+            ExprRight (LitW8 r) -> r
+    assert (local == remoteEval)
+
+prop_ifthenelseeitherb :: ArduinoConnection -> Word8 -> Word8 -> Property
+prop_ifthenelseeitherb c x y = monadicIO $ do
+    let local = if (x < y) then Left x else Right $ y > 0x7F
+    remote <- run $ send c $ do
+        v <- ifThenElseEither ((lit x) <* (lit y)) (return $ ExprLeft $ lit x) (return $ ExprRight $ lit (y > 0x7F))
+        return v
+    case local of 
+        Left l -> do
+            let (ExprLeft (LitW8 rl)) = remote
+            assert (l == rl)
+        Right r -> do
+            let (ExprRight (LitB rr)) = remote
+            assert (r == rr)
+
 prop_while :: ArduinoConnection -> NonZero Word8 -> Property
 prop_while c (NonZero x) = monadicIO $ do
     let local = x
@@ -425,6 +450,10 @@ main = do
     quickCheck (prop_bind conn refW8)
     print "IfThenElse Tests:"
     quickCheck (prop_ifthenelse conn)
+    print "IfThenElseEitherW8 Tests:"
+    quickCheck (prop_ifthenelseeitherw8 conn)
+    print "IfThenElseEitherBool Tests:"
+    quickCheck (prop_ifthenelseeitherb conn)
     print "While Tests:"
     quickCheck (prop_while conn)
     closeArduino conn

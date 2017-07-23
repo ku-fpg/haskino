@@ -159,10 +159,10 @@ static int typeToSize(int type)
     {
     switch(type)
         {
-        case EXPR_BOOL:
         case EXPR_WORD16:
         case EXPR_INT16:
             return 2;
+        case EXPR_BOOL:
         case EXPR_WORD8:
         case EXPR_INT8:
             return 1;

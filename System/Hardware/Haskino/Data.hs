@@ -1373,6 +1373,7 @@ data Response = DelayResp
               | ReadRefI32Reply Int32
               | ReadRefL8Reply [Word8]
               | ReadRefFloatReply Float
+              | IfThenElseUnitReply ()
               | IfThenElseBReply Bool
               | IfThenElseW8Reply Word8
               | IfThenElseW16Reply Word16
@@ -1382,6 +1383,16 @@ data Response = DelayResp
               | IfThenElseI32Reply Int32
               | IfThenElseL8Reply [Word8]
               | IfThenElseFloatReply Float
+              | IfThenElseUnitLeftReply ()
+              | IfThenElseBLeftReply Bool
+              | IfThenElseW8LeftReply Word8
+              | IfThenElseW16LeftReply Word16
+              | IfThenElseW32LeftReply Word32
+              | IfThenElseI8LeftReply Int8
+              | IfThenElseI16LeftReply Int16
+              | IfThenElseI32LeftReply Int32
+              | IfThenElseL8LeftReply [Word8]
+              | IfThenElseFloatLeftReply Float
               | WhileBReply Bool
               | WhileW8Reply Word8
               | WhileW16Reply Word16

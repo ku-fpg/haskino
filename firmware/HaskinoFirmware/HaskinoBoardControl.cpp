@@ -156,10 +156,10 @@ static int typeToSize(int type, byte *src)
         {
         case EXPR_UNIT:
             return 2;
-        case EXPR_BOOL:
         case EXPR_WORD16:
         case EXPR_INT16:
             return 4;
+        case EXPR_BOOL:
         case EXPR_WORD8:
         case EXPR_INT8:
             return 3;
@@ -173,9 +173,9 @@ static int typeToSize(int type, byte *src)
         }
     } 
 
-// TBD MDG - not updated for new expressions
 static bool handleWhile(int size, const byte *msg, CONTEXT *context)
     {
+#if 1
     byte bind = msg[1];
     byte *expr = (byte *) &msg[2];
     bool rescheduled = (context->task && context->task->rescheduled);
@@ -246,7 +246,7 @@ static bool handleWhile(int size, const byte *msg, CONTEXT *context)
     sendReply( typeToSize(exprType, &context->bind[bind * BIND_SPACING]),
                BC_RESP_WHILE, &context->bind[bind * BIND_SPACING],
                context, bind);
-
+#endif
     return false;
 }
 
@@ -263,6 +263,7 @@ static bool handleIfThenElse(int size, const byte *msg, CONTEXT *context)
     byte *codeBlock = expr;
     bool test;
     bool rescheduled = context->task && context->task->rescheduled;
+    byte *bind_ptr = &context->bind[bind * BIND_SPACING];
     byte ifReply[6];
 
     if (rescheduled)
@@ -280,14 +281,17 @@ static bool handleIfThenElse(int size, const byte *msg, CONTEXT *context)
     if (test)
         {
         rescheduled = runCodeBlock(thenSize, codeBlock, context);
-        type = type1;
         }
     else
         {
         elseSize = size - (thenSize + (codeBlock - msg));
         rescheduled = runCodeBlock(elseSize, codeBlock + thenSize, context);
-        type = type2;
         }
+
+    if ((*bind_ptr & EXPRE_LEFT_FLAG) == EXPRE_LEFT_FLAG)
+        type = type1;
+    else
+        type = type2;
 
     if (!rescheduled)
         sendReply( typeToSize(type, &context->bind[bind * BIND_SPACING]),

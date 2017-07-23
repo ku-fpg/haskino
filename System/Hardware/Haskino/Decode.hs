@@ -116,10 +116,10 @@ decodeCmdArgs BC_CMD_WHILE _ (b :< sz :< xs) = (prc ++ dec ++ "\n" ++ dec', B.em
     (dec, xs') = decodeExprCmd 2 xs
     dec' = decodeCodeBlock xs' "While"
 decodeCmdArgs BC_CMD_IF_THEN_ELSE _ Empty = decodeErr B.empty
-decodeCmdArgs BC_CMD_IF_THEN_ELSE _ xs | B.length xs < 5 = decodeErr xs
-decodeCmdArgs BC_CMD_IF_THEN_ELSE _ (rt :< b :< xs) = (cmd ++ dec ++ "\n" ++ dec' ++ dec'', B.empty)
+decodeCmdArgs BC_CMD_IF_THEN_ELSE _ xs | B.length xs < 6 = decodeErr xs
+decodeCmdArgs BC_CMD_IF_THEN_ELSE _ (rt1 :< rt2 :< b :< xs) = (cmd ++ dec ++ "\n" ++ dec' ++ dec'', B.empty)
   where
-    cmd = "-" ++ (show ((toEnum (fromIntegral rt))::ExprType)) ++ " (Bind " ++ show b ++ ") <-"
+    cmd = "-" ++ (show ((toEnum (fromIntegral rt1))::ExprType)) ++ (show ((toEnum (fromIntegral rt2))::ExprType)) ++ " (Bind " ++ show b ++ ") <-"
     thenSize = bytesToWord16 (B.head xs, B.head (B.tail xs))
     (dec, xs') = decodeExprCmd 1 (B.drop 2 xs)
     dec' = decodeCodeBlock (B.take (fromIntegral thenSize) xs') "Then"
@@ -295,6 +295,7 @@ decodeOp etype eop bs =
     EXPR_QUOT  -> decodeExprOps 2 "" bs
     EXPR_MOD   -> decodeExprOps 2 "" bs
     EXPR_SHOW  -> decodeExprOps 1 "" bs
+    EXPR_LEFT  -> decodeExprOps 1 "" bs
 
 decodeRefBind :: B.ByteString -> (String, B.ByteString)
 decodeRefBind bs = 

@@ -22,7 +22,7 @@ import           Control.Monad.State
 import           Control.Remote.Applicative.Types as T
 import           Control.Remote.Monad
 import           Control.Remote.Monad.Types       as T
-import           Data.Bits                        (xor,shiftR)
+import           Data.Bits                        (xor,shiftR,(.&.))
 import qualified Data.ByteString                  as B
 import           Data.Int                         (Int8, Int16, Int32)
 import qualified Data.Map                         as M
@@ -507,6 +507,16 @@ packageProcedure p = do
     packageProcedure' (IfThenElseInt32E e cb1 cb2) ib = packageIfThenElseProcedure EXPR_INT32 ib e cb1 cb2
     packageProcedure' (IfThenElseL8E e cb1 cb2) ib = packageIfThenElseProcedure EXPR_LIST8 ib e cb1 cb2
     packageProcedure' (IfThenElseFloatE e cb1 cb2) ib = packageIfThenElseProcedure EXPR_FLOAT ib e cb1 cb2
+    packageProcedure' (IfThenElseW8Unit e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD8 EXPR_UNIT ib e cb1 cb2
+    packageProcedure' (IfThenElseW8Bool e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD8 EXPR_BOOL ib e cb1 cb2
+    packageProcedure' (IfThenElseW8W8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD8 EXPR_WORD8 ib e cb1 cb2
+    packageProcedure' (IfThenElseW8W16 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD8 EXPR_WORD16 ib e cb1 cb2
+    packageProcedure' (IfThenElseW8W32 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD8 EXPR_WORD32 ib e cb1 cb2
+    packageProcedure' (IfThenElseW8I8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD8 EXPR_INT8 ib e cb1 cb2
+    packageProcedure' (IfThenElseW8I16 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD8 EXPR_INT16 ib e cb1 cb2
+    packageProcedure' (IfThenElseW8I32 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD8 EXPR_INT32 ib e cb1 cb2
+    packageProcedure' (IfThenElseW8L8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD8 EXPR_LIST8 ib e cb1 cb2
+    packageProcedure' (IfThenElseW8Float e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD8 EXPR_FLOAT ib e cb1 cb2
     packageProcedure' (WhileBoolE iv bf bdf) ib = packageWhileProcedure EXPR_BOOL ib (RemBindB ib) iv bf bdf
     packageProcedure' (WhileWord8E iv bf bdf) ib = packageWhileProcedure EXPR_WORD8 ib (RemBindW8 ib) iv bf bdf
     packageProcedure' (WhileWord16E iv bf bdf) ib = packageWhileProcedure EXPR_WORD16 ib (RemBindW16 ib) iv bf bdf
@@ -532,6 +542,18 @@ packageIfThenElseProcedure rt b e cb1 cb2 = do
     let pc2'  = B.append pc2 $ lenPackage rc2
     let thenSize = word16ToBytes $ fromIntegral (B.length pc1')
     i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum rt, fromIntegral $ fromEnum rt, fromIntegral b] ++ thenSize ++ (packageExpr e))
+    return $ B.append i (B.append pc1' pc2')
+
+packageIfThenElseEitherProcedure :: (ExprB a, ExprB b) => ExprType -> ExprType -> Int -> Expr Bool -> Arduino (ExprEither a b) -> Arduino (ExprEither a b) -> State CommandState B.ByteString
+packageIfThenElseEitherProcedure rt1 rt2 b e cb1 cb2 = do
+    (r1, pc1) <- packageCodeBlock cb1
+    let rc1 = buildCommand EXPR_CMD_RET $ (fromIntegral b) : packageExprEither rt1 rt2 r1
+    let pc1'  = B.append pc1 $ lenPackage rc1
+    (r2, pc2) <- packageCodeBlock cb2
+    let rc2 = buildCommand EXPR_CMD_RET $ (fromIntegral b) : packageExprEither rt1 rt2 r2
+    let pc2'  = B.append pc2 $ lenPackage rc2
+    let thenSize = word16ToBytes $ fromIntegral (B.length pc1')
+    i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum rt1, fromIntegral $ fromEnum rt2, fromIntegral b] ++ thenSize ++ (packageExpr e))
     return $ B.append i (B.append pc1' pc2')
 
 packageWhileProcedure :: ExprType -> Int -> Expr a -> Expr a -> (Expr a -> Expr Bool) -> (Expr a -> Arduino (Expr a)) -> State CommandState B.ByteString
@@ -584,6 +606,10 @@ packageTwoMathExpr o e1 e2 = (exprFCmdVal o) ++ (packageExpr e1) ++ (packageExpr
 
 packageRef :: Int -> [Word8] -> [Word8]
 packageRef n ec = ec ++ [fromIntegral n]
+
+packageExprEither :: (ExprB a, ExprB b) => ExprType -> ExprType -> ExprEither a b -> [Word8]
+packageExprEither t1  _t2 (ExprLeft  el) = [toW8 t1, toW8 EXPR_LEFT] ++ packageExpr el
+packageExprEither _t1 _t2 (ExprRight er) = packageExpr er
 
 packageExpr :: Expr a -> [Word8]
 packageExpr (LitB b) = [toW8 EXPR_BOOL, toW8 EXPR_LIT, if b then 1 else 0]
@@ -829,6 +855,10 @@ unpackageResponse (cmdWord:args)
                                       -> IfThenElseL8Reply bs
       (BC_RESP_IF_THEN_ELSE , [t,l,b1,b2,b3,b4]) | t == toW8 EXPR_FLOAT && l == toW8 EXPR_LIT
                                       -> IfThenElseFloatReply $ bytesToFloat (b1, b2, b3, b4)
+      (BC_RESP_IF_THEN_ELSE , [t,l,b]) | t == (toW8 EXPR_BOOL  + 0x80) && l == toW8 EXPR_LIT
+                                      -> IfThenElseBLeftReply (if b == 0 then False else True)
+      (BC_RESP_IF_THEN_ELSE , [t,l,b]) | t == (toW8 EXPR_WORD8 + 0x80) && l == toW8 EXPR_LIT
+                                      -> IfThenElseW8LeftReply b
       (BC_RESP_WHILE , [t,l,b]) | t == toW8 EXPR_BOOL && l == toW8 EXPR_LIT
                                       -> WhileBReply (if b == 0 then False else True)
       (BC_RESP_WHILE , [t,l,b]) | t == toW8 EXPR_WORD8 && l == toW8 EXPR_LIT
@@ -957,6 +987,10 @@ parseQueryResult (IfThenElseInt16E _ _ _) (IfThenElseI16Reply r) = Just $ lit r
 parseQueryResult (IfThenElseInt32E _ _ _) (IfThenElseI32Reply r) = Just $ lit r
 parseQueryResult (IfThenElseL8E _ _ _) (IfThenElseL8Reply r) = Just $ lit r
 parseQueryResult (IfThenElseFloatE _ _ _) (IfThenElseFloatReply r) = Just $ lit r
+parseQueryResult (IfThenElseW8Bool _ _ _) (IfThenElseBReply r) = Just $ ExprRight $ lit r
+parseQueryResult (IfThenElseW8Bool _ _ _) (IfThenElseW8LeftReply r) = Just $ ExprLeft $ lit r
+parseQueryResult (IfThenElseW8W8 _ _ _) (IfThenElseW8Reply r) = Just $ ExprRight $ lit r
+parseQueryResult (IfThenElseW8W8 _ _ _) (IfThenElseW8LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (WhileBoolE _ _ _) (WhileBReply r) = Just $ lit r
 parseQueryResult (WhileWord8E _ _ _) (WhileW8Reply r) = Just $ lit r
 parseQueryResult (WhileWord16E _ _ _) (WhileW16Reply r) = Just $ lit r
