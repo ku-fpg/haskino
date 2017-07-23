@@ -463,8 +463,8 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
                     val = evalInt32Expr(ppExpr, context);
                     break;
                 case EXPR_IF:
-                    memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
-                    memcpy((byte *) &elseSize, &pExpr[3], sizeof(uint16_t));
+                    memcpy((byte *) &thenSize, &pExpr[2], sizeof(uint16_t));
+                    memcpy((byte *) &elseSize, &pExpr[4], sizeof(uint16_t));
                     *ppExpr += 2 + 2*sizeof(uint16_t); // Use Type, Cmd and Value bytes
                     conditional = evalBoolExpr(ppExpr, context);
                     if (conditional)
@@ -668,8 +668,8 @@ int8_t evalInt8Expr(byte **ppExpr, CONTEXT *context)
             val = evalInt32Expr(ppExpr, context);
             break;
         case EXPR_IF:
-            memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
-            memcpy((byte *) &elseSize, &pExpr[3], sizeof(uint16_t));
+            memcpy((byte *) &thenSize, &pExpr[2], sizeof(uint16_t));
+            memcpy((byte *) &elseSize, &pExpr[4], sizeof(uint16_t));
             *ppExpr += 2 + 2*sizeof(uint16_t); // Use Type, Cmd and Value bytes
             conditional = evalBoolExpr(ppExpr, context);
             if (conditional)
@@ -820,8 +820,8 @@ uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context)
             val = evalInt32Expr(ppExpr, context);
             break;
         case EXPR_IF:
-            memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
-            memcpy((byte *) &elseSize, &pExpr[3], sizeof(uint16_t));
+            memcpy((byte *) &thenSize, &pExpr[2], sizeof(uint16_t));
+            memcpy((byte *) &elseSize, &pExpr[4], sizeof(uint16_t));
             *ppExpr += 2 + 2*sizeof(uint16_t); // Use Type, Cmd and Value bytes
             conditional = evalBoolExpr(ppExpr, context);
             if (conditional)
@@ -990,8 +990,8 @@ int16_t evalInt16Expr(byte **ppExpr, CONTEXT *context)
             val = evalInt32Expr(ppExpr, context);
             break;
         case EXPR_IF:
-            memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
-            memcpy((byte *) &elseSize, &pExpr[3], sizeof(uint16_t));
+            memcpy((byte *) &thenSize, &pExpr[2], sizeof(uint16_t));
+            memcpy((byte *) &elseSize, &pExpr[4], sizeof(uint16_t));
             *ppExpr += 2 + 2*sizeof(uint16_t); // Use Type, Cmd and Value bytes
             conditional = evalBoolExpr(ppExpr, context);
             if (conditional)
@@ -1142,8 +1142,8 @@ uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context)
             val = evalInt32Expr(ppExpr, context);
             break;
         case EXPR_IF:
-            memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
-            memcpy((byte *) &elseSize, &pExpr[3], sizeof(uint16_t));
+            memcpy((byte *) &thenSize, &pExpr[2], sizeof(uint16_t));
+            memcpy((byte *) &elseSize, &pExpr[4], sizeof(uint16_t));
             *ppExpr += 2 + 2*sizeof(uint16_t); // Use Type, Cmd and Value bytes
             conditional = evalBoolExpr(ppExpr, context);
             if (conditional)
@@ -1313,8 +1313,8 @@ int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context)
                     }
                 break;
             case EXPR_IF:
-                memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
-                memcpy((byte *) &elseSize, &pExpr[3], sizeof(uint16_t));
+                memcpy((byte *) &thenSize, &pExpr[2], sizeof(uint16_t));
+                memcpy((byte *) &elseSize, &pExpr[4], sizeof(uint16_t));
                 *ppExpr += 2 + 2*sizeof(uint16_t); // Use Type, Cmd and Value bytes
                 conditional = evalBoolExpr(ppExpr, context);
                 if (conditional)
@@ -1481,8 +1481,8 @@ float evalFloatExpr(byte **ppExpr, CONTEXT *context)
             val = evalInt32Expr(ppExpr, context);
             break;
         case EXPR_IF:
-            memcpy((byte *) &thenSize, &pExpr[1], sizeof(uint16_t));
-            memcpy((byte *) &elseSize, &pExpr[3], sizeof(uint16_t));
+            memcpy((byte *) &thenSize, &pExpr[2], sizeof(uint16_t));
+            memcpy((byte *) &elseSize, &pExpr[4], sizeof(uint16_t));
             *ppExpr += 2 + 2*sizeof(uint16_t); // Use Type, Cmd and Value bytes
             conditional = evalBoolExpr(ppExpr, context);
             if (conditional)
