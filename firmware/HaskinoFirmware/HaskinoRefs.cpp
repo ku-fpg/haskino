@@ -360,7 +360,7 @@ static bool handleReadRef(int type, int size, const byte *msg, CONTEXT *context)
             sendReply(sizeof(uint32_t)+2, REF_RESP_READ, readReply, context, bind);
             break;
         case EXPR_INT8:
-            readReply[1] = *((int8_t *) haskinoRefs[refIndex].ref);
+            readReply[2] = *((int8_t *) haskinoRefs[refIndex].ref);
             sendReply(sizeof(int8_t)+2, REF_RESP_READ, readReply, context, bind);
             break;
         case EXPR_INT16:
