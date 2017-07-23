@@ -280,7 +280,7 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
                 {
                 int i;
                 for (i=0;
-                     i < l1len && i < l2len && l1[2+i] == l2[2+i];
+                     i < l1len && i < l2len && l1[3+i] == l2[3+i];
                      i++);
                 if (i == l1len && i == l2len)
                     val = false;

@@ -390,7 +390,7 @@ decodeFloatOp efop bs =
     EXPRF_SUB   -> decodeExprOps 2 "" bs
     EXPRF_MULT  -> decodeExprOps 2 "" bs
     EXPRF_DIV   -> decodeExprOps 2 "" bs
-    EXPRF_SHOW  -> decodeExprOps 1 "" bs
+    EXPRF_SHOW  -> decodeExprOps 2 "" bs
     EXPRF_TRUNC  -> decodeExprOps 1 "" bs
     EXPRF_FRAC   -> decodeExprOps 1 "" bs
     EXPRF_ROUND  -> decodeExprOps 1 "" bs
