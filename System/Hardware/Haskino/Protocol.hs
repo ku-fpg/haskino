@@ -531,7 +531,7 @@ packageIfThenElseProcedure rt b e cb1 cb2 = do
     let rc2 = buildCommand EXPR_CMD_RET $ (fromIntegral b) : packageExpr r2
     let pc2'  = B.append pc2 $ lenPackage rc2
     let thenSize = word16ToBytes $ fromIntegral (B.length pc1')
-    i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum rt, fromIntegral b] ++ thenSize ++ (packageExpr e))
+    i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum rt, fromIntegral $ fromEnum rt, fromIntegral b] ++ thenSize ++ (packageExpr e))
     return $ B.append i (B.append pc1' pc2')
 
 packageWhileProcedure :: ExprType -> Int -> Expr a -> Expr a -> (Expr a -> Expr Bool) -> (Expr a -> Arduino (Expr a)) -> State CommandState B.ByteString

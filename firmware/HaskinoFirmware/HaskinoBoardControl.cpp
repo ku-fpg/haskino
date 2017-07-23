@@ -252,11 +252,13 @@ static bool handleWhile(int size, const byte *msg, CONTEXT *context)
 
 static bool handleIfThenElse(int size, const byte *msg, CONTEXT *context)
     {
-    byte type = msg[1];
-    byte bind = msg[2];
+    byte type;
+    byte type1 = msg[1];
+    byte type2 = msg[2];
+    byte bind = msg[3];
     uint16_t thenSize, elseSize;
-    memcpy(&thenSize, &msg[3], sizeof(thenSize));
-    byte *expr = (byte *) &msg[5];
+    memcpy(&thenSize, &msg[4], sizeof(thenSize));
+    byte *expr = (byte *) &msg[6];
     bool condition = evalBoolExpr(&expr, context);
     byte *codeBlock = expr;
     bool test;
@@ -278,11 +280,13 @@ static bool handleIfThenElse(int size, const byte *msg, CONTEXT *context)
     if (test)
         {
         rescheduled = runCodeBlock(thenSize, codeBlock, context);
+        type = type1;
         }
     else
         {
         elseSize = size - (thenSize + (codeBlock - msg));
         rescheduled = runCodeBlock(elseSize, codeBlock + thenSize, context);
+        type = type2;
         }
 
     if (!rescheduled)
