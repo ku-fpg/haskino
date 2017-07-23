@@ -801,11 +801,10 @@ data ExprType = EXPR_UNIT
               | EXPR_INT32
               | EXPR_LIST8
               | EXPR_FLOAT
-              | EXPR_EXT
             deriving (Show, Enum, Ord, Eq)
 
-data ExprEitherType = EXPR_RIGHT
-              | EXPR_LEFT
+data ExprEitherType = EXPRE_RIGHT
+              | EXPRE_LEFT
             deriving (Show, Enum, Ord, Eq)
 
 data ExprOp = EXPR_LIT
@@ -814,6 +813,7 @@ data ExprOp = EXPR_LIT
             | EXPR_EQ
             | EXPR_LESS
             | EXPR_IF
+            | EXPR_LEFT
             | EXPR_FINT
             | EXPR_NEG
             | EXPR_SIGN
@@ -844,6 +844,7 @@ data ExprListOp = EXPRL_LIT
             | EXPRL_EQ
             | EXPRL_LESS
             | EXPRL_IF
+            | EXPRL_LEFT
             | EXPRL_ELEM
             | EXPRL_LEN
             | EXPRL_CONS
@@ -857,6 +858,7 @@ data ExprFloatOp = EXPRF_LIT
             | EXPRF_EQ
             | EXPRF_LESS
             | EXPRF_IF
+            | EXPRF_LEFT
             | EXPRF_FINT
             | EXPRF_NEG
             | EXPRF_SIGN
