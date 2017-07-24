@@ -1975,6 +1975,14 @@ static bool handleExprRet(int size, const byte *msg, CONTEXT *context)
     return false;
     }
 
+ void storeUnitBind(CONTEXT *context, byte bind)
+    {
+    byte *bind_ptr = &context->bind[bind * BIND_SPACING];
+
+    bind_ptr[0] = EXPR_UNIT;
+    bind_ptr[1] = EXPR_LIT;
+    }
+
  void storeBoolBind(byte *expr, CONTEXT *context, byte bind)
     {
     byte *bind_ptr = &context->bind[bind * BIND_SPACING];

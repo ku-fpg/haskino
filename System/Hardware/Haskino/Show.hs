@@ -112,14 +112,6 @@ showCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) =
 showCommand (Loop cb) = do
     (_, c) <- showCodeBlock cb
     return $ "Loop\n" ++ c
-showCommand (LoopE cb) = do
-    (_, c) <- showCodeBlock cb
-    return $ "LoopE\n" ++ c
-showCommand (ForInE ws f) = do
-    s <- get
-    (_, p) <- showCodeBlock $ f $ RemBindW8 $ ib s
-    put s {ib = (ib s) + 1}
-    return $ "ForIn " ++ show ws ++ " Bind" ++ show (ib s) ++ "\n" ++ p
 showCommand (IfThenElseUnitE e cb1 cb2) = do
     (_, cs1) <- showCodeBlock cb1
     (_, cs2) <- showCodeBlock cb2

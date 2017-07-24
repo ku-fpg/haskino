@@ -323,42 +323,12 @@ compileCommand (ModifyRemoteRefI16 (RemoteRefI16 i) f) = compileWriteRef i f
 compileCommand (ModifyRemoteRefI32 (RemoteRefI32 i) f) = compileWriteRef i f
 compileCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) = compileWriteListRef i f
 compileCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) = compileWriteRef i f
-compileCommand (LoopE cb) = do
-    compileLine "while (1)"
-    compileCodeBlock cb
-    compileLineIndent "}"
-    return ()
 compileCommand (IfThenElseUnitE e cb1 cb2) = do
     compileLine $ "if (" ++ compileExpr e ++ ")"
     compileCodeBlock cb1
     compileLineIndent "}"
     compileLine "else"
     compileCodeBlock cb2
-    compileLineIndent "}"
-    return ()
-compileCommand (ForInE ws f) = do
-    s <- get
-    let belem = ib s
-    let blist = belem + 1
-    let bloop = belem + 2
-    put s {ib = belem + 3}
-    compileAllocBind $ compileTypeToString Word8Type ++ " " ++
-                       bindName ++ show belem ++ ";"
-    compileAllocBind $ "static " ++ compileTypeToString List8Type ++ " " ++
-                       bindName ++ show blist ++ ";"
-    compileAllocBind $ compileTypeToString Word16Type ++ " " ++
-                       bindName ++ show bloop ++ ";"
-    let belemName = bindName ++ show belem
-    let blistName = bindName ++ show blist
-    let bloopName = bindName ++ show bloop
-    compileLine $ "listAssign(&" ++ blistName ++ ", " ++ compileExpr ws ++ ");"
-    compileLine $ "for (" ++ bloopName ++ "=0, " ++
-                             belemName ++ " = list8Elem(" ++ blistName ++ ", 0);"
-    compileLine $ "     " ++ bloopName ++ " < list8Len(" ++ blistName ++ ");"
-    compileLine $ "     " ++ bloopName ++ "++, " ++
-                             belemName ++ " = list8Elem(" ++ blistName ++ ", " ++
-                             bloopName ++ "))"
-    compileCodeBlock (f (RemBindW8 belem))
     compileLineIndent "}"
     return ()
 

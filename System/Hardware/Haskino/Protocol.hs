@@ -43,10 +43,10 @@ minServo = 544
 maxServo :: Int16 
 maxServo = 2400
 
-data CommandState = CommandState {ix :: Int  
-                                , ib :: Int
-                                , block :: B.ByteString    
-                                , blocks :: [B.ByteString]}    
+data CommandState = CommandState {ix        :: Int  
+                                , ib        :: Int
+                                , block     :: B.ByteString    
+                                , blocks    :: [B.ByteString]}
 
 framePackage :: B.ByteString -> B.ByteString
 framePackage bs = B.append (B.concatMap escape bs) (B.append (escape $ check bs) (B.singleton 0x7E))
@@ -148,16 +148,6 @@ packageCommand (ModifyRemoteRefI16 (RemoteRefI16 i) f) = addWriteRefCommand EXPR
 packageCommand (ModifyRemoteRefI32 (RemoteRefI32 i) f) = addWriteRefCommand EXPR_INT32 i f
 packageCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) = addWriteRefCommand EXPR_LIST8 i f
 packageCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) = addWriteRefCommand EXPR_FLOAT i f
-packageCommand (LoopE cb) = do
-    (_, p) <- packageCodeBlock cb
-    l <- addCommand BC_CMD_LOOP (B.unpack p)
-    return l
-packageCommand (ForInE ws f) = do
-    s <- get
-    (_, p) <- packageCodeBlock $ f $ RemBindW8 $ ib s
-    fc <- addCommand BC_CMD_FORIN ((packageExpr ws) ++ (packageExpr (RemBindW8 (ib s))))
-    put s {ib = (ib s) + 1}
-    return $ B.append fc p
 packageCommand (IfThenElseUnitE e cb1 cb2) = do
     (_, pc1) <- packageCodeBlock cb1
     (_, pc2) <- packageCodeBlock cb2
@@ -394,6 +384,15 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (WhileFloatE iv bf bdf) = do
           i <- packDeepProcedure (WhileFloatE iv bf bdf)
           return $ RemBindFloat i
+      packProcedure (IterateW8UnitE iv bf) = do
+          i <- packDeepProcedure (IterateW8UnitE iv bf)
+          return $ RemBindUnit i
+      packProcedure (IterateW8BoolE iv bf) = do
+          i <- packDeepProcedure (IterateW8BoolE iv bf)
+          return $ RemBindB i
+      packProcedure (IterateW8W8E iv bf) = do
+          i <- packDeepProcedure (IterateW8W8E iv bf)
+          return $ RemBindW8 i
       packProcedure (DebugE tids) = packShallowProcedure (DebugE tids) ()
       -- For sending as part of a Scheduler task, debug and die make no sense.  
       -- Instead of signalling an error, at this point they are just ignored.
@@ -517,15 +516,9 @@ packageProcedure p = do
     packageProcedure' (IfThenElseW8I32 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD8 EXPR_INT32 ib e cb1 cb2
     packageProcedure' (IfThenElseW8L8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD8 EXPR_LIST8 ib e cb1 cb2
     packageProcedure' (IfThenElseW8Float e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD8 EXPR_FLOAT ib e cb1 cb2
-    packageProcedure' (WhileBoolE iv bf bdf) ib = packageWhileProcedure EXPR_BOOL ib (RemBindB ib) iv bf bdf
-    packageProcedure' (WhileWord8E iv bf bdf) ib = packageWhileProcedure EXPR_WORD8 ib (RemBindW8 ib) iv bf bdf
-    packageProcedure' (WhileWord16E iv bf bdf) ib = packageWhileProcedure EXPR_WORD16 ib (RemBindW16 ib) iv bf bdf
-    packageProcedure' (WhileWord32E iv bf bdf) ib = packageWhileProcedure EXPR_WORD32 ib (RemBindW32 ib) iv bf bdf
-    packageProcedure' (WhileInt8E iv bf bdf) ib = packageWhileProcedure EXPR_INT8 ib (RemBindI8 ib) iv bf bdf
-    packageProcedure' (WhileInt16E iv bf bdf) ib = packageWhileProcedure EXPR_INT16 ib (RemBindI16 ib) iv bf bdf
-    packageProcedure' (WhileInt32E iv bf bdf) ib = packageWhileProcedure EXPR_INT32 ib (RemBindI32 ib) iv bf bdf
-    packageProcedure' (WhileL8E iv bf bdf) ib = packageWhileProcedure EXPR_LIST8 ib (RemBindList8 ib) iv bf bdf
-    packageProcedure' (WhileFloatE iv bf bdf) ib = packageWhileProcedure EXPR_FLOAT ib (RemBindFloat ib) iv bf bdf
+    packageProcedure' (IterateW8UnitE iv bf) ib = packageIterateProcedure EXPR_WORD8 EXPR_UNIT ib (RemBindW8 ib) iv bf
+    packageProcedure' (IterateW8BoolE iv bf) ib = packageIterateProcedure EXPR_WORD8 EXPR_BOOL ib (RemBindW8 ib) iv bf
+    packageProcedure' (IterateW8W8E iv bf) ib = packageIterateProcedure EXPR_WORD8 EXPR_WORD8 ib (RemBindW8 ib) iv bf
     packageProcedure' DebugListen ib = return B.empty
 
 packageReadRefProcedure :: ExprType -> Int -> Int -> State CommandState B.ByteString
@@ -556,12 +549,13 @@ packageIfThenElseEitherProcedure rt1 rt2 b e cb1 cb2 = do
     i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum rt1, fromIntegral $ fromEnum rt2, fromIntegral b] ++ thenSize ++ (packageExpr e))
     return $ B.append i (B.append pc1' pc2')
 
-packageWhileProcedure :: ExprType -> Int -> Expr a -> Expr a -> (Expr a -> Expr Bool) -> (Expr a -> Arduino (Expr a)) -> State CommandState B.ByteString
-packageWhileProcedure rt ib be iv bf bdf = do
-    (r, pc) <- packageCodeBlock $ (bdf be)
-    let rc = buildCommand EXPR_CMD_RET $ (fromIntegral ib) : packageExpr r
-    let pc' = B.append pc $ lenPackage rc
-    w <- addCommand BC_CMD_WHILE ([fromIntegral ib, fromIntegral $ length ive] ++ ive ++ (packageExpr (bf be)))
+packageIterateProcedure :: ExprType -> ExprType -> Int -> Expr a -> 
+                           Expr a -> (Expr a -> Arduino(ExprEither a b)) ->
+                           State CommandState B.ByteString
+packageIterateProcedure ta tb ib be iv bf = do
+    (r, pc) <- packageCodeBlock $ bf be
+    let pc' = B.append pc $ lenPackage pc
+    w <- addCommand BC_CMD_ITERATE ([fromIntegral $ fromEnum ta, fromIntegral $ fromEnum tb, fromIntegral ib, fromIntegral $ length ive] ++ ive)
     return $ B.append w pc'
   where
     ive = packageExpr iv
@@ -859,24 +853,10 @@ unpackageResponse (cmdWord:args)
                                       -> IfThenElseBLeftReply (if b == 0 then False else True)
       (BC_RESP_IF_THEN_ELSE , [t,l,b]) | t == (toW8 EXPR_WORD8 + 0x80) && l == toW8 EXPR_LIT
                                       -> IfThenElseW8LeftReply b
-      (BC_RESP_WHILE , [t,l,b]) | t == toW8 EXPR_BOOL && l == toW8 EXPR_LIT
-                                      -> WhileBReply (if b == 0 then False else True)
-      (BC_RESP_WHILE , [t,l,b]) | t == toW8 EXPR_WORD8 && l == toW8 EXPR_LIT
-                                      -> WhileW8Reply b
-      (BC_RESP_WHILE , [t,l,b1,b2]) | t == toW8 EXPR_WORD16 && l == toW8 EXPR_LIT
-                                      -> WhileW16Reply (bytesToWord16 (b1, b2))
-      (BC_RESP_WHILE , [t,l,b1,b2,b3,b4]) | t == toW8 EXPR_WORD32 && l == toW8 EXPR_LIT
-                                      -> WhileW32Reply (bytesToWord32 (b1, b2, b3, b4))
-      (BC_RESP_WHILE , [t,l,b]) | t == toW8 EXPR_INT8 && l == toW8 EXPR_LIT
-                                      -> WhileI8Reply $ fromIntegral b
-      (BC_RESP_WHILE , [t,l,b1,b2]) | t == toW8 EXPR_INT16 && l == toW8 EXPR_LIT
-                                      -> WhileI16Reply $ fromIntegral (bytesToWord16 (b1, b2))
-      (BC_RESP_WHILE , [t,l,b1,b2,b3,b4]) | t == toW8 EXPR_INT32 && l == toW8 EXPR_LIT
-                                      -> WhileI32Reply $ fromIntegral (bytesToWord32 (b1, b2, b3, b4))
-      (BC_RESP_WHILE , t:l:_:bs) | t == toW8 EXPR_LIST8 && l == toW8 EXPR_LIT
-                                      -> WhileL8Reply bs
-      (BC_RESP_WHILE , [t,l,b1,b2,b3,b4]) | t == toW8 EXPR_FLOAT && l == toW8 EXPR_LIT
-                                      -> WhileFloatReply $ bytesToFloat (b1, b2, b3, b4)
+      (BC_RESP_ITERATE , [t,l,b]) | t == toW8 EXPR_BOOL && l == toW8 EXPR_LIT
+                                      -> IterateBReply (if b == 0 then False else True)
+      (BC_RESP_ITERATE , [t,l,b]) | t == toW8 EXPR_WORD8 && l == toW8 EXPR_LIT
+                                      -> IterateW8Reply b
       (BS_RESP_DEBUG, [])                    -> DebugResp
       (BS_RESP_VERSION, [majV, minV])        -> Firmware (bytesToWord16 (majV,minV))
       (BS_RESP_TYPE, [p])                    -> ProcessorType p
@@ -991,13 +971,14 @@ parseQueryResult (IfThenElseW8Bool _ _ _) (IfThenElseBReply r) = Just $ ExprRigh
 parseQueryResult (IfThenElseW8Bool _ _ _) (IfThenElseW8LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseW8W8 _ _ _) (IfThenElseW8Reply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseW8W8 _ _ _) (IfThenElseW8LeftReply r) = Just $ ExprLeft $ lit r
-parseQueryResult (WhileBoolE _ _ _) (WhileBReply r) = Just $ lit r
-parseQueryResult (WhileWord8E _ _ _) (WhileW8Reply r) = Just $ lit r
-parseQueryResult (WhileWord16E _ _ _) (WhileW16Reply r) = Just $ lit r
-parseQueryResult (WhileWord32E _ _ _) (WhileW32Reply r) = Just $ lit r
-parseQueryResult (WhileInt8E _ _ _) (WhileI8Reply r) = Just $ lit r
-parseQueryResult (WhileInt16E _ _ _) (WhileI16Reply r) = Just $ lit r
-parseQueryResult (WhileInt32E _ _ _) (WhileI32Reply r) = Just $ lit r
-parseQueryResult (WhileL8E _ _ _) (WhileL8Reply r) = Just $ lit r
-parseQueryResult (WhileFloatE _ _ _) (WhileFloatReply r) = Just $ lit r
+parseQueryResult (IterateW8UnitE _ _) (IterateUReply) = Just $ LitUnit
+parseQueryResult (IterateW8BoolE _ _) (IterateBReply r) = Just $ lit r
+parseQueryResult (IterateW8W8E _ _) (IterateW8Reply r) = Just $ lit r
+parseQueryResult (IterateW8W16E _ _) (IterateW16Reply r) = Just $ lit r
+parseQueryResult (IterateW8W32E _ _) (IterateW32Reply r) = Just $ lit r
+parseQueryResult (IterateW8I8E _ _) (IterateI8Reply r) = Just $ lit r
+parseQueryResult (IterateW8I16E _ _) (IterateI16Reply r) = Just $ lit r
+parseQueryResult (IterateW8I32E _ _) (IterateI32Reply r) = Just $ lit r
+parseQueryResult (IterateW8L8E _ _) (IterateL8Reply r) = Just $ lit r
+parseQueryResult (IterateW8FloatE _ _) (IterateFloatReply r) = Just $ lit r
 parseQueryResult _q _r = Nothing

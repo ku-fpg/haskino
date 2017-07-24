@@ -199,8 +199,6 @@ data ArduinoPrimitive :: * -> * where
      ModifyRemoteRefL8    :: RemoteRef [Word8] -> Expr [Word8] -> ArduinoPrimitive ()
      ModifyRemoteRefFloat :: RemoteRef Float   -> Expr Float   -> ArduinoPrimitive ()
      Loop                 :: Arduino ()                        -> ArduinoPrimitive ()
-     LoopE                :: Arduino ()                                  -> ArduinoPrimitive ()
-     ForInE               :: Expr [Word8] -> (Expr Word8 -> Arduino ())  -> ArduinoPrimitive ()
      IfThenElseUnit       :: Bool -> Arduino () -> Arduino ()            -> ArduinoPrimitive ()
      IfThenElseUnitE      :: Expr Bool -> Arduino () -> Arduino ()       -> ArduinoPrimitive ()
      -- ToDo: add SPI commands
@@ -531,8 +529,6 @@ instance KnownResult ArduinoPrimitive where
   knownResult (ModifyRemoteRefL8 {}    ) = Just ()
   knownResult (ModifyRemoteRefFloat {} ) = Just ()
   knownResult (Loop {}                 ) = Just ()
-  knownResult (LoopE {}                ) = Just ()
-  knownResult (ForInE {}               ) = Just ()
   knownResult (IfThenElseUnit {}       ) = Just ()
   knownResult (IfThenElseUnitE {}      ) = Just ()
   knownResult _                          = Nothing
@@ -660,12 +656,6 @@ takeSem id = Arduino $ primitive $ TakeSemE (lit id)
 
 takeSemE :: Expr Word8 -> Arduino ()
 takeSemE id = Arduino $ primitive $ TakeSemE id
-
-loopE :: Arduino () -> Arduino()
-loopE ps = Arduino $ primitive $ LoopE ps
-
-forInE :: Expr [Word8] -> (Expr Word8 -> Arduino ()) -> Arduino ()
-forInE ws f = Arduino $ primitive $ ForInE ws f
 
 ifThenElseUnitE :: Expr Bool -> Arduino () -> Arduino () -> Arduino ()
 ifThenElseUnitE be tps eps = Arduino $ primitive $ IfThenElseUnitE be tps eps
@@ -875,44 +865,33 @@ die msg msgs = Arduino $ primitive $ Die msg msgs
 class ExprB a => ArduinoConditional a where
     ifThenElseE  :: Expr Bool -> Arduino (Expr a) -> 
                         Arduino (Expr a) -> Arduino (Expr a)
-    whileE       :: Expr a -> (Expr a -> Expr Bool) ->
-                        (Expr a -> Arduino (Expr a)) -> Arduino (Expr a)
 
 instance ArduinoConditional Bool where
     ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseBoolE be tps eps
-    whileE iv bf bdf       = Arduino $ primitive $ WhileBoolE iv bf bdf
 
 instance ArduinoConditional Word8 where
     ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseWord8E be tps eps
-    whileE iv bf bdf       = Arduino $ primitive $ WhileWord8E iv bf bdf
 
 instance ArduinoConditional Word16 where
     ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseWord16E be tps eps
-    whileE iv bf bdf       = Arduino $ primitive $ WhileWord16E iv bf bdf
 
 instance ArduinoConditional Word32 where
     ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseWord32E be tps eps
-    whileE iv bf bdf       = Arduino $ primitive $ WhileWord32E iv bf bdf
 
 instance ArduinoConditional Int8 where
     ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseInt8E be tps eps
-    whileE iv bf bdf       = Arduino $ primitive $ WhileInt8E iv bf bdf
 
 instance ArduinoConditional Int16 where
     ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseInt16E be tps eps
-    whileE iv bf bdf       = Arduino $ primitive $ WhileInt16E iv bf bdf
 
 instance ArduinoConditional Int32 where
     ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseInt32E be tps eps
-    whileE iv bf bdf       = Arduino $ primitive $ WhileInt32E iv bf bdf
 
 instance ArduinoConditional [Word8] where
     ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseL8E be tps eps
-    whileE iv bf bdf       = Arduino $ primitive $ WhileL8E iv bf bdf
 
 instance ArduinoConditional Float where
     ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseFloatE be tps eps
-    whileE iv bf bdf       = Arduino $ primitive $ WhileFloatE iv bf bdf
 
 class (ExprB a, ExprB b) => ArduinoIterate a b where
     iterateE  :: Expr a -> (Expr a -> Arduino (ExprEither a b)) -> Arduino (Expr b)
@@ -1319,29 +1298,27 @@ instance ArduinoIterate Float Float where
     iterateE iv bf = Arduino $ primitive $ IterateFloatFloatE iv bf
     ifThenElseEither be te ee = Arduino $ primitive $ IfThenElseFloatFloat be te ee
 
-{-
-whileE' :: ArduinoIterate a a => Expr a -> (Expr a -> Expr Bool) ->
+whileE :: ArduinoIterate a a => Expr a -> (Expr a -> Expr Bool) ->
                      (Expr a -> Arduino (Expr a)) -> Arduino (Expr a)
-whileE' i tf bf = iterateE i ibf
+whileE i tf bf = iterateE i ibf
   where
     ibf i' = do
         res <- bf i'
         ifThenElseEither (tf res) (return $ ExprLeft res) (return $ ExprRight res)
 
-loopE' :: Arduino a -> Arduino (Expr ())
-loopE' bf = iterateE LitUnit ibf
+loopE :: Arduino a -> Arduino (Expr ())
+loopE bf = iterateE LitUnit ibf
   where
     ibf _ = do
         bf
         return $ ExprLeft LitUnit
 
-forInE' :: Expr [Word8] -> (Expr Word8 -> Arduino ()) -> Arduino (Expr ())
-forInE' ws bf = iterateE 0 ibf
+forInE :: Expr [Word8] -> (Expr Word8 -> Arduino ()) -> Arduino (Expr ())
+forInE ws bf = iterateE 0 ibf
   where
     ibf i = do
         bf (ws !!* i)
         ifThenElseEither (i `lessE` (len ws)) (return $ ExprLeft (i+1)) (return $ ExprRight LitUnit)
--}
 
 -- | A response, as returned from the Arduino
 data Response = DelayResp
@@ -1393,15 +1370,16 @@ data Response = DelayResp
               | IfThenElseI32LeftReply Int32
               | IfThenElseL8LeftReply [Word8]
               | IfThenElseFloatLeftReply Float
-              | WhileBReply Bool
-              | WhileW8Reply Word8
-              | WhileW16Reply Word16
-              | WhileW32Reply Word32
-              | WhileI8Reply Int8
-              | WhileI16Reply Int16
-              | WhileI32Reply Int32
-              | WhileL8Reply [Word8]
-              | WhileFloatReply Float
+              | IterateUReply
+              | IterateBReply Bool
+              | IterateW8Reply Word8
+              | IterateW16Reply Word16
+              | IterateW32Reply Word32
+              | IterateI8Reply Int8
+              | IterateI16Reply Int16
+              | IterateI32Reply Int32
+              | IterateL8Reply [Word8]
+              | IterateFloatReply Float
               | DebugResp
               | FailedNewRef
               | Unimplemented (Maybe String) [Word8] -- ^ Represents messages currently unsupported
@@ -1415,10 +1393,8 @@ data FirmwareCmd = BC_CMD_SYSTEM_RESET
                  | BC_CMD_SET_PIN_MODE
                  | BC_CMD_DELAY_MILLIS
                  | BC_CMD_DELAY_MICROS
-                 | BC_CMD_LOOP
-                 | BC_CMD_WHILE
+                 | BC_CMD_ITERATE
                  | BC_CMD_IF_THEN_ELSE
-                 | BC_CMD_FORIN
                  | BS_CMD_REQUEST_VERSION
                  | BS_CMD_REQUEST_TYPE
                  | BS_CMD_REQUEST_MICROS
@@ -1472,10 +1448,8 @@ firmwareCmdVal BC_CMD_SYSTEM_RESET      = 0x10
 firmwareCmdVal BC_CMD_SET_PIN_MODE      = 0x11
 firmwareCmdVal BC_CMD_DELAY_MILLIS      = 0x12
 firmwareCmdVal BC_CMD_DELAY_MICROS      = 0x13
-firmwareCmdVal BC_CMD_WHILE             = 0x14
+firmwareCmdVal BC_CMD_ITERATE           = 0x14
 firmwareCmdVal BC_CMD_IF_THEN_ELSE      = 0x15
-firmwareCmdVal BC_CMD_LOOP              = 0x16
-firmwareCmdVal BC_CMD_FORIN             = 0x17
 firmwareCmdVal BS_CMD_REQUEST_VERSION   = 0x20
 firmwareCmdVal BS_CMD_REQUEST_TYPE      = 0x21
 firmwareCmdVal BS_CMD_REQUEST_MICROS    = 0x22
@@ -1527,10 +1501,8 @@ firmwareValCmd 0x10 = BC_CMD_SYSTEM_RESET
 firmwareValCmd 0x11 = BC_CMD_SET_PIN_MODE
 firmwareValCmd 0x12 = BC_CMD_DELAY_MILLIS
 firmwareValCmd 0x13 = BC_CMD_DELAY_MICROS
-firmwareValCmd 0x14 = BC_CMD_WHILE
+firmwareValCmd 0x14 = BC_CMD_ITERATE
 firmwareValCmd 0x15 = BC_CMD_IF_THEN_ELSE
-firmwareValCmd 0x16 = BC_CMD_LOOP
-firmwareValCmd 0x17 = BC_CMD_FORIN
 firmwareValCmd 0x20 = BS_CMD_REQUEST_VERSION
 firmwareValCmd 0x21 = BS_CMD_REQUEST_TYPE
 firmwareValCmd 0x22 = BS_CMD_REQUEST_MICROS
@@ -1581,7 +1553,7 @@ firmwareValCmd _    = UNKNOWN_COMMAND
 -- | https://github.com/ku-fpg/haskino/wiki/Haskino-Firmware-Protocol-Definition
 data FirmwareReply =  BC_RESP_DELAY
                    |  BC_RESP_IF_THEN_ELSE
-                   |  BC_RESP_WHILE
+                   |  BC_RESP_ITERATE
                    |  BS_RESP_VERSION
                    |  BS_RESP_TYPE
                    |  BS_RESP_MICROS
@@ -1609,7 +1581,7 @@ data FirmwareReply =  BC_RESP_DELAY
 getFirmwareReply :: Word8 -> Either Word8 FirmwareReply
 getFirmwareReply 0x18 = Right BC_RESP_DELAY
 getFirmwareReply 0x19 = Right BC_RESP_IF_THEN_ELSE
-getFirmwareReply 0x1A = Right BC_RESP_WHILE
+getFirmwareReply 0x1A = Right BC_RESP_ITERATE
 getFirmwareReply 0x28 = Right BS_RESP_VERSION
 getFirmwareReply 0x29 = Right BS_RESP_TYPE
 getFirmwareReply 0x2A = Right BS_RESP_MICROS

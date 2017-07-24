@@ -16,15 +16,13 @@
 #define BC_CMD_SET_PIN_MODE     (BC_CMD_TYPE | 0x1)
 #define BC_CMD_DELAY_MILLIS     (BC_CMD_TYPE | 0x2)
 #define BC_CMD_DELAY_MICROS     (BC_CMD_TYPE | 0x3)
-#define BC_CMD_WHILE            (BC_CMD_TYPE | 0x4)
+#define BC_CMD_ITERATE          (BC_CMD_TYPE | 0x4)
 #define BC_CMD_IF_THEN_ELSE     (BC_CMD_TYPE | 0x5)
-#define BC_CMD_LOOP             (BC_CMD_TYPE | 0x6)
-#define BC_CMD_FORIN            (BC_CMD_TYPE | 0x7)
 
 // Board Control responses
 #define BC_RESP_DELAY           (BC_CMD_TYPE | 0x8)
 #define BC_RESP_IF_THEN_ELSE    (BC_CMD_TYPE | 0x9)
-#define BC_RESP_WHILE           (BC_CMD_TYPE | 0xA)
+#define BC_RESP_ITERATE         (BC_CMD_TYPE | 0xA)
 
 // Board Status commands
 #define BS_CMD_TYPE             0x20

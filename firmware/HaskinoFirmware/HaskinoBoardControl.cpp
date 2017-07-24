@@ -14,10 +14,8 @@ static bool handleSystemReset(int size, const byte *msg, CONTEXT *context);
 static bool handleSetPinMode(int size, const byte *msg, CONTEXT *context);
 static bool handleDelayMillis(int size, const byte *msg, CONTEXT *context);
 static bool handleDelayMicros(int size, const byte *msg, CONTEXT *context);
-static bool handleLoop(int size, const byte *msg, CONTEXT *context);
-static bool handleWhile(int size, const byte *msg, CONTEXT *context);
+static bool handleIterate(int size, const byte *msg, CONTEXT *context);
 static bool handleIfThenElse(int size, const byte *msg, CONTEXT *context);
-static bool handleForIn(int size, const byte *msg, CONTEXT *context);
 
 bool parseBoardControlMessage(int size, const byte *msg, CONTEXT *context)
     {
@@ -35,17 +33,11 @@ bool parseBoardControlMessage(int size, const byte *msg, CONTEXT *context)
         case BC_CMD_DELAY_MICROS:
             return handleDelayMicros(size, msg, context);
             break;
-        case BC_CMD_LOOP:
-            return handleLoop(size, msg, context);
-            break;
-        case BC_CMD_WHILE:
-            return handleWhile(size, msg, context);
+        case BC_CMD_ITERATE:
+            return handleIterate(size, msg, context);
             break;
         case BC_CMD_IF_THEN_ELSE:
             return handleIfThenElse(size, msg, context);
-            break;
-        case BC_CMD_FORIN:
-            return handleForIn(size, msg, context);
             break;
         }
     return false;
@@ -97,59 +89,6 @@ static bool handleSystemReset(int size, const byte *msg, CONTEXT *context)
     return false;
     }
 
-static bool handleLoop(int size, const byte *msg, CONTEXT *context)
-    {
-    byte *codeBlock = (byte *) &msg[1];
-    int loopSize = size - 1;
-    bool rescheduled;
-
-    while (true)
-        {
-        rescheduled = runCodeBlock(loopSize, codeBlock, context);
-        if (rescheduled)
-            return true;
-        }
-
-    return false;
-    }
-
-static bool handleForIn(int size, const byte *msg, CONTEXT *context)
-    {
-    byte *expr = (byte *) &msg[1];
-    bool alloc;
-    byte *listPtr = evalList8Expr(&expr, context, &alloc);
-    byte listSize = listPtr[1];
-    byte bindIndex = expr[2];
-    byte *codeBlock = expr + 3;
-    int forSize = size - (codeBlock - msg);
-    bool rescheduled = context->task && context->task->rescheduled;
-    int i;
-
-    context->bind[bindIndex * BIND_SPACING] = EXPR_WORD8;
-    context->bind[bindIndex * BIND_SPACING + 1] = EXPR_LIT;
-    for (i=rescheduled ? 
-            context->blockStatus[context->recallBlockLevel+1].info.index : 0;
-         i<listSize;
-         i++)
-        {
-        context->bind[bindIndex * BIND_SPACING + 2] = listPtr[i+3];
-        context->blockStatus[context->currBlockLevel+1].info.index = i;
-        rescheduled = runCodeBlock(forSize, codeBlock, context);
-        if (rescheduled)
-            {
-            if (alloc) 
-                free(listPtr);
-
-            return true;
-            }
-        }
-
-    if (alloc) 
-        free(listPtr);
-
-    return false;
-    }
-
 static int typeToSize(int type, byte *src)
     {
     switch(type)
@@ -173,30 +112,32 @@ static int typeToSize(int type, byte *src)
         }
     } 
 
-static bool handleWhile(int size, const byte *msg, CONTEXT *context)
+static bool handleIterate(int size, const byte *msg, CONTEXT *context)
     {
-#if 1
-    byte bind = msg[1];
-    byte *expr = (byte *) &msg[2];
+    byte type1 = msg[1];
+    byte type2 = msg[2];
+    byte bind = msg[3];
+    byte *expr = (byte *) &msg[4];
     bool rescheduled = (context->task && context->task->rescheduled);
+    byte *bind_ptr = &context->bind[bind * BIND_SPACING];
     byte initLength;
     byte *initExpr;
-    byte *condExpr;
     bool condition;
-    byte exprType;
     byte *codeBlock;
-    int whileSize;
+    int iterSize;
     
     initLength = *expr++;
+    // ToDo:  Verify length for long inits.
     initExpr = expr;
-    exprType = initExpr[0];
     expr += initLength;
-    condExpr = expr;
 
     if (!rescheduled)
         {
-        switch (exprType)
+        switch (type1)
             {
+            case EXPR_UNIT:
+                storeUnitBind(context, bind);
+                break;
             case EXPR_BOOL:
                 storeBoolBind(initExpr, context, bind);
                 break;
@@ -227,26 +168,24 @@ static bool handleWhile(int size, const byte *msg, CONTEXT *context)
             }
         }
 
-    condition = evalBoolExpr(&expr, context);
     codeBlock = expr;
-    whileSize = size - (expr - msg);
+    iterSize = size - (expr - msg);
+    condition = true;
 
     // If we were rescheduled, always enter the loop to rerun code block
     while (condition || rescheduled)
         {
-        rescheduled = runCodeBlock(whileSize, codeBlock, context);
+        rescheduled = runCodeBlock(iterSize, codeBlock, context);
         if (rescheduled) {
              return true;
         }
 
-        expr = condExpr;
-        condition = evalBoolExpr(&expr, context);
+        condition = ((*bind_ptr & EXPRE_LEFT_FLAG) == EXPRE_LEFT_FLAG);
         }
 
-    sendReply( typeToSize(exprType, &context->bind[bind * BIND_SPACING]),
-               BC_RESP_WHILE, &context->bind[bind * BIND_SPACING],
+    sendReply( typeToSize(type2, &context->bind[bind * BIND_SPACING]),
+               BC_RESP_ITERATE, &context->bind[bind * BIND_SPACING],
                context, bind);
-#endif
     return false;
 }
 

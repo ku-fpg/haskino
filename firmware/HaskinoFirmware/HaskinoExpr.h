@@ -95,6 +95,7 @@ int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context);
 float evalFloatExpr(byte **ppExpr, CONTEXT *context);
 bool parseExprMessage(int size, const byte *msg, CONTEXT *context);
 void putBindListPtr(CONTEXT *context, byte bind, byte *newPtr);
+void storeUnitBind(CONTEXT *context, byte bind);
 void storeBoolBind(byte *expr, CONTEXT *context, byte bind);
 void storeWord8Bind(byte *expr, CONTEXT *context, byte bind);
 void storeWord16Bind(byte *expr, CONTEXT *context, byte bind);
