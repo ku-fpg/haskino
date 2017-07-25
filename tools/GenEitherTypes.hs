@@ -82,6 +82,19 @@ genCompIter ((tyn1, ty1, cty1), (tyn2, ty2, cty2)) =
     "    compileIterateProcedure " ++ cty1 ++ "Type " ++ cty2 ++ "Type i bi j bj iv bf\n" ++
     "    return bj\n"
 
+
+genPackIf :: ((String, String) , (String, String)) -> String
+genPackIf ((tyn1,ty1), (tyn2,_)) = 
+    "      packProcedure (IfThenElse" ++ tyn1 ++ tyn2 ++ " e cb1 cb2) = do\n" ++
+    "          i <- packDeepProcedure (IfThenElse" ++ tyn1 ++ tyn2 ++ " e cb1 cb2)\n" ++
+    "          return $ ExprLeft $ RemBind" ++ ty1 ++ " i\n"
+
+genPackIter :: ((String, String) , (String, String)) -> String
+genPackIter ((tyn1,_), (tyn2, ty2)) = 
+    "      packProcedure (Iterate" ++ tyn1 ++ tyn2 ++ "E iv bf) = do\n" ++
+    "          i <- packDeepProcedure (Iterate" ++ tyn1 ++ tyn2 ++ "E iv bf)\n" ++
+    "          return $ RemBind" ++ ty2 ++ " i\n"
+
 main :: IO ()
 main = do
   let prims1 = map genEitherPrim typeNameTypeCombos
@@ -91,6 +104,8 @@ main = do
   let showIters = map genShowIter typeNameBindCombos
   let compIfs = map genCompIf typeNameCompTypeCombos
   let compIters = map genCompIter typeNameBindCompTypeCombos
+  let packIfs = map genPackIf typeNameBindCombos
+  let packIters = map genPackIter typeNameBindCombos
   putStrLn $ concat prims1
   putStrLn ""
   putStrLn $ concat prims2
@@ -104,4 +119,7 @@ main = do
   putStrLn $ concat compIfs
   putStrLn ""
   putStrLn $ concat compIters
-
+  putStrLn ""
+  putStrLn $ concat packIfs
+  putStrLn ""
+  putStrLn $ concat packIters
