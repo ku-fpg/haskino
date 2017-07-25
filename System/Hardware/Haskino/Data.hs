@@ -1304,7 +1304,7 @@ whileE i tf bf = iterateE i ibf
   where
     ibf i' = do
         res <- bf i'
-        ifThenElseEither (tf res) (return $ ExprLeft res) (return $ ExprRight res)
+        ifThenElseEither (tf i') (return $ ExprLeft res) (return $ ExprRight i')
 
 loopE :: Arduino a -> Arduino (Expr ())
 loopE bf = iterateE LitUnit ibf

@@ -375,15 +375,15 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (WhileInt16E iv bf bdf) = do
           i <- packDeepProcedure (WhileInt16E iv bf bdf)
           return $ RemBindI16 i
-      packProcedure (WhileInt32E iv bf bdf) = do
-          i <- packDeepProcedure (WhileInt32E iv bf bdf)
-          return $ RemBindI32 i
-      packProcedure (WhileL8E iv bf bdf) = do
-          i <- packDeepProcedure (WhileL8E iv bf bdf)
-          return $ RemBindList8 i
-      packProcedure (WhileFloatE iv bf bdf) = do
-          i <- packDeepProcedure (WhileFloatE iv bf bdf)
-          return $ RemBindFloat i
+      packProcedure (IfThenElseW8Unit  e cb1 cb2) = do
+          i <- packDeepProcedure (IfThenElseW8Unit  e cb1 cb2)
+          return $ ExprLeft $ RemBindW8 i
+      packProcedure (IfThenElseW8Bool  e cb1 cb2) = do
+          i <- packDeepProcedure (IfThenElseW8Bool  e cb1 cb2)
+          return $ ExprLeft $ RemBindW8 i
+      packProcedure (IfThenElseW8W8  e cb1 cb2) = do
+          i <- packDeepProcedure (IfThenElseW8W8  e cb1 cb2)
+          return $ ExprLeft $ RemBindW8 i
       packProcedure (IterateW8UnitE iv bf) = do
           i <- packDeepProcedure (IterateW8UnitE iv bf)
           return $ RemBindUnit i
@@ -554,9 +554,8 @@ packageIterateProcedure :: ExprType -> ExprType -> Int -> Expr a ->
                            State CommandState B.ByteString
 packageIterateProcedure ta tb ib be iv bf = do
     (r, pc) <- packageCodeBlock $ bf be
-    let pc' = B.append pc $ lenPackage pc
     w <- addCommand BC_CMD_ITERATE ([fromIntegral $ fromEnum ta, fromIntegral $ fromEnum tb, fromIntegral ib, fromIntegral $ length ive] ++ ive)
-    return $ B.append w pc'
+    return $ B.append w pc
   where
     ive = packageExpr iv
 
