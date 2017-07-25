@@ -1361,8 +1361,8 @@ data Response = DelayResp
               | IfThenElseI32LeftReply Int32
               | IfThenElseL8LeftReply [Word8]
               | IfThenElseFloatLeftReply Float
-              | IterateUReply
-              | IterateBReply Bool
+              | IterateUnitReply
+              | IterateBoolReply Bool
               | IterateW8Reply Word8
               | IterateW16Reply Word16
               | IterateW32Reply Word32
