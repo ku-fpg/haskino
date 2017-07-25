@@ -18,6 +18,8 @@ bindList           = ["Unit", "B", "W8", "W16", "W32",
                       "I8", "I16", "I32", "List8", "Float"]
 compTypeList       = ["Unit", "Bool", "Word8", "Word16", "Word32",
                       "Int8", "Int16", "Int32", "List8", "Float"]
+packTypeList       = ["UNIT", "BOOL", "WORD8", "WORD16", "WORD32",
+                      "INT8", "INT16", "INT32", "LIST8", "FLOAT"]
 typeNameTypeList   = zip typeNameList typeList
 typeNameTypeCombos = [ (x,y) | x<-typeNameTypeList, y<-typeNameTypeList ]
 typeNameBindList   = zip typeNameList bindList
@@ -26,6 +28,10 @@ typeNameCompTypeList   = zip typeNameList compTypeList
 typeNameCompTypeCombos = [ (x,y) | x<-typeNameCompTypeList, y<-typeNameCompTypeList ]
 typeNameBindCompTypeList   = zip3 typeNameList bindList compTypeList
 typeNameBindCompTypeCombos = [ (x,y) | x<-typeNameBindCompTypeList, y<-typeNameBindCompTypeList ]
+typeNameBindPackTypeList   = zip3 typeNameList bindList packTypeList
+typeNameBindPackTypeCombos = [ (x,y) | x<-typeNameBindPackTypeList, y<-typeNameBindPackTypeList ]
+typeNamePackTypeList = zip typeNameList packTypeList
+typeNamePackTypeCombos = [ (x,y) | x<-typeNamePackTypeList, y<-typeNamePackTypeList ]
 
 genEitherPrim :: ((String, String) , (String, String)) -> String
 genEitherPrim ((tyn1,ty1), (tyn2, ty2)) = 
@@ -95,6 +101,14 @@ genPackIter ((tyn1,_), (tyn2, ty2)) =
     "          i <- packDeepProcedure (Iterate" ++ tyn1 ++ tyn2 ++ "E iv bf)\n" ++
     "          return $ RemBind" ++ ty2 ++ " i\n"
 
+genPackageIf :: ((String, String) , (String, String)) -> String
+genPackageIf ((tyn1,ty1), (tyn2,ty2)) = 
+    "    packageProcedure' (IfThenElse" ++ tyn1 ++ tyn2 ++ " e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_" ++ ty1 ++ " EXPR_" ++ ty2 ++ " ib e cb1 cb2\n"
+
+genPackageIter :: ((String, String, String) , (String, String, String)) -> String
+genPackageIter ((tyn1, ty1, cty1), (tyn2, _, cty2)) = 
+    "    packageProcedure' (Iterate" ++ tyn1 ++ tyn2 ++ "E iv bf) ib = packageIterateProcedure EXPR_" ++ cty1 ++ " EXPR_" ++ cty2 ++ " ib (RemBind" ++ ty1  ++ " ib) iv bf\n"
+
 main :: IO ()
 main = do
   let prims1 = map genEitherPrim typeNameTypeCombos
@@ -106,6 +120,8 @@ main = do
   let compIters = map genCompIter typeNameBindCompTypeCombos
   let packIfs = map genPackIf typeNameBindCombos
   let packIters = map genPackIter typeNameBindCombos
+  let packageIfs = map genPackageIf typeNamePackTypeCombos
+  let packageIters = map genPackageIter typeNameBindPackTypeCombos
   putStrLn $ concat prims1
   putStrLn ""
   putStrLn $ concat prims2
@@ -123,3 +139,7 @@ main = do
   putStrLn $ concat packIfs
   putStrLn ""
   putStrLn $ concat packIters
+  putStrLn ""
+  putStrLn $ concat packageIfs
+  putStrLn ""
+  putStrLn $ concat packageIters
