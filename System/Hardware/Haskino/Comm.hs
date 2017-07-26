@@ -145,19 +145,19 @@ runDie c m ms = do
 
 withArduino :: Bool       -- ^ If 'True', debugging info will be printed
             -> FilePath   -- ^ Path to the USB port
-            -> Arduino () -- ^ The Haskell controller program to run
+            -> Arduino a  -- ^ The Haskell controller program to run
             -> IO ()
 withArduino = withArduinoApp
 
 withArduinoWeak :: Bool       -- ^ If 'True', debugging info will be printed
                 -> FilePath   -- ^ Path to the USB port
-                -> Arduino () -- ^ The Haskell controller program to run
+                -> Arduino a  -- ^ The Haskell controller program to run
                 -> IO ()
 withArduinoWeak = withArduinoMode sendWeak 
 
 withArduinoApp :: Bool       -- ^ If 'True', debugging info will be printed
                -> FilePath   -- ^ Path to the USB port
-               -> Arduino () -- ^ The Haskell controller program to run
+               -> Arduino a  -- ^ The Haskell controller program to run
                -> IO ()
 withArduinoApp = withArduinoMode sendApp 
 
