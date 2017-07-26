@@ -47,8 +47,9 @@ static bool handleSetPinMode(int size, const byte *msg, CONTEXT *context)
     {
     byte *expr = (byte *) &msg[1];
     byte pinNo = evalWord8Expr(&expr, context);
+    byte value = evalWord8Expr(&expr, context);
 
-    pinMode(pinNo, *expr);
+    pinMode(pinNo, value);
     return false;
     }
 
@@ -179,7 +180,7 @@ static bool handleIterate(int size, const byte *msg, CONTEXT *context)
         if (rescheduled) {
              return true;
         }
-        
+
         condition = ((*bind_ptr & EXPRE_LEFT_FLAG) == EXPRE_LEFT_FLAG);
         }
 
