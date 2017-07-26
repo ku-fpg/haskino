@@ -1305,13 +1305,15 @@ packageIfThenElseEitherProcedure rt1 rt2 b e cb1 cb2 = do
     i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum rt1, fromIntegral $ fromEnum rt2, fromIntegral b] ++ thenSize ++ (packageExpr e))
     return $ B.append i (B.append pc1' pc2')
 
-packageIterateProcedure :: ExprType -> ExprType -> Int -> Expr a -> 
+packageIterateProcedure :: (ExprB a, ExprB b) => ExprType -> ExprType -> Int -> Expr a -> 
                            Expr a -> (Expr a -> Arduino(ExprEither a b)) ->
                            State CommandState B.ByteString
 packageIterateProcedure ta tb ib be iv bf = do
     (r, pc) <- packageCodeBlock $ bf be
+    let rc = buildCommand EXPR_CMD_RET $ (fromIntegral ib) : packageExprEither ta tb r
+    let pc'  = B.append pc $ lenPackage rc
     w <- addCommand BC_CMD_ITERATE ([fromIntegral $ fromEnum ta, fromIntegral $ fromEnum tb, fromIntegral ib, fromIntegral $ length ive] ++ ive)
-    return $ B.append w pc
+    return $ B.append w pc'
   where
     ive = packageExpr iv
 
@@ -1361,6 +1363,7 @@ packageExprEither t1  _t2 (ExprLeft  el) = [toW8 t1, toW8 EXPR_LEFT] ++ packageE
 packageExprEither _t1 _t2 (ExprRight er) = packageExpr er
 
 packageExpr :: Expr a -> [Word8]
+packageExpr (LitUnit) = [toW8 EXPR_UNIT, toW8 EXPR_LIT]
 packageExpr (LitB b) = [toW8 EXPR_BOOL, toW8 EXPR_LIT, if b then 1 else 0]
 packageExpr (ShowB e) = packageSubExpr (exprCmdVal EXPR_BOOL EXPR_SHOW) e 
 packageExpr (RefB n) = packageRef n (exprCmdVal EXPR_BOOL EXPR_REF)
@@ -1608,6 +1611,8 @@ unpackageResponse (cmdWord:args)
                                       -> IfThenElseBoolLeftReply (if b == 0 then False else True)
       (BC_RESP_IF_THEN_ELSE , [t,l,b]) | t == (toW8 EXPR_WORD8 + 0x80) && l == toW8 EXPR_LIT
                                       -> IfThenElseW8LeftReply b
+      (BC_RESP_ITERATE , [t,l]) | t == toW8 EXPR_UNIT && l == toW8 EXPR_LIT
+                                      -> IterateUnitReply
       (BC_RESP_ITERATE , [t,l,b]) | t == toW8 EXPR_BOOL && l == toW8 EXPR_LIT
                                       -> IterateBoolReply (if b == 0 then False else True)
       (BC_RESP_ITERATE , [t,l,b]) | t == toW8 EXPR_WORD8 && l == toW8 EXPR_LIT

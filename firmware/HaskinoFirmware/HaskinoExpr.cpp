@@ -20,6 +20,37 @@ bool parseExprMessage(int size, const byte *msg, CONTEXT *context)
     return false;
     }
 
+bool evalUnitExpr(byte **ppExpr, CONTEXT *context)
+    {
+    byte *pExpr = *ppExpr;
+    byte exprOp = pExpr[1];
+
+    context->left = false;
+    switch (exprOp)
+        {
+        case EXPR_BIND:
+            *ppExpr += 3; // Use Type, Cmd and Bind Index bytes
+            break;
+        case EXPR_LIT:
+            *ppExpr += 2; // Use Type, Cmd and Value bytes
+            break;
+        case EXPR_REF:
+            *ppExpr += 3; // Use Type, Cmd and Ref bytes
+            break;
+        case EXPR_LEFT:
+            *ppExpr += 2; // Use Type and Cmd bytes
+            evalUnitExpr(ppExpr, context);
+            context->left = true;
+            break;
+        default:
+#ifdef DEBUG
+            sendStringf("eUE:%d,%d", exprType, exprOp);
+#endif
+            break;
+        }
+    return false;
+    }
+
 bool evalBoolExpr(byte **ppExpr, CONTEXT *context) 
     {
     byte *pExpr = *ppExpr;
@@ -1941,6 +1972,9 @@ static bool handleExprRet(int size, const byte *msg, CONTEXT *context)
 
     switch (exprType)
         {
+        case EXPR_UNIT:
+            storeUnitBind(expr, context, bind);
+            break;
         case EXPR_BOOL:
             storeBoolBind(expr, context, bind);
             break;
@@ -1975,12 +2009,13 @@ static bool handleExprRet(int size, const byte *msg, CONTEXT *context)
     return false;
     }
 
- void storeUnitBind(CONTEXT *context, byte bind)
+ void storeUnitBind(byte *expr, CONTEXT *context, byte bind)
     {
     byte *bind_ptr = &context->bind[bind * BIND_SPACING];
 
     bind_ptr[0] = EXPR_UNIT;
     bind_ptr[1] = EXPR_LIT;
+    evalUnitExpr(&expr, context);
     }
 
  void storeBoolBind(byte *expr, CONTEXT *context, byte bind)

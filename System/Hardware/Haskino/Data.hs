@@ -1309,6 +1309,7 @@ repeatUntilE i tf bf = iterateE i ibf
 loopE :: Arduino a -> Arduino (Expr ())
 loopE bf = iterateE LitUnit ibf
   where
+    -- ibf :: Expr () -> Arduino (ExprEither () ())
     ibf _ = do
         bf
         return $ ExprLeft LitUnit

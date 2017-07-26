@@ -301,6 +301,7 @@ decodeRefBind bs =
 decodeLit :: ExprType -> B.ByteString -> (String, B.ByteString)
 decodeLit etype bs =
   case etype of
+    EXPR_UNIT   -> (" ()", bs)
     EXPR_BOOL   -> case bs of
                      Empty     -> decodeErr bs
                      (x :< xs) -> (if x==0 then " False" else " True", xs)

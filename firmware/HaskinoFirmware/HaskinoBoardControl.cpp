@@ -136,7 +136,7 @@ static bool handleIterate(int size, const byte *msg, CONTEXT *context)
         switch (type1)
             {
             case EXPR_UNIT:
-                storeUnitBind(context, bind);
+                storeUnitBind(initExpr, context, bind);
                 break;
             case EXPR_BOOL:
                 storeBoolBind(initExpr, context, bind);
@@ -179,7 +179,7 @@ static bool handleIterate(int size, const byte *msg, CONTEXT *context)
         if (rescheduled) {
              return true;
         }
-
+        
         condition = ((*bind_ptr & EXPRE_LEFT_FLAG) == EXPRE_LEFT_FLAG);
         }
 
