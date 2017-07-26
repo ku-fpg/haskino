@@ -1294,6 +1294,15 @@ whileE :: ArduinoIterate a a => Expr a -> (Expr a -> Expr Bool) ->
 whileE i tf bf = iterateE i ibf
   where
     ibf i' = do
+        ifThenElseEither (tf i') (do
+                                    res <- bf i'
+                                    return $ ExprLeft res) (return $ ExprRight i')
+
+repeatUntilE :: ArduinoIterate a a => Expr a -> (Expr a -> Expr Bool) ->
+                     (Expr a -> Arduino (Expr a)) -> Arduino (Expr a)
+repeatUntilE i tf bf = iterateE i ibf
+  where
+    ibf i' = do
         res <- bf i'
         ifThenElseEither (tf i') (return $ ExprLeft res) (return $ ExprRight i')
 
