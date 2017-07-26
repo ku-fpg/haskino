@@ -5,7 +5,7 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- The /hello world/ of the arduino world, blinking the led.
+-- Generator for Haskino Ether types
 -------------------------------------------------------------------------------
 
 module Main where
@@ -22,6 +22,7 @@ packTypeList       = ["UNIT", "BOOL", "WORD8", "WORD16", "WORD32",
                       "INT8", "INT16", "INT32", "LIST8", "FLOAT"]
 typeNameTypeList   = zip typeNameList typeList
 typeNameTypeCombos = [ (x,y) | x<-typeNameTypeList, y<-typeNameTypeList ]
+typeNameCombos = [ (x,y)  | x<-typeNameList, y<-typeNameList]
 typeNameBindList   = zip typeNameList bindList
 typeNameBindCombos = [ (x,y) | x<-typeNameBindList, y<-typeNameBindList ]
 typeNameCompTypeList   = zip typeNameList compTypeList
@@ -88,7 +89,6 @@ genCompIter ((tyn1, ty1, cty1), (tyn2, ty2, cty2)) =
     "    compileIterateProcedure " ++ cty1 ++ "Type " ++ cty2 ++ "Type i bi j bj iv bf\n" ++
     "    return bj\n"
 
-
 genPackIf :: ((String, String) , (String, String)) -> String
 genPackIf ((tyn1,ty1), (tyn2,_)) = 
     "      packProcedure (IfThenElse" ++ tyn1 ++ tyn2 ++ " e cb1 cb2) = do\n" ++
@@ -109,6 +109,16 @@ genPackageIter :: ((String, String, String) , (String, String, String)) -> Strin
 genPackageIter ((tyn1, ty1, cty1), (tyn2, _, cty2)) = 
     "    packageProcedure' (Iterate" ++ tyn1 ++ tyn2 ++ "E iv bf) ib = packageIterateProcedure EXPR_" ++ cty1 ++ " EXPR_" ++ cty2 ++ " ib (RemBind" ++ ty1  ++ " ib) iv bf\n"
 
+genParseIf :: (String, String) -> String
+genParseIf (tyn1, tyn2) =
+      "parseQueryResult (IfThenElse" ++ tyn1 ++ tyn2 ++ " _ _ _) (IfThenElse" ++ tyn2 ++ "Reply r) = Just $ ExprRight $ lit r\n" ++
+      "parseQueryResult (IfThenElse" ++ tyn1 ++ tyn2 ++ " _ _ _) (IfThenElse" ++ tyn1 ++ "LeftReply r) = Just $ ExprLeft $ lit r\n"
+
+genParseIter :: (String, String) -> String
+genParseIter (tyn1,tyn2) =
+      "parseQueryResult (Iterate" ++ tyn1 ++ tyn2 ++ "E _ _) (Iterate" ++ tyn2 ++
+      if tyn2 == "Unit" then "Reply) = Just $ LitUnit\n" else "Reply r) = Just $ lit r\n"
+
 main :: IO ()
 main = do
   let prims1 = map genEitherPrim typeNameTypeCombos
@@ -122,6 +132,8 @@ main = do
   let packIters = map genPackIter typeNameBindCombos
   let packageIfs = map genPackageIf typeNamePackTypeCombos
   let packageIters = map genPackageIter typeNameBindPackTypeCombos
+  let parseIfs = map genParseIf typeNameCombos
+  let parseIters = map genParseIter typeNameCombos
   putStrLn $ concat prims1
   putStrLn ""
   putStrLn $ concat prims2
@@ -143,3 +155,7 @@ main = do
   putStrLn $ concat packageIfs
   putStrLn ""
   putStrLn $ concat packageIters
+  putStrLn ""
+  putStrLn $ concat parseIfs
+  putStrLn ""
+  putStrLn $ concat parseIters
