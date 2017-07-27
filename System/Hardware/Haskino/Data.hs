@@ -1306,16 +1306,20 @@ repeatUntilE i tf bf = iterateE i ibf
         res <- bf i'
         ifThenElseEither (tf i') (return $ ExprLeft res) (return $ ExprRight i')
 
-loopE :: Arduino a -> Arduino (Expr ())
-loopE bf = iterateE LitUnit ibf
+loopE :: Arduino a -> Arduino ()
+loopE bf = do 
+            Arduino $ primitive $ IterateUnitUnitE LitUnit ibf
+            return ()
   where
     -- ibf :: Expr () -> Arduino (ExprEither () ())
     ibf _ = do
         bf
         return $ ExprLeft LitUnit
 
-forInE :: Expr [Word8] -> (Expr Word8 -> Arduino ()) -> Arduino (Expr ())
-forInE ws bf = iterateE 0 ibf
+forInE :: Expr [Word8] -> (Expr Word8 -> Arduino ()) -> Arduino ()
+forInE ws bf = do 
+                iterateE 0 ibf
+                return ()
   where
     ibf i = do
         bf (ws !!* i)
