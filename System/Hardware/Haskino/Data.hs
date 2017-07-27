@@ -1322,8 +1322,10 @@ forInE ws bf = do
                 return ()
   where
     ibf i = do
-        bf (ws !!* i)
-        ifThenElseEither (i `lessE` (len ws)) (return $ ExprLeft (i+1)) (return $ ExprRight LitUnit)
+        ifThenElseEither (i `lessE` (len ws)) (do
+                                    debugE $ showE i
+                                    bf (ws !!* i)
+                                    return $ ExprLeft (i+1)) (return $ ExprRight LitUnit)        
 
 -- | A response, as returned from the Arduino
 data Response = DelayResp

@@ -107,8 +107,10 @@ counterProg = do
           key <- getKey
           ifThenElseUnitE (key ==* (keyValue KeyUp))
               (modifyRemoteRef cref (\x -> x + 1)) (return ())
+          debugE $ litString "KeyDown"
           ifThenElseUnitE (key ==* (keyValue KeyDown))
               (modifyRemoteRef cref (\x -> x - 1)) (return ())
+          debugE $ litString "KeyUp"
           count <- readRemoteRef cref
           lcdClearE lcd
           lcdHomeE lcd
@@ -122,6 +124,7 @@ lcdCounterE = withArduino True "/dev/cu.usbmodem1421" $ do
       -- Query to confirm task creation
       task <- queryTask 1
       liftIO $ print task
+      debugListen
 
 lcdCounterEProg :: IO ()
 lcdCounterEProg = withArduino True "/dev/cu.usbmodem1421" $ do
