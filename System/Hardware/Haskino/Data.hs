@@ -1322,7 +1322,6 @@ forInE ws bf = do
   where
     ibf i = do
         ifThenElseEither (i `lessE` (len ws)) (do
-                                    debugE $ showE i
                                     bf (ws !!* i)
                                     return $ ExprLeft (i+1)) (return $ ExprRight LitUnit)        
 

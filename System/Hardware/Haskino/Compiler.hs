@@ -1597,16 +1597,6 @@ compileIterateProcedure ta tb b1 b1e b2 b2e iv bf = do
     put s {iterBinds = tail $ iterBinds s}
     return b2e
 
-compileWhileProcedure :: ExprB a => CompileType -> Int -> Expr a -> Expr a -> (Expr a -> Expr Bool) -> (Expr a -> Arduino (Expr a)) -> State CompileState (Expr a)
-compileWhileProcedure t b be iv bf bdf = do
-    compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
-    compileLine $ bindName ++ show b ++ " = " ++ compileExpr iv ++ ";"
-    compileLine $ "while (" ++ compileExpr (bf be) ++ ")"
-    r <- compileCodeBlock $ bdf be
-    compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r ++ ";"
-    compileLineIndent "}"
-    return be
-
 compileCodeBlock :: Arduino a -> State CompileState a
 compileCodeBlock (Arduino commands) = do
     s <- get
