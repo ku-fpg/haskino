@@ -212,7 +212,7 @@ pulseEnableI2C c@I2CHitachi44780{address} d = do
 withLCD :: LCDE -> String -> (LCDController -> Arduino a) -> Arduino a
 withLCD lcd what action = do
         let c = lcdControllerE lcd 
-        debug what
+        debugE $ litString what
         action c
 
 ---------------------------------------------------------------------------------------

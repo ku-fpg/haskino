@@ -47,7 +47,9 @@ maxServo = 2400
 data CommandState = CommandState {ix        :: Int  
                                 , ib        :: Int
                                 , block     :: B.ByteString    
-                                , blocks    :: [B.ByteString]}
+                                , blocks    :: [B.ByteString]
+                                , pureLast  :: Bool
+                                , pureLasts :: [Bool]}
 
 framePackage :: B.ByteString -> B.ByteString
 framePackage bs = B.append (B.concatMap escape bs) (B.append (escape $ check bs) (B.singleton 0x7E))
@@ -114,7 +116,7 @@ packageCommand (GiveSemE id) =
 packageCommand (TakeSemE id) =
     addCommand SCHED_CMD_TAKE_SEM (packageExpr id)
 packageCommand (CreateTaskE tid m) = do
-    (_, td) <- packageCodeBlock m
+    (_, td, _) <- packageCodeBlock m
     s <- get
     let taskSize = fromIntegral (B.length td)
     cmd <- addCommand SCHED_CMD_CREATE_TASK ((packageExpr tid) ++ (packageExpr (LitW16 taskSize)) ++ (packageExpr (LitW16 (fromIntegral (ib s)))))                                   
@@ -150,8 +152,8 @@ packageCommand (ModifyRemoteRefI32 (RemoteRefI32 i) f) = addWriteRefCommand EXPR
 packageCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) = addWriteRefCommand EXPR_LIST8 i f
 packageCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) = addWriteRefCommand EXPR_FLOAT i f
 packageCommand (IfThenElseUnitE e cb1 cb2) = do
-    (_, pc1) <- packageCodeBlock cb1
-    (_, pc2) <- packageCodeBlock cb2
+    (_, pc1, _) <- packageCodeBlock cb1
+    (_, pc2, _) <- packageCodeBlock cb2
     let thenSize = word16ToBytes $ fromIntegral (B.length pc1)
     i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum EXPR_UNIT, 0] ++ thenSize ++ (packageExpr e))
     return $ B.append i (B.append pc1 pc2)
@@ -161,22 +163,25 @@ addWriteRefCommand :: ExprType -> Int -> Expr a -> State CommandState B.ByteStri
 addWriteRefCommand t i e = 
   addCommand REF_CMD_WRITE ([toW8 t, toW8 EXPR_WORD8, toW8 EXPR_LIT, fromIntegral i] ++ packageExpr e)
 
-packageCodeBlock :: Arduino a -> State CommandState (a, B.ByteString)
+packageCodeBlock :: Arduino a -> State CommandState (a, B.ByteString, Bool)
 packageCodeBlock (Arduino commands) = do
     startNewBlock 
     ret <- packMonad commands
+    s' <- get 
     str <- endCurrentBlock
-    return (ret, str)
+    return (ret, str, pureLast s')
   where
       startNewBlock :: State CommandState ()
       startNewBlock = do
           s <- get
-          put s {block = B.empty, blocks = (block s) : (blocks s)}
+          put s {pureLast = False, pureLasts = (pureLast s) : (pureLasts s),
+                 block = B.empty, blocks = (block s) : (blocks s)}
 
       endCurrentBlock :: State CommandState B.ByteString
       endCurrentBlock = do
           s <- get
-          put s {block = head $ blocks s, blocks = tail $ blocks s}
+          put s {pureLast = head $ pureLasts s, pureLasts = tail $ pureLasts s,
+                 block = head $ blocks s, blocks = tail $ blocks s}
           return $ block s
 
       addToBlock :: B.ByteString -> State CommandState ()
@@ -969,21 +974,28 @@ packageCodeBlock (Arduino commands) = do
       packProcedure _ = error "packProcedure: unsupported Procedure (it may have been a command)"
 
       packAppl :: RemoteApplicative ArduinoPrimitive a -> State CommandState a
-      packAppl (T.Primitive p) = case knownResult p of
-                                   Just a -> do
-                                              pc <- packageCommand p
-                                              addToBlock $ lenPackage pc
-                                              return a
-                                   Nothing -> packProcedure p
+      packAppl (T.Primitive p) = do
+          s <- get 
+          put s{pureLast = False}
+          case knownResult p of
+            Just a -> do
+                        pc <- packageCommand p
+                        addToBlock $ lenPackage pc
+                        return a
+            Nothing -> do
+                        packProcedure p
       packAppl (T.Ap a1 a2) = do
           f <- packAppl a1
           g <- packAppl a2
           return $ f g
-      packAppl (T.Pure a)  = return a
+      packAppl (T.Pure a)  = do
+          s <- get 
+          put s{pureLast = True}
+          return a
       packAppl (T.Alt _ _) = error "packAppl: \"Alt\" is not supported"
       packAppl  T.Empty    = error "packAppl: \"Empty\" is not supported"
 
-      packMonad :: RemoteMonad  ArduinoPrimitive a -> State CommandState a
+      packMonad :: RemoteMonad ArduinoPrimitive a -> State CommandState a
       packMonad (T.Appl app) = packAppl app
       packMonad (T.Bind m k) = do
           r <- packMonad m
@@ -996,6 +1008,10 @@ packageCodeBlock (Arduino commands) = do
       packMonad T.Empty'      = error "packMonad: \"Alt\" is not supported"
       packMonad (T.Catch _ _) = error "packMonad: \"Catch\" is not supported"
       packMonad (T.Throw  _)  = error "packMonad: \"Throw\" is not supported"
+
+      isIfThenElseEither :: ArduinoPrimitive a -> Bool
+      isIfThenElseEither (IfThenElseW8Unit _ _ _) = True
+      isIfThenElseEither _  = False
 
 lenPackage :: B.ByteString -> B.ByteString
 lenPackage package = B.append (lenEncode $ B.length package) package      
@@ -1283,10 +1299,10 @@ packageReadRefProcedure t ib i =
 
 packageIfThenElseProcedure :: ExprType -> Int -> Expr Bool -> Arduino (Expr a) -> Arduino (Expr a) -> State CommandState B.ByteString
 packageIfThenElseProcedure rt b e cb1 cb2 = do
-    (r1, pc1) <- packageCodeBlock cb1
+    (r1, pc1, _) <- packageCodeBlock cb1
     let rc1 = buildCommand EXPR_CMD_RET $ (fromIntegral b) : packageExpr r1
     let pc1'  = B.append pc1 $ lenPackage rc1
-    (r2, pc2) <- packageCodeBlock cb2
+    (r2, pc2, _) <- packageCodeBlock cb2
     let rc2 = buildCommand EXPR_CMD_RET $ (fromIntegral b) : packageExpr r2
     let pc2'  = B.append pc2 $ lenPackage rc2
     let thenSize = word16ToBytes $ fromIntegral (B.length pc1')
@@ -1295,10 +1311,10 @@ packageIfThenElseProcedure rt b e cb1 cb2 = do
 
 packageIfThenElseEitherProcedure :: (ExprB a, ExprB b) => ExprType -> ExprType -> Int -> Expr Bool -> Arduino (ExprEither a b) -> Arduino (ExprEither a b) -> State CommandState B.ByteString
 packageIfThenElseEitherProcedure rt1 rt2 b e cb1 cb2 = do
-    (r1, pc1) <- packageCodeBlock cb1
+    (r1, pc1, _) <- packageCodeBlock cb1
     let rc1 = buildCommand EXPR_CMD_RET $ (fromIntegral b) : packageExprEither rt1 rt2 r1
     let pc1'  = B.append pc1 $ lenPackage rc1
-    (r2, pc2) <- packageCodeBlock cb2
+    (r2, pc2, _) <- packageCodeBlock cb2
     let rc2 = buildCommand EXPR_CMD_RET $ (fromIntegral b) : packageExprEither rt1 rt2 r2
     let pc2'  = B.append pc2 $ lenPackage rc2
     let thenSize = word16ToBytes $ fromIntegral (B.length pc1')
@@ -1309,9 +1325,10 @@ packageIterateProcedure :: (ExprB a, ExprB b) => ExprType -> ExprType -> Int -> 
                            Expr a -> (Expr a -> Arduino(ExprEither a b)) ->
                            State CommandState B.ByteString
 packageIterateProcedure ta tb ib be iv bf = do
-    (r, pc) <- packageCodeBlock $ bf be
+    s <- get
+    (r, pc, pureWasLast) <- packageCodeBlock $ bf be
     let rc = buildCommand EXPR_CMD_RET $ (fromIntegral ib) : packageExprEither ta tb r
-    let pc'  = B.append pc $ lenPackage rc
+    let pc'  = if pureWasLast then B.append pc $ lenPackage rc else pc
     w <- addCommand BC_CMD_ITERATE ([fromIntegral $ fromEnum ta, fromIntegral $ fromEnum tb, fromIntegral ib, fromIntegral $ length ive] ++ ive)
     return $ B.append w pc'
   where
@@ -1617,6 +1634,7 @@ unpackageResponse (cmdWord:args)
                                       -> IterateBoolReply (if b == 0 then False else True)
       (BC_RESP_ITERATE , [t,l,b]) | t == toW8 EXPR_WORD8 && l == toW8 EXPR_LIT
                                       -> IterateW8Reply b
+      -- ToDo: Add decoding for other returns
       (BS_RESP_DEBUG, [])                    -> DebugResp
       (BS_RESP_VERSION, [majV, minV])        -> Firmware (bytesToWord16 (majV,minV))
       (BS_RESP_TYPE, [p])                    -> ProcessorType p
