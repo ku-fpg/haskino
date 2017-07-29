@@ -288,7 +288,7 @@ checkPackageLength :: ArduinoConnection -> B.ByteString -> IO ()
 checkPackageLength c p = if B.length p > (maxFirmwareSize - 2)
                          then runDie c ("Protocol Frame Too Large (" ++ (show $ B.length p) ++ " bytes)")
                                       ["Frame in Error starts with " ++ (show $ firmwareValCmd $ B.head p),
-                                       "Common error is a control structure (while, ifThenElse, loopE)",
+                                       "Common error is a control structure (iterateE or ifThenElseE)",
                                        "which exceeds frame limits is used outside of a task"]
                          else return ()
 

@@ -1311,7 +1311,6 @@ loopE bf = do
             Arduino $ primitive $ IterateUnitUnitE LitUnit ibf
             return ()
   where
-    -- ibf :: Expr () -> Arduino (ExprEither () ())
     ibf _ = do
         bf
         return $ ExprLeft LitUnit
