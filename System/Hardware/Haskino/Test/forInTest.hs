@@ -15,6 +15,7 @@ module System.Hardware.Haskino.SamplePrograms.Deep.ForInTest where
 
 import Control.Monad.Trans (liftIO)
 
+import Prelude hiding ((<*))
 import System.Hardware.Haskino
 import Data.Boolean
 import Data.Word
@@ -33,6 +34,26 @@ forInTest = withArduino True "/dev/cu.usbmodem1421" $ do
     -- Create the task which writes to the LCD
     myTask
     debugListen
+
+myTask2 :: Arduino ()
+myTask2 = do
+    loopE (do
+        let count = lit (3::Word16)
+        whileE 0 (\x -> x <* count) (\x -> do 
+            whileE 0 (\y -> y <* count) (\y -> do
+                analogWriteE 8 (x + y)
+                return (y-1)
+                )
+            return (x-1)))
+
+whileTest :: IO ()
+whileTest = withArduino True "/dev/cu.usbmodem1421" $ do
+    -- Create the task which writes to the LCD
+    myTask2
+    debugListen
+
+compile :: IO ()
+compile = compileProgram myTask "forInTest.ino"
         
 
         
