@@ -98,7 +98,7 @@ genPackIf ((tyn1,ty1), (tyn2,_)) =
 genPackIter :: ((String, String) , (String, String)) -> String
 genPackIter ((tyn1,_), (tyn2, ty2)) = 
     "      packProcedure (Iterate" ++ tyn1 ++ tyn2 ++ "E iv bf) = do\n" ++
-    "          i <- packDeepProcedure (Iterate" ++ tyn1 ++ tyn2 ++ "E iv bf)\n" ++
+    "          i <- packIterateProcedure (Iterate" ++ tyn1 ++ tyn2 ++ "E iv bf)\n" ++
     "          return $ RemBind" ++ ty2 ++ " i\n"
 
 genPackageIf :: ((String, String) , (String, String)) -> String

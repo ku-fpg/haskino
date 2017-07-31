@@ -42,7 +42,7 @@ myTask1 led = do
             digitalWriteE led false
             delayMillisE blinkDelay
             return $ x + 1)
-        return ()
+    return ()
 
 myTask2 :: Arduino ()
 myTask2 = do
@@ -53,6 +53,7 @@ myTask2 = do
         writeRemoteRef loopCount $ t+1
         debugE $ showE t
         delayMillisE taskDelay
+    return ()
 
 initExample :: Arduino ()
 initExample = do

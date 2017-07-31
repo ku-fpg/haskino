@@ -334,18 +334,14 @@ compileCommand (IfThenElseUnitE e cb1 cb2) = do
 
 compileSimpleProcedure :: CompileType -> String -> State CompileState Int
 compileSimpleProcedure t p = do
-    s <- get
-    let b = ib s
-    put s {ib = b + 1}
+    b <- nextBind
     compileLine $ bindName ++ show b ++ " = " ++ p ++ ";"
     compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
     return b
 
 compileSimpleListProcedure :: String -> State CompileState Int
 compileSimpleListProcedure p = do
-    s <- get
-    let b = ib s
-    put s {ib = b + 1}
+    b <- nextBind
     compileLine $ "listAssign(&" ++ bindName ++ show b ++ ", " ++ p ++ ");"
     compileAllocBind $ compileTypeToString List8Type ++ " " ++
                        bindName ++ show b ++ " = NULL;"
@@ -415,18 +411,14 @@ compileNewListRef e = do
 
 compileReadRef :: CompileType -> Int -> State CompileState Int
 compileReadRef t ix = do
-    s <- get
-    let b = ib s
-    put s {ib = b + 1}
+    b <- nextBind
     compileLine $ bindName ++ show b ++ " = " ++ refName ++ show ix ++ ";"
     compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
     return b
 
 compileReadListRef :: Int -> State CompileState Int
 compileReadListRef ix = do
-    s <- get
-    let b = ib s
-    put s {ib = b + 1}
+    b <- nextBind
     compileLine $ "listAssign(&" ++ bindName ++ show b ++ ", " ++
                   refName ++ show ix ++ ");"
     compileAllocBind $ compileTypeToString List8Type ++ " " ++
@@ -1539,9 +1531,7 @@ compileProcedure (IterateFloatFloatE iv bf) = do
 
 compileIfThenElseProcedure :: ExprB a => CompileType -> Expr Bool -> Arduino (Expr a) -> Arduino (Expr a) -> State CompileState (Expr a)
 compileIfThenElseProcedure t e cb1 cb2 = do
-    s <- get
-    let b = ib s
-    put s {ib = b + 1}
+    b <- nextBind
     compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
     compileLine $ "if (" ++ compileExpr e ++ ")"
     r1 <- compileCodeBlock cb1

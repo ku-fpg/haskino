@@ -261,7 +261,7 @@ sendProcedureCmds c (LiftIO m) cmds = do
     sendToArduino c cmds
     m
 sendProcedureCmds c procedure cmds = do
-    let (pc, _) = runState (packageProcedure procedure) (CommandState 0 0 B.empty [] False [])
+    let (pc, _) = runState (packageProcedure procedure) (CommandState 0 0 B.empty [] False [] [])
     checkPackageLength c pc
     sendToArduino c (B.append cmds (framePackage pc))
     qr <- waitResponse c (procDelay procedure) procedure
@@ -270,7 +270,7 @@ sendProcedureCmds c procedure cmds = do
 sendRemoteBindingCmds :: ArduinoConnection -> ArduinoPrimitive a -> B.ByteString -> IO a
 sendRemoteBindingCmds c b cmds = do
     ix <- takeMVar (refIndex c)
-    let (prb, _) = runState (packageRemoteBinding b) (CommandState ix 0 B.empty [] False [])
+    let (prb, _) = runState (packageRemoteBinding b) (CommandState ix 0 B.empty [] False [] [])
     checkPackageLength c prb
     putMVar (refIndex c) (ix+1)
     sendToArduino c (B.append cmds (framePackage prb))
@@ -280,7 +280,7 @@ sendRemoteBindingCmds c b cmds = do
 packageCommandIndex :: ArduinoConnection -> ArduinoPrimitive a -> IO B.ByteString
 packageCommandIndex c cmd = do
     index <- takeMVar (refIndex c)
-    let (pc, st) = runState (packageCommand cmd) (CommandState index 0 B.empty [] False [])
+    let (pc, st) = runState (packageCommand cmd) (CommandState index 0 B.empty [] False [] [])
     putMVar (refIndex c) (ix st)
     return pc
 

@@ -29,6 +29,7 @@ ledTask led delay = do
         delayMillisE delay
         digitalWriteE led false
         delayMillisE delay
+    return ()
 
 initExample :: Arduino ()
 initExample = do
