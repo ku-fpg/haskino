@@ -83,12 +83,12 @@ initOSepp = do lcd <- lcdRegisterE osepp
                                       bu <- readButton 
                                       return bu)
                          -- wait for key release
-                         key' <- whileE key (\x -> x /=* (keyValue KeyNone)) $ do
-                                   (\x -> do
-                                      bu <- readButton
-                                      return bu)
+                         whileE key (\x -> x /=* (keyValue KeyNone)) $ do
+                            (\x -> do
+                                bu <- readButton
+                                return bu)
                          delayMillisE 100
-                         return key'
+                         return key
                return (lcd, getKey)
 
 -- | Program which maintains an integer counter, and displays the counter value 
