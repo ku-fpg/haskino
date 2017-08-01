@@ -1644,12 +1644,27 @@ unpackageResponse (cmdWord:args)
                                       -> IfThenElseBoolLeftReply (if b == 0 then False else True)
       (BC_RESP_IF_THEN_ELSE , [t,l,b]) | t == (toW8 EXPR_WORD8 + 0x80) && l == toW8 EXPR_LIT
                                       -> IfThenElseW8LeftReply b
+      -- ToDo : Add other Left replies and then comment out
       (BC_RESP_ITERATE , [t,l]) | t == toW8 EXPR_UNIT && l == toW8 EXPR_LIT
                                       -> IterateUnitReply
       (BC_RESP_ITERATE , [t,l,b]) | t == toW8 EXPR_BOOL && l == toW8 EXPR_LIT
                                       -> IterateBoolReply (if b == 0 then False else True)
       (BC_RESP_ITERATE , [t,l,b]) | t == toW8 EXPR_WORD8 && l == toW8 EXPR_LIT
                                       -> IterateW8Reply b
+      (BC_RESP_ITERATE , [t,l,b1,b2]) | t == toW8 EXPR_WORD16 && l == toW8 EXPR_LIT
+                                      -> IterateW16Reply (bytesToWord16 (b1, b2))
+      (BC_RESP_ITERATE , [t,l,b1,b2,b3,b4]) | t == toW8 EXPR_WORD32 && l == toW8 EXPR_LIT
+                                      -> IterateW32Reply (bytesToWord32 (b1, b2, b3, b4))
+      (BC_RESP_ITERATE , [t,l,b]) | t == toW8 EXPR_INT8 && l == toW8 EXPR_LIT
+                                      -> IterateI8Reply $ fromIntegral b
+      (BC_RESP_ITERATE , [t,l,b1,b2]) | t == toW8 EXPR_INT16 && l == toW8 EXPR_LIT
+                                      -> IterateI16Reply $ fromIntegral (bytesToWord16 (b1, b2))
+      (BC_RESP_ITERATE , [t,l,b1,b2,b3,b4]) | t == toW8 EXPR_INT32 && l == toW8 EXPR_LIT
+                                      -> IterateI32Reply $ fromIntegral (bytesToWord32 (b1, b2, b3, b4))
+      (BC_RESP_ITERATE , t:l:_:bs) | t == toW8 EXPR_LIST8 && l == toW8 EXPR_LIT
+                                      -> IterateL8Reply bs
+      (BC_RESP_ITERATE , [t,l,b1,b2,b3,b4]) | t == toW8 EXPR_FLOAT && l == toW8 EXPR_LIT
+                                      -> IterateFloatReply $ bytesToFloat (b1, b2, b3, b4)
       -- ToDo: Add decoding for other returns
       (BS_RESP_DEBUG, [])                    -> DebugResp
       (BS_RESP_VERSION, [majV, minV])        -> Firmware (bytesToWord16 (majV,minV))
