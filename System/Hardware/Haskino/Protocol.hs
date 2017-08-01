@@ -156,7 +156,7 @@ packageCommand (IfThenElseUnitE e cb1 cb2) = do
     (_, pc1, _) <- packageCodeBlock cb1
     (_, pc2, _) <- packageCodeBlock cb2
     let thenSize = word16ToBytes $ fromIntegral (B.length pc1)
-    i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum EXPR_UNIT, 0] ++ thenSize ++ (packageExpr e))
+    i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum EXPR_UNIT, fromIntegral $ fromEnum EXPR_UNIT, 0] ++ thenSize ++ (packageExpr e))
     return $ B.append i (B.append pc1 pc2)
 packageCommand _ = error $ "packageCommand: Error Command not supported (It may have been a procedure)"
 
@@ -214,7 +214,6 @@ packageCodeBlock (Arduino commands) = do
       packIterateProcedure :: ArduinoPrimitive a -> State CommandState Int
       packIterateProcedure p = do
           s <- get
-          put s {ib = (ib s) + 1}
           pp <- packageProcedure p
           addToBlock $ lenPackage pp
           return $ ib s
