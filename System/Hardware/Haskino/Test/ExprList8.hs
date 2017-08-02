@@ -238,12 +238,12 @@ main = do
     quickCheck (prop_eq conn refB)
     print "Not Equal Tests:"
     quickCheck (prop_neq conn refB)
-    --print "Less Than Tests:"
-    --quickCheck (prop_lt conn refB)
-    --print "Greater Than Tests:"
-    --quickCheck (prop_gt conn refB)
-    --print "Less Than Equal Tests:"
-    --quickCheck (prop_lte conn refB)
+    print "Less Than Tests:"
+    quickCheck (prop_lt conn refB)
+    print "Greater Than Tests:"
+    quickCheck (prop_gt conn refB)
+    print "Less Than Equal Tests:"
+    quickCheck (prop_lte conn refB)
     print "Greater Than Equal Tests:"
     quickCheck (prop_gte conn refB)
     print "Show Word8 Tests:"
