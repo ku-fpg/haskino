@@ -9,6 +9,8 @@
 -------------------------------------------------------------------------------
 
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE NegativeLiterals #-}
 
 module System.Hardware.Haskino.Test.ExprInt16 where
 
@@ -329,6 +331,15 @@ prop_bind c r a b d e = monadicIO $ do
         return v
     assert (local == litEval16 remote)
 
+prop_while :: ArduinoConnection -> Int8 -> Property
+prop_while c x = monadicIO $ do
+    let x'::Int16 = fromIntegral x
+    let local = x'
+    remote <- run $ send c $ do
+        v <- whileE (lit (-128::Int16)) (\z -> z <* lit x') (\z -> return $ z + 1)
+        return v
+    assert (local == litEval16 remote)
+
 main :: IO ()
 main = do
     conn <- openArduino False "/dev/cu.usbmodem1421"
@@ -398,4 +409,6 @@ main = do
     quickCheck (prop_arith conn refI16)
     print "Bind Tests:"
     quickCheck (prop_bind conn refI16)
+    print "While Tests:"
+    quickCheck (prop_while conn)
     closeArduino conn
