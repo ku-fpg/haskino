@@ -2051,7 +2051,7 @@ static bool handleExprRet(int size, const byte *msg, CONTEXT *context)
     byte *bind_ptr = &context->bind[bind * BIND_SPACING];
     uint32_t w32Val = evalWord32Expr(&expr, context);
 
-    bind_ptr[0] = EXPR_WORD16;
+    bind_ptr[0] = EXPR_WORD32;
     bind_ptr[1] = EXPR_LIT;
     memcpy(bind_ptr+2, &w32Val, sizeof(w32Val));
     }
