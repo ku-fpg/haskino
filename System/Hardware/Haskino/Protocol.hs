@@ -1640,11 +1640,28 @@ unpackageResponse (cmdWord:args)
                                       -> IfThenElseL8Reply bs
       (BC_RESP_IF_THEN_ELSE , [t,l,b1,b2,b3,b4]) | t == toW8 EXPR_FLOAT && l == toW8 EXPR_LIT
                                       -> IfThenElseFloatReply $ bytesToFloat (b1, b2, b3, b4)
+      {-- The IfThenElse Left replies are only used inside of Iterates
+       -- so they will never be received by the host, but are here for
+       -- test purposes 
       (BC_RESP_IF_THEN_ELSE , [t,l,b]) | t == (toW8 EXPR_BOOL  + 0x80) && l == toW8 EXPR_LIT
                                       -> IfThenElseBoolLeftReply (if b == 0 then False else True)
       (BC_RESP_IF_THEN_ELSE , [t,l,b]) | t == (toW8 EXPR_WORD8 + 0x80) && l == toW8 EXPR_LIT
                                       -> IfThenElseW8LeftReply b
-      -- ToDo : Add other Left replies and then comment out
+      (BC_RESP_IF_THEN_ELSE , [t,l,b1,b2]) | t == (toW8 EXPR_WORD16 + 0x80) && l == toW8 EXPR_LIT
+                                      -> IfThenElseW16LeftReply (bytesToWord16 (b1, b2))
+      (BC_RESP_IF_THEN_ELSE , [t,l,b1,b2,b3,b4]) | t == (toW8 EXPR_WORD32 + 0x80) && l == toW8 EXPR_LIT
+                                      -> IfThenElseW32LeftReply (bytesToWord32 (b1, b2, b3, b4))
+      (BC_RESP_IF_THEN_ELSE , [t,l,b]) | t == (toW8 EXPR_INT8 + 0x80) && l == toW8 EXPR_LIT
+                                      -> IfThenElseI8LeftReply $ fromIntegral b
+      (BC_RESP_IF_THEN_ELSE , [t,l,b1,b2]) | t == (toW8 EXPR_INT16 + 0x80) && l == toW8 EXPR_LIT
+                                      -> IfThenElseI16LeftReply $ fromIntegral (bytesToWord16 (b1, b2))
+      (BC_RESP_IF_THEN_ELSE , [t,l,b1,b2,b3,b4]) | t == (toW8 EXPR_INT32 + 0x80) && l == toW8 EXPR_LIT
+                                      -> IfThenElseI32LeftReply $ fromIntegral (bytesToWord32 (b1, b2, b3, b4))
+      (BC_RESP_IF_THEN_ELSE , t:l:_:bs) | t == (toW8 EXPR_LIST8 + 0x80) && l == toW8 EXPR_LIT
+                                      -> IfThenElseL8LeftReply bs
+      (BC_RESP_IF_THEN_ELSE , [t,l,b1,b2,b3,b4]) | t == (toW8 EXPR_FLOAT + 0x80) && l == toW8 EXPR_LIT
+                                      -> IfThenElseFloatLeftReply $ bytesToFloat (b1, b2, b3, b4)
+      -}
       (BC_RESP_ITERATE , [t,l]) | t == toW8 EXPR_UNIT && l == toW8 EXPR_LIT
                                       -> IterateUnitReply
       (BC_RESP_ITERATE , [t,l,b]) | t == toW8 EXPR_BOOL && l == toW8 EXPR_LIT
@@ -1665,7 +1682,6 @@ unpackageResponse (cmdWord:args)
                                       -> IterateL8Reply bs
       (BC_RESP_ITERATE , [t,l,b1,b2,b3,b4]) | t == toW8 EXPR_FLOAT && l == toW8 EXPR_LIT
                                       -> IterateFloatReply $ bytesToFloat (b1, b2, b3, b4)
-      -- ToDo: Add decoding for other returns
       (BS_RESP_DEBUG, [])                    -> DebugResp
       (BS_RESP_VERSION, [majV, minV])        -> Firmware (bytesToWord16 (majV,minV))
       (BS_RESP_TYPE, [p])                    -> ProcessorType p

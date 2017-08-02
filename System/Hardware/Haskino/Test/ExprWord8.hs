@@ -346,6 +346,9 @@ prop_ifthenelse c x y = monadicIO $ do
         return v
     assert (local == litEval8 remote)
 
+{-- The IfThenElseEithers are only used inside of Iterates
+ -- so they will never be received by the host, but are here for
+ -- initialtest purposes 
 prop_ifthenelseeitherw8 :: ArduinoConnection -> Word8 -> Word8 -> Property
 prop_ifthenelseeitherw8 c x y = monadicIO $ do
     let local = if (x < y) then x else y
@@ -370,6 +373,7 @@ prop_ifthenelseeitherb c x y = monadicIO $ do
         Right r -> do
             let (ExprRight (LitB rr)) = remote
             assert (r == rr)
+-}
 
 prop_while :: ArduinoConnection -> NonZero Word8 -> Property
 prop_while c (NonZero x) = monadicIO $ do
@@ -449,11 +453,13 @@ main = do
     print "Bind Tests:"
     quickCheck (prop_bind conn refW8)
     print "IfThenElse Tests:"
+{-
     quickCheck (prop_ifthenelse conn)
     print "IfThenElseEitherW8 Tests:"
     quickCheck (prop_ifthenelseeitherw8 conn)
     print "IfThenElseEitherBool Tests:"
     quickCheck (prop_ifthenelseeitherb conn)
+-}
     print "While Tests:"
     quickCheck (prop_while conn)
     closeArduino conn

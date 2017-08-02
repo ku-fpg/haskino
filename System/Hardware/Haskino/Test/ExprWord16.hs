@@ -9,6 +9,7 @@
 -------------------------------------------------------------------------------
 
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module System.Hardware.Haskino.Test.ExprWord16 where
 
@@ -337,11 +338,12 @@ prop_ifthenelse c x y = monadicIO $ do
         return v
     assert (local == litEval16 remote)
 
-prop_while :: ArduinoConnection -> NonZero Word16 -> Property
+prop_while :: ArduinoConnection -> NonZero Word8 -> Property
 prop_while c (NonZero x) = monadicIO $ do
-    let local = x
+    let x'::Word16 = fromIntegral x
+    let local = x'
     remote <- run $ send c $ do
-        v <- whileE (lit 0) (\z -> z <* lit x) (\z -> return $ z + 1)
+        v <- whileE (lit 0) (\z -> z <* lit x') (\z -> return $ z + 1)
         return v
     assert (local == litEval16 remote)
 
