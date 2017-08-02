@@ -35,7 +35,7 @@ typeNamePackTypeList = zip typeNameList packTypeList
 typeNamePackTypeCombos = [ (x,y) | x<-typeNamePackTypeList, y<-typeNamePackTypeList ]
 
 genEitherPrim :: ((String, String) , (String, String)) -> String
-genEitherPrim ((tyn1,ty1), (tyn2, ty2)) = 
+genEitherPrim ((tyn1,ty1), (tyn2, ty2)) =
     "     IfThenElse" ++ tyn1 ++ tyn2 ++ spaces ++ ":: Expr Bool" ++ argStrs ++ returnStr ++ "\n"
   where
     strLens = (length tyn1) + (length tyn2)
@@ -45,8 +45,8 @@ genEitherPrim ((tyn1,ty1), (tyn2, ty2)) =
     returnStr = " -> ArduinoPrimitive (ExprEither " ++ ty1 ++ " " ++ ty2 ++ ")"
 
 genIteratePrim :: ((String, String) , (String, String)) -> String
-genIteratePrim ((tyn1,ty1), (tyn2, ty2)) = 
-    "     Iterate" ++ tyn1 ++ tyn2 ++ "E" ++ spaces ++ ":: Expr " ++ ty1 ++ 
+genIteratePrim ((tyn1,ty1), (tyn2, ty2)) =
+    "     Iterate" ++ tyn1 ++ tyn2 ++ "E" ++ spaces ++ ":: Expr " ++ ty1 ++
     " -> (Expr " ++ ty1 ++ " -> Arduino (ExprEither " ++ ty1 ++ " " ++
     ty2 ++ ")) -> ArduinoPrimitive (Expr " ++ ty2 ++ ")" ++ "\n"
   where
@@ -54,18 +54,18 @@ genIteratePrim ((tyn1,ty1), (tyn2, ty2)) =
     spaces = replicate (13 - strLens) ' '
 
 genIterateInst :: ((String, String) , (String, String)) -> String
-genIterateInst ((tyn1,ty1), (tyn2, ty2)) = 
+genIterateInst ((tyn1,ty1), (tyn2, ty2)) =
     "instance ArduinoIterate " ++ ty1 ++ " " ++ ty2 ++ " where\n" ++
     "    iterateE iv bf = Arduino $ primitive $ Iterate" ++ tyn1 ++ tyn2 ++ "E iv bf\n" ++
     "    ifThenElseEither be te ee = Arduino $ primitive $ IfThenElse"++ tyn1 ++ tyn2 ++ " be te ee\n\n"
 
 genShowIf :: ((String, String) , (String, String)) -> String
-genShowIf ((tyn1, _), (tyn2, _)) = 
+genShowIf ((tyn1, _), (tyn2, _)) =
     "      showProcedure (IfThenElse" ++ tyn1 ++ tyn2 ++ " e cb1 cb2) =\n" ++
     "          showIfThenElseEitherProcedure e cb1 cb2\n"
 
 genShowIter :: ((String, String) , (String, String)) -> String
-genShowIter ((tyn1,ty1), (tyn2, ty2)) = 
+genShowIter ((tyn1,ty1), (tyn2, ty2)) =
     "      showProcedure (Iterate" ++ tyn1 ++ tyn2 ++ "E iv bf) = do\n" ++
     "          i <- nextBind\n" ++
     "          let bi = RemBind" ++ ty1 ++ " i\n" ++
@@ -75,12 +75,12 @@ genShowIter ((tyn1,ty1), (tyn2, ty2)) =
     "          return bj\n"
 
 genCompIf :: ((String, String) , (String, String)) -> String
-genCompIf ((tyn1, ty1), (tyn2, ty2)) = 
+genCompIf ((tyn1, ty1), (tyn2, ty2)) =
     "compileProcedure (IfThenElse" ++ tyn1 ++ tyn2 ++ " e cb1 cb2) =\n" ++
     "    compileIfThenElseEitherProcedure " ++ ty1 ++ "Type " ++ ty2 ++ "Type e cb1 cb2\n"
 
 genCompIter :: ((String, String, String) , (String, String, String)) -> String
-genCompIter ((tyn1, ty1, cty1), (tyn2, ty2, cty2)) = 
+genCompIter ((tyn1, ty1, cty1), (tyn2, ty2, cty2)) =
     "compileProcedure (Iterate" ++ tyn1 ++ tyn2 ++ "E iv bf) = do\n" ++
     "    i <- nextBind\n" ++
     "    let bi = RemBind" ++ ty1 ++ " i\n" ++
@@ -90,23 +90,23 @@ genCompIter ((tyn1, ty1, cty1), (tyn2, ty2, cty2)) =
     "    return bj\n"
 
 genPackIf :: ((String, String) , (String, String)) -> String
-genPackIf ((tyn1,ty1), (tyn2,_)) = 
+genPackIf ((tyn1,ty1), (tyn2,_)) =
     "      packProcedure (IfThenElse" ++ tyn1 ++ tyn2 ++ " e cb1 cb2) = do\n" ++
     "          i <- packDeepProcedure (IfThenElse" ++ tyn1 ++ tyn2 ++ " e cb1 cb2)\n" ++
     "          return $ ExprLeft $ RemBind" ++ ty1 ++ " i\n"
 
 genPackIter :: ((String, String) , (String, String)) -> String
-genPackIter ((tyn1,_), (tyn2, ty2)) = 
+genPackIter ((tyn1,_), (tyn2, ty2)) =
     "      packProcedure (Iterate" ++ tyn1 ++ tyn2 ++ "E iv bf) = do\n" ++
     "          i <- packIterateProcedure (Iterate" ++ tyn1 ++ tyn2 ++ "E iv bf)\n" ++
     "          return $ RemBind" ++ ty2 ++ " i\n"
 
 genPackageIf :: ((String, String) , (String, String)) -> String
-genPackageIf ((tyn1,ty1), (tyn2,ty2)) = 
+genPackageIf ((tyn1,ty1), (tyn2,ty2)) =
     "    packageProcedure' (IfThenElse" ++ tyn1 ++ tyn2 ++ " e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_" ++ ty1 ++ " EXPR_" ++ ty2 ++ " ib e cb1 cb2\n"
 
 genPackageIter :: ((String, String, String) , (String, String, String)) -> String
-genPackageIter ((tyn1, ty1, cty1), (tyn2, _, cty2)) = 
+genPackageIter ((tyn1, ty1, cty1), (tyn2, _, cty2)) =
     "    packageProcedure' (Iterate" ++ tyn1 ++ tyn2 ++ "E iv bf) ib = packageIterateProcedure EXPR_" ++ cty1 ++ " EXPR_" ++ cty2 ++ " ib (RemBind" ++ ty1  ++ " ib) iv bf\n"
 
 genParseIf :: (String, String) -> String
@@ -118,6 +118,14 @@ genParseIter :: (String, String) -> String
 genParseIter (tyn1,tyn2) =
       "parseQueryResult (Iterate" ++ tyn1 ++ tyn2 ++ "E _ _) (Iterate" ++ tyn2 ++
       if tyn2 == "Unit" then "Reply) = Just $ LitUnit\n" else "Reply r) = Just $ lit r\n"
+
+genCommProcIf :: (String, String) -> String
+genCommProcIf (tyn1, tyn2) =
+      "              , \"ifThenElse" ++ tyn1 ++ tyn2 ++ "\"\n"
+
+genCommProcIter :: (String, String) -> String
+genCommProcIter (tyn1, tyn2) =
+      "              , \"iterate" ++ tyn1 ++ tyn2 ++ "E\"\n"
 
 main :: IO ()
 main = do
@@ -134,6 +142,8 @@ main = do
   let packageIters = map genPackageIter typeNameBindPackTypeCombos
   let parseIfs = map genParseIf typeNameCombos
   let parseIters = map genParseIter typeNameCombos
+  let commProcIfs = map genCommProcIf typeNameCombos
+  let commProcIters = map genCommProcIter typeNameCombos
   putStrLn $ concat prims1
   putStrLn ""
   putStrLn $ concat prims2
@@ -159,3 +169,7 @@ main = do
   putStrLn $ concat parseIfs
   putStrLn ""
   putStrLn $ concat parseIters
+  putStrLn ""
+  putStrLn $ concat commProcIfs
+  putStrLn ""
+  putStrLn $ concat commProcIters
