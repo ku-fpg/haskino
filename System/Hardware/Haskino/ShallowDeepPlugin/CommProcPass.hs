@@ -218,17 +218,11 @@ commProcExprAlts ((ac, b, a) : as) = do
 commProcXlat :: XlatEntry -> CoreExpr -> BindM CoreExpr
 commProcXlat xe e = do
   let (f, args) = collectArgs e
-  liftCoreM $ putMsgS "@@@@@@@@@@"
-  liftCoreM $ putMsg $ ppr f
-  liftCoreM $ putMsg $ ppr args
   (xlatRet, xlatArgs) <- genXlatBools (fromId xe) (toId xe)
   let zargs = zip xlatArgs args
   args' <- mapM commProcXlatArg zargs
   newId <- toId xe
   let f' = Var newId
-  liftCoreM $ putMsg $ ppr xlatRet
-  liftCoreM $ putMsg $ ppr xlatArgs
-
   if xlatRet
   then do
     let (tyCon, [ty]) = splitTyConApp $ exprType e
@@ -238,7 +232,16 @@ commProcXlat xe e = do
     return $ mkCoreApps f' args'
 
 commProcXlatArg :: (Bool, CoreExpr) -> BindM CoreExpr
-commProcXlatArg (xlat, e) = if xlat then repExpr e else return e
+commProcXlatArg (xlat, e) =
+  if xlat
+  then do
+    let tyCon_m = splitTyConApp_maybe $ exprType e
+    case tyCon_m of
+      Just (tyCon, [ty]) -> do
+        e' <- commProcExpr e
+        fmapAbsExpr (mkTyConTy tyCon) ty e'
+      _                  -> repExpr e
+  else return e
 
 genXlatBools :: BindM Id -> BindM Id -> BindM (Bool, [Bool])
 genXlatBools from to = do

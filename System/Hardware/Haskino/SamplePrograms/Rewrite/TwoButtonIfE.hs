@@ -16,7 +16,7 @@ import Control.Monad
 import Data.Word
 import Data.Boolean
 
-twoButtonProg1E :: Arduino ()
+twoButtonProg1E :: Arduino (Expr ())
 twoButtonProg1E = do
     let led1 = 12
     let led2 = 13
@@ -43,7 +43,7 @@ twoButtonProg1E = do
             return (a' &&* b) )
         delayMillisE 1000
 
-twoButtonProg2E :: Arduino ()
+twoButtonProg2E :: Arduino (Expr ())
 twoButtonProg2E = do
     let led1 = 12
     let led2 = 13
@@ -70,7 +70,7 @@ twoButtonProg2E = do
             return c )
         delayMillisE 1000
 
-twoButtonProg3E :: Arduino ()
+twoButtonProg3E :: Arduino (Expr ())
 twoButtonProg3E = do
     let led1 = 12
     let led2 = 13
@@ -83,7 +83,7 @@ twoButtonProg3E = do
     loopE $ do
         a <- digitalReadE button1
         b <- digitalReadE button2
-        ifThenElseUnitE
+        ifThenElseE
           (a ||* b)
           (   do
             digitalWriteE led1 a
@@ -93,7 +93,7 @@ twoButtonProg3E = do
             digitalWriteE led2 (notB b) )
         delayMillisE 1000
 
-twoButtonProg4E :: Arduino ()
+twoButtonProg4E :: Arduino (Expr ())
 twoButtonProg4E = do
     let led1 = 12
     let led2 = 13

@@ -470,13 +470,13 @@ compileProcedure (DelayMillis ms) = do
     return ()
 compileProcedure (DelayMillisE ms) = do
     compile1ExprCommand "delayMilliseconds" ms
-    return ()
+    return LitUnit
 compileProcedure (DelayMicros ms) = do
     compileStrongProcedureError $ "delayMicros " ++ show ms
     return ()
 compileProcedure (DelayMicrosE ms) = do
     compile1ExprCommand "delayMicroseconds" ms
-    return ()
+    return LitUnit
 compileProcedure (DigitalRead ms) = do
     compileStrongProcedureError $ "digitalRead " ++ show ms
     return False

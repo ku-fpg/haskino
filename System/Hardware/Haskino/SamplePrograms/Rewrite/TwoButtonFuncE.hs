@@ -32,39 +32,39 @@ myRead3E p = do
     delayMillisE 100
     return true
 
-myWriteE :: Expr Word8 -> Expr Bool -> Arduino ()
+myWriteE :: Expr Word8 -> Expr Bool -> Arduino (Expr ())
 myWriteE p b = do
     delayMillisE 100
     digitalWriteE (p+1) (notB b)
 
-twoButtonProg1E :: Arduino ()
+twoButtonProg1E :: Arduino (Expr ())
 twoButtonProg1E = do
     setPinModeE 13 OUTPUT
     setPinModeE 2 INPUT
     setPinModeE 3 INPUT
-    loopE $ do 
+    loopE $ do
         a <- myRead1E 2
         b <- myRead1E 3
         myWriteE 13 (a ||* b)
         delayMillisE 1000
 
-twoButtonProg2E :: Arduino ()
+twoButtonProg2E :: Arduino (Expr ())
 twoButtonProg2E = do
     setPinModeE 13 OUTPUT
     setPinModeE 2 INPUT
     setPinModeE 3 INPUT
-    loopE $ do 
+    loopE $ do
         a <- myRead2E 2
         b <- myRead2E 3
         myWriteE 13 (a ||* b)
         delayMillisE 1000
 
-twoButtonProg3E :: Arduino ()
+twoButtonProg3E :: Arduino (Expr ())
 twoButtonProg3E = do
     setPinModeE 13 OUTPUT
     setPinModeE 2 INPUT
     setPinModeE 3 INPUT
-    loopE $ do 
+    loopE $ do
         a <- myRead3E 2
         b <- myRead3E 3
         myWriteE 13 (a ||* b)

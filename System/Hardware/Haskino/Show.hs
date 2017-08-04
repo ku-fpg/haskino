@@ -286,9 +286,9 @@ showCodeBlock (Arduino commands) = do
           i <- showDeep0Procedure "MillisE"
           return $ RemBindW32 i
       showProcedure (DelayMillis ms) = showShallow1Procedure "DelayMillis" ms ()
-      showProcedure (DelayMillisE ms) = showShallow1Procedure "DelayMillisE" ms ()
+      showProcedure (DelayMillisE ms) = showShallow1Procedure "DelayMillisE" ms LitUnit
       showProcedure (DelayMicros ms) = showShallow1Procedure "DelayMicros" ms ()
-      showProcedure (DelayMicrosE ms) = showShallow1Procedure "DelayMicrosE" ms ()
+      showProcedure (DelayMicrosE ms) = showShallow1Procedure "DelayMicrosE" ms LitUnit
       showProcedure (DigitalRead p) = showShallow1Procedure "DigitalRead" p False
       showProcedure (DigitalReadE p) = do
           i <- showDeep1Procedure "DigitalReadE" p

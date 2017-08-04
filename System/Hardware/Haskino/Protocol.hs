@@ -224,9 +224,9 @@ packageCodeBlock (Arduino commands) = do
           i <- packDeepProcedure MillisE
           return $ RemBindW32 i
       packProcedure (DelayMillis ms) = packShallowProcedure (DelayMillis ms) ()
-      packProcedure (DelayMillisE ms) = packShallowProcedure (DelayMillisE ms) ()
+      packProcedure (DelayMillisE ms) = packShallowProcedure (DelayMillisE ms) LitUnit
       packProcedure (DelayMicros ms) = packShallowProcedure (DelayMicros ms) ()
-      packProcedure (DelayMicrosE ms) = packShallowProcedure (DelayMicrosE ms) ()
+      packProcedure (DelayMicrosE ms) = packShallowProcedure (DelayMicrosE ms) LitUnit
       packProcedure (DigitalRead p) = packShallowProcedure (DigitalRead p) False
       packProcedure (DigitalReadE p) = do
           i <- packDeepProcedure (DigitalReadE p)
@@ -1678,9 +1678,9 @@ parseQueryResult MicrosE (MicrosReply m) = Just (lit m)
 parseQueryResult Millis (MillisReply m) = Just m
 parseQueryResult MillisE (MillisReply m) = Just (lit m)
 parseQueryResult (DelayMicros _) DelayResp = Just ()
-parseQueryResult (DelayMicrosE _) DelayResp = Just ()
+parseQueryResult (DelayMicrosE _) DelayResp = Just LitUnit
 parseQueryResult (DelayMillis _) DelayResp = Just ()
-parseQueryResult (DelayMillisE _) DelayResp = Just ()
+parseQueryResult (DelayMillisE _) DelayResp = Just LitUnit
 parseQueryResult (DebugE _) DebugResp = Just ()
 parseQueryResult (DigitalRead _) (DigitalReply d) = Just (if d == 0 then False else True)
 parseQueryResult (DigitalReadE _) (DigitalReply d) = Just (if d == 0 then lit False else lit True)

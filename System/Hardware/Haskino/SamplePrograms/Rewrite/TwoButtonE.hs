@@ -24,7 +24,7 @@ twoButtonProgE = do
     setPinModeE led OUTPUT
     setPinModeE button1 INPUT
     setPinModeE button2 INPUT
-    loopE $ do 
+    loopE $ do
         a <- digitalReadE button1
         b <- digitalReadE button2
         c <- return (a ||* b)

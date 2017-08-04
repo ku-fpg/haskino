@@ -198,7 +198,7 @@ data ArduinoPrimitive :: * -> * where
      ModifyRemoteRefI32   :: RemoteRef Int32   -> Expr Int32   -> ArduinoPrimitive (Expr ())
      ModifyRemoteRefL8    :: RemoteRef [Word8] -> Expr [Word8] -> ArduinoPrimitive (Expr ())
      ModifyRemoteRefFloat :: RemoteRef Float   -> Expr Float   -> ArduinoPrimitive (Expr ())
-     Loop                 :: Arduino a                         -> ArduinoPrimitive ()
+     Loop                 :: Arduino ()                        -> ArduinoPrimitive ()
      -- ToDo: add SPI commands
      -- Procedures
      QueryFirmware        :: ArduinoPrimitive Word16                   -- ^ Query the Firmware version installed
@@ -211,8 +211,8 @@ data ArduinoPrimitive :: * -> * where
      MillisE              :: ArduinoPrimitive (Expr Word32)
      DelayMillis          :: TimeMillis -> ArduinoPrimitive ()
      DelayMicros          :: TimeMicros -> ArduinoPrimitive ()
-     DelayMillisE         :: TimeMillisE -> ArduinoPrimitive ()
-     DelayMicrosE         :: TimeMicrosE -> ArduinoPrimitive ()
+     DelayMillisE         :: TimeMillisE -> ArduinoPrimitive (Expr ())
+     DelayMicrosE         :: TimeMicrosE -> ArduinoPrimitive (Expr ())
      DigitalRead          :: Pin -> ArduinoPrimitive Bool            -- ^ Read the avlue ona pin digitally
      DigitalReadE         :: PinE -> ArduinoPrimitive (Expr Bool)         -- ^ Read the avlue ona pin digitally
      DigitalPortRead      :: Pin -> Word8 -> ArduinoPrimitive Word8          -- ^ Read the values on a port digitally
@@ -729,7 +729,7 @@ instance RemoteReference Float where
     modifyRemoteRef (RemoteRefFloat i) f =
         Arduino $ primitive $ ModifyRemoteRefFloat (RemoteRefFloat i) (f $ RefFloat i)
 
-loop :: Arduino a -> Arduino ()
+loop :: Arduino () -> Arduino ()
 loop m = Arduino $ primitive $ Loop m
 
 queryFirmware :: Arduino Word16
@@ -759,13 +759,13 @@ millisE = Arduino $ primitive MillisE
 delayMillis :: TimeMillis -> Arduino ()
 delayMillis t = Arduino $ primitive $ DelayMillis t
 
-delayMillisE :: TimeMillisE -> Arduino ()
+delayMillisE :: TimeMillisE -> Arduino (Expr ())
 delayMillisE t = Arduino $ primitive $ DelayMillisE t
 
 delayMicros :: TimeMicros -> Arduino ()
 delayMicros t = Arduino $ primitive $ DelayMicros t
 
-delayMicrosE :: TimeMicrosE -> Arduino ()
+delayMicrosE :: TimeMicrosE -> Arduino (Expr ())
 delayMicrosE t = Arduino $ primitive $ DelayMicrosE t
 
 digitalRead :: Pin -> Arduino Bool
@@ -1317,7 +1317,7 @@ repeatUntilE i tf bf = iterateE i ibf
         res <- bf i'
         ifThenElseEither (tf i') (return $ ExprLeft res) (return $ ExprRight i')
 
-loopE :: Arduino a -> Arduino (Expr ())
+loopE :: Arduino (Expr ()) -> Arduino (Expr ())
 loopE bf = iterateE LitUnit (\_ -> bf >> (return $ ExprLeft LitUnit))
 
 forInE :: Expr [Word8] -> (Expr Word8 -> Arduino (Expr ())) -> Arduino (Expr ())

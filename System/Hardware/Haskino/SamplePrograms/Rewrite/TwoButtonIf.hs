@@ -167,6 +167,7 @@ main = do
       putStrLn $ show twoButtonProg2
       putStrLn "-----------------"
       putStrLn $ show twoButtonProg2E
+{-
   if test3
   then putStrLn "*** Test3 Passed"
   else do
@@ -174,6 +175,7 @@ main = do
       putStrLn $ show twoButtonProg3
       putStrLn "-----------------"
       putStrLn $ show twoButtonProg3E
+-}
   if test4
   then putStrLn "*** Test4 Passed"
   else do
@@ -182,11 +184,3 @@ main = do
       putStrLn "-----------------"
       putStrLn $ show twoButtonProg4E
 
-testIt :: Arduino ()
-testIt = do
-    let test1 = 3 :: Word8
-    let test2 = 4 :: Word8
-    loopE $ do
-        if test1 > test2
-        then digitalWrite test1 True
-        else digitalWrite test1 False

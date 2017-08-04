@@ -16,7 +16,7 @@ import Control.Monad
 import Data.Word
 import Data.Boolean
 
-twoButtonProg1E :: Arduino ()
+twoButtonProg1E :: Arduino (Expr ())
 twoButtonProg1E = do
     let myWriteE p b = do
         delayMillisE 100
@@ -33,7 +33,7 @@ twoButtonProg1E = do
         delayMillisE 1000
 
 
-twoButtonProg2E :: Arduino ()
+twoButtonProg2E :: Arduino (Expr ())
 twoButtonProg2E = do
     let myReadE p = do
         delayMillisE 100
