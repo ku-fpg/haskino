@@ -13,7 +13,7 @@
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module System.Hardware.Haskino.Protocol(framePackage, packageCommand, 
+module System.Hardware.Haskino.Protocol(framePackage, packageCommand,
                                             packageProcedure, packageRemoteBinding,
                                             unpackageResponse, parseQueryResult,
                                             maxFirmwareSize, packageExpr,
@@ -38,19 +38,16 @@ maxFirmwareSize :: Int
 maxFirmwareSize = 256
 
 -- | Minimum and maximum servo pulse widths
-minServo :: Int16 
+minServo :: Int16
 minServo = 544
 
-maxServo :: Int16 
+maxServo :: Int16
 maxServo = 2400
 
-data CommandState = CommandState {ix        :: Int  
+data CommandState = CommandState {ix        :: Int
                                 , ib        :: Int
-                                , block     :: B.ByteString    
-                                , blocks    :: [B.ByteString]
-                                , pureLast  :: Bool
-                                , pureLasts :: [Bool]
-                                , iterBinds :: [Int]}
+                                , block     :: B.ByteString
+                                , blocks    :: [B.ByteString]}
 
 framePackage :: B.ByteString -> B.ByteString
 framePackage bs = B.append (B.concatMap escape bs) (B.append (escape $ check bs) (B.singleton 0x7E))
@@ -70,9 +67,9 @@ buildCommand cmd bs = B.pack $ firmwareCmdVal cmd : bs
 -- | Package a request as a sequence of bytes to be sent to the board
 -- using the Haskino Firmware protocol.
 packageCommand :: forall a . ArduinoPrimitive a -> State CommandState B.ByteString
-packageCommand SystemReset =
+packageCommand SystemResetE =
     addCommand BC_CMD_SYSTEM_RESET []
-packageCommand (SetPinModeE p m) = 
+packageCommand (SetPinModeE p m) =
     addCommand BC_CMD_SET_PIN_MODE (packageExpr p ++ packageExpr m)
 packageCommand (DigitalWriteE p b) =
     addCommand DIG_CMD_WRITE_PIN (packageExpr p ++ packageExpr b)
@@ -86,53 +83,53 @@ packageCommand (ToneE p f Nothing) =
     packageCommand (ToneE p f (Just 0))
 packageCommand (NoToneE p) =
     addCommand ALG_CMD_NOTONE_PIN (packageExpr  p)
-packageCommand (I2CWrite sa w8s) = 
+packageCommand (I2CWriteE sa w8s) =
     addCommand I2C_CMD_WRITE (packageExpr sa ++ packageExpr w8s)
-packageCommand I2CConfig = 
+packageCommand I2CConfigE =
     addCommand I2C_CMD_CONFIG []
-packageCommand (StepperSetSpeedE st sp) = 
+packageCommand (StepperSetSpeedE st sp) =
     addCommand STEP_CMD_SET_SPEED (packageExpr st ++ packageExpr sp)
-packageCommand (ServoDetachE sv) = 
+packageCommand (ServoDetachE sv) =
     addCommand SRVO_CMD_DETACH (packageExpr sv)
-packageCommand (ServoWriteE sv w) = 
+packageCommand (ServoWriteE sv w) =
     addCommand SRVO_CMD_WRITE (packageExpr sv ++ packageExpr w)
-packageCommand (ServoWriteMicrosE sv w) = 
+packageCommand (ServoWriteMicrosE sv w) =
     addCommand SRVO_CMD_WRITE_MICROS (packageExpr sv ++ packageExpr w)
 packageCommand (DeleteTaskE tid) =
     addCommand SCHED_CMD_DELETE_TASK (packageExpr tid)
 packageCommand (ScheduleTaskE tid tt) =
     addCommand SCHED_CMD_SCHED_TASK (packageExpr tid ++ packageExpr tt)
-packageCommand ScheduleReset =
+packageCommand ScheduleResetE =
     addCommand SCHED_CMD_RESET []
 packageCommand (AttachIntE p t m) =
     addCommand SCHED_CMD_ATTACH_INT (packageExpr p ++ packageExpr t ++ packageExpr m)
 packageCommand (DetachIntE p) =
     addCommand SCHED_CMD_DETACH_INT (packageExpr p)
-packageCommand (Interrupts) =
+packageCommand (InterruptsE) =
     addCommand SCHED_CMD_INTERRUPTS []
-packageCommand (NoInterrupts) =
+packageCommand (NoInterruptsE) =
     addCommand SCHED_CMD_NOINTERRUPTS []
 packageCommand (GiveSemE id) =
     addCommand SCHED_CMD_GIVE_SEM (packageExpr id)
 packageCommand (TakeSemE id) =
     addCommand SCHED_CMD_TAKE_SEM (packageExpr id)
 packageCommand (CreateTaskE tid m) = do
-    (_, td, _) <- packageCodeBlock m
+    (_, td) <- packageCodeBlock m
     s <- get
     let taskSize = fromIntegral (B.length td)
-    cmd <- addCommand SCHED_CMD_CREATE_TASK ((packageExpr tid) ++ (packageExpr (LitW16 taskSize)) ++ (packageExpr (LitW16 (fromIntegral (ib s)))))                                   
+    cmd <- addCommand SCHED_CMD_CREATE_TASK ((packageExpr tid) ++ (packageExpr (LitW16 taskSize)) ++ (packageExpr (LitW16 (fromIntegral (ib s)))))
     return $ (framePackage cmd) `B.append` (genAddToTaskCmds td)
   where
-    -- Max command data size is max frame size - 7 
+    -- Max command data size is max frame size - 7
     -- command - 1 byte,checksum - 1 byte,frame flag - 1 byte
     -- task ID - 2 bytes (lit + constant), size - 2 bytes (lit + constant)
     maxCmdSize = maxFirmwareSize - 7
-    genAddToTaskCmds tds | fromIntegral (B.length tds) > maxCmdSize = 
-        addToTask (B.take maxCmdSize tds) 
+    genAddToTaskCmds tds | fromIntegral (B.length tds) > maxCmdSize =
+        addToTask (B.take maxCmdSize tds)
             `B.append` (genAddToTaskCmds (B.drop maxCmdSize tds))
     genAddToTaskCmds tds = addToTask tds
-    addToTask tds' = framePackage $ buildCommand SCHED_CMD_ADD_TO_TASK ((packageExpr tid) ++ 
-                                                                          (packageExpr (LitW8 (fromIntegral (B.length tds')))) ++ 
+    addToTask tds' = framePackage $ buildCommand SCHED_CMD_ADD_TO_TASK ((packageExpr tid) ++
+                                                                          (packageExpr (LitW8 (fromIntegral (B.length tds')))) ++
                                                                           (B.unpack tds'))
 packageCommand (WriteRemoteRefB (RemoteRefB i) e) = addWriteRefCommand EXPR_BOOL i e
 packageCommand (WriteRemoteRefW8 (RemoteRefW8 i) e) = addWriteRefCommand EXPR_WORD8 i e
@@ -153,36 +150,33 @@ packageCommand (ModifyRemoteRefI32 (RemoteRefI32 i) f) = addWriteRefCommand EXPR
 packageCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) = addWriteRefCommand EXPR_LIST8 i f
 packageCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) = addWriteRefCommand EXPR_FLOAT i f
 packageCommand (IfThenElseUnitE e cb1 cb2) = do
-    (_, pc1, _) <- packageCodeBlock cb1
-    (_, pc2, _) <- packageCodeBlock cb2
+    (_, pc1) <- packageCodeBlock cb1
+    (_, pc2) <- packageCodeBlock cb2
     let thenSize = word16ToBytes $ fromIntegral (B.length pc1)
-    i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum EXPR_UNIT, fromIntegral $ fromEnum EXPR_UNIT, 0] ++ thenSize ++ (packageExpr e))
+    i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum EXPR_UNIT, 0] ++ thenSize ++ (packageExpr e))
     return $ B.append i (B.append pc1 pc2)
 packageCommand _ = error $ "packageCommand: Error Command not supported (It may have been a procedure)"
 
 addWriteRefCommand :: ExprType -> Int -> Expr a -> State CommandState B.ByteString
-addWriteRefCommand t i e = 
+addWriteRefCommand t i e =
   addCommand REF_CMD_WRITE ([toW8 t, toW8 EXPR_WORD8, toW8 EXPR_LIT, fromIntegral i] ++ packageExpr e)
 
-packageCodeBlock :: Arduino a -> State CommandState (a, B.ByteString, Bool)
+packageCodeBlock :: Arduino a -> State CommandState (a, B.ByteString)
 packageCodeBlock (Arduino commands) = do
-    startNewBlock 
+    startNewBlock
     ret <- packMonad commands
-    s' <- get 
     str <- endCurrentBlock
-    return (ret, str, pureLast s')
+    return (ret, str)
   where
       startNewBlock :: State CommandState ()
       startNewBlock = do
           s <- get
-          put s {pureLast = False, pureLasts = (pureLast s) : (pureLasts s),
-                 block = B.empty, blocks = (block s) : (blocks s)}
+          put s {block = B.empty, blocks = (block s) : (blocks s)}
 
       endCurrentBlock :: State CommandState B.ByteString
       endCurrentBlock = do
           s <- get
-          put s {pureLast = head $ pureLasts s, pureLasts = tail $ pureLasts s,
-                 block = head $ blocks s, blocks = tail $ blocks s}
+          put s {block = head $ blocks s, blocks = tail $ blocks s}
           return $ block s
 
       addToBlock :: B.ByteString -> State CommandState ()
@@ -204,20 +198,6 @@ packageCodeBlock (Arduino commands) = do
           put s {ib = (ib s) + 1}
           return $ ib s
 
-      packIfEitherProcedure :: ArduinoPrimitive a -> State CommandState Int
-      packIfEitherProcedure p = do
-          pp <- packageProcedure p
-          addToBlock $ lenPackage pp
-          s <- get
-          return $ ib s
-
-      packIterateProcedure :: ArduinoPrimitive a -> State CommandState Int
-      packIterateProcedure p = do
-          s <- get
-          pp <- packageProcedure p
-          addToBlock $ lenPackage pp
-          return $ ib s
-
       packNewRef :: ArduinoPrimitive a -> a -> State CommandState a
       packNewRef p r = do
           prb <- packageRemoteBinding p
@@ -229,7 +209,7 @@ packageCodeBlock (Arduino commands) = do
       packProcedure :: ArduinoPrimitive a -> State CommandState a
       packProcedure QueryFirmware = packShallowProcedure QueryFirmware 0
       packProcedure QueryFirmwareE = do
-          i <- packDeepProcedure QueryFirmwareE 
+          i <- packDeepProcedure QueryFirmwareE
           return $ RemBindW16 i
       packProcedure QueryProcessor = packShallowProcedure QueryProcessor UNKNOWN_PROCESSOR
       packProcedure QueryProcessorE = do
@@ -380,608 +360,608 @@ packageCodeBlock (Arduino commands) = do
           return $ RemBindFloat i
       -- The following IfThenElse* functions generated by toold/GenEitherTypes.hs
       packProcedure (IfThenElseUnitUnit e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseUnitUnit e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseUnitUnit e cb1 cb2)
           return $ ExprLeft $ RemBindUnit i
       packProcedure (IfThenElseUnitBool e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseUnitBool e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseUnitBool e cb1 cb2)
           return $ ExprLeft $ RemBindUnit i
       packProcedure (IfThenElseUnitW8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseUnitW8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseUnitW8 e cb1 cb2)
           return $ ExprLeft $ RemBindUnit i
       packProcedure (IfThenElseUnitW16 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseUnitW16 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseUnitW16 e cb1 cb2)
           return $ ExprLeft $ RemBindUnit i
       packProcedure (IfThenElseUnitW32 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseUnitW32 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseUnitW32 e cb1 cb2)
           return $ ExprLeft $ RemBindUnit i
       packProcedure (IfThenElseUnitI8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseUnitI8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseUnitI8 e cb1 cb2)
           return $ ExprLeft $ RemBindUnit i
       packProcedure (IfThenElseUnitI16 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseUnitI16 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseUnitI16 e cb1 cb2)
           return $ ExprLeft $ RemBindUnit i
       packProcedure (IfThenElseUnitI32 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseUnitI32 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseUnitI32 e cb1 cb2)
           return $ ExprLeft $ RemBindUnit i
       packProcedure (IfThenElseUnitL8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseUnitL8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseUnitL8 e cb1 cb2)
           return $ ExprLeft $ RemBindUnit i
       packProcedure (IfThenElseUnitFloat e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseUnitFloat e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseUnitFloat e cb1 cb2)
           return $ ExprLeft $ RemBindUnit i
       packProcedure (IfThenElseBoolUnit e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseBoolUnit e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseBoolUnit e cb1 cb2)
           return $ ExprLeft $ RemBindB i
       packProcedure (IfThenElseBoolBool e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseBoolBool e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseBoolBool e cb1 cb2)
           return $ ExprLeft $ RemBindB i
       packProcedure (IfThenElseBoolW8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseBoolW8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseBoolW8 e cb1 cb2)
           return $ ExprLeft $ RemBindB i
       packProcedure (IfThenElseBoolW16 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseBoolW16 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseBoolW16 e cb1 cb2)
           return $ ExprLeft $ RemBindB i
       packProcedure (IfThenElseBoolW32 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseBoolW32 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseBoolW32 e cb1 cb2)
           return $ ExprLeft $ RemBindB i
       packProcedure (IfThenElseBoolI8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseBoolI8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseBoolI8 e cb1 cb2)
           return $ ExprLeft $ RemBindB i
       packProcedure (IfThenElseBoolI16 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseBoolI16 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseBoolI16 e cb1 cb2)
           return $ ExprLeft $ RemBindB i
       packProcedure (IfThenElseBoolI32 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseBoolI32 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseBoolI32 e cb1 cb2)
           return $ ExprLeft $ RemBindB i
       packProcedure (IfThenElseBoolL8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseBoolL8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseBoolL8 e cb1 cb2)
           return $ ExprLeft $ RemBindB i
       packProcedure (IfThenElseBoolFloat e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseBoolFloat e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseBoolFloat e cb1 cb2)
           return $ ExprLeft $ RemBindB i
       packProcedure (IfThenElseW8Unit e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW8Unit e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW8Unit e cb1 cb2)
           return $ ExprLeft $ RemBindW8 i
       packProcedure (IfThenElseW8Bool e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW8Bool e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW8Bool e cb1 cb2)
           return $ ExprLeft $ RemBindW8 i
       packProcedure (IfThenElseW8W8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW8W8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW8W8 e cb1 cb2)
           return $ ExprLeft $ RemBindW8 i
       packProcedure (IfThenElseW8W16 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW8W16 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW8W16 e cb1 cb2)
           return $ ExprLeft $ RemBindW8 i
       packProcedure (IfThenElseW8W32 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW8W32 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW8W32 e cb1 cb2)
           return $ ExprLeft $ RemBindW8 i
       packProcedure (IfThenElseW8I8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW8I8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW8I8 e cb1 cb2)
           return $ ExprLeft $ RemBindW8 i
       packProcedure (IfThenElseW8I16 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW8I16 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW8I16 e cb1 cb2)
           return $ ExprLeft $ RemBindW8 i
       packProcedure (IfThenElseW8I32 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW8I32 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW8I32 e cb1 cb2)
           return $ ExprLeft $ RemBindW8 i
       packProcedure (IfThenElseW8L8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW8L8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW8L8 e cb1 cb2)
           return $ ExprLeft $ RemBindW8 i
       packProcedure (IfThenElseW8Float e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW8Float e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW8Float e cb1 cb2)
           return $ ExprLeft $ RemBindW8 i
       packProcedure (IfThenElseW16Unit e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW16Unit e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW16Unit e cb1 cb2)
           return $ ExprLeft $ RemBindW16 i
       packProcedure (IfThenElseW16Bool e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW16Bool e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW16Bool e cb1 cb2)
           return $ ExprLeft $ RemBindW16 i
       packProcedure (IfThenElseW16W8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW16W8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW16W8 e cb1 cb2)
           return $ ExprLeft $ RemBindW16 i
       packProcedure (IfThenElseW16W16 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW16W16 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW16W16 e cb1 cb2)
           return $ ExprLeft $ RemBindW16 i
       packProcedure (IfThenElseW16W32 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW16W32 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW16W32 e cb1 cb2)
           return $ ExprLeft $ RemBindW16 i
       packProcedure (IfThenElseW16I8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW16I8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW16I8 e cb1 cb2)
           return $ ExprLeft $ RemBindW16 i
       packProcedure (IfThenElseW16I16 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW16I16 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW16I16 e cb1 cb2)
           return $ ExprLeft $ RemBindW16 i
       packProcedure (IfThenElseW16I32 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW16I32 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW16I32 e cb1 cb2)
           return $ ExprLeft $ RemBindW16 i
       packProcedure (IfThenElseW16L8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW16L8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW16L8 e cb1 cb2)
           return $ ExprLeft $ RemBindW16 i
       packProcedure (IfThenElseW16Float e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW16Float e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW16Float e cb1 cb2)
           return $ ExprLeft $ RemBindW16 i
       packProcedure (IfThenElseW32Unit e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW32Unit e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW32Unit e cb1 cb2)
           return $ ExprLeft $ RemBindW32 i
       packProcedure (IfThenElseW32Bool e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW32Bool e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW32Bool e cb1 cb2)
           return $ ExprLeft $ RemBindW32 i
       packProcedure (IfThenElseW32W8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW32W8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW32W8 e cb1 cb2)
           return $ ExprLeft $ RemBindW32 i
       packProcedure (IfThenElseW32W16 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW32W16 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW32W16 e cb1 cb2)
           return $ ExprLeft $ RemBindW32 i
       packProcedure (IfThenElseW32W32 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW32W32 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW32W32 e cb1 cb2)
           return $ ExprLeft $ RemBindW32 i
       packProcedure (IfThenElseW32I8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW32I8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW32I8 e cb1 cb2)
           return $ ExprLeft $ RemBindW32 i
       packProcedure (IfThenElseW32I16 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW32I16 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW32I16 e cb1 cb2)
           return $ ExprLeft $ RemBindW32 i
       packProcedure (IfThenElseW32I32 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW32I32 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW32I32 e cb1 cb2)
           return $ ExprLeft $ RemBindW32 i
       packProcedure (IfThenElseW32L8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW32L8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW32L8 e cb1 cb2)
           return $ ExprLeft $ RemBindW32 i
       packProcedure (IfThenElseW32Float e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseW32Float e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseW32Float e cb1 cb2)
           return $ ExprLeft $ RemBindW32 i
       packProcedure (IfThenElseI8Unit e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI8Unit e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI8Unit e cb1 cb2)
           return $ ExprLeft $ RemBindI8 i
       packProcedure (IfThenElseI8Bool e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI8Bool e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI8Bool e cb1 cb2)
           return $ ExprLeft $ RemBindI8 i
       packProcedure (IfThenElseI8W8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI8W8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI8W8 e cb1 cb2)
           return $ ExprLeft $ RemBindI8 i
       packProcedure (IfThenElseI8W16 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI8W16 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI8W16 e cb1 cb2)
           return $ ExprLeft $ RemBindI8 i
       packProcedure (IfThenElseI8W32 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI8W32 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI8W32 e cb1 cb2)
           return $ ExprLeft $ RemBindI8 i
       packProcedure (IfThenElseI8I8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI8I8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI8I8 e cb1 cb2)
           return $ ExprLeft $ RemBindI8 i
       packProcedure (IfThenElseI8I16 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI8I16 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI8I16 e cb1 cb2)
           return $ ExprLeft $ RemBindI8 i
       packProcedure (IfThenElseI8I32 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI8I32 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI8I32 e cb1 cb2)
           return $ ExprLeft $ RemBindI8 i
       packProcedure (IfThenElseI8L8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI8L8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI8L8 e cb1 cb2)
           return $ ExprLeft $ RemBindI8 i
       packProcedure (IfThenElseI8Float e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI8Float e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI8Float e cb1 cb2)
           return $ ExprLeft $ RemBindI8 i
       packProcedure (IfThenElseI16Unit e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI16Unit e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI16Unit e cb1 cb2)
           return $ ExprLeft $ RemBindI16 i
       packProcedure (IfThenElseI16Bool e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI16Bool e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI16Bool e cb1 cb2)
           return $ ExprLeft $ RemBindI16 i
       packProcedure (IfThenElseI16W8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI16W8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI16W8 e cb1 cb2)
           return $ ExprLeft $ RemBindI16 i
       packProcedure (IfThenElseI16W16 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI16W16 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI16W16 e cb1 cb2)
           return $ ExprLeft $ RemBindI16 i
       packProcedure (IfThenElseI16W32 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI16W32 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI16W32 e cb1 cb2)
           return $ ExprLeft $ RemBindI16 i
       packProcedure (IfThenElseI16I8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI16I8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI16I8 e cb1 cb2)
           return $ ExprLeft $ RemBindI16 i
       packProcedure (IfThenElseI16I16 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI16I16 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI16I16 e cb1 cb2)
           return $ ExprLeft $ RemBindI16 i
       packProcedure (IfThenElseI16I32 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI16I32 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI16I32 e cb1 cb2)
           return $ ExprLeft $ RemBindI16 i
       packProcedure (IfThenElseI16L8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI16L8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI16L8 e cb1 cb2)
           return $ ExprLeft $ RemBindI16 i
       packProcedure (IfThenElseI16Float e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI16Float e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI16Float e cb1 cb2)
           return $ ExprLeft $ RemBindI16 i
       packProcedure (IfThenElseI32Unit e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI32Unit e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI32Unit e cb1 cb2)
           return $ ExprLeft $ RemBindI32 i
       packProcedure (IfThenElseI32Bool e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI32Bool e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI32Bool e cb1 cb2)
           return $ ExprLeft $ RemBindI32 i
       packProcedure (IfThenElseI32W8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI32W8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI32W8 e cb1 cb2)
           return $ ExprLeft $ RemBindI32 i
       packProcedure (IfThenElseI32W16 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI32W16 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI32W16 e cb1 cb2)
           return $ ExprLeft $ RemBindI32 i
       packProcedure (IfThenElseI32W32 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI32W32 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI32W32 e cb1 cb2)
           return $ ExprLeft $ RemBindI32 i
       packProcedure (IfThenElseI32I8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI32I8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI32I8 e cb1 cb2)
           return $ ExprLeft $ RemBindI32 i
       packProcedure (IfThenElseI32I16 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI32I16 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI32I16 e cb1 cb2)
           return $ ExprLeft $ RemBindI32 i
       packProcedure (IfThenElseI32I32 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI32I32 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI32I32 e cb1 cb2)
           return $ ExprLeft $ RemBindI32 i
       packProcedure (IfThenElseI32L8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI32L8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI32L8 e cb1 cb2)
           return $ ExprLeft $ RemBindI32 i
       packProcedure (IfThenElseI32Float e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseI32Float e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseI32Float e cb1 cb2)
           return $ ExprLeft $ RemBindI32 i
       packProcedure (IfThenElseL8Unit e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseL8Unit e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseL8Unit e cb1 cb2)
           return $ ExprLeft $ RemBindList8 i
       packProcedure (IfThenElseL8Bool e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseL8Bool e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseL8Bool e cb1 cb2)
           return $ ExprLeft $ RemBindList8 i
       packProcedure (IfThenElseL8W8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseL8W8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseL8W8 e cb1 cb2)
           return $ ExprLeft $ RemBindList8 i
       packProcedure (IfThenElseL8W16 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseL8W16 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseL8W16 e cb1 cb2)
           return $ ExprLeft $ RemBindList8 i
       packProcedure (IfThenElseL8W32 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseL8W32 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseL8W32 e cb1 cb2)
           return $ ExprLeft $ RemBindList8 i
       packProcedure (IfThenElseL8I8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseL8I8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseL8I8 e cb1 cb2)
           return $ ExprLeft $ RemBindList8 i
       packProcedure (IfThenElseL8I16 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseL8I16 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseL8I16 e cb1 cb2)
           return $ ExprLeft $ RemBindList8 i
       packProcedure (IfThenElseL8I32 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseL8I32 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseL8I32 e cb1 cb2)
           return $ ExprLeft $ RemBindList8 i
       packProcedure (IfThenElseL8L8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseL8L8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseL8L8 e cb1 cb2)
           return $ ExprLeft $ RemBindList8 i
       packProcedure (IfThenElseL8Float e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseL8Float e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseL8Float e cb1 cb2)
           return $ ExprLeft $ RemBindList8 i
       packProcedure (IfThenElseFloatUnit e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseFloatUnit e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseFloatUnit e cb1 cb2)
           return $ ExprLeft $ RemBindFloat i
       packProcedure (IfThenElseFloatBool e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseFloatBool e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseFloatBool e cb1 cb2)
           return $ ExprLeft $ RemBindFloat i
       packProcedure (IfThenElseFloatW8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseFloatW8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseFloatW8 e cb1 cb2)
           return $ ExprLeft $ RemBindFloat i
       packProcedure (IfThenElseFloatW16 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseFloatW16 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseFloatW16 e cb1 cb2)
           return $ ExprLeft $ RemBindFloat i
       packProcedure (IfThenElseFloatW32 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseFloatW32 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseFloatW32 e cb1 cb2)
           return $ ExprLeft $ RemBindFloat i
       packProcedure (IfThenElseFloatI8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseFloatI8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseFloatI8 e cb1 cb2)
           return $ ExprLeft $ RemBindFloat i
       packProcedure (IfThenElseFloatI16 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseFloatI16 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseFloatI16 e cb1 cb2)
           return $ ExprLeft $ RemBindFloat i
       packProcedure (IfThenElseFloatI32 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseFloatI32 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseFloatI32 e cb1 cb2)
           return $ ExprLeft $ RemBindFloat i
       packProcedure (IfThenElseFloatL8 e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseFloatL8 e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseFloatL8 e cb1 cb2)
           return $ ExprLeft $ RemBindFloat i
       packProcedure (IfThenElseFloatFloat e cb1 cb2) = do
-          i <- packIfEitherProcedure (IfThenElseFloatFloat e cb1 cb2)
+          i <- packDeepProcedure (IfThenElseFloatFloat e cb1 cb2)
           return $ ExprLeft $ RemBindFloat i
       packProcedure (IterateUnitUnitE iv bf) = do
-          i <- packIterateProcedure (IterateUnitUnitE iv bf)
+          i <- packDeepProcedure (IterateUnitUnitE iv bf)
           return $ RemBindUnit i
       packProcedure (IterateUnitBoolE iv bf) = do
-          i <- packIterateProcedure (IterateUnitBoolE iv bf)
+          i <- packDeepProcedure (IterateUnitBoolE iv bf)
           return $ RemBindB i
       packProcedure (IterateUnitW8E iv bf) = do
-          i <- packIterateProcedure (IterateUnitW8E iv bf)
+          i <- packDeepProcedure (IterateUnitW8E iv bf)
           return $ RemBindW8 i
       packProcedure (IterateUnitW16E iv bf) = do
-          i <- packIterateProcedure (IterateUnitW16E iv bf)
+          i <- packDeepProcedure (IterateUnitW16E iv bf)
           return $ RemBindW16 i
       packProcedure (IterateUnitW32E iv bf) = do
-          i <- packIterateProcedure (IterateUnitW32E iv bf)
+          i <- packDeepProcedure (IterateUnitW32E iv bf)
           return $ RemBindW32 i
       packProcedure (IterateUnitI8E iv bf) = do
-          i <- packIterateProcedure (IterateUnitI8E iv bf)
+          i <- packDeepProcedure (IterateUnitI8E iv bf)
           return $ RemBindI8 i
       packProcedure (IterateUnitI16E iv bf) = do
-          i <- packIterateProcedure (IterateUnitI16E iv bf)
+          i <- packDeepProcedure (IterateUnitI16E iv bf)
           return $ RemBindI16 i
       packProcedure (IterateUnitI32E iv bf) = do
-          i <- packIterateProcedure (IterateUnitI32E iv bf)
+          i <- packDeepProcedure (IterateUnitI32E iv bf)
           return $ RemBindI32 i
       packProcedure (IterateUnitL8E iv bf) = do
-          i <- packIterateProcedure (IterateUnitL8E iv bf)
+          i <- packDeepProcedure (IterateUnitL8E iv bf)
           return $ RemBindList8 i
       packProcedure (IterateUnitFloatE iv bf) = do
-          i <- packIterateProcedure (IterateUnitFloatE iv bf)
+          i <- packDeepProcedure (IterateUnitFloatE iv bf)
           return $ RemBindFloat i
       packProcedure (IterateBoolUnitE iv bf) = do
-          i <- packIterateProcedure (IterateBoolUnitE iv bf)
+          i <- packDeepProcedure (IterateBoolUnitE iv bf)
           return $ RemBindUnit i
       packProcedure (IterateBoolBoolE iv bf) = do
-          i <- packIterateProcedure (IterateBoolBoolE iv bf)
+          i <- packDeepProcedure (IterateBoolBoolE iv bf)
           return $ RemBindB i
       packProcedure (IterateBoolW8E iv bf) = do
-          i <- packIterateProcedure (IterateBoolW8E iv bf)
+          i <- packDeepProcedure (IterateBoolW8E iv bf)
           return $ RemBindW8 i
       packProcedure (IterateBoolW16E iv bf) = do
-          i <- packIterateProcedure (IterateBoolW16E iv bf)
+          i <- packDeepProcedure (IterateBoolW16E iv bf)
           return $ RemBindW16 i
       packProcedure (IterateBoolW32E iv bf) = do
-          i <- packIterateProcedure (IterateBoolW32E iv bf)
+          i <- packDeepProcedure (IterateBoolW32E iv bf)
           return $ RemBindW32 i
       packProcedure (IterateBoolI8E iv bf) = do
-          i <- packIterateProcedure (IterateBoolI8E iv bf)
+          i <- packDeepProcedure (IterateBoolI8E iv bf)
           return $ RemBindI8 i
       packProcedure (IterateBoolI16E iv bf) = do
-          i <- packIterateProcedure (IterateBoolI16E iv bf)
+          i <- packDeepProcedure (IterateBoolI16E iv bf)
           return $ RemBindI16 i
       packProcedure (IterateBoolI32E iv bf) = do
-          i <- packIterateProcedure (IterateBoolI32E iv bf)
+          i <- packDeepProcedure (IterateBoolI32E iv bf)
           return $ RemBindI32 i
       packProcedure (IterateBoolL8E iv bf) = do
-          i <- packIterateProcedure (IterateBoolL8E iv bf)
+          i <- packDeepProcedure (IterateBoolL8E iv bf)
           return $ RemBindList8 i
       packProcedure (IterateBoolFloatE iv bf) = do
-          i <- packIterateProcedure (IterateBoolFloatE iv bf)
+          i <- packDeepProcedure (IterateBoolFloatE iv bf)
           return $ RemBindFloat i
       -- The following Iterate*E functions generated by toold/GenEitherTypes.hs
       packProcedure (IterateW8UnitE iv bf) = do
-          i <- packIterateProcedure (IterateW8UnitE iv bf)
+          i <- packDeepProcedure (IterateW8UnitE iv bf)
           return $ RemBindUnit i
       packProcedure (IterateW8BoolE iv bf) = do
-          i <- packIterateProcedure (IterateW8BoolE iv bf)
+          i <- packDeepProcedure (IterateW8BoolE iv bf)
           return $ RemBindB i
       packProcedure (IterateW8W8E iv bf) = do
-          i <- packIterateProcedure (IterateW8W8E iv bf)
+          i <- packDeepProcedure (IterateW8W8E iv bf)
           return $ RemBindW8 i
       packProcedure (IterateW8W16E iv bf) = do
-          i <- packIterateProcedure (IterateW8W16E iv bf)
+          i <- packDeepProcedure (IterateW8W16E iv bf)
           return $ RemBindW16 i
       packProcedure (IterateW8W32E iv bf) = do
-          i <- packIterateProcedure (IterateW8W32E iv bf)
+          i <- packDeepProcedure (IterateW8W32E iv bf)
           return $ RemBindW32 i
       packProcedure (IterateW8I8E iv bf) = do
-          i <- packIterateProcedure (IterateW8I8E iv bf)
+          i <- packDeepProcedure (IterateW8I8E iv bf)
           return $ RemBindI8 i
       packProcedure (IterateW8I16E iv bf) = do
-          i <- packIterateProcedure (IterateW8I16E iv bf)
+          i <- packDeepProcedure (IterateW8I16E iv bf)
           return $ RemBindI16 i
       packProcedure (IterateW8I32E iv bf) = do
-          i <- packIterateProcedure (IterateW8I32E iv bf)
+          i <- packDeepProcedure (IterateW8I32E iv bf)
           return $ RemBindI32 i
       packProcedure (IterateW8L8E iv bf) = do
-          i <- packIterateProcedure (IterateW8L8E iv bf)
+          i <- packDeepProcedure (IterateW8L8E iv bf)
           return $ RemBindList8 i
       packProcedure (IterateW8FloatE iv bf) = do
-          i <- packIterateProcedure (IterateW8FloatE iv bf)
+          i <- packDeepProcedure (IterateW8FloatE iv bf)
           return $ RemBindFloat i
       packProcedure (IterateW16UnitE iv bf) = do
-          i <- packIterateProcedure (IterateW16UnitE iv bf)
+          i <- packDeepProcedure (IterateW16UnitE iv bf)
           return $ RemBindUnit i
       packProcedure (IterateW16BoolE iv bf) = do
-          i <- packIterateProcedure (IterateW16BoolE iv bf)
+          i <- packDeepProcedure (IterateW16BoolE iv bf)
           return $ RemBindB i
       packProcedure (IterateW16W8E iv bf) = do
-          i <- packIterateProcedure (IterateW16W8E iv bf)
+          i <- packDeepProcedure (IterateW16W8E iv bf)
           return $ RemBindW8 i
       packProcedure (IterateW16W16E iv bf) = do
-          i <- packIterateProcedure (IterateW16W16E iv bf)
+          i <- packDeepProcedure (IterateW16W16E iv bf)
           return $ RemBindW16 i
       packProcedure (IterateW16W32E iv bf) = do
-          i <- packIterateProcedure (IterateW16W32E iv bf)
+          i <- packDeepProcedure (IterateW16W32E iv bf)
           return $ RemBindW32 i
       packProcedure (IterateW16I8E iv bf) = do
-          i <- packIterateProcedure (IterateW16I8E iv bf)
+          i <- packDeepProcedure (IterateW16I8E iv bf)
           return $ RemBindI8 i
       packProcedure (IterateW16I16E iv bf) = do
-          i <- packIterateProcedure (IterateW16I16E iv bf)
+          i <- packDeepProcedure (IterateW16I16E iv bf)
           return $ RemBindI16 i
       packProcedure (IterateW16I32E iv bf) = do
-          i <- packIterateProcedure (IterateW16I32E iv bf)
+          i <- packDeepProcedure (IterateW16I32E iv bf)
           return $ RemBindI32 i
       packProcedure (IterateW16L8E iv bf) = do
-          i <- packIterateProcedure (IterateW16L8E iv bf)
+          i <- packDeepProcedure (IterateW16L8E iv bf)
           return $ RemBindList8 i
       packProcedure (IterateW16FloatE iv bf) = do
-          i <- packIterateProcedure (IterateW16FloatE iv bf)
+          i <- packDeepProcedure (IterateW16FloatE iv bf)
           return $ RemBindFloat i
       packProcedure (IterateW32UnitE iv bf) = do
-          i <- packIterateProcedure (IterateW32UnitE iv bf)
+          i <- packDeepProcedure (IterateW32UnitE iv bf)
           return $ RemBindUnit i
       packProcedure (IterateW32BoolE iv bf) = do
-          i <- packIterateProcedure (IterateW32BoolE iv bf)
+          i <- packDeepProcedure (IterateW32BoolE iv bf)
           return $ RemBindB i
       packProcedure (IterateW32W8E iv bf) = do
-          i <- packIterateProcedure (IterateW32W8E iv bf)
+          i <- packDeepProcedure (IterateW32W8E iv bf)
           return $ RemBindW8 i
       packProcedure (IterateW32W16E iv bf) = do
-          i <- packIterateProcedure (IterateW32W16E iv bf)
+          i <- packDeepProcedure (IterateW32W16E iv bf)
           return $ RemBindW16 i
       packProcedure (IterateW32W32E iv bf) = do
-          i <- packIterateProcedure (IterateW32W32E iv bf)
+          i <- packDeepProcedure (IterateW32W32E iv bf)
           return $ RemBindW32 i
       packProcedure (IterateW32I8E iv bf) = do
-          i <- packIterateProcedure (IterateW32I8E iv bf)
+          i <- packDeepProcedure (IterateW32I8E iv bf)
           return $ RemBindI8 i
       packProcedure (IterateW32I16E iv bf) = do
-          i <- packIterateProcedure (IterateW32I16E iv bf)
+          i <- packDeepProcedure (IterateW32I16E iv bf)
           return $ RemBindI16 i
       packProcedure (IterateW32I32E iv bf) = do
-          i <- packIterateProcedure (IterateW32I32E iv bf)
+          i <- packDeepProcedure (IterateW32I32E iv bf)
           return $ RemBindI32 i
       packProcedure (IterateW32L8E iv bf) = do
-          i <- packIterateProcedure (IterateW32L8E iv bf)
+          i <- packDeepProcedure (IterateW32L8E iv bf)
           return $ RemBindList8 i
       packProcedure (IterateW32FloatE iv bf) = do
-          i <- packIterateProcedure (IterateW32FloatE iv bf)
+          i <- packDeepProcedure (IterateW32FloatE iv bf)
           return $ RemBindFloat i
       packProcedure (IterateI8UnitE iv bf) = do
-          i <- packIterateProcedure (IterateI8UnitE iv bf)
+          i <- packDeepProcedure (IterateI8UnitE iv bf)
           return $ RemBindUnit i
       packProcedure (IterateI8BoolE iv bf) = do
-          i <- packIterateProcedure (IterateI8BoolE iv bf)
+          i <- packDeepProcedure (IterateI8BoolE iv bf)
           return $ RemBindB i
       packProcedure (IterateI8W8E iv bf) = do
-          i <- packIterateProcedure (IterateI8W8E iv bf)
+          i <- packDeepProcedure (IterateI8W8E iv bf)
           return $ RemBindW8 i
       packProcedure (IterateI8W16E iv bf) = do
-          i <- packIterateProcedure (IterateI8W16E iv bf)
+          i <- packDeepProcedure (IterateI8W16E iv bf)
           return $ RemBindW16 i
       packProcedure (IterateI8W32E iv bf) = do
-          i <- packIterateProcedure (IterateI8W32E iv bf)
+          i <- packDeepProcedure (IterateI8W32E iv bf)
           return $ RemBindW32 i
       packProcedure (IterateI8I8E iv bf) = do
-          i <- packIterateProcedure (IterateI8I8E iv bf)
+          i <- packDeepProcedure (IterateI8I8E iv bf)
           return $ RemBindI8 i
       packProcedure (IterateI8I16E iv bf) = do
-          i <- packIterateProcedure (IterateI8I16E iv bf)
+          i <- packDeepProcedure (IterateI8I16E iv bf)
           return $ RemBindI16 i
       packProcedure (IterateI8I32E iv bf) = do
-          i <- packIterateProcedure (IterateI8I32E iv bf)
+          i <- packDeepProcedure (IterateI8I32E iv bf)
           return $ RemBindI32 i
       packProcedure (IterateI8L8E iv bf) = do
-          i <- packIterateProcedure (IterateI8L8E iv bf)
+          i <- packDeepProcedure (IterateI8L8E iv bf)
           return $ RemBindList8 i
       packProcedure (IterateI8FloatE iv bf) = do
-          i <- packIterateProcedure (IterateI8FloatE iv bf)
+          i <- packDeepProcedure (IterateI8FloatE iv bf)
           return $ RemBindFloat i
       packProcedure (IterateI16UnitE iv bf) = do
-          i <- packIterateProcedure (IterateI16UnitE iv bf)
+          i <- packDeepProcedure (IterateI16UnitE iv bf)
           return $ RemBindUnit i
       packProcedure (IterateI16BoolE iv bf) = do
-          i <- packIterateProcedure (IterateI16BoolE iv bf)
+          i <- packDeepProcedure (IterateI16BoolE iv bf)
           return $ RemBindB i
       packProcedure (IterateI16W8E iv bf) = do
-          i <- packIterateProcedure (IterateI16W8E iv bf)
+          i <- packDeepProcedure (IterateI16W8E iv bf)
           return $ RemBindW8 i
       packProcedure (IterateI16W16E iv bf) = do
-          i <- packIterateProcedure (IterateI16W16E iv bf)
+          i <- packDeepProcedure (IterateI16W16E iv bf)
           return $ RemBindW16 i
       packProcedure (IterateI16W32E iv bf) = do
-          i <- packIterateProcedure (IterateI16W32E iv bf)
+          i <- packDeepProcedure (IterateI16W32E iv bf)
           return $ RemBindW32 i
       packProcedure (IterateI16I8E iv bf) = do
-          i <- packIterateProcedure (IterateI16I8E iv bf)
+          i <- packDeepProcedure (IterateI16I8E iv bf)
           return $ RemBindI8 i
       packProcedure (IterateI16I16E iv bf) = do
-          i <- packIterateProcedure (IterateI16I16E iv bf)
+          i <- packDeepProcedure (IterateI16I16E iv bf)
           return $ RemBindI16 i
       packProcedure (IterateI16I32E iv bf) = do
-          i <- packIterateProcedure (IterateI16I32E iv bf)
+          i <- packDeepProcedure (IterateI16I32E iv bf)
           return $ RemBindI32 i
       packProcedure (IterateI16L8E iv bf) = do
-          i <- packIterateProcedure (IterateI16L8E iv bf)
+          i <- packDeepProcedure (IterateI16L8E iv bf)
           return $ RemBindList8 i
       packProcedure (IterateI16FloatE iv bf) = do
-          i <- packIterateProcedure (IterateI16FloatE iv bf)
+          i <- packDeepProcedure (IterateI16FloatE iv bf)
           return $ RemBindFloat i
       packProcedure (IterateI32UnitE iv bf) = do
-          i <- packIterateProcedure (IterateI32UnitE iv bf)
+          i <- packDeepProcedure (IterateI32UnitE iv bf)
           return $ RemBindUnit i
       packProcedure (IterateI32BoolE iv bf) = do
-          i <- packIterateProcedure (IterateI32BoolE iv bf)
+          i <- packDeepProcedure (IterateI32BoolE iv bf)
           return $ RemBindB i
       packProcedure (IterateI32W8E iv bf) = do
-          i <- packIterateProcedure (IterateI32W8E iv bf)
+          i <- packDeepProcedure (IterateI32W8E iv bf)
           return $ RemBindW8 i
       packProcedure (IterateI32W16E iv bf) = do
-          i <- packIterateProcedure (IterateI32W16E iv bf)
+          i <- packDeepProcedure (IterateI32W16E iv bf)
           return $ RemBindW16 i
       packProcedure (IterateI32W32E iv bf) = do
-          i <- packIterateProcedure (IterateI32W32E iv bf)
+          i <- packDeepProcedure (IterateI32W32E iv bf)
           return $ RemBindW32 i
       packProcedure (IterateI32I8E iv bf) = do
-          i <- packIterateProcedure (IterateI32I8E iv bf)
+          i <- packDeepProcedure (IterateI32I8E iv bf)
           return $ RemBindI8 i
       packProcedure (IterateI32I16E iv bf) = do
-          i <- packIterateProcedure (IterateI32I16E iv bf)
+          i <- packDeepProcedure (IterateI32I16E iv bf)
           return $ RemBindI16 i
       packProcedure (IterateI32I32E iv bf) = do
-          i <- packIterateProcedure (IterateI32I32E iv bf)
+          i <- packDeepProcedure (IterateI32I32E iv bf)
           return $ RemBindI32 i
       packProcedure (IterateI32L8E iv bf) = do
-          i <- packIterateProcedure (IterateI32L8E iv bf)
+          i <- packDeepProcedure (IterateI32L8E iv bf)
           return $ RemBindList8 i
       packProcedure (IterateI32FloatE iv bf) = do
-          i <- packIterateProcedure (IterateI32FloatE iv bf)
+          i <- packDeepProcedure (IterateI32FloatE iv bf)
           return $ RemBindFloat i
       packProcedure (IterateL8UnitE iv bf) = do
-          i <- packIterateProcedure (IterateL8UnitE iv bf)
+          i <- packDeepProcedure (IterateL8UnitE iv bf)
           return $ RemBindUnit i
       packProcedure (IterateL8BoolE iv bf) = do
-          i <- packIterateProcedure (IterateL8BoolE iv bf)
+          i <- packDeepProcedure (IterateL8BoolE iv bf)
           return $ RemBindB i
       packProcedure (IterateL8W8E iv bf) = do
-          i <- packIterateProcedure (IterateL8W8E iv bf)
+          i <- packDeepProcedure (IterateL8W8E iv bf)
           return $ RemBindW8 i
       packProcedure (IterateL8W16E iv bf) = do
-          i <- packIterateProcedure (IterateL8W16E iv bf)
+          i <- packDeepProcedure (IterateL8W16E iv bf)
           return $ RemBindW16 i
       packProcedure (IterateL8W32E iv bf) = do
-          i <- packIterateProcedure (IterateL8W32E iv bf)
+          i <- packDeepProcedure (IterateL8W32E iv bf)
           return $ RemBindW32 i
       packProcedure (IterateL8I8E iv bf) = do
-          i <- packIterateProcedure (IterateL8I8E iv bf)
+          i <- packDeepProcedure (IterateL8I8E iv bf)
           return $ RemBindI8 i
       packProcedure (IterateL8I16E iv bf) = do
-          i <- packIterateProcedure (IterateL8I16E iv bf)
+          i <- packDeepProcedure (IterateL8I16E iv bf)
           return $ RemBindI16 i
       packProcedure (IterateL8I32E iv bf) = do
-          i <- packIterateProcedure (IterateL8I32E iv bf)
+          i <- packDeepProcedure (IterateL8I32E iv bf)
           return $ RemBindI32 i
       packProcedure (IterateL8L8E iv bf) = do
-          i <- packIterateProcedure (IterateL8L8E iv bf)
+          i <- packDeepProcedure (IterateL8L8E iv bf)
           return $ RemBindList8 i
       packProcedure (IterateL8FloatE iv bf) = do
-          i <- packIterateProcedure (IterateL8FloatE iv bf)
+          i <- packDeepProcedure (IterateL8FloatE iv bf)
           return $ RemBindFloat i
       packProcedure (IterateFloatUnitE iv bf) = do
-          i <- packIterateProcedure (IterateFloatUnitE iv bf)
+          i <- packDeepProcedure (IterateFloatUnitE iv bf)
           return $ RemBindUnit i
       packProcedure (IterateFloatBoolE iv bf) = do
-          i <- packIterateProcedure (IterateFloatBoolE iv bf)
+          i <- packDeepProcedure (IterateFloatBoolE iv bf)
           return $ RemBindB i
       packProcedure (IterateFloatW8E iv bf) = do
-          i <- packIterateProcedure (IterateFloatW8E iv bf)
+          i <- packDeepProcedure (IterateFloatW8E iv bf)
           return $ RemBindW8 i
       packProcedure (IterateFloatW16E iv bf) = do
-          i <- packIterateProcedure (IterateFloatW16E iv bf)
+          i <- packDeepProcedure (IterateFloatW16E iv bf)
           return $ RemBindW16 i
       packProcedure (IterateFloatW32E iv bf) = do
-          i <- packIterateProcedure (IterateFloatW32E iv bf)
+          i <- packDeepProcedure (IterateFloatW32E iv bf)
           return $ RemBindW32 i
       packProcedure (IterateFloatI8E iv bf) = do
-          i <- packIterateProcedure (IterateFloatI8E iv bf)
+          i <- packDeepProcedure (IterateFloatI8E iv bf)
           return $ RemBindI8 i
       packProcedure (IterateFloatI16E iv bf) = do
-          i <- packIterateProcedure (IterateFloatI16E iv bf)
+          i <- packDeepProcedure (IterateFloatI16E iv bf)
           return $ RemBindI16 i
       packProcedure (IterateFloatI32E iv bf) = do
-          i <- packIterateProcedure (IterateFloatI32E iv bf)
+          i <- packDeepProcedure (IterateFloatI32E iv bf)
           return $ RemBindI32 i
       packProcedure (IterateFloatL8E iv bf) = do
-          i <- packIterateProcedure (IterateFloatL8E iv bf)
+          i <- packDeepProcedure (IterateFloatL8E iv bf)
           return $ RemBindList8 i
       packProcedure (IterateFloatFloatE iv bf) = do
-          i <- packIterateProcedure (IterateFloatFloatE iv bf)
+          i <- packDeepProcedure (IterateFloatFloatE iv bf)
           return $ RemBindFloat i
       packProcedure (DebugE tids) = packShallowProcedure (DebugE tids) ()
-      -- For sending as part of a Scheduler task, debug and die make no sense.  
+      -- For sending as part of a Scheduler task, debug and die make no sense.
       -- Instead of signalling an error, at this point they are just ignored.
       packProcedure (Debug _) = return ()
       packProcedure DebugListen = return ()
@@ -989,28 +969,21 @@ packageCodeBlock (Arduino commands) = do
       packProcedure _ = error "packProcedure: unsupported Procedure (it may have been a command)"
 
       packAppl :: RemoteApplicative ArduinoPrimitive a -> State CommandState a
-      packAppl (T.Primitive p) = do
-          s <- get 
-          put s{pureLast = False}
-          case knownResult p of
-            Just a -> do
-                        pc <- packageCommand p
-                        addToBlock $ lenPackage pc
-                        return a
-            Nothing -> do
-                        packProcedure p
+      packAppl (T.Primitive p) = case knownResult p of
+                                   Just a -> do
+                                              pc <- packageCommand p
+                                              addToBlock $ lenPackage pc
+                                              return a
+                                   Nothing -> packProcedure p
       packAppl (T.Ap a1 a2) = do
           f <- packAppl a1
           g <- packAppl a2
           return $ f g
-      packAppl (T.Pure a)  = do
-          s <- get 
-          put s{pureLast = True}
-          return a
+      packAppl (T.Pure a)  = return a
       packAppl (T.Alt _ _) = error "packAppl: \"Alt\" is not supported"
       packAppl  T.Empty    = error "packAppl: \"Empty\" is not supported"
 
-      packMonad :: RemoteMonad ArduinoPrimitive a -> State CommandState a
+      packMonad :: RemoteMonad  ArduinoPrimitive a -> State CommandState a
       packMonad (T.Appl app) = packAppl app
       packMonad (T.Bind m k) = do
           r <- packMonad m
@@ -1025,7 +998,7 @@ packageCodeBlock (Arduino commands) = do
       packMonad (T.Throw  _)  = error "packMonad: \"Throw\" is not supported"
 
 lenPackage :: B.ByteString -> B.ByteString
-lenPackage package = B.append (lenEncode $ B.length package) package      
+lenPackage package = B.append (lenEncode $ B.length package) package
 
 -- Length of the code block is encoded with a 1 or 3 byte sequence.
 -- If the length is 0-254, the length is sent as a one byte value.
@@ -1034,7 +1007,7 @@ lenPackage package = B.append (lenEncode $ B.length package) package
 -- (Zero is not a valid length, as it would be an empty command)
 lenEncode :: Int -> B.ByteString
 lenEncode l = if l < 255
-              then B.singleton $ fromIntegral l 
+              then B.singleton $ fromIntegral l
               else B.pack $ 0xFF : (word16ToBytes $ fromIntegral l)
 
 packageProcedure :: ArduinoPrimitive a -> State CommandState B.ByteString
@@ -1305,15 +1278,15 @@ packageProcedure p = do
     packageProcedure' DebugListen ib = return B.empty
 
 packageReadRefProcedure :: ExprType -> Int -> Int -> State CommandState B.ByteString
-packageReadRefProcedure t ib i = 
+packageReadRefProcedure t ib i =
   addCommand REF_CMD_READ [toW8 t, fromIntegral ib, toW8 EXPR_WORD8, toW8 EXPR_LIT, fromIntegral i]
 
 packageIfThenElseProcedure :: ExprType -> Int -> Expr Bool -> Arduino (Expr a) -> Arduino (Expr a) -> State CommandState B.ByteString
 packageIfThenElseProcedure rt b e cb1 cb2 = do
-    (r1, pc1, _) <- packageCodeBlock cb1
+    (r1, pc1) <- packageCodeBlock cb1
     let rc1 = buildCommand EXPR_CMD_RET $ (fromIntegral b) : packageExpr r1
     let pc1'  = B.append pc1 $ lenPackage rc1
-    (r2, pc2, _) <- packageCodeBlock cb2
+    (r2, pc2) <- packageCodeBlock cb2
     let rc2 = buildCommand EXPR_CMD_RET $ (fromIntegral b) : packageExpr r2
     let pc2'  = B.append pc2 $ lenPackage rc2
     let thenSize = word16ToBytes $ fromIntegral (B.length pc1')
@@ -1322,30 +1295,24 @@ packageIfThenElseProcedure rt b e cb1 cb2 = do
 
 packageIfThenElseEitherProcedure :: (ExprB a, ExprB b) => ExprType -> ExprType -> Int -> Expr Bool -> Arduino (ExprEither a b) -> Arduino (ExprEither a b) -> State CommandState B.ByteString
 packageIfThenElseEitherProcedure rt1 rt2 b e cb1 cb2 = do
-    s <- get
-    let ibs = head $ iterBinds s
-    (r1, pc1, _) <- packageCodeBlock cb1
-    let rc1 = buildCommand EXPR_CMD_RET $ (fromIntegral ibs) : packageExprEither rt1 rt2 r1
+    (r1, pc1) <- packageCodeBlock cb1
+    let rc1 = buildCommand EXPR_CMD_RET $ (fromIntegral b) : packageExprEither rt1 rt2 r1
     let pc1'  = B.append pc1 $ lenPackage rc1
-    (r2, pc2, _) <- packageCodeBlock cb2
-    let rc2 = buildCommand EXPR_CMD_RET $ (fromIntegral ibs) : packageExprEither rt1 rt2 r2
+    (r2, pc2) <- packageCodeBlock cb2
+    let rc2 = buildCommand EXPR_CMD_RET $ (fromIntegral b) : packageExprEither rt1 rt2 r2
     let pc2'  = B.append pc2 $ lenPackage rc2
     let thenSize = word16ToBytes $ fromIntegral (B.length pc1')
-    i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum rt1, fromIntegral $ fromEnum rt2, fromIntegral ibs] ++ thenSize ++ (packageExpr e))
+    i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum rt1, fromIntegral $ fromEnum rt2, fromIntegral b] ++ thenSize ++ (packageExpr e))
     return $ B.append i (B.append pc1' pc2')
 
-packageIterateProcedure :: (ExprB a, ExprB b) => ExprType -> ExprType -> Int -> Expr a -> 
+packageIterateProcedure :: (ExprB a, ExprB b) => ExprType -> ExprType -> Int -> Expr a ->
                            Expr a -> (Expr a -> Arduino(ExprEither a b)) ->
                            State CommandState B.ByteString
 packageIterateProcedure ta tb ib be iv bf = do
-    s <- get
-    put s {iterBinds = ib : iterBinds s}
-    (r, pc, pureWasLast) <- packageCodeBlock $ bf be
+    (r, pc) <- packageCodeBlock $ bf be
     let rc = buildCommand EXPR_CMD_RET $ (fromIntegral ib) : packageExprEither ta tb r
-    let pc'  = if pureWasLast then B.append pc $ lenPackage rc else pc
+    let pc'  = B.append pc $ lenPackage rc
     w <- addCommand BC_CMD_ITERATE ([fromIntegral $ fromEnum ta, fromIntegral $ fromEnum tb, fromIntegral ib, fromIntegral $ length ive] ++ ive)
-    s <- get
-    put s {iterBinds = tail $ iterBinds s}
     return $ B.append w pc'
   where
     ive = packageExpr iv
@@ -1398,31 +1365,31 @@ packageExprEither _t1 _t2 (ExprRight er) = packageExpr er
 packageExpr :: Expr a -> [Word8]
 packageExpr (LitUnit) = [toW8 EXPR_UNIT, toW8 EXPR_LIT]
 packageExpr (LitB b) = [toW8 EXPR_BOOL, toW8 EXPR_LIT, if b then 1 else 0]
-packageExpr (ShowB e) = packageSubExpr (exprCmdVal EXPR_BOOL EXPR_SHOW) e 
+packageExpr (ShowB e) = packageSubExpr (exprCmdVal EXPR_BOOL EXPR_SHOW) e
 packageExpr (RefB n) = packageRef n (exprCmdVal EXPR_BOOL EXPR_REF)
 packageExpr (RemBindB b) = (exprCmdVal EXPR_BOOL EXPR_BIND) ++ [fromIntegral b]
-packageExpr (NotB e) = packageSubExpr (exprCmdVal EXPR_BOOL EXPR_NOT) e 
-packageExpr (AndB e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_BOOL EXPR_AND) e1 e2 
-packageExpr (OrB e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_BOOL EXPR_OR) e1 e2 
-packageExpr (EqB e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_BOOL EXPR_EQ) e1 e2 
-packageExpr (LessB e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_BOOL EXPR_LESS) e1 e2 
+packageExpr (NotB e) = packageSubExpr (exprCmdVal EXPR_BOOL EXPR_NOT) e
+packageExpr (AndB e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_BOOL EXPR_AND) e1 e2
+packageExpr (OrB e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_BOOL EXPR_OR) e1 e2
+packageExpr (EqB e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_BOOL EXPR_EQ) e1 e2
+packageExpr (LessB e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_BOOL EXPR_LESS) e1 e2
 packageExpr (IfB e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_BOOL EXPR_IF) e1 e2 e3
-packageExpr (EqW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_EQ) e1 e2 
-packageExpr (LessW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_LESS) e1 e2 
-packageExpr (EqW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_EQ) e1 e2 
-packageExpr (LessW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_LESS) e1 e2 
-packageExpr (EqW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_EQ) e1 e2 
-packageExpr (LessW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_LESS) e1 e2 
-packageExpr (EqI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_EQ) e1 e2 
-packageExpr (LessI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_LESS) e1 e2 
-packageExpr (EqI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_EQ) e1 e2 
-packageExpr (LessI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_LESS) e1 e2 
-packageExpr (EqI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_EQ) e1 e2 
-packageExpr (LessI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_LESS) e1 e2 
-packageExpr (EqL8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_EQ) e1 e2 
-packageExpr (LessL8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_LESS) e1 e2 
-packageExpr (EqFloat e1 e2) = packageTwoSubExpr (exprFCmdVal EXPRF_EQ) e1 e2 
-packageExpr (LessFloat e1 e2) = packageTwoSubExpr (exprFCmdVal EXPRF_LESS) e1 e2 
+packageExpr (EqW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_EQ) e1 e2
+packageExpr (LessW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_LESS) e1 e2
+packageExpr (EqW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_EQ) e1 e2
+packageExpr (LessW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_LESS) e1 e2
+packageExpr (EqW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_EQ) e1 e2
+packageExpr (LessW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_LESS) e1 e2
+packageExpr (EqI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_EQ) e1 e2
+packageExpr (LessI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_LESS) e1 e2
+packageExpr (EqI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_EQ) e1 e2
+packageExpr (LessI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_LESS) e1 e2
+packageExpr (EqI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_EQ) e1 e2
+packageExpr (LessI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_LESS) e1 e2
+packageExpr (EqL8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_EQ) e1 e2
+packageExpr (LessL8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_LESS) e1 e2
+packageExpr (EqFloat e1 e2) = packageTwoSubExpr (exprFCmdVal EXPRF_EQ) e1 e2
+packageExpr (LessFloat e1 e2) = packageTwoSubExpr (exprFCmdVal EXPRF_LESS) e1 e2
 packageExpr (LitW8 w) = (exprCmdVal EXPR_WORD8 EXPR_LIT) ++ [w]
 packageExpr (ShowW8 e) = packageSubExpr (exprCmdVal EXPR_WORD8 EXPR_SHOW) e
 packageExpr (RefW8 n) = packageRef n (exprCmdVal EXPR_WORD8 EXPR_REF)
@@ -1431,23 +1398,23 @@ packageExpr (FromIntW8 e) = packageSubExpr (exprCmdVal EXPR_WORD8 EXPR_FINT) e
 packageExpr (ToIntW8 e) = packageSubExpr (exprCmdVal EXPR_WORD8 EXPR_TINT) e
 packageExpr (NegW8 e) = packageSubExpr (exprCmdVal EXPR_WORD8 EXPR_NEG) e
 packageExpr (SignW8 e) = packageSubExpr (exprCmdVal EXPR_WORD8 EXPR_SIGN) e
-packageExpr (AddW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_ADD) e1 e2 
-packageExpr (SubW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_SUB) e1 e2 
-packageExpr (MultW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_MULT) e1 e2 
-packageExpr (DivW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_DIV) e1 e2 
-packageExpr (RemW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_REM) e1 e2 
-packageExpr (QuotW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_QUOT) e1 e2 
-packageExpr (ModW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_MOD) e1 e2 
-packageExpr (AndW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_AND) e1 e2 
-packageExpr (OrW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_OR) e1 e2 
-packageExpr (XorW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_XOR) e1 e2 
-packageExpr (CompW8 e) = packageSubExpr (exprCmdVal EXPR_WORD8 EXPR_COMP) e 
-packageExpr (ShfLW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_SHFL) e1 e2 
-packageExpr (ShfRW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_SHFR) e1 e2 
+packageExpr (AddW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_ADD) e1 e2
+packageExpr (SubW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_SUB) e1 e2
+packageExpr (MultW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_MULT) e1 e2
+packageExpr (DivW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_DIV) e1 e2
+packageExpr (RemW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_REM) e1 e2
+packageExpr (QuotW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_QUOT) e1 e2
+packageExpr (ModW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_MOD) e1 e2
+packageExpr (AndW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_AND) e1 e2
+packageExpr (OrW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_OR) e1 e2
+packageExpr (XorW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_XOR) e1 e2
+packageExpr (CompW8 e) = packageSubExpr (exprCmdVal EXPR_WORD8 EXPR_COMP) e
+packageExpr (ShfLW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_SHFL) e1 e2
+packageExpr (ShfRW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_SHFR) e1 e2
 packageExpr (IfW8 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_WORD8 EXPR_IF) e1 e2 e3
-packageExpr (TestBW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_TSTB) e1 e2 
-packageExpr (SetBW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_SETB) e1 e2 
-packageExpr (ClrBW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_CLRB) e1 e2 
+packageExpr (TestBW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_TSTB) e1 e2
+packageExpr (SetBW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_SETB) e1 e2
+packageExpr (ClrBW8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_CLRB) e1 e2
 packageExpr (LitW16 w) = (exprCmdVal EXPR_WORD16 EXPR_LIT) ++ word16ToBytes w
 packageExpr (ShowW16 e) = packageSubExpr (exprCmdVal EXPR_WORD16 EXPR_SHOW) e
 packageExpr (RefW16 n) = packageRef n (exprCmdVal EXPR_WORD16 EXPR_REF)
@@ -1456,23 +1423,23 @@ packageExpr (FromIntW16 e) = packageSubExpr (exprCmdVal EXPR_WORD16 EXPR_FINT) e
 packageExpr (ToIntW16 e) = packageSubExpr (exprCmdVal EXPR_WORD16 EXPR_TINT) e
 packageExpr (NegW16 e) = packageSubExpr (exprCmdVal EXPR_WORD16 EXPR_NEG) e
 packageExpr (SignW16 e) = packageSubExpr (exprCmdVal EXPR_WORD16 EXPR_SIGN) e
-packageExpr (AddW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_ADD) e1 e2 
-packageExpr (SubW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_SUB) e1 e2 
-packageExpr (MultW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_MULT) e1 e2 
-packageExpr (DivW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_DIV) e1 e2 
-packageExpr (RemW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_REM) e1 e2 
-packageExpr (QuotW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_QUOT) e1 e2 
-packageExpr (ModW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_MOD) e1 e2 
-packageExpr (AndW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_AND) e1 e2 
-packageExpr (OrW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_OR) e1 e2 
-packageExpr (XorW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_XOR) e1 e2 
-packageExpr (CompW16 e) = packageSubExpr (exprCmdVal EXPR_WORD16 EXPR_COMP) e 
-packageExpr (ShfLW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_SHFL) e1 e2 
-packageExpr (ShfRW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_SHFR) e1 e2 
+packageExpr (AddW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_ADD) e1 e2
+packageExpr (SubW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_SUB) e1 e2
+packageExpr (MultW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_MULT) e1 e2
+packageExpr (DivW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_DIV) e1 e2
+packageExpr (RemW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_REM) e1 e2
+packageExpr (QuotW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_QUOT) e1 e2
+packageExpr (ModW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_MOD) e1 e2
+packageExpr (AndW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_AND) e1 e2
+packageExpr (OrW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_OR) e1 e2
+packageExpr (XorW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_XOR) e1 e2
+packageExpr (CompW16 e) = packageSubExpr (exprCmdVal EXPR_WORD16 EXPR_COMP) e
+packageExpr (ShfLW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_SHFL) e1 e2
+packageExpr (ShfRW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_SHFR) e1 e2
 packageExpr (IfW16 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_WORD16 EXPR_IF) e1 e2 e3
-packageExpr (TestBW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_TSTB) e1 e2 
-packageExpr (SetBW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_SETB) e1 e2 
-packageExpr (ClrBW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_CLRB) e1 e2 
+packageExpr (TestBW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_TSTB) e1 e2
+packageExpr (SetBW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_SETB) e1 e2
+packageExpr (ClrBW16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD16 EXPR_CLRB) e1 e2
 packageExpr (LitW32 w) = (exprCmdVal EXPR_WORD32 EXPR_LIT) ++ word32ToBytes w
 packageExpr (ShowW32 e) = packageSubExpr (exprCmdVal EXPR_WORD32 EXPR_SHOW) e
 packageExpr (RefW32 n) = packageRef n (exprCmdVal EXPR_WORD32 EXPR_REF)
@@ -1481,23 +1448,23 @@ packageExpr (FromIntW32 e) = packageSubExpr (exprCmdVal EXPR_WORD32 EXPR_FINT) e
 packageExpr (ToIntW32 e) = packageSubExpr (exprCmdVal EXPR_WORD32 EXPR_TINT) e
 packageExpr (NegW32 e) = packageSubExpr (exprCmdVal EXPR_WORD32 EXPR_NEG) e
 packageExpr (SignW32 e) = packageSubExpr (exprCmdVal EXPR_WORD32 EXPR_SIGN) e
-packageExpr (AddW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_ADD) e1 e2 
-packageExpr (SubW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_SUB) e1 e2 
-packageExpr (MultW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_MULT) e1 e2 
-packageExpr (DivW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_DIV) e1 e2 
-packageExpr (RemW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_REM) e1 e2 
-packageExpr (QuotW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_QUOT) e1 e2 
-packageExpr (ModW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_MOD) e1 e2 
-packageExpr (AndW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_AND) e1 e2 
-packageExpr (OrW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_OR) e1 e2 
-packageExpr (XorW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_XOR) e1 e2 
+packageExpr (AddW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_ADD) e1 e2
+packageExpr (SubW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_SUB) e1 e2
+packageExpr (MultW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_MULT) e1 e2
+packageExpr (DivW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_DIV) e1 e2
+packageExpr (RemW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_REM) e1 e2
+packageExpr (QuotW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_QUOT) e1 e2
+packageExpr (ModW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_MOD) e1 e2
+packageExpr (AndW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_AND) e1 e2
+packageExpr (OrW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_OR) e1 e2
+packageExpr (XorW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_XOR) e1 e2
 packageExpr (CompW32 e) = packageSubExpr (exprCmdVal EXPR_WORD32 EXPR_COMP) e
-packageExpr (ShfLW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_SHFL) e1 e2 
-packageExpr (ShfRW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_SHFR) e1 e2 
+packageExpr (ShfLW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_SHFL) e1 e2
+packageExpr (ShfRW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_SHFR) e1 e2
 packageExpr (IfW32 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_WORD32 EXPR_IF) e1 e2 e3
-packageExpr (TestBW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_TSTB) e1 e2 
-packageExpr (SetBW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_SETB) e1 e2 
-packageExpr (ClrBW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_CLRB) e1 e2 
+packageExpr (TestBW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_TSTB) e1 e2
+packageExpr (SetBW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_SETB) e1 e2
+packageExpr (ClrBW32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD32 EXPR_CLRB) e1 e2
 packageExpr (LitI8 w) = (exprCmdVal EXPR_INT8 EXPR_LIT) ++ [fromIntegral w]
 packageExpr (ShowI8 e) = packageSubExpr (exprCmdVal EXPR_INT8 EXPR_SHOW) e
 packageExpr (RefI8 n) = packageRef n (exprCmdVal EXPR_INT8 EXPR_REF)
@@ -1506,23 +1473,23 @@ packageExpr (FromIntI8 e) = packageSubExpr (exprCmdVal EXPR_INT8 EXPR_FINT) e
 packageExpr (ToIntI8 e) = packageSubExpr (exprCmdVal EXPR_INT8 EXPR_TINT) e
 packageExpr (NegI8 e) = packageSubExpr (exprCmdVal EXPR_INT8 EXPR_NEG) e
 packageExpr (SignI8 e) = packageSubExpr (exprCmdVal EXPR_INT8 EXPR_SIGN) e
-packageExpr (AddI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_ADD) e1 e2 
-packageExpr (SubI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_SUB) e1 e2 
-packageExpr (MultI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_MULT) e1 e2 
-packageExpr (DivI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_DIV) e1 e2 
-packageExpr (RemI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_REM) e1 e2 
-packageExpr (QuotI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_QUOT) e1 e2 
-packageExpr (ModI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_MOD) e1 e2 
-packageExpr (AndI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_AND) e1 e2 
-packageExpr (OrI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_OR) e1 e2 
-packageExpr (XorI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_XOR) e1 e2 
-packageExpr (CompI8 e) = packageSubExpr (exprCmdVal EXPR_INT8 EXPR_COMP) e 
-packageExpr (ShfLI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_SHFL) e1 e2 
-packageExpr (ShfRI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_SHFR) e1 e2 
+packageExpr (AddI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_ADD) e1 e2
+packageExpr (SubI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_SUB) e1 e2
+packageExpr (MultI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_MULT) e1 e2
+packageExpr (DivI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_DIV) e1 e2
+packageExpr (RemI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_REM) e1 e2
+packageExpr (QuotI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_QUOT) e1 e2
+packageExpr (ModI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_MOD) e1 e2
+packageExpr (AndI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_AND) e1 e2
+packageExpr (OrI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_OR) e1 e2
+packageExpr (XorI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_XOR) e1 e2
+packageExpr (CompI8 e) = packageSubExpr (exprCmdVal EXPR_INT8 EXPR_COMP) e
+packageExpr (ShfLI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_SHFL) e1 e2
+packageExpr (ShfRI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_SHFR) e1 e2
 packageExpr (IfI8 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_INT8 EXPR_IF) e1 e2 e3
-packageExpr (TestBI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_TSTB) e1 e2 
-packageExpr (SetBI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_SETB) e1 e2 
-packageExpr (ClrBI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_CLRB) e1 e2 
+packageExpr (TestBI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_TSTB) e1 e2
+packageExpr (SetBI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_SETB) e1 e2
+packageExpr (ClrBI8 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT8 EXPR_CLRB) e1 e2
 packageExpr (LitI16 w) = (exprCmdVal EXPR_INT16 EXPR_LIT) ++ word16ToBytes (fromIntegral w)
 packageExpr (ShowI16 e) = packageSubExpr (exprCmdVal EXPR_INT16 EXPR_SHOW) e
 packageExpr (RefI16 n) = packageRef n (exprCmdVal EXPR_INT16 EXPR_REF)
@@ -1531,53 +1498,53 @@ packageExpr (FromIntI16 e) = packageSubExpr (exprCmdVal EXPR_INT16 EXPR_FINT) e
 packageExpr (ToIntI16 e) = packageSubExpr (exprCmdVal EXPR_INT16 EXPR_TINT) e
 packageExpr (NegI16 e) = packageSubExpr (exprCmdVal EXPR_INT16 EXPR_NEG) e
 packageExpr (SignI16 e) = packageSubExpr (exprCmdVal EXPR_INT16 EXPR_SIGN) e
-packageExpr (AddI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_ADD) e1 e2 
-packageExpr (SubI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_SUB) e1 e2 
-packageExpr (MultI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_MULT) e1 e2 
-packageExpr (DivI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_DIV) e1 e2 
-packageExpr (RemI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_REM) e1 e2 
-packageExpr (QuotI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_QUOT) e1 e2 
-packageExpr (ModI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_MOD) e1 e2 
-packageExpr (AndI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_AND) e1 e2 
-packageExpr (OrI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_OR) e1 e2 
-packageExpr (XorI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_XOR) e1 e2 
-packageExpr (CompI16 e) = packageSubExpr (exprCmdVal EXPR_INT16 EXPR_COMP) e 
-packageExpr (ShfLI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_SHFL) e1 e2 
-packageExpr (ShfRI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_SHFR) e1 e2 
+packageExpr (AddI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_ADD) e1 e2
+packageExpr (SubI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_SUB) e1 e2
+packageExpr (MultI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_MULT) e1 e2
+packageExpr (DivI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_DIV) e1 e2
+packageExpr (RemI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_REM) e1 e2
+packageExpr (QuotI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_QUOT) e1 e2
+packageExpr (ModI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_MOD) e1 e2
+packageExpr (AndI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_AND) e1 e2
+packageExpr (OrI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_OR) e1 e2
+packageExpr (XorI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_XOR) e1 e2
+packageExpr (CompI16 e) = packageSubExpr (exprCmdVal EXPR_INT16 EXPR_COMP) e
+packageExpr (ShfLI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_SHFL) e1 e2
+packageExpr (ShfRI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_SHFR) e1 e2
 packageExpr (IfI16 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_INT16 EXPR_IF) e1 e2 e3
-packageExpr (TestBI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_TSTB) e1 e2 
-packageExpr (SetBI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_SETB) e1 e2 
-packageExpr (ClrBI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_CLRB) e1 e2 
+packageExpr (TestBI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_TSTB) e1 e2
+packageExpr (SetBI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_SETB) e1 e2
+packageExpr (ClrBI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_CLRB) e1 e2
 packageExpr (LitI32 w) = (exprCmdVal EXPR_INT32 EXPR_LIT) ++ word32ToBytes (fromIntegral w)
 packageExpr (ShowI32 e) = packageSubExpr (exprCmdVal EXPR_INT32 EXPR_SHOW) e
 packageExpr (RefI32 n) = packageRef n (exprCmdVal EXPR_INT32 EXPR_REF)
 packageExpr (RemBindI32 b) = (exprCmdVal EXPR_INT32 EXPR_BIND) ++ [fromIntegral b]
 packageExpr (NegI32 e) = packageSubExpr (exprCmdVal EXPR_INT32 EXPR_NEG) e
 packageExpr (SignI32 e) = packageSubExpr (exprCmdVal EXPR_INT32 EXPR_SIGN) e
-packageExpr (AddI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_ADD) e1 e2 
-packageExpr (SubI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_SUB) e1 e2 
-packageExpr (MultI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_MULT) e1 e2 
-packageExpr (DivI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_DIV) e1 e2 
-packageExpr (RemI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_REM) e1 e2 
-packageExpr (QuotI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_QUOT) e1 e2 
-packageExpr (ModI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_MOD) e1 e2 
-packageExpr (AndI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_AND) e1 e2 
-packageExpr (OrI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_OR) e1 e2 
-packageExpr (XorI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_XOR) e1 e2 
+packageExpr (AddI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_ADD) e1 e2
+packageExpr (SubI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_SUB) e1 e2
+packageExpr (MultI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_MULT) e1 e2
+packageExpr (DivI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_DIV) e1 e2
+packageExpr (RemI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_REM) e1 e2
+packageExpr (QuotI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_QUOT) e1 e2
+packageExpr (ModI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_MOD) e1 e2
+packageExpr (AndI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_AND) e1 e2
+packageExpr (OrI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_OR) e1 e2
+packageExpr (XorI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_XOR) e1 e2
 packageExpr (CompI32 e) = packageSubExpr (exprCmdVal EXPR_INT32 EXPR_COMP) e
-packageExpr (ShfLI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_SHFL) e1 e2 
-packageExpr (ShfRI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_SHFR) e1 e2 
+packageExpr (ShfLI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_SHFL) e1 e2
+packageExpr (ShfRI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_SHFR) e1 e2
 packageExpr (IfI32 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_INT32 EXPR_IF) e1 e2 e3
-packageExpr (TestBI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_TSTB) e1 e2 
-packageExpr (SetBI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_SETB) e1 e2 
-packageExpr (ClrBI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_CLRB) e1 e2 
+packageExpr (TestBI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_TSTB) e1 e2
+packageExpr (SetBI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_SETB) e1 e2
+packageExpr (ClrBI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_CLRB) e1 e2
 packageExpr (LitList8 ws) = (exprLCmdVal EXPRL_LIT) ++ [fromIntegral $ length ws] ++ ws
 packageExpr (RefList8 n) = packageRef n (exprLCmdVal EXPRL_REF)
 packageExpr (RemBindList8 b) = (exprLCmdVal EXPRL_BIND) ++ [fromIntegral b]
 packageExpr (IfL8 e1 e2 e3) = packageIfBSubExpr (exprLCmdVal EXPRL_IF) e1 e2 e3
-packageExpr (ElemList8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_ELEM) e1 e2 
+packageExpr (ElemList8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_ELEM) e1 e2
 packageExpr (LenList8 e) = packageSubExpr (exprLCmdVal EXPRL_LEN) e
-packageExpr (ConsList8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_CONS) e1 e2 
+packageExpr (ConsList8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_CONS) e1 e2
 packageExpr (ApndList8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_APND) e1 e2
 packageExpr (PackList8 es) = (exprLCmdVal EXPRL_PACK) ++ [fromIntegral $ length es] ++ (foldl (++) [] (map packageExpr es))
 packageExpr (LitFloat f) = (exprFCmdVal EXPRF_LIT) ++ floatToBytes f
@@ -1587,33 +1554,33 @@ packageExpr (RemBindFloat b) = (exprFCmdVal EXPRF_BIND) ++ [fromIntegral b]
 packageExpr (FromIntFloat e) = packageSubExpr (exprFCmdVal EXPRF_FINT) e
 packageExpr (NegFloat e) = packageSubExpr (exprFCmdVal EXPRF_NEG) e
 packageExpr (SignFloat e) = packageSubExpr (exprFCmdVal EXPRF_SIGN) e
-packageExpr (AddFloat e1 e2) = packageTwoSubExpr (exprFCmdVal EXPRF_ADD) e1 e2 
-packageExpr (SubFloat e1 e2) = packageTwoSubExpr (exprFCmdVal EXPRF_SUB) e1 e2 
-packageExpr (MultFloat e1 e2) = packageTwoSubExpr (exprFCmdVal EXPRF_MULT) e1 e2 
-packageExpr (DivFloat e1 e2) = packageTwoSubExpr (exprFCmdVal EXPRF_DIV) e1 e2 
+packageExpr (AddFloat e1 e2) = packageTwoSubExpr (exprFCmdVal EXPRF_ADD) e1 e2
+packageExpr (SubFloat e1 e2) = packageTwoSubExpr (exprFCmdVal EXPRF_SUB) e1 e2
+packageExpr (MultFloat e1 e2) = packageTwoSubExpr (exprFCmdVal EXPRF_MULT) e1 e2
+packageExpr (DivFloat e1 e2) = packageTwoSubExpr (exprFCmdVal EXPRF_DIV) e1 e2
 packageExpr (IfFloat e1 e2 e3) = packageIfBSubExpr (exprFCmdVal EXPRF_IF) e1 e2 e3
-packageExpr (TruncFloat e) = packageMathExpr EXPRF_TRUNC e 
-packageExpr (FracFloat e) = packageMathExpr EXPRF_FRAC e 
-packageExpr (RoundFloat e) = packageMathExpr EXPRF_ROUND e 
-packageExpr (CeilFloat e) = packageMathExpr EXPRF_CEIL e 
-packageExpr (FloorFloat e) = packageMathExpr EXPRF_FLOOR e 
+packageExpr (TruncFloat e) = packageMathExpr EXPRF_TRUNC e
+packageExpr (FracFloat e) = packageMathExpr EXPRF_FRAC e
+packageExpr (RoundFloat e) = packageMathExpr EXPRF_ROUND e
+packageExpr (CeilFloat e) = packageMathExpr EXPRF_CEIL e
+packageExpr (FloorFloat e) = packageMathExpr EXPRF_FLOOR e
 packageExpr PiFloat = exprFCmdVal EXPRF_PI
-packageExpr (ExpFloat e) = packageMathExpr EXPRF_EXP e 
-packageExpr (LogFloat e) = packageMathExpr EXPRF_LOG e 
-packageExpr (SqrtFloat e) = packageMathExpr EXPRF_SQRT e 
-packageExpr (SinFloat e) = packageMathExpr EXPRF_SIN e 
-packageExpr (CosFloat e) = packageMathExpr EXPRF_COS e 
-packageExpr (TanFloat e) = packageMathExpr EXPRF_TAN e 
-packageExpr (AsinFloat e) = packageMathExpr EXPRF_ASIN e 
-packageExpr (AcosFloat e) = packageMathExpr EXPRF_ACOS e 
-packageExpr (AtanFloat e) = packageMathExpr EXPRF_ATAN e 
-packageExpr (Atan2Float e1 e2) = packageTwoMathExpr EXPRF_ATAN2 e1 e2 
-packageExpr (SinhFloat e) = packageMathExpr EXPRF_SINH e 
-packageExpr (CoshFloat e) = packageMathExpr EXPRF_COSH e 
-packageExpr (TanhFloat e) = packageMathExpr EXPRF_TANH e 
-packageExpr (PowerFloat e1 e2) = packageTwoMathExpr EXPRF_POWER e1 e2 
-packageExpr (IsNaNFloat e) = packageMathExpr EXPRF_ISNAN e 
-packageExpr (IsInfFloat e) = packageMathExpr EXPRF_ISINF e 
+packageExpr (ExpFloat e) = packageMathExpr EXPRF_EXP e
+packageExpr (LogFloat e) = packageMathExpr EXPRF_LOG e
+packageExpr (SqrtFloat e) = packageMathExpr EXPRF_SQRT e
+packageExpr (SinFloat e) = packageMathExpr EXPRF_SIN e
+packageExpr (CosFloat e) = packageMathExpr EXPRF_COS e
+packageExpr (TanFloat e) = packageMathExpr EXPRF_TAN e
+packageExpr (AsinFloat e) = packageMathExpr EXPRF_ASIN e
+packageExpr (AcosFloat e) = packageMathExpr EXPRF_ACOS e
+packageExpr (AtanFloat e) = packageMathExpr EXPRF_ATAN e
+packageExpr (Atan2Float e1 e2) = packageTwoMathExpr EXPRF_ATAN2 e1 e2
+packageExpr (SinhFloat e) = packageMathExpr EXPRF_SINH e
+packageExpr (CoshFloat e) = packageMathExpr EXPRF_COSH e
+packageExpr (TanhFloat e) = packageMathExpr EXPRF_TANH e
+packageExpr (PowerFloat e1 e2) = packageTwoMathExpr EXPRF_POWER e1 e2
+packageExpr (IsNaNFloat e) = packageMathExpr EXPRF_ISNAN e
+packageExpr (IsInfFloat e) = packageMathExpr EXPRF_ISINF e
 
 -- | Unpackage a Haskino Firmware response
 unpackageResponse :: [Word8] -> Response
@@ -1640,48 +1607,16 @@ unpackageResponse (cmdWord:args)
                                       -> IfThenElseL8Reply bs
       (BC_RESP_IF_THEN_ELSE , [t,l,b1,b2,b3,b4]) | t == toW8 EXPR_FLOAT && l == toW8 EXPR_LIT
                                       -> IfThenElseFloatReply $ bytesToFloat (b1, b2, b3, b4)
-      {-- The IfThenElse Left replies are only used inside of Iterates
-       -- so they will never be received by the host, but are here for
-       -- test purposes 
       (BC_RESP_IF_THEN_ELSE , [t,l,b]) | t == (toW8 EXPR_BOOL  + 0x80) && l == toW8 EXPR_LIT
                                       -> IfThenElseBoolLeftReply (if b == 0 then False else True)
       (BC_RESP_IF_THEN_ELSE , [t,l,b]) | t == (toW8 EXPR_WORD8 + 0x80) && l == toW8 EXPR_LIT
                                       -> IfThenElseW8LeftReply b
-      (BC_RESP_IF_THEN_ELSE , [t,l,b1,b2]) | t == (toW8 EXPR_WORD16 + 0x80) && l == toW8 EXPR_LIT
-                                      -> IfThenElseW16LeftReply (bytesToWord16 (b1, b2))
-      (BC_RESP_IF_THEN_ELSE , [t,l,b1,b2,b3,b4]) | t == (toW8 EXPR_WORD32 + 0x80) && l == toW8 EXPR_LIT
-                                      -> IfThenElseW32LeftReply (bytesToWord32 (b1, b2, b3, b4))
-      (BC_RESP_IF_THEN_ELSE , [t,l,b]) | t == (toW8 EXPR_INT8 + 0x80) && l == toW8 EXPR_LIT
-                                      -> IfThenElseI8LeftReply $ fromIntegral b
-      (BC_RESP_IF_THEN_ELSE , [t,l,b1,b2]) | t == (toW8 EXPR_INT16 + 0x80) && l == toW8 EXPR_LIT
-                                      -> IfThenElseI16LeftReply $ fromIntegral (bytesToWord16 (b1, b2))
-      (BC_RESP_IF_THEN_ELSE , [t,l,b1,b2,b3,b4]) | t == (toW8 EXPR_INT32 + 0x80) && l == toW8 EXPR_LIT
-                                      -> IfThenElseI32LeftReply $ fromIntegral (bytesToWord32 (b1, b2, b3, b4))
-      (BC_RESP_IF_THEN_ELSE , t:l:_:bs) | t == (toW8 EXPR_LIST8 + 0x80) && l == toW8 EXPR_LIT
-                                      -> IfThenElseL8LeftReply bs
-      (BC_RESP_IF_THEN_ELSE , [t,l,b1,b2,b3,b4]) | t == (toW8 EXPR_FLOAT + 0x80) && l == toW8 EXPR_LIT
-                                      -> IfThenElseFloatLeftReply $ bytesToFloat (b1, b2, b3, b4)
-      -}
       (BC_RESP_ITERATE , [t,l]) | t == toW8 EXPR_UNIT && l == toW8 EXPR_LIT
                                       -> IterateUnitReply
       (BC_RESP_ITERATE , [t,l,b]) | t == toW8 EXPR_BOOL && l == toW8 EXPR_LIT
                                       -> IterateBoolReply (if b == 0 then False else True)
       (BC_RESP_ITERATE , [t,l,b]) | t == toW8 EXPR_WORD8 && l == toW8 EXPR_LIT
                                       -> IterateW8Reply b
-      (BC_RESP_ITERATE , [t,l,b1,b2]) | t == toW8 EXPR_WORD16 && l == toW8 EXPR_LIT
-                                      -> IterateW16Reply (bytesToWord16 (b1, b2))
-      (BC_RESP_ITERATE , [t,l,b1,b2,b3,b4]) | t == toW8 EXPR_WORD32 && l == toW8 EXPR_LIT
-                                      -> IterateW32Reply (bytesToWord32 (b1, b2, b3, b4))
-      (BC_RESP_ITERATE , [t,l,b]) | t == toW8 EXPR_INT8 && l == toW8 EXPR_LIT
-                                      -> IterateI8Reply $ fromIntegral b
-      (BC_RESP_ITERATE , [t,l,b1,b2]) | t == toW8 EXPR_INT16 && l == toW8 EXPR_LIT
-                                      -> IterateI16Reply $ fromIntegral (bytesToWord16 (b1, b2))
-      (BC_RESP_ITERATE , [t,l,b1,b2,b3,b4]) | t == toW8 EXPR_INT32 && l == toW8 EXPR_LIT
-                                      -> IterateI32Reply $ fromIntegral (bytesToWord32 (b1, b2, b3, b4))
-      (BC_RESP_ITERATE , t:l:_:bs) | t == toW8 EXPR_LIST8 && l == toW8 EXPR_LIT
-                                      -> IterateL8Reply bs
-      (BC_RESP_ITERATE , [t,l,b1,b2,b3,b4]) | t == toW8 EXPR_FLOAT && l == toW8 EXPR_LIT
-                                      -> IterateFloatReply $ bytesToFloat (b1, b2, b3, b4)
       (BS_RESP_DEBUG, [])                    -> DebugResp
       (BS_RESP_VERSION, [majV, minV])        -> Firmware (bytesToWord16 (majV,minV))
       (BS_RESP_TYPE, [p])                    -> ProcessorType p
@@ -1700,14 +1635,14 @@ unpackageResponse (cmdWord:args)
       (SRVO_RESP_READ_MICROS, [_t,_l,il,ih]) -> ServoReadMicrosReply (fromIntegral (bytesToWord16 (il,ih)))
       (SCHED_RESP_BOOT, [_t,_l,b])           -> BootTaskResp b
       (SCHED_RESP_QUERY_ALL, _:_:_:ts)       -> QueryAllTasksReply ts
-      (SCHED_RESP_QUERY, ts) | length ts == 0 -> 
+      (SCHED_RESP_QUERY, ts) | length ts == 0 ->
           QueryTaskReply Nothing
-      (SCHED_RESP_QUERY, ts) | length ts >= 9 -> 
+      (SCHED_RESP_QUERY, ts) | length ts >= 9 ->
           let ts0:ts1:tl0:tl1:tp0:tp1:tt0:tt1:tt2:tt3:rest = ts
-          in QueryTaskReply (Just (bytesToWord16 (ts0,ts1), 
+          in QueryTaskReply (Just (bytesToWord16 (ts0,ts1),
                                    bytesToWord16 (tl0,tl1),
-                                   bytesToWord16 (tp0,tp1), 
-                                   bytesToWord32 (tt0,tt1,tt2,tt3)))  
+                                   bytesToWord16 (tp0,tp1),
+                                   bytesToWord32 (tt0,tt1,tt2,tt3)))
       (REF_RESP_READ , [t,l,b]) | t == toW8 EXPR_BOOL && l == toW8 EXPR_LIT
                                       -> ReadRefBReply (if b == 0 then False else True)
       (REF_RESP_READ , [t,l,b]) | t == toW8 EXPR_WORD8 && l == toW8 EXPR_LIT

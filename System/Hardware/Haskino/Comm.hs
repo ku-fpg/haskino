@@ -17,11 +17,11 @@
 module System.Hardware.Haskino.Comm where
 
 import           Control.Concurrent                (Chan, MVar, ThreadId,
-                                                    newChan, newMVar, 
-                                                    newEmptyMVar, putMVar, 
-                                                    takeMVar, writeChan, 
-                                                    readChan, forkIO, 
-                                                    modifyMVar_, tryTakeMVar, 
+                                                    newChan, newMVar,
+                                                    newEmptyMVar, putMVar,
+                                                    takeMVar, writeChan,
+                                                    readChan, forkIO,
+                                                    modifyMVar_, tryTakeMVar,
                                                     killThread, threadDelay,
                                                     withMVar)
 import           Control.Exception                 (tryJust, AsyncException(UserInterrupt))
@@ -33,11 +33,11 @@ import           Control.Remote.Monad
 import           Control.Remote.Packet.Weak        as WP
 import           Control.Remote.Packet.Applicative as AP
 import           Data.Bits                         (testBit, (.&.), xor, shiftR)
-import qualified Data.ByteString                   as B 
+import qualified Data.ByteString                   as B
 import           Data.ByteString.Base16            (encode)
 import           Data.List                         (intercalate)
 import qualified Data.Map                          as M (empty, mapWithKey,
-                                                         insert, assocs, 
+                                                         insert, assocs,
                                                          lookup, member)
 import           Data.Maybe                        (listToMaybe)
 import qualified Data.Set                          as S (empty)
@@ -48,8 +48,8 @@ import           System.Hardware.Haskino.Expr
 import           System.Hardware.Haskino.Protocol
 import           System.Hardware.Haskino.Utils
 import           System.Hardware.Serialport        (SerialPort)
-import qualified System.Hardware.Serialport        as S (openSerial, closeSerial, 
-                                                         defaultSerialSettings, 
+import qualified System.Hardware.Serialport        as S (openSerial, closeSerial,
+                                                         defaultSerialSettings,
                                                          CommSpeed(CS115200),
                                                          commSpeed,
                                                          recv, send)
@@ -77,8 +77,8 @@ openArduino verbose fp = do
       debugger $ "Accessing arduino located at: " ++ show fp
       listenerTid <- newEmptyMVar
       portTry <- tryIOError (S.openSerial fp S.defaultSerialSettings{S.commSpeed = S.CS115200})
-      case portTry of 
-        Left e -> 
+      case portTry of
+        Left e ->
           error $ "\n*** Haskino:ERROR: Missing Port\n*** Make sure your Arduino is connected to " ++ fp
         Right port -> do
           dc <- newChan
@@ -98,7 +98,7 @@ openArduino verbose fp = do
                            , refIndex      = refIndex
                         }
           -- Step 0: Delay for 1 second after opeing serial port to allow Mega
-          --    to funciton correctly, as opening the serial port while 
+          --    to funciton correctly, as opening the serial port while
           --    connected to a Mac or Linux machine with these boards causes
           --    them to reset. (Bootloader needs 1/2 sec itself).
           liftIO $ threadDelay (1000 * 1000);
@@ -112,7 +112,7 @@ openArduino verbose fp = do
               min = ver .&. 0xFF
               id = "Firmware v" ++ show maj ++ "." ++ show min
               versionState = initState {firmwareID = id}
-          if maj == 0 && min >= 6 then return () else error $ "\n*** Haskino:ERROR: Firmware version 0.6 or greater required" 
+          if maj == 0 && min >= 6 then return () else error $ "\n*** Haskino:ERROR: Firmware version 0.6 or greater required"
           putStrLn id
           -- Step 3: Send a processor type request
           p <- send versionState queryProcessor
@@ -139,7 +139,7 @@ cleanUpArduino tid = do mbltid <- tryTakeMVar tid
 
 -- | Bailing out: print the given string on stdout and die
 runDie :: ArduinoConnection -> String -> [String] -> IO a
-runDie c m ms = do 
+runDie c m ms = do
     let f = bailOut c
     f m ms
 
@@ -153,26 +153,26 @@ withArduinoWeak :: Bool       -- ^ If 'True', debugging info will be printed
                 -> FilePath   -- ^ Path to the USB port
                 -> Arduino a  -- ^ The Haskell controller program to run
                 -> IO ()
-withArduinoWeak = withArduinoMode sendWeak 
+withArduinoWeak = withArduinoMode sendWeak
 
 withArduinoApp :: Bool       -- ^ If 'True', debugging info will be printed
                -> FilePath   -- ^ Path to the USB port
                -> Arduino a  -- ^ The Haskell controller program to run
                -> IO ()
-withArduinoApp = withArduinoMode sendApp 
+withArduinoApp = withArduinoMode sendApp
 
 withArduinoMode :: (ArduinoConnection -> Arduino a -> IO a) -- ^ Send function
                 -> Bool       -- ^ If 'True', debugging info will be printed
                 -> FilePath   -- ^ Path to the USB port
                 -> Arduino a  -- ^ The Haskell controller program to run
                 -> IO ()
-withArduinoMode useSend verbose fp program = do 
+withArduinoMode useSend verbose fp program = do
       conn <- openArduino verbose fp
       res <- tryJust catchCtrlC $ useSend conn program
       case res of
         Left () -> putStrLn "Haskino: Caught Ctrl-C, quitting.."
         _       -> return ()
-      closeArduino conn  
+      closeArduino conn
   where catchCtrlC UserInterrupt = Just ()
         catchCtrlC _             = Nothing
 
@@ -228,20 +228,13 @@ frameCommand :: ArduinoConnection -> ArduinoPrimitive a -> B.ByteString -> IO B.
 frameCommand c (Loop m) cmds = do
     sendToArduino c cmds
     forever $ send c m
--- ToDo: Is this really needed, or smart?  What about procedure variants?
-frameCommand c (IfThenElseUnit b m1 m2) cmds = do
-    sendToArduino c cmds
-    if b
-    then send c m1
-    else send c m2
-    return B.empty
 frameCommand c (CreateTaskE tid as) cmds= do
-    pc <- packageCommandIndex c (CreateTaskE tid as)  
-    return $ B.append cmds pc 
+    pc <- packageCommandIndex c (CreateTaskE tid as)
+    return $ B.append cmds pc
 frameCommand c cmd cmds= do
-    pc <- packageCommandIndex c cmd 
+    pc <- packageCommandIndex c cmd
     checkPackageLength c pc
-    return $ B.append cmds (framePackage pc) 
+    return $ B.append cmds (framePackage pc)
 
 sendProcedureCmds :: ArduinoConnection -> ArduinoPrimitive a -> B.ByteString -> IO a
 sendProcedureCmds c (Debug msg) cmds = do
@@ -249,19 +242,19 @@ sendProcedureCmds c (Debug msg) cmds = do
     sendToArduino c cmds
 sendProcedureCmds c (Die msg msgs) cmds = runDie c msg msgs
 sendProcedureCmds c (NewRemoteRefB r) cmds = sendRemoteBindingCmds c (NewRemoteRefB r) cmds
-sendProcedureCmds c (NewRemoteRefW8 r) cmds  = sendRemoteBindingCmds c (NewRemoteRefW8 r) cmds 
+sendProcedureCmds c (NewRemoteRefW8 r) cmds  = sendRemoteBindingCmds c (NewRemoteRefW8 r) cmds
 sendProcedureCmds c (NewRemoteRefW16 r) cmds = sendRemoteBindingCmds c (NewRemoteRefW16 r) cmds
 sendProcedureCmds c (NewRemoteRefW32 r) cmds = sendRemoteBindingCmds c (NewRemoteRefW32 r) cmds
 sendProcedureCmds c (NewRemoteRefI8 r) cmds = sendRemoteBindingCmds c (NewRemoteRefI8 r) cmds
 sendProcedureCmds c (NewRemoteRefI16 r) cmds = sendRemoteBindingCmds c (NewRemoteRefI16 r) cmds
 sendProcedureCmds c (NewRemoteRefI32 r) cmds = sendRemoteBindingCmds c (NewRemoteRefI32 r) cmds
-sendProcedureCmds c (NewRemoteRefL8 r) cmds = sendRemoteBindingCmds c (NewRemoteRefL8 r) cmds 
+sendProcedureCmds c (NewRemoteRefL8 r) cmds = sendRemoteBindingCmds c (NewRemoteRefL8 r) cmds
 sendProcedureCmds c (NewRemoteRefFloat r) cmds = sendRemoteBindingCmds c (NewRemoteRefFloat r) cmds
 sendProcedureCmds c (LiftIO m) cmds = do
     sendToArduino c cmds
     m
 sendProcedureCmds c procedure cmds = do
-    let (pc, _) = runState (packageProcedure procedure) (CommandState 0 0 B.empty [] False [] [])
+    let (pc, _) = runState (packageProcedure procedure) (CommandState 0 0 B.empty [])
     checkPackageLength c pc
     sendToArduino c (B.append cmds (framePackage pc))
     qr <- waitResponse c (procDelay procedure) procedure
@@ -270,7 +263,7 @@ sendProcedureCmds c procedure cmds = do
 sendRemoteBindingCmds :: ArduinoConnection -> ArduinoPrimitive a -> B.ByteString -> IO a
 sendRemoteBindingCmds c b cmds = do
     ix <- takeMVar (refIndex c)
-    let (prb, _) = runState (packageRemoteBinding b) (CommandState ix 0 B.empty [] False [] [])
+    let (prb, _) = runState (packageRemoteBinding b) (CommandState ix 0 B.empty [])
     checkPackageLength c prb
     putMVar (refIndex c) (ix+1)
     sendToArduino c (B.append cmds (framePackage prb))
@@ -280,7 +273,7 @@ sendRemoteBindingCmds c b cmds = do
 packageCommandIndex :: ArduinoConnection -> ArduinoPrimitive a -> IO B.ByteString
 packageCommandIndex c cmd = do
     index <- takeMVar (refIndex c)
-    let (pc, st) = runState (packageCommand cmd) (CommandState index 0 B.empty [] False [] [])
+    let (pc, st) = runState (packageCommand cmd) (CommandState index 0 B.empty [])
     putMVar (refIndex c) (ix st)
     return pc
 
@@ -288,13 +281,13 @@ checkPackageLength :: ArduinoConnection -> B.ByteString -> IO ()
 checkPackageLength c p = if B.length p > (maxFirmwareSize - 2)
                          then runDie c ("Protocol Frame Too Large (" ++ (show $ B.length p) ++ " bytes)")
                                       ["Frame in Error starts with " ++ (show $ firmwareValCmd $ B.head p),
-                                       "Common error is a control structure (iterateE or ifThenElseE)",
+                                       "Common error is a control structure (while, ifThenElse, loopE)",
                                        "which exceeds frame limits is used outside of a task"]
                          else return ()
 
 sendToArduino :: ArduinoConnection -> B.ByteString -> IO ()
 sendToArduino conn cmds = do
-    when (lp /= 0) 
+    when (lp /= 0)
          -- (message conn $ "Sending: " ++ show (encode cmds))
          (message conn $ "Sending: \n" ++ (decodeFrame cmds))
     sent <- liftIO $ S.send (port conn) cmds
@@ -307,13 +300,13 @@ waitResponse :: ArduinoConnection -> Int -> ArduinoPrimitive a -> IO a
 waitResponse c t procedure = do
   message c $ "Waiting for response"
   resp <- liftIO $ timeout t $ readChan $ deviceChannel c
-  case resp of 
-      Nothing -> runDie c "Haskino:ERROR: Response Timeout" 
+  case resp of
+      Nothing -> runDie c "Haskino:ERROR: Response Timeout"
                        [ "Make sure your Arduino is running Haskino Firmware"]
-      Just FailedNewRef -> runDie c "Haskino:ERROR: Failed to Allocate Reference" 
+      Just FailedNewRef -> runDie c "Haskino:ERROR: Failed to Allocate Reference"
                             [ "Make sure MAX_REFS is set high enough in Firmware",
                               "and that Arudino has sufficient RAM"]
-      Just r -> do 
+      Just r -> do
           case parseQueryResult procedure r of
               -- Ignore responses that do not match expected response
               -- and wait for the next response.
@@ -322,7 +315,7 @@ waitResponse c t procedure = do
               Just qr -> return qr
 
 procDelay :: ArduinoPrimitive a -> Int
-procDelay proc = 
+procDelay proc =
   case proc of
     DelayMillis d           -> millisToMicros (fromIntegral d) + secsToMicros 2
     DelayMillisE (LitW32 d) -> millisToMicros (fromIntegral d) + secsToMicros 2
@@ -346,7 +339,7 @@ setupListener serial dbg chan = do
         let getByte = do bs <- S.recv serial 1
                          case B.length bs of
                             0 -> getByte
-                            1 -> return $ B.head bs 
+                            1 -> return $ B.head bs
             collectFrame sofar = do b <- getByte
                                     case b of
                                       0x7E -> return $ reverse sofar
@@ -356,7 +349,7 @@ setupListener serial dbg chan = do
             checkFrame fs = (last fs) == (foldl (+) 0 $ init fs)
             listener = do
                 frame  <- collectFrame []
-                resp <- case frame of 
+                resp <- case frame of
                            [] -> return $ EmptyFrame
                            fs | not (checkFrame fs) -> return $ InvalidChecksumFrame fs
                            fs -> case getFirmwareReply $ head fs of

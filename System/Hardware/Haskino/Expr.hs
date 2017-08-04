@@ -900,6 +900,9 @@ exprLCmdVal o = [toW8 EXPR_LIST8, toW8 o]
 exprFCmdVal :: ExprFloatOp -> [Word8]
 exprFCmdVal o = [toW8 EXPR_FLOAT, toW8 o]
 
+evalExprUnit :: Expr () -> ()
+evalExprUnit _ = ()
+
 {-# NOINLINE abs_ #-}
 abs_ :: Expr a -> a
 abs_ _ = error "Internal error: abs_ called"

@@ -132,16 +132,11 @@ changeRetExprAlts ((ac, b, a) : as) = do
 -}
 changeReturnTypes :: CoreExpr -> BindM CoreExpr
 changeReturnTypes e = do
-    unitTyCon <- thNameToTyCon unitTyConTH
-    let unitTyConTy = mkTyConTy unitTyCon
     let (f, args) = collectArgs e
     case args of
       [Type ty1, Var d, Type ty2, ex] -> do
-          if ty2 `eqType` unitTyConTy
-          then return e
-          else do
-              retArg <- repExpr ex
-              exprTyConApp <- thNameTyToTyConApp exprTyConTH ty2
-              let f' = mkCoreApps f [Type ty1, Var d, Type exprTyConApp, retArg]
-              fmapAbsExpr ty1 ty2 f'
+          retArg <- repExpr ex
+          exprTyConApp <- thNameTyToTyConApp exprTyConTH ty2
+          let f' = mkCoreApps f [Type ty1, Var d, Type exprTyConApp, retArg]
+          fmapAbsExpr ty1 ty2 f'
       _ -> return e

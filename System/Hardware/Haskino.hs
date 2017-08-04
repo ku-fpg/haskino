@@ -32,7 +32,7 @@ module System.Hardware.Haskino (
   -- ** Speaker
   , tone, noTone, toneE, noToneE
   -- ** I2C
-  , SlaveAddress, i2cRead, i2cWrite, i2cConfig, i2cReadE, i2cWriteE 
+  , SlaveAddress, i2cRead, i2cWrite, i2cConfig, i2cReadE, i2cWriteE
   -- ** Servo
   , servoDetach, servoDetachE, servoWrite, servoWriteE, servoWriteMicros
   , servoWriteMicrosE, servoAttach, servoAttachE, servoAttachMinMax
@@ -52,7 +52,7 @@ module System.Hardware.Haskino (
   , stepper2Pin, stepper2PinE, stepper4Pin, stepper4PinE, stepperSetSpeed
   , stepperSetSpeedE, stepperStep ,stepperStepE
   -- ** Control structures
-  , loop, loopE, ArduinoConditional(..), ifThenElseUnitE, forInE, whileE, repeatUntilE
+  , loop, loopE, ArduinoConditional(..), forInE, whileE, repeatUntilE
   -- ** Expressions
   , Expr(..), RemoteRef, lit, newRemoteRef, readRemoteRef, writeRemoteRef
   , modifyRemoteRef, (++*), (*:), (!!*), len, pack, litString, showE, showFFloatE
@@ -62,7 +62,7 @@ module System.Hardware.Haskino (
   -- ** Compiler
   , compileProgram
   -- ** Recursion
-  , ArduinoIterate(..), ExprEither(..) 
+  , ArduinoIterate(..), ExprEither(..)
  )
  where
 

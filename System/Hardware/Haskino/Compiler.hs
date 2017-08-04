@@ -150,7 +150,7 @@ compileTask t name int = do
     compileCodeBlock t
     if not int
     then compileLineIndent "taskComplete();"
-    else return ()
+    else return LitUnit
     compileLineIndent "}"
     s <- get
     let defineStr = (map toUpper name) ++ stackSizeStr
@@ -162,90 +162,96 @@ compileTask t name int = do
     put s {tasksDone = cmds s : tasksDone s}
     return ()
 
-compileLine :: String -> State CompileState ()
+compileLine :: String -> State CompileState (Expr ())
 compileLine s = do
     st <- get
     put st { cmds = cmds st ++ (indent $ level st) ++ s ++ "\n"}
-    return ()
+    return LitUnit
 
-compileLineIndent :: String -> State CompileState ()
+compileLineIndent :: String -> State CompileState (Expr ())
 compileLineIndent s = do
     st <- get
     put st { cmds = cmds st ++ (indent (level st + 1)) ++ s ++ "\n"}
-    return ()
+    return LitUnit
 
-compileAllocBind :: String -> State CompileState ()
+compileAllocBind :: String -> State CompileState (Expr ())
 compileAllocBind s = do
     st <- get
     put st { binds = binds st ++ (indent $ level st) ++  s ++ "\n"}
-    return ()
+    return LitUnit
 
-compileAllocRef :: String -> State CompileState ()
+compileAllocRef :: String -> State CompileState (Expr ())
 compileAllocRef s = do
     st <- get
     put st { refs = refs st ++ s ++ "\n"}
-    return ()
+    return LitUnit
 
-compileForward :: String -> State CompileState ()
+compileForward :: String -> State CompileState (Expr ())
 compileForward s = do
     st <- get
     put st { forwards = forwards st ++ s ++ "\n"}
-    return ()
+    return LitUnit
 
-compileError :: String -> String -> State CompileState ()
+compileError :: String -> String -> State CompileState (Expr ())
 compileError s1 s2 = do
     compileLine s1
     st <- get
     put st { errors = s2 : (errors st)}
-    return ()
+    return LitUnit
 
-compileStrongProcedureError :: String -> State CompileState ()
-compileStrongProcedureError s =
+compileStrongProcedureError :: String -> State CompileState (Expr ())
+compileStrongProcedureError s = do
     compileError ("/* " ++ errmsg ++ " */") errmsg
+    return LitUnit
   where
     errmsg = "ERROR - " ++ s ++ " is a Shallow procedure, use Deep version instead."
 
-compileUnsupportedError :: String -> State CompileState ()
-compileUnsupportedError s =
+compileUnsupportedError :: String -> State CompileState (Expr ())
+compileUnsupportedError s = do
     compileError ("/* " ++ errmsg ++ " */") errmsg
+    return LitUnit
   where
     errmsg = "ERROR - " ++ s ++ " not suppported by compiler."
 
-compileNoExprCommand :: String -> State CompileState ()
-compileNoExprCommand s =
+compileNoExprCommand :: String -> State CompileState (Expr ())
+compileNoExprCommand s = do
     compileLine (s ++ "();")
+    return LitUnit
 
-compile1ExprCommand :: String -> Expr a -> State CompileState ()
-compile1ExprCommand s e =
+compile1ExprCommand :: String -> Expr a -> State CompileState (Expr ())
+compile1ExprCommand s e = do
     compileLine (s ++ "(" ++ compileExpr e ++ ");")
+    return LitUnit
 
-compile2ExprCommand :: String -> Expr a -> Expr b -> State CompileState ()
-compile2ExprCommand s e1 e2 =
-    compileLine (s ++ "(" ++ compileExpr e1 ++ "," ++
-                                      compileExpr e2 ++ ");")
+compile2ExprCommand :: String -> Expr a -> Expr b -> State CompileState (Expr ())
+compile2ExprCommand s e1 e2 = do
+    compileLine (s ++ "(" ++ compileExpr e1 ++ "," ++ compileExpr e2 ++ ");")
+    return LitUnit
 
-compile3ExprCommand :: String -> Expr a -> Expr b -> Expr c -> State CompileState ()
-compile3ExprCommand s e1 e2 e3 =
+compile3ExprCommand :: String -> Expr a -> Expr b -> Expr c -> State CompileState (Expr ())
+compile3ExprCommand s e1 e2 e3 = do
     compileLine (s ++ "(" ++ compileExpr e1 ++ "," ++
                                       compileExpr e2 ++ "," ++
                                       compileExpr e3 ++ ");")
+    return LitUnit
 
-compileWriteRef :: Int -> Expr a -> State CompileState ()
-compileWriteRef ix e = compileLine $ refName ++ show ix ++ " = " ++
-                       compileExpr e ++ ";"
+compileWriteRef :: Int -> Expr a -> State CompileState (Expr ())
+compileWriteRef ix e = do
+  compileLine $ refName ++ show ix ++ " = " ++ compileExpr e ++ ";"
+  return LitUnit
 
-compileWriteListRef :: Int -> Expr a -> State CompileState ()
-compileWriteListRef ix e = compileLine $ "listAssign(&" ++ refName ++ show ix ++
-                           ", " ++ compileExpr e ++ ");"
+compileWriteListRef :: Int -> Expr a -> State CompileState (Expr ())
+compileWriteListRef ix e = do
+  compileLine $ "listAssign(&" ++ refName ++ show ix ++ ", " ++ compileExpr e ++ ");"
+  return LitUnit
 
 compilePrimitive :: forall a . ArduinoPrimitive a -> State CompileState a
 compilePrimitive prim = case knownResult prim of
                           Just _ -> compileCommand prim
-
                           Nothing -> compileProcedure prim
 
 compileCommand :: ArduinoPrimitive a -> State CompileState a
-compileCommand SystemReset = return ()
+compileCommand SystemResetE = return LitUnit
 compileCommand (SetPinModeE p m) = compile2ExprCommand "pinMode" p m
 compileCommand (DigitalWriteE p b) = compile2ExprCommand "digitalWrite" p b
 compileCommand (DigitalPortWriteE p b m) =
@@ -254,8 +260,8 @@ compileCommand (AnalogWriteE p w) = compile2ExprCommand "analogWrite" p w
 compileCommand (ToneE p f (Just d)) = compile3ExprCommand "tone" p f d
 compileCommand (ToneE p f Nothing) = compile3ExprCommand "tone" p f (lit (0::Word32))
 compileCommand (NoToneE p) = compile1ExprCommand "noTone" p
-compileCommand (I2CWrite sa w8s) = compile2ExprCommand "i2cWrite" sa w8s
-compileCommand I2CConfig = compileNoExprCommand "i2cConfig"
+compileCommand (I2CWriteE sa w8s) = compile2ExprCommand "i2cWrite" sa w8s
+compileCommand I2CConfigE = compileNoExprCommand "i2cConfig"
 compileCommand (StepperSetSpeedE st sp) =
     compile2ExprCommand "stepperSetSpeed" st sp
 compileCommand (ServoDetachE sv) =
@@ -274,9 +280,10 @@ compileCommand (CreateTaskE (LitW8 tid) m) = do
                   taskName ++ ");"
     s <- get
     put s {tasksToDo = (m, taskName, False) : (tasksToDo s)}
+    return LitUnit
 compileCommand (ScheduleTaskE tid tt) =
     compile2ExprCommand "scheduleTask" tid tt
-compileCommand ScheduleReset =
+compileCommand ScheduleResetE =
     compileNoExprCommand "scheduleReset"
 compileCommand (AttachIntE p t m) = do
     let taskName = "task" ++ compileExpr t
@@ -297,9 +304,9 @@ compileCommand (AttachIntE p t m) = do
                                 else (m, tn1, i)
 compileCommand (DetachIntE p) =
     compile1ExprCommand "detachInterrupt" p
-compileCommand Interrupts =
+compileCommand InterruptsE =
     compileNoExprCommand "interrupts"
-compileCommand NoInterrupts =
+compileCommand NoInterruptsE =
     compileNoExprCommand "noInterrupts"
 compileCommand (GiveSemE id) =
     compile1ExprCommand "giveSem" id
@@ -330,18 +337,22 @@ compileCommand (IfThenElseUnitE e cb1 cb2) = do
     compileLine "else"
     compileCodeBlock cb2
     compileLineIndent "}"
-    return ()
+    return LitUnit
 
 compileSimpleProcedure :: CompileType -> String -> State CompileState Int
 compileSimpleProcedure t p = do
-    b <- nextBind
+    s <- get
+    let b = ib s
+    put s {ib = b + 1}
     compileLine $ bindName ++ show b ++ " = " ++ p ++ ";"
     compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
     return b
 
 compileSimpleListProcedure :: String -> State CompileState Int
 compileSimpleListProcedure p = do
-    b <- nextBind
+    s <- get
+    let b = ib s
+    put s {ib = b + 1}
     compileLine $ "listAssign(&" ++ bindName ++ show b ++ ", " ++ p ++ ");"
     compileAllocBind $ compileTypeToString List8Type ++ " " ++
                        bindName ++ show b ++ " = NULL;"
@@ -411,14 +422,18 @@ compileNewListRef e = do
 
 compileReadRef :: CompileType -> Int -> State CompileState Int
 compileReadRef t ix = do
-    b <- nextBind
+    s <- get
+    let b = ib s
+    put s {ib = b + 1}
     compileLine $ bindName ++ show b ++ " = " ++ refName ++ show ix ++ ";"
     compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
     return b
 
 compileReadListRef :: Int -> State CompileState Int
 compileReadListRef ix = do
-    b <- nextBind
+    s <- get
+    let b = ib s
+    put s {ib = b + 1}
     compileLine $ "listAssign(&" ++ bindName ++ show b ++ ", " ++
                   refName ++ show ix ++ ");"
     compileAllocBind $ compileTypeToString List8Type ++ " " ++
@@ -1531,7 +1546,9 @@ compileProcedure (IterateFloatFloatE iv bf) = do
 
 compileIfThenElseProcedure :: ExprB a => CompileType -> Expr Bool -> Arduino (Expr a) -> Arduino (Expr a) -> State CompileState (Expr a)
 compileIfThenElseProcedure t e cb1 cb2 = do
-    b <- nextBind
+    s <- get
+    let b = ib s
+    put s {ib = b + 1}
     compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
     compileLine $ "if (" ++ compileExpr e ++ ")"
     r1 <- compileCodeBlock cb1
@@ -1551,10 +1568,10 @@ compileIfThenElseEitherProcedure t1 t2 e cb1 cb2 = do
     r1 <- compileCodeBlock cb1
     case r1 of
         ExprLeft a -> do
-            if (t1 == UnitType) then return ()
+            if (t1 == UnitType) then return LitUnit
             else compileLineIndent $ bindName ++ show (fst ibs) ++ " = " ++ compileExpr a ++ ";"
         ExprRight b -> do
-            if (t2 == UnitType) then return ()
+            if (t2 == UnitType) then return LitUnit
             else compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ compileExpr b ++ ";"
             compileLineIndent "break;"
     compileLineIndent "}"
@@ -1562,10 +1579,10 @@ compileIfThenElseEitherProcedure t1 t2 e cb1 cb2 = do
     r2 <- compileCodeBlock cb2
     case r2 of
         ExprLeft a -> do
-            if (t1 == UnitType) then return ()
+            if (t1 == UnitType) then return LitUnit
             else compileLineIndent $ bindName ++ show (fst ibs) ++ " = " ++ compileExpr a ++ ";"
         ExprRight b -> do
-            if (t2 == UnitType) then return ()
+            if (t2 == UnitType) then return LitUnit
             else compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ compileExpr b ++ ";"
             compileLineIndent "break;"
     compileLineIndent "}"
@@ -1586,6 +1603,16 @@ compileIterateProcedure ta tb b1 b1e b2 b2e iv bf = do
     s <- get
     put s {iterBinds = tail $ iterBinds s}
     return b2e
+
+compileWhileProcedure :: ExprB a => CompileType -> Int -> Expr a -> Expr a -> (Expr a -> Expr Bool) -> (Expr a -> Arduino (Expr a)) -> State CompileState (Expr a)
+compileWhileProcedure t b be iv bf bdf = do
+    compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
+    compileLine $ bindName ++ show b ++ " = " ++ compileExpr iv ++ ";"
+    compileLine $ "while (" ++ compileExpr (bf be) ++ ")"
+    r <- compileCodeBlock $ bdf be
+    compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r ++ ";"
+    compileLineIndent "}"
+    return be
 
 compileCodeBlock :: Arduino a -> State CompileState a
 compileCodeBlock (Arduino commands) = do

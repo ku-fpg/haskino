@@ -47,7 +47,7 @@ nextBind = do
     return (ib s)
 
 showCommand :: ArduinoPrimitive a -> State ShowState String
-showCommand SystemReset = showCommand0 "SystemReset"
+showCommand SystemResetE = showCommand0 "SystemReset"
 showCommand (SetPinModeE p m) = showCommand2 "SetPinModeE" p m
 showCommand (DigitalWriteE p b) = showCommand2 "DigitalWriteE" p b
 showCommand (DigitalPortWriteE p b m) = showCommand3 "DigitalPortWriteE" p b m
@@ -55,19 +55,19 @@ showCommand (AnalogWriteE p w) = showCommand2 "AnalogWriteE" p w
 showCommand (ToneE p f (Just d)) = showCommand3 "ToneE" p f d
 showCommand (ToneE p f Nothing) = showCommand (ToneE p f (Just 0))
 showCommand (NoToneE p) = showCommand1 "NoToneE" p
-showCommand (I2CWrite sa w8s) = showCommand2 "I2CWrite" sa w8s
-showCommand I2CConfig = showCommand0 "I2CConfig"
+showCommand (I2CWriteE sa w8s) = showCommand2 "I2CWrite" sa w8s
+showCommand I2CConfigE = showCommand0 "I2CConfig"
 showCommand (StepperSetSpeedE st sp) = showCommand2 "StepperSetSpeedE" st sp
 showCommand (ServoDetachE sv) = showCommand1 "ServoDetachE" sv
 showCommand (ServoWriteE sv w) = showCommand2 "ServoWriteE " sv w
 showCommand (ServoWriteMicrosE sv w) = showCommand2 "ServoWriteMicrosE" sv w
 showCommand (DeleteTaskE tid) = showCommand1 "DeleteTaskE" tid
 showCommand (ScheduleTaskE tid tt) = showCommand2 "ScheduleTaskE" tid tt
-showCommand ScheduleReset = showCommand0 "ScheduleReset"
+showCommand ScheduleResetE = showCommand0 "ScheduleReset"
 showCommand (AttachIntE p t m) = showCommand3 "AttachIntE" p t m
 showCommand (DetachIntE p) = showCommand1 "DetachIntE " p
-showCommand (Interrupts) = showCommand0 "Interrupts"
-showCommand (NoInterrupts) = showCommand0 "NoInterrupts"
+showCommand (InterruptsE) = showCommand0 "Interrupts"
+showCommand (NoInterruptsE) = showCommand0 "NoInterrupts"
 showCommand (GiveSemE id) = showCommand1 "GiveSemE"  id
 showCommand (TakeSemE id) = showCommand1 "TakeSemE" id
 showCommand (CreateTaskE tid m) = do

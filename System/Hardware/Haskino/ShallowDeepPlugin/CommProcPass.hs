@@ -151,6 +151,7 @@ funcInXlatList id = do
 
 commProcExpr :: CoreExpr -> BindM CoreExpr
 commProcExpr e = do
+  apId <- thNameToId apNameTH
   df <- liftCoreM getDynFlags
   case e of
     Var v -> do
@@ -217,11 +218,16 @@ commProcExprAlts ((ac, b, a) : as) = do
 commProcXlat :: XlatEntry -> CoreExpr -> BindM CoreExpr
 commProcXlat xe e = do
   let (f, args) = collectArgs e
+  liftCoreM $ putMsgS "@@@@@@@@@@"
+  liftCoreM $ putMsg $ ppr f
+  liftCoreM $ putMsg $ ppr args
   (xlatRet, xlatArgs) <- genXlatBools (fromId xe) (toId xe)
   let zargs = zip xlatArgs args
   args' <- mapM commProcXlatArg zargs
   newId <- toId xe
   let f' = Var newId
+  liftCoreM $ putMsg $ ppr xlatRet
+  liftCoreM $ putMsg $ ppr xlatArgs
 
   if xlatRet
   then do

@@ -16,7 +16,7 @@ import Control.Monad
 import Data.Word
 import Data.Boolean
 
-twoButtonProgE :: Arduino ()
+twoButtonProgE :: Arduino (Expr ())
 twoButtonProgE = do
     let led = 13
     let button1 = 2

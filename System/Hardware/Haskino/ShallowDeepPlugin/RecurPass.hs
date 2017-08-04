@@ -149,7 +149,6 @@ transformRecur argTy retTy e = do
     apId <- thNameToId apNameTH
     returnId <- thNameToId returnNameTH
     ifThenElseEitherId <- thNameToId ifThenElseEitherNameTH
-    ifThenElseUnitId <- thNameToId ifThenElseUnitNameTH
     ifThenElseId <- thNameToId ifThenElseNameTH
     eitherTyCon <- thNameToTyCon eitherTyConTH
     let eitherTyp = mkTyConApp eitherTyCon [argTy, retTy]
@@ -162,16 +161,6 @@ transformRecur argTy retTy e = do
                e2' <- transformRecur argTy retTy e2
                let e'' = mkCoreApps (Var fv) [Type monadTy, dict, Type arg1Ty, Type eitherTyp, e1, e2']
                return $ (mkLams bs e'')
-            _ -> return e
-      -- Check if the next level has a recur
-      Var fv | fv == ifThenElseUnitId -> do
-          case args of
-            [cond, thenE, elseE] -> do
-                thenE' <- transformRecur argTy retTy thenE
-                elseE' <- transformRecur argTy retTy elseE
-                eitherDict <- thNameTysToDict monadIterateTyConTH [argTy, retTy]
-                let e'' = mkCoreApps (Var ifThenElseEitherId) [Type argTy, Type retTy, eitherDict, cond, thenE', elseE']
-                return $ (mkLams bs e'')
             _ -> return e
       -- Check if the next level has a recur
       Var fv | fv == ifThenElseId -> do

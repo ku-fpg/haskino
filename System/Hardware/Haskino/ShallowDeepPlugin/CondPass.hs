@@ -89,13 +89,9 @@ condExpr e = do
               [(ac1, _, _), _] -> do
                 case ac1 of
                   DataAlt d -> do
-                    unitTyCon <- thNameToTyCon ''()
-                    let unitTyConTy = mkTyConTy unitTyCon
                     Just falseName <- liftCoreM $ thNameToGhcName falseNameTH
                     if (getName d) == falseName
-                    then if retTy' `eqType` unitTyConTy
-                         then condTransformUnit ty e' alts'
-                         else condTransform ty e' alts'
+                    then condTransform ty e' alts'
                     else defaultReturn
                   _ -> defaultReturn
             else defaultReturn
@@ -150,21 +146,3 @@ condTransform ty e alts = do
       -- Apply fmap of abs_
       tyCon <- thNameToTyCon monadTyConTH
       fmapAbsExpr (mkTyConTy tyCon) ty' ifteExpr
-
-{-
-  The following performs this transform:
-
-    forall (b :: Bool) (t :: Arduino ()) (e :: Arduino ()).
-    if b then t else e
-      =
-    ifThenElseUnitE (rep_ b) t e
-
--}
-condTransformUnit :: Type -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CondM CoreExpr
-condTransformUnit ty e alts = do
-  case alts of
-    [(_, _, e1),(_, _, e2)] -> do
-      ifThenElseId <- thNameToId ifThenElseUnitNameTH
-      -- Build the First Arg to ifThenElseUnitE
-      arg1 <- repExpr e
-      return $ mkCoreApps (Var ifThenElseId) [arg1, e2, e1]

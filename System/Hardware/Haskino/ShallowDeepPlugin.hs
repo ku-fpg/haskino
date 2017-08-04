@@ -14,6 +14,7 @@ import StaticFlags   -- This is required on Windows
 import CoreMonad
 import GhcPlugins
 import System.Hardware.Haskino.ShallowDeepPlugin.AbsLambdaPass
+import System.Hardware.Haskino.ShallowDeepPlugin.ApRemovePass
 import System.Hardware.Haskino.ShallowDeepPlugin.BindChangeArgPass
 import System.Hardware.Haskino.ShallowDeepPlugin.CommProcPass
 import System.Hardware.Haskino.ShallowDeepPlugin.CondPass
@@ -33,6 +34,7 @@ install _ todo = do
   liftIO initStaticOpts   -- This is required on Windows
   reinitializeGlobals
   let absLambdaToDo = [CoreDoPluginPass "AbsLambda" absLambdaPass]
+  let apRemoveToDo = [CoreDoPluginPass "ApRemove" apRemovePass]
   let condToDo = [CoreDoPluginPass "CondTransform" condPass]
   let recurToDo = [CoreDoPluginPass "RecursionTransform" recurPass]
   let returnsToDo = [CoreDoPluginPass "ReturnsTransform" returnsPass]
@@ -43,7 +45,7 @@ install _ todo = do
   let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
   let showToDo = [CoreDoPluginPass "ShowPass" showPass]
 
-  return $ [simplPass] ++ condToDo ++ commProcToDo ++ returnsToDo ++
+  return $ [simplPass] ++ apRemoveToDo ++ dumpToDo ++ condToDo ++ commProcToDo ++ returnsToDo ++
            bindArgRetAppToDo ++ repPushToDo ++ absLambdaToDo ++
            repAbsFuseToDo ++ recurToDo ++ todo -- ++ dumpToDo
 

@@ -40,7 +40,6 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            repNameTH,
                                            ifThenElseNameTH,
                                            ifThenElseEitherNameTH,
-                                           ifThenElseUnitNameTH,
                                            iterateETH,
                                            leftNameTH,
                                            rightNameTH,
@@ -94,7 +93,6 @@ monadIterateTyConTH    = ''System.Hardware.Haskino.ArduinoIterate
 absNameTH              = 'System.Hardware.Haskino.abs_
 repNameTH              = 'System.Hardware.Haskino.rep_
 ifThenElseNameTH       = 'System.Hardware.Haskino.ifThenElseE
-ifThenElseUnitNameTH   = 'System.Hardware.Haskino.ifThenElseUnitE
 ifThenElseEitherNameTH = 'System.Hardware.Haskino.ifThenElseEither
 iterateETH             = 'System.Hardware.Haskino.iterateE
 leftNameTH             = 'System.Hardware.Haskino.ExprLeft

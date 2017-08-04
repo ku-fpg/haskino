@@ -362,8 +362,6 @@ changeSubBind b e = do
   let (bs, e') = collectBinders e
   let tyCon_m = splitTyConApp_maybe retTy
   monadTyConId <- thNameToTyCon monadTyConTH
-  unitTyConId <- thNameToTyCon ''()
-  let unitTyConTy = mkTyConTy unitTyConId
   case tyCon_m of
       -- We are looking for return types of Arduino a
       Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
@@ -381,42 +379,26 @@ changeSubBind b e = do
           -- Generate args for new shallow body
           deepArgs <- mapM repExpr (map Var bs)
 
-          -- If it is not a unit type return, change return type
-          if not (retTy' `eqType` unitTyConTy)
-          then do
-              exprTyCon <- thNameToTyCon exprTyConTH
-              let exprTyConApp = mkTyConApp exprTyCon [retTy']
+          -- Change return type
+          exprTyCon <- thNameToTyCon exprTyConTH
+          let exprTyConApp = mkTyConApp exprTyCon [retTy']
 
-              -- Change the return
-              e''' <- fmapRepBindReturn e''
+          -- Change the return
+          e''' <- fmapRepBindReturn e''
 
-              -- Create a new top level bind type with the deep tyep
-              bDeep <- modId b deepSuffix
-              let b' = setVarType bDeep $ mkFunTys argTys (mkTyConApp retTyCon [exprTyConApp])
+          -- Create a new top level bind type with the deep tyep
+          bDeep <- modId b deepSuffix
+          let b' = setVarType bDeep $ mkFunTys argTys (mkTyConApp retTyCon [exprTyConApp])
 
-              -- Apply the abs <$> to the new shallow body
-              let shallowE = mkCoreApps (Var b') deepArgs
-              absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' shallowE
+          -- Apply the abs <$> to the new shallow body
+          let shallowE = mkCoreApps (Var b') deepArgs
+          absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' shallowE
 
-              -- Put id pair into state
-              s <- get
-              put s{shallowDeepMap = M.insert b b' (shallowDeepMap s)}
+          -- Put id pair into state
+          s <- get
+          put s{shallowDeepMap = M.insert b b' (shallowDeepMap s)}
 
-              return [(b, mkLams bs absExpr), (b', mkLams bs' e''')]
-          else if length bs > 0
-              then do
-                  -- Create a new top level bind type with the deep tyep
-                  bDeep <- modId b deepSuffix
-                  let b' = setVarType bDeep $ mkFunTys argTys' retTy
-
-                  let shallowE = mkCoreApps (Var b') deepArgs
-
-                  -- Put id pair into state
-                  s <- get
-                  put s{shallowDeepMap = M.insert b  b' (shallowDeepMap s)}
-
-                  return [(b, mkLams bs shallowE), (b', mkLams bs' e'')]
-              else return [(b, e)]
+          return [(b, mkLams bs absExpr), (b', mkLams bs' e''')]
       _ -> return [(b, e)]
 
 changeArg :: (CoreBndr, Type) -> BindM (CoreBndr, Type)
@@ -511,8 +493,6 @@ changeAppExpr :: CoreExpr -> BindM CoreExpr
 changeAppExpr e = do
   df <- liftCoreM getDynFlags
   monadTyConId <- thNameToTyCon monadTyConTH
-  unitTyConId <- thNameToTyCon ''()
-  let unitTyConTy = mkTyConTy unitTyConId
   s <- get
   let sdMap = shallowDeepMap s
   case e of
@@ -523,13 +503,16 @@ changeAppExpr e = do
       if isSuffixOf deepSuffix vs || vs `elem` comProcList
       then defaultRet
       else case tyCon_m of
-            Just (retTyCon, [retTy']) | retTyCon == monadTyConId &&
-                                        not (retTy' `eqType` unitTyConTy) -> do
-                v' <- if v `M.member` sdMap
-                      then return $ sdMap M.! v
-                      else stringToId $ (varString v) ++ deepSuffix
-                fmapAbsExpr (mkTyConTy retTyCon) retTy' (Var v')
-            _ -> defaultRet
+          Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
+              let exprtyCon_m = splitTyConApp_maybe retTy'
+              case exprtyCon_m of
+                  Just (exprTy, [exprTy']) -> defaultRet
+                  _ -> do
+                      v' <- if v `M.member` sdMap
+                            then return $ sdMap M.! v
+                            else stringToId $ (varString v) ++ deepSuffix
+                      fmapAbsExpr (mkTyConTy retTyCon) retTy' (Var v')
+          _ -> defaultRet
     Lit l -> return $ Lit l
     Type ty -> return $ Type ty
     Coercion co -> return $ Coercion co
@@ -551,13 +534,9 @@ changeAppExpr e = do
                        then return $ sdMap M.! vb
                        else stringToId $ (varString vb) ++ deepSuffix
                 args' <- mapM repExpr args
-                if not (retTy' `eqType` unitTyConTy)
-                then do
-                    let e' = mkCoreApps (Var vb') args'
-                    absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' e'
-                    return $ absExpr
-                else do
-                    return $ mkCoreApps (Var vb') args'
+                let e' = mkCoreApps (Var vb') args'
+                absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' e'
+                return $ absExpr
             _ -> defaultRet
     Lam tb e -> do
       e' <- changeAppExpr e

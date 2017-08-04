@@ -24,7 +24,7 @@
 module System.Hardware.Haskino.Data where
 
 import           Control.Applicative
-import           Control.Concurrent           (Chan, MVar, ThreadId, 
+import           Control.Concurrent           (Chan, MVar, ThreadId,
                                                withMVar, modifyMVar,
                                                modifyMVar_, putMVar,
                                                takeMVar, readMVar,
@@ -157,50 +157,48 @@ type VarSize = Word8
 
 data ArduinoPrimitive :: * -> * where
      -- Commands
-     SystemReset          :: ArduinoPrimitive () -- ^ Send system reset
-     SetPinModeE          :: PinE -> Expr Word8               -> ArduinoPrimitive () -- ^ Set the mode on a pin
-     DigitalPortWriteE    :: PinE -> Expr Word8 -> Expr Word8 -> ArduinoPrimitive ()
-     DigitalWriteE        :: PinE -> Expr Bool                -> ArduinoPrimitive ()
-     AnalogWriteE         :: PinE -> Expr Word16              -> ArduinoPrimitive ()
-     ToneE                :: PinE -> Expr Word16 -> Maybe (Expr Word32) -> ArduinoPrimitive ()      -- ^ Play a tone on a pin
-     NoToneE              :: PinE                              -> ArduinoPrimitive ()  -- ^ Stop playing a tone on a pin
-     I2CWrite             :: SlaveAddressE -> Expr [Word8]     -> ArduinoPrimitive ()
-     I2CConfig            ::                                      ArduinoPrimitive ()
-     StepperSetSpeedE     :: Expr Word8 -> Expr Int32          -> ArduinoPrimitive ()
-     ServoDetachE         :: Expr Word8                        -> ArduinoPrimitive ()
-     ServoWriteE          :: Expr Word8 -> Expr Int16          -> ArduinoPrimitive ()
-     ServoWriteMicrosE    :: Expr Word8 -> Expr Int16          -> ArduinoPrimitive ()
-     CreateTaskE          :: TaskIDE    -> Arduino ()          -> ArduinoPrimitive ()
-     DeleteTaskE          :: TaskIDE                           -> ArduinoPrimitive ()
-     ScheduleTaskE        :: TaskIDE    -> TimeMillisE         -> ArduinoPrimitive ()
-     ScheduleReset        ::                                      ArduinoPrimitive ()
-     AttachIntE           :: PinE -> TaskIDE -> Expr Word8     -> ArduinoPrimitive ()
-     DetachIntE           :: PinE                              -> ArduinoPrimitive ()
-     Interrupts           ::                                      ArduinoPrimitive ()
-     NoInterrupts         ::                                      ArduinoPrimitive ()
-     GiveSemE             :: Expr Word8                        -> ArduinoPrimitive ()
-     TakeSemE             :: Expr Word8                        -> ArduinoPrimitive ()
-     WriteRemoteRefB      :: RemoteRef Bool    -> Expr Bool    -> ArduinoPrimitive ()
-     WriteRemoteRefW8     :: RemoteRef Word8   -> Expr Word8   -> ArduinoPrimitive ()
-     WriteRemoteRefW16    :: RemoteRef Word16  -> Expr Word16  -> ArduinoPrimitive ()
-     WriteRemoteRefW32    :: RemoteRef Word32  -> Expr Word32  -> ArduinoPrimitive ()
-     WriteRemoteRefI8     :: RemoteRef Int8    -> Expr Int8    -> ArduinoPrimitive ()
-     WriteRemoteRefI16    :: RemoteRef Int16   -> Expr Int16   -> ArduinoPrimitive ()
-     WriteRemoteRefI32    :: RemoteRef Int32   -> Expr Int32   -> ArduinoPrimitive ()
-     WriteRemoteRefL8     :: RemoteRef [Word8] -> Expr [Word8] -> ArduinoPrimitive ()
-     WriteRemoteRefFloat  :: RemoteRef Float   -> Expr Float   -> ArduinoPrimitive ()
-     ModifyRemoteRefB     :: RemoteRef Bool    -> Expr Bool    -> ArduinoPrimitive ()
-     ModifyRemoteRefW8    :: RemoteRef Word8   -> Expr Word8   -> ArduinoPrimitive ()
-     ModifyRemoteRefW16   :: RemoteRef Word16  -> Expr Word16  -> ArduinoPrimitive ()
-     ModifyRemoteRefW32   :: RemoteRef Word32  -> Expr Word32  -> ArduinoPrimitive ()
-     ModifyRemoteRefI8    :: RemoteRef Int8    -> Expr Int8    -> ArduinoPrimitive ()
-     ModifyRemoteRefI16   :: RemoteRef Int16   -> Expr Int16   -> ArduinoPrimitive ()
-     ModifyRemoteRefI32   :: RemoteRef Int32   -> Expr Int32   -> ArduinoPrimitive ()
-     ModifyRemoteRefL8    :: RemoteRef [Word8] -> Expr [Word8] -> ArduinoPrimitive ()
-     ModifyRemoteRefFloat :: RemoteRef Float   -> Expr Float   -> ArduinoPrimitive ()
-     Loop                 :: Arduino ()                        -> ArduinoPrimitive ()
-     IfThenElseUnit       :: Bool -> Arduino () -> Arduino ()            -> ArduinoPrimitive ()
-     IfThenElseUnitE      :: Expr Bool -> Arduino () -> Arduino ()       -> ArduinoPrimitive ()
+     SystemResetE         ::                                     ArduinoPrimitive (Expr ())
+     SetPinModeE          :: PinE -> Expr Word8               -> ArduinoPrimitive (Expr ())
+     DigitalPortWriteE    :: PinE -> Expr Word8 -> Expr Word8 -> ArduinoPrimitive (Expr ())
+     DigitalWriteE        :: PinE -> Expr Bool                -> ArduinoPrimitive (Expr ())
+     AnalogWriteE         :: PinE -> Expr Word16              -> ArduinoPrimitive (Expr ())
+     ToneE                :: PinE -> Expr Word16 -> Maybe (Expr Word32) -> ArduinoPrimitive (Expr ())
+     NoToneE              :: PinE                              -> ArduinoPrimitive (Expr ())
+     I2CWriteE            :: SlaveAddressE -> Expr [Word8]     -> ArduinoPrimitive (Expr ())
+     I2CConfigE           ::                                      ArduinoPrimitive (Expr ())
+     StepperSetSpeedE     :: Expr Word8 -> Expr Int32          -> ArduinoPrimitive (Expr ())
+     ServoDetachE         :: Expr Word8                        -> ArduinoPrimitive (Expr ())
+     ServoWriteE          :: Expr Word8 -> Expr Int16          -> ArduinoPrimitive (Expr ())
+     ServoWriteMicrosE    :: Expr Word8 -> Expr Int16          -> ArduinoPrimitive (Expr ())
+     CreateTaskE          :: TaskIDE    -> Arduino ()          -> ArduinoPrimitive (Expr ())
+     DeleteTaskE          :: TaskIDE                           -> ArduinoPrimitive (Expr ())
+     ScheduleTaskE        :: TaskIDE    -> TimeMillisE         -> ArduinoPrimitive (Expr ())
+     ScheduleResetE       ::                                      ArduinoPrimitive (Expr ())
+     AttachIntE           :: PinE -> TaskIDE -> Expr Word8     -> ArduinoPrimitive (Expr ())
+     DetachIntE           :: PinE                              -> ArduinoPrimitive (Expr ())
+     InterruptsE          ::                                      ArduinoPrimitive (Expr ())
+     NoInterruptsE        ::                                      ArduinoPrimitive (Expr ())
+     GiveSemE             :: Expr Word8                        -> ArduinoPrimitive (Expr ())
+     TakeSemE             :: Expr Word8                        -> ArduinoPrimitive (Expr ())
+     WriteRemoteRefB      :: RemoteRef Bool    -> Expr Bool    -> ArduinoPrimitive (Expr ())
+     WriteRemoteRefW8     :: RemoteRef Word8   -> Expr Word8   -> ArduinoPrimitive (Expr ())
+     WriteRemoteRefW16    :: RemoteRef Word16  -> Expr Word16  -> ArduinoPrimitive (Expr ())
+     WriteRemoteRefW32    :: RemoteRef Word32  -> Expr Word32  -> ArduinoPrimitive (Expr ())
+     WriteRemoteRefI8     :: RemoteRef Int8    -> Expr Int8    -> ArduinoPrimitive (Expr ())
+     WriteRemoteRefI16    :: RemoteRef Int16   -> Expr Int16   -> ArduinoPrimitive (Expr ())
+     WriteRemoteRefI32    :: RemoteRef Int32   -> Expr Int32   -> ArduinoPrimitive (Expr ())
+     WriteRemoteRefL8     :: RemoteRef [Word8] -> Expr [Word8] -> ArduinoPrimitive (Expr ())
+     WriteRemoteRefFloat  :: RemoteRef Float   -> Expr Float   -> ArduinoPrimitive (Expr ())
+     ModifyRemoteRefB     :: RemoteRef Bool    -> Expr Bool    -> ArduinoPrimitive (Expr ())
+     ModifyRemoteRefW8    :: RemoteRef Word8   -> Expr Word8   -> ArduinoPrimitive (Expr ())
+     ModifyRemoteRefW16   :: RemoteRef Word16  -> Expr Word16  -> ArduinoPrimitive (Expr ())
+     ModifyRemoteRefW32   :: RemoteRef Word32  -> Expr Word32  -> ArduinoPrimitive (Expr ())
+     ModifyRemoteRefI8    :: RemoteRef Int8    -> Expr Int8    -> ArduinoPrimitive (Expr ())
+     ModifyRemoteRefI16   :: RemoteRef Int16   -> Expr Int16   -> ArduinoPrimitive (Expr ())
+     ModifyRemoteRefI32   :: RemoteRef Int32   -> Expr Int32   -> ArduinoPrimitive (Expr ())
+     ModifyRemoteRefL8    :: RemoteRef [Word8] -> Expr [Word8] -> ArduinoPrimitive (Expr ())
+     ModifyRemoteRefFloat :: RemoteRef Float   -> Expr Float   -> ArduinoPrimitive (Expr ())
+     Loop                 :: Arduino a                         -> ArduinoPrimitive ()
      -- ToDo: add SPI commands
      -- Procedures
      QueryFirmware        :: ArduinoPrimitive Word16                   -- ^ Query the Firmware version installed
@@ -259,6 +257,7 @@ data ArduinoPrimitive :: * -> * where
      NewRemoteRefI32      :: Expr Int32 -> ArduinoPrimitive (RemoteRef Int32)
      NewRemoteRefL8       :: Expr [Word8] -> ArduinoPrimitive (RemoteRef [Word8])
      NewRemoteRefFloat    :: Expr Float -> ArduinoPrimitive (RemoteRef Float)
+     IfThenElseUnitE      :: Expr Bool -> Arduino (Expr ()) -> Arduino (Expr ()) -> ArduinoPrimitive (Expr ())
      IfThenElseBoolE      :: Expr Bool -> Arduino (Expr Bool) -> Arduino (Expr Bool) -> ArduinoPrimitive (Expr Bool)
      IfThenElseWord8E     :: Expr Bool -> Arduino (Expr Word8) -> Arduino (Expr Word8) -> ArduinoPrimitive (Expr Word8)
      IfThenElseWord16E    :: Expr Bool -> Arduino (Expr Word16) -> Arduino (Expr Word16) -> ArduinoPrimitive (Expr Word16)
@@ -478,250 +477,259 @@ data ArduinoPrimitive :: * -> * where
      -- ToDo: add SPI procedures
 
 instance KnownResult ArduinoPrimitive where
-  knownResult (SystemReset {}          ) = Just ()
-  knownResult (SetPinModeE {}          ) = Just ()
-  knownResult (DigitalPortWriteE {}    ) = Just ()
-  knownResult (DigitalWriteE {}        ) = Just ()
-  knownResult (AnalogWriteE {}         ) = Just ()
-  knownResult (ToneE {}                ) = Just ()
-  knownResult (NoToneE {}              ) = Just ()
-  knownResult (I2CWrite {}             ) = Just ()
-  knownResult (I2CConfig {}            ) = Just ()
-  knownResult (StepperSetSpeedE {}     ) = Just ()
-  knownResult (ServoDetachE {}         ) = Just ()
-  knownResult (ServoWriteE {}          ) = Just ()
-  knownResult (ServoWriteMicrosE {}    ) = Just ()
-  knownResult (CreateTaskE {}          ) = Just ()
-  knownResult (DeleteTaskE {}          ) = Just ()
-  knownResult (ScheduleTaskE {}        ) = Just ()
-  knownResult (ScheduleReset {}        ) = Just ()
-  knownResult (AttachIntE {}           ) = Just ()
-  knownResult (DetachIntE {}           ) = Just ()
-  knownResult (Interrupts {}           ) = Just ()
-  knownResult (NoInterrupts {}         ) = Just ()
-  knownResult (GiveSemE {}             ) = Just ()
-  knownResult (TakeSemE {}             ) = Just ()
-  knownResult (WriteRemoteRefB {}      ) = Just ()
-  knownResult (WriteRemoteRefW8 {}     ) = Just ()
-  knownResult (WriteRemoteRefW16 {}    ) = Just ()
-  knownResult (WriteRemoteRefW32  {}   ) = Just ()
-  knownResult (WriteRemoteRefI8 {}     ) = Just ()
-  knownResult (WriteRemoteRefI16 {}    ) = Just ()
-  knownResult (WriteRemoteRefI32 {}    ) = Just ()
-  knownResult (WriteRemoteRefL8 {}     ) = Just ()
-  knownResult (WriteRemoteRefFloat {}  ) = Just ()
-  knownResult (ModifyRemoteRefB {}     ) = Just ()
-  knownResult (ModifyRemoteRefW8 {}    ) = Just ()
-  knownResult (ModifyRemoteRefW16 {}   ) = Just ()
-  knownResult (ModifyRemoteRefW32 {}   ) = Just ()
-  knownResult (ModifyRemoteRefI8 {}    ) = Just ()
-  knownResult (ModifyRemoteRefI16 {}   ) = Just ()
-  knownResult (ModifyRemoteRefI32 {}   ) = Just ()
-  knownResult (ModifyRemoteRefL8 {}    ) = Just ()
-  knownResult (ModifyRemoteRefFloat {} ) = Just ()
-  knownResult (Loop {}                 ) = Just ()
-  knownResult (IfThenElseUnit {}       ) = Just ()
-  knownResult (IfThenElseUnitE {}      ) = Just ()
+  knownResult (SystemResetE {}         ) = Just LitUnit
+  knownResult (SetPinModeE {}          ) = Just LitUnit
+  knownResult (DigitalPortWriteE {}    ) = Just LitUnit
+  knownResult (DigitalWriteE {}        ) = Just LitUnit
+  knownResult (AnalogWriteE {}         ) = Just LitUnit
+  knownResult (ToneE {}                ) = Just LitUnit
+  knownResult (NoToneE {}              ) = Just LitUnit
+  knownResult (I2CWriteE {}            ) = Just LitUnit
+  knownResult (I2CConfigE {}           ) = Just LitUnit
+  knownResult (StepperSetSpeedE {}     ) = Just LitUnit
+  knownResult (ServoDetachE {}         ) = Just LitUnit
+  knownResult (ServoWriteE {}          ) = Just LitUnit
+  knownResult (ServoWriteMicrosE {}    ) = Just LitUnit
+  knownResult (CreateTaskE {}          ) = Just LitUnit
+  knownResult (DeleteTaskE {}          ) = Just LitUnit
+  knownResult (ScheduleTaskE {}        ) = Just LitUnit
+  knownResult (ScheduleResetE {}       ) = Just LitUnit
+  knownResult (AttachIntE {}           ) = Just LitUnit
+  knownResult (DetachIntE {}           ) = Just LitUnit
+  knownResult (InterruptsE {}          ) = Just LitUnit
+  knownResult (NoInterruptsE {}        ) = Just LitUnit
+  knownResult (GiveSemE {}             ) = Just LitUnit
+  knownResult (TakeSemE {}             ) = Just LitUnit
+  knownResult (WriteRemoteRefB {}      ) = Just LitUnit
+  knownResult (WriteRemoteRefW8 {}     ) = Just LitUnit
+  knownResult (WriteRemoteRefW16 {}    ) = Just LitUnit
+  knownResult (WriteRemoteRefW32  {}   ) = Just LitUnit
+  knownResult (WriteRemoteRefI8 {}     ) = Just LitUnit
+  knownResult (WriteRemoteRefI16 {}    ) = Just LitUnit
+  knownResult (WriteRemoteRefI32 {}    ) = Just LitUnit
+  knownResult (WriteRemoteRefL8 {}     ) = Just LitUnit
+  knownResult (WriteRemoteRefFloat {}  ) = Just LitUnit
+  knownResult (ModifyRemoteRefB {}     ) = Just LitUnit
+  knownResult (ModifyRemoteRefW8 {}    ) = Just LitUnit
+  knownResult (ModifyRemoteRefW16 {}   ) = Just LitUnit
+  knownResult (ModifyRemoteRefW32 {}   ) = Just LitUnit
+  knownResult (ModifyRemoteRefI8 {}    ) = Just LitUnit
+  knownResult (ModifyRemoteRefI16 {}   ) = Just LitUnit
+  knownResult (ModifyRemoteRefI32 {}   ) = Just LitUnit
+  knownResult (ModifyRemoteRefL8 {}    ) = Just LitUnit
+  knownResult (ModifyRemoteRefFloat {} ) = Just LitUnit
   knownResult _                          = Nothing
 
 systemReset :: Arduino ()
-systemReset =  Arduino $ primitive SystemReset
+systemReset = evalExprUnit <$> (Arduino $ primitive SystemResetE)
+
+systemResetE :: Arduino (Expr ())
+systemResetE =  Arduino $ primitive SystemResetE
 
 setPinMode :: Pin -> PinMode -> Arduino ()
-setPinMode p pm =  Arduino $ primitive $ SetPinModeE (lit p) (lit $ fromIntegral $ fromEnum pm)
+setPinMode p pm = evalExprUnit <$> (Arduino $ primitive $ SetPinModeE (lit p) (lit $ fromIntegral $ fromEnum pm))
 
-setPinModeE :: PinE -> PinMode -> Arduino ()
+setPinModeE :: PinE -> PinMode -> Arduino (Expr ())
 setPinModeE p pm =  Arduino $ primitive $ SetPinModeE p (lit $ fromIntegral $ fromEnum pm)
 
 digitalWrite :: Pin -> Bool -> Arduino ()
-digitalWrite p b = Arduino $ primitive $ DigitalWriteE (lit p) (lit b)
+digitalWrite p b = evalExprUnit <$> (Arduino $ primitive $ DigitalWriteE (lit p) (lit b))
 
-digitalWriteE :: PinE -> Expr Bool -> Arduino ()
+digitalWriteE :: PinE -> Expr Bool -> Arduino (Expr ())
 digitalWriteE p b = Arduino $ primitive $ DigitalWriteE p b
 
 digitalPortWrite :: Pin -> Word8 -> Word8 -> Arduino ()
-digitalPortWrite p b m = Arduino $ primitive $ DigitalPortWriteE (lit p) (lit b) (lit m)
+digitalPortWrite p b m = evalExprUnit <$> (Arduino $ primitive $ DigitalPortWriteE (lit p) (lit b) (lit m))
 
-digitalPortWriteE :: PinE -> Expr Word8 -> Expr Word8 -> Arduino ()
+digitalPortWriteE :: PinE -> Expr Word8 -> Expr Word8 -> Arduino (Expr ())
 digitalPortWriteE p b m = Arduino $ primitive $ DigitalPortWriteE p b m
 
 analogWrite :: Pin -> Word16 -> Arduino ()
-analogWrite p w = Arduino $ primitive $ AnalogWriteE (lit p) (lit w)
+analogWrite p w =  evalExprUnit <$> (Arduino $ primitive $ AnalogWriteE (lit p) (lit w))
 
-analogWriteE :: PinE -> Expr Word16 -> Arduino ()
+analogWriteE :: PinE -> Expr Word16 -> Arduino (Expr ())
 analogWriteE p w = Arduino $ primitive $ AnalogWriteE p w
 
 tone :: Pin -> Word16 -> Maybe Word32 -> Arduino ()
-tone p f Nothing = Arduino $ primitive $ ToneE (lit p) (lit f) Nothing
-tone p f (Just d) = Arduino $ primitive $ ToneE (lit p) (lit f) (Just $ lit d)
+tone p f Nothing =  evalExprUnit <$> (Arduino $ primitive $ ToneE (lit p) (lit f) Nothing)
+tone p f (Just d) =  evalExprUnit <$> (Arduino $ primitive $ ToneE (lit p) (lit f) (Just $ lit d))
 
-toneE :: PinE -> Expr Word16 -> Maybe (Expr Word32) -> Arduino ()
+toneE :: PinE -> Expr Word16 -> Maybe (Expr Word32) -> Arduino (Expr ())
 toneE p f d = Arduino $ primitive $ ToneE p f d
 
 noTone :: Pin -> Arduino ()
-noTone p = Arduino $ primitive $ NoToneE (lit p)
+noTone p = evalExprUnit <$> (Arduino $ primitive $ NoToneE (lit p))
 
-noToneE :: PinE -> Arduino ()
+noToneE :: PinE -> Arduino (Expr ())
 noToneE p = Arduino $ primitive $ NoToneE p
 
 i2cWrite :: SlaveAddress -> [Word8] -> Arduino ()
-i2cWrite sa ws = Arduino $ primitive $ I2CWrite (lit sa) (lit ws)
+i2cWrite sa ws = evalExprUnit <$> (Arduino $ primitive $ I2CWriteE (lit sa) (lit ws))
 
-i2cWriteE :: SlaveAddressE -> Expr [Word8] -> Arduino ()
-i2cWriteE sa ws = Arduino $ primitive $ I2CWrite sa ws
+i2cWriteE :: SlaveAddressE -> Expr [Word8] -> Arduino (Expr ())
+i2cWriteE sa ws = Arduino $ primitive $ I2CWriteE sa ws
 
 i2cConfig :: Arduino ()
-i2cConfig = Arduino $ primitive $ I2CConfig
+i2cConfig = evalExprUnit <$> (Arduino $ primitive $ I2CConfigE)
+
+i2cConfigE :: Arduino (Expr ())
+i2cConfigE =  Arduino $ primitive $ I2CConfigE
 
 stepperSetSpeed :: Word8 -> Int32 -> Arduino ()
-stepperSetSpeed st sp = Arduino $ primitive $ StepperSetSpeedE (lit st) (lit sp)
+stepperSetSpeed st sp = evalExprUnit <$> (Arduino $ primitive $ StepperSetSpeedE (lit st) (lit sp))
 
-stepperSetSpeedE :: Expr Word8 -> Expr Int32 -> Arduino ()
+stepperSetSpeedE :: Expr Word8 -> Expr Int32 -> Arduino (Expr ())
 stepperSetSpeedE st sp = Arduino $ primitive $ StepperSetSpeedE st sp
 
 servoDetach :: Word8 -> Arduino ()
-servoDetach s = Arduino $ primitive $ ServoDetachE (lit s)
+servoDetach s = evalExprUnit <$> (Arduino $ primitive $ ServoDetachE (lit s))
 
-servoDetachE :: Expr Word8 -> Arduino ()
+servoDetachE :: Expr Word8 -> Arduino (Expr ())
 servoDetachE s = Arduino $ primitive $ ServoDetachE s
 
 servoWrite :: Word8 -> Int16 -> Arduino ()
-servoWrite s w = Arduino $ primitive $ ServoWriteE (lit s) (lit w)
+servoWrite s w = evalExprUnit <$> (Arduino $ primitive $ ServoWriteE (lit s) (lit w))
 
-servoWriteE :: Expr Word8 -> Expr Int16 -> Arduino ()
+servoWriteE :: Expr Word8 -> Expr Int16 -> Arduino (Expr ())
 servoWriteE s w = Arduino $ primitive $ ServoWriteE s w
 
 servoWriteMicros :: Word8 -> Int16 -> Arduino ()
-servoWriteMicros s w = Arduino $ primitive $ ServoWriteMicrosE (lit s) (lit w)
+servoWriteMicros s w = evalExprUnit <$> (Arduino $ primitive $ ServoWriteMicrosE (lit s) (lit w))
 
-servoWriteMicrosE :: Expr Word8 -> Expr Int16 -> Arduino ()
+servoWriteMicrosE :: Expr Word8 -> Expr Int16 -> Arduino (Expr ())
 servoWriteMicrosE s w = Arduino $ primitive $ ServoWriteMicrosE s w
 
 createTask :: TaskID -> Arduino () -> Arduino ()
-createTask tid ps = Arduino $ primitive $ CreateTaskE (lit tid) ps
+createTask tid ps = evalExprUnit <$> (Arduino $ primitive $ CreateTaskE (lit tid) ps)
 
-createTaskE :: TaskIDE -> Arduino () -> Arduino ()
+createTaskE :: TaskIDE -> Arduino () -> Arduino (Expr ())
 createTaskE tid ps = Arduino $ primitive  $ CreateTaskE tid ps
 
 deleteTask :: TaskID -> Arduino ()
-deleteTask tid = Arduino $ primitive $ DeleteTaskE (lit tid)
+deleteTask tid = evalExprUnit <$> (Arduino $ primitive $ DeleteTaskE (lit tid))
 
-deleteTaskE :: TaskIDE -> Arduino ()
+deleteTaskE :: TaskIDE -> Arduino (Expr ())
 deleteTaskE tid = Arduino $ primitive $ DeleteTaskE tid
 
 scheduleTask :: TaskID -> TimeMillis -> Arduino ()
-scheduleTask tid tt = Arduino $ primitive $ ScheduleTaskE (lit tid) (lit tt)
+scheduleTask tid tt = evalExprUnit <$> (Arduino $ primitive $ ScheduleTaskE (lit tid) (lit tt))
 
-scheduleTaskE :: TaskIDE -> TimeMillisE -> Arduino ()
+scheduleTaskE :: TaskIDE -> TimeMillisE -> Arduino (Expr ())
 scheduleTaskE tid tt = Arduino $ primitive $ ScheduleTaskE tid tt
 
 attachInt :: Pin -> TaskID -> IntMode -> Arduino ()
-attachInt p tid m = Arduino $ primitive $ AttachIntE (lit p) (lit tid) (lit $ fromIntegral $ fromEnum m)
+attachInt p tid m = evalExprUnit <$> (Arduino $ primitive $ AttachIntE (lit p) (lit tid) (lit $ fromIntegral $ fromEnum m))
 
-attachIntE :: PinE -> TaskIDE -> IntMode -> Arduino ()
+attachIntE :: PinE -> TaskIDE -> IntMode -> Arduino (Expr ())
 attachIntE p tid m = Arduino $ primitive $ AttachIntE p tid (lit $ fromIntegral $ fromEnum m)
 
 detachInt :: Pin -> Arduino ()
-detachInt p = Arduino $ primitive $ DetachIntE (lit p)
+detachInt p = evalExprUnit <$> (Arduino $ primitive $ DetachIntE (lit p))
 
-detachIntE :: PinE -> Arduino ()
+detachIntE :: PinE -> Arduino (Expr ())
 detachIntE p = Arduino $ primitive $ DetachIntE p
 
 interrupts :: Arduino ()
-interrupts = Arduino $ primitive $ Interrupts
+interrupts = evalExprUnit <$> (Arduino $ primitive $ InterruptsE)
+
+interruptsE :: Arduino (Expr ())
+interruptsE = Arduino $ primitive $ InterruptsE
 
 noInterrupts :: Arduino ()
-noInterrupts = Arduino $ primitive $ NoInterrupts
+noInterrupts = evalExprUnit <$> (Arduino $ primitive $ NoInterruptsE)
+
+noInterruptsE :: Arduino (Expr ())
+noInterruptsE =  Arduino $ primitive $ NoInterruptsE
 
 scheduleReset :: Arduino ()
-scheduleReset = Arduino $ primitive ScheduleReset
+scheduleReset = evalExprUnit <$> (Arduino $ primitive ScheduleResetE)
+
+scheduleResetE :: Arduino (Expr ())
+scheduleResetE = Arduino $ primitive ScheduleResetE
 
 giveSem :: Word8 -> Arduino ()
-giveSem id = Arduino $ primitive $ GiveSemE (lit id)
+giveSem id = evalExprUnit <$> (Arduino $ primitive $ GiveSemE (lit id))
 
-giveSemE :: Expr Word8 -> Arduino ()
+giveSemE :: Expr Word8 -> Arduino (Expr ())
 giveSemE id = Arduino $ primitive $ GiveSemE id
 
 takeSem :: Word8 -> Arduino ()
-takeSem id = Arduino $ primitive $ TakeSemE (lit id)
+takeSem id = evalExprUnit <$> (Arduino $ primitive $ TakeSemE (lit id))
 
-takeSemE :: Expr Word8 -> Arduino ()
+takeSemE :: Expr Word8 -> Arduino (Expr ())
 takeSemE id = Arduino $ primitive $ TakeSemE id
-
-ifThenElseUnitE :: Expr Bool -> Arduino () -> Arduino () -> Arduino ()
-ifThenElseUnitE be tps eps = Arduino $ primitive $ IfThenElseUnitE be tps eps
 
 class ExprB a => RemoteReference a where
     newRemoteRef    :: Expr a -> Arduino (RemoteRef a)
     readRemoteRef   :: RemoteRef a -> Arduino (Expr a)
-    writeRemoteRef  :: RemoteRef a -> Expr a -> Arduino ()
+    writeRemoteRef  :: RemoteRef a -> Expr a -> Arduino (Expr ())
     modifyRemoteRef :: RemoteRef a -> (Expr a -> Expr a) ->
-                             Arduino ()
+                             Arduino (Expr ())
 
 instance RemoteReference Bool where
     newRemoteRef n      = Arduino $ primitive $ NewRemoteRefB n
     readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefB n
     writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefB r e
-    modifyRemoteRef (RemoteRefB i) f = 
+    modifyRemoteRef (RemoteRefB i) f =
         Arduino $ primitive $ ModifyRemoteRefB (RemoteRefB i) (f $ RefB i)
 
 instance RemoteReference Word8 where
     newRemoteRef n      = Arduino $ primitive $ NewRemoteRefW8 n
     readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefW8 n
     writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefW8 r e
-    modifyRemoteRef (RemoteRefW8 i) f = 
+    modifyRemoteRef (RemoteRefW8 i) f =
         Arduino $ primitive $ ModifyRemoteRefW8 (RemoteRefW8 i) (f $ RefW8 i)
 
 instance RemoteReference Word16 where
     newRemoteRef n      = Arduino $ primitive $ NewRemoteRefW16 n
     readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefW16 n
     writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefW16 r e
-    modifyRemoteRef (RemoteRefW16 i) f = 
+    modifyRemoteRef (RemoteRefW16 i) f =
         Arduino $ primitive $ ModifyRemoteRefW16 (RemoteRefW16 i) (f $ RefW16 i)
 
 instance RemoteReference Word32 where
     newRemoteRef n      = Arduino $ primitive $ NewRemoteRefW32 n
     readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefW32 n
     writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefW32 r e
-    modifyRemoteRef (RemoteRefW32 i) f = 
+    modifyRemoteRef (RemoteRefW32 i) f =
         Arduino $ primitive $ ModifyRemoteRefW32 (RemoteRefW32 i) (f $ RefW32 i)
 
 instance RemoteReference Int8 where
     newRemoteRef n      = Arduino $ primitive $ NewRemoteRefI8 n
     readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefI8 n
     writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefI8 r e
-    modifyRemoteRef (RemoteRefI8 i) f = 
+    modifyRemoteRef (RemoteRefI8 i) f =
         Arduino $ primitive $ ModifyRemoteRefI8 (RemoteRefI8 i) (f $ RefI8 i)
 
 instance RemoteReference Int16 where
     newRemoteRef n      = Arduino $ primitive $ NewRemoteRefI16 n
     readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefI16 n
     writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefI16 r e
-    modifyRemoteRef (RemoteRefI16 i) f = 
+    modifyRemoteRef (RemoteRefI16 i) f =
         Arduino $ primitive $ ModifyRemoteRefI16 (RemoteRefI16 i) (f $ RefI16 i)
 
 instance RemoteReference Int32 where
     newRemoteRef n      = Arduino $ primitive $ NewRemoteRefI32 n
     readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefI32 n
     writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefI32 r e
-    modifyRemoteRef (RemoteRefI32 i) f = 
+    modifyRemoteRef (RemoteRefI32 i) f =
         Arduino $ primitive $ ModifyRemoteRefI32 (RemoteRefI32 i) (f $ RefI32 i)
 
 instance RemoteReference [Word8] where
     newRemoteRef n      = Arduino $ primitive $ NewRemoteRefL8 n
     readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefL8 n
     writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefL8 r e
-    modifyRemoteRef (RemoteRefL8 i) f = 
+    modifyRemoteRef (RemoteRefL8 i) f =
         Arduino $ primitive $ ModifyRemoteRefL8 (RemoteRefL8 i) (f $ RefList8 i)
 
 instance RemoteReference Float where
     newRemoteRef n      = Arduino $ primitive $ NewRemoteRefFloat n
     readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefFloat n
     writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefFloat r e
-    modifyRemoteRef (RemoteRefFloat i) f = 
+    modifyRemoteRef (RemoteRefFloat i) f =
         Arduino $ primitive $ ModifyRemoteRefFloat (RemoteRefFloat i) (f $ RefFloat i)
 
-loop :: Arduino () -> Arduino ()
+loop :: Arduino a -> Arduino ()
 loop m = Arduino $ primitive $ Loop m
 
 queryFirmware :: Arduino Word16
@@ -854,8 +862,11 @@ die :: String -> [String] -> Arduino ()
 die msg msgs = Arduino $ primitive $ Die msg msgs
 
 class ExprB a => ArduinoConditional a where
-    ifThenElseE  :: Expr Bool -> Arduino (Expr a) -> 
+    ifThenElseE  :: Expr Bool -> Arduino (Expr a) ->
                         Arduino (Expr a) -> Arduino (Expr a)
+
+instance ArduinoConditional () where
+    ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseUnitE be tps eps
 
 instance ArduinoConditional Bool where
     ifThenElseE be tps eps = Arduino $ primitive $ IfThenElseBoolE be tps eps
@@ -1306,24 +1317,15 @@ repeatUntilE i tf bf = iterateE i ibf
         res <- bf i'
         ifThenElseEither (tf i') (return $ ExprLeft res) (return $ ExprRight i')
 
-loopE :: Arduino a -> Arduino ()
-loopE bf = do 
-            Arduino $ primitive $ IterateUnitUnitE LitUnit ibf
-            return ()
-  where
-    ibf _ = do
-        bf
-        return $ ExprLeft LitUnit
+loopE :: Arduino a -> Arduino (Expr ())
+loopE bf = iterateE LitUnit (\_ -> bf >> (return $ ExprLeft LitUnit))
 
-forInE :: Expr [Word8] -> (Expr Word8 -> Arduino ()) -> Arduino ()
-forInE ws bf = do 
-                iterateE 0 ibf
-                return ()
+forInE :: Expr [Word8] -> (Expr Word8 -> Arduino (Expr ())) -> Arduino (Expr ())
+forInE ws bf = iterateE 0 ibf
   where
     ibf i = do
-        ifThenElseEither (i `lessE` (len ws)) (do
-                                    bf (ws !!* i)
-                                    return $ ExprLeft (i+1)) (return $ ExprRight LitUnit)        
+        bf (ws !!* i)
+        ifThenElseEither (i `lessE` (len ws)) (return $ ExprLeft (i+1)) (return $ ExprRight LitUnit)
 
 -- | A response, as returned from the Arduino
 data Response = DelayResp
