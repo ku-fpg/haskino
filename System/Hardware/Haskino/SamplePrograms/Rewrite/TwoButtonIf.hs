@@ -167,7 +167,6 @@ main = do
       putStrLn $ show twoButtonProg2
       putStrLn "-----------------"
       putStrLn $ show twoButtonProg2E
-{-
   if test3
   then putStrLn "*** Test3 Passed"
   else do
@@ -175,7 +174,6 @@ main = do
       putStrLn $ show twoButtonProg3
       putStrLn "-----------------"
       putStrLn $ show twoButtonProg3E
--}
   if test4
   then putStrLn "*** Test4 Passed"
   else do

@@ -112,11 +112,6 @@ showCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) =
 showCommand (Loop cb) = do
     (_, c) <- showCodeBlock cb
     return $ "Loop\n" ++ c
-showCommand (IfThenElseUnitE e cb1 cb2) = do
-    (_, cs1) <- showCodeBlock cb1
-    (_, cs2) <- showCodeBlock cb2
-    s <- get
-    return $ "If " ++ show e ++ " Then\n" ++ cs1 ++ replicate (indent s) ' ' ++ "Else\n" ++ cs2
 
 showCommandAndArgs :: [String] -> State ShowState String
 showCommandAndArgs ss = do
@@ -393,6 +388,9 @@ showCodeBlock (Arduino commands) = do
       showProcedure (NewRemoteRefFloat e) = do
           s <- get
           showNewRef "NewRemoteRefFloat" e (RemoteRefFloat (ix s))
+      showProcedure (IfThenElseUnitE e cb1 cb2) = do
+          i <- showIfThenElseProcedure e cb1 cb2
+          return $ RemBindUnit i
       showProcedure (IfThenElseBoolE e cb1 cb2) = do
           i <- showIfThenElseProcedure e cb1 cb2
           return $ RemBindB i
