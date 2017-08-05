@@ -34,7 +34,7 @@ button2 = 3
 
 analogKey :: Arduino (Expr Word8)
 analogKey = iterateE LitUnit (\x -> do
-                v <- analogReadE button1
+                v <- analogReadE button2
                 ifThenElseEither (v <* 30) (return (ExprRight (lit (keyValue KeyRight))))
                   (ifThenElseEither (v <* 150) (return (ExprRight (lit (keyValue KeyUp))))
                     (ifThenElseEither (v <* 350) (return (ExprRight (lit (keyValue KeyDown))))
@@ -58,7 +58,7 @@ blink t = iterateE t (\x -> do
                                                             )
           )
 
-recurProgE :: Arduino ()
+recurProgE :: Arduino (Expr ())
 recurProgE = do
     setPinModeE led OUTPUT
     setPinModeE button1 INPUT
@@ -66,5 +66,5 @@ recurProgE = do
     wait
     blink 3
     analogKey
-    return ()
+    return LitUnit
 
