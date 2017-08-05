@@ -1,15 +1,14 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonRecurE
---                Based on System.Hardware.Arduino
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TransRecurTestE
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Two button example used for rewrite
+-- Recursion test example used for rewrite written in shallow version.
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonRecurE(recurProgE) where
+module System.Hardware.Haskino.SamplePrograms.Rewrite.TransRecurTestE(recurProgE) where
 
 import Prelude hiding ((<*))
 import System.Hardware.Haskino

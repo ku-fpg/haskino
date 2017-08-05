@@ -1,24 +1,22 @@
 {-# OPTIONS_GHC -fplugin=System.Hardware.Haskino.ShallowDeepPlugin #-}
--- {-# OPTIONS_GHC -fenable-rewrite-rules #-}
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButton
---                Based on System.Hardware.Arduino
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TransRecurTest
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Two button example used for rewrite
+-- Recursion test example used for rewrite written in shallow version.
 -------------------------------------------------------------------------------
 
-module Main where
+module System.Hardware.Haskino.SamplePrograms.Rewrite.TransRecurTest where
 
 import System.Hardware.Haskino
 import Control.Monad
 import Control.Monad.Fix
 import Data.Word
 import Data.Boolean
-import System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonRecurE
+import System.Hardware.Haskino.SamplePrograms.Rewrite.TransRecurTestE
 
 data Key = KeyNone
          | KeyRight
@@ -80,16 +78,16 @@ recurProg = do
     return ()
 
 test1 :: Bool
-test1 = (show recurProg) == (show recurProg)
+test1 = (show recurProg) == (show recurProgE)
 
-main :: IO ()
-main = do
+transRecurTest :: IO ()
+transRecurTest = do
+  putStrLn "Recursion Translation Test"
   if test1
-  then putStrLn "*** Test1 Passed"
+  then putStrLn "    *** Recursion Test1 Passed"
   else do
-      putStrLn "*** Test1 Failed"
+      putStrLn "    *** Recursion Test1 Failed"
       putStrLn $ show recurProg
-      putStrLn "-----------------"
-      putStrLn $ show recurProg
---    compileProgram recurProg "iterBlink.ino"
+      putStrLn "    -----------------"
+      putStrLn $ show recurProgE
 

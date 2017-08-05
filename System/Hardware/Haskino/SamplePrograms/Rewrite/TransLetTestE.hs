@@ -1,23 +1,22 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonLetE
---                Based on System.Hardware.Arduino
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TransLetTestE
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Two button example used for rewrite
+-- Let test example used for rewrite written directly in deep version.
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonLetE where
+module System.Hardware.Haskino.SamplePrograms.Rewrite.TransLetTestE where
 
 import System.Hardware.Haskino
 import Control.Monad
 import Data.Word
 import Data.Boolean
 
-twoButtonProg1E :: Arduino (Expr ())
-twoButtonProg1E = do
+transTestProg1E :: Arduino (Expr ())
+transTestProg1E = do
     let myWriteE p b = do
         delayMillisE 100
         digitalWriteE (1) (notB b)
@@ -32,9 +31,8 @@ twoButtonProg1E = do
         myWriteE 13 (a ||* false)
         delayMillisE 1000
 
-
-twoButtonProg2E :: Arduino (Expr ())
-twoButtonProg2E = do
+transTestProg2E :: Arduino (Expr ())
+transTestProg2E = do
     let myReadE p = do
         delayMillisE 100
         a <- digitalReadE (p+1)

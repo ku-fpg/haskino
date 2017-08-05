@@ -1,26 +1,24 @@
 {-# OPTIONS_GHC -fplugin=System.Hardware.Haskino.ShallowDeepPlugin #-}
--- {-# OPTIONS_GHC -fenable-rewrite-rules #-}
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButton
---                Based on System.Hardware.Arduino
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TransTestProg
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Two button example used for rewrite
+-- Base test example used for rewrite written in shallow version.
 -------------------------------------------------------------------------------
 
-module Main where
+module System.Hardware.Haskino.SamplePrograms.Rewrite.TransTest(transTest) where
 
 import System.Hardware.Haskino
 import Control.Monad
 import Data.Word
 import Data.Boolean
-import System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonE
+import System.Hardware.Haskino.SamplePrograms.Rewrite.TransTestE
 
-twoButtonProg :: Arduino ()
-twoButtonProg = do
+transTestProg :: Arduino ()
+transTestProg = do
     let led = 13
     let button1 = 2
     let button2 = 3
@@ -35,14 +33,15 @@ twoButtonProg = do
         delayMillis 1000
 
 test :: Bool
-test = (show twoButtonProg) == (show twoButtonProgE)
+test = (show transTestProg) == (show transTestProgE)
 
-main :: IO ()
-main = do
+transTest :: IO ()
+transTest = do
+  putStrLn "Base Translation Test"
   if test
-  then putStrLn "*** Test Passed"
+  then putStrLn "    *** Base Test Passed"
   else do
-      putStrLn "*** Test Failed"
-      putStrLn $ show twoButtonProg
-      putStrLn "-----------------"
-      putStrLn $ show twoButtonProgE
+      putStrLn "     *** Base Test Failed"
+      putStrLn $ show transTestProg
+      putStrLn "     -----------------"
+      putStrLn $ show transTestProgE

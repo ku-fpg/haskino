@@ -1,23 +1,22 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonIfE
---                Based on System.Hardware.Arduino
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TransIfTestE
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Two button example used for rewrite
+-- IfThenElse test example used for rewrite written directly in deep version.
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonIfE where
+module System.Hardware.Haskino.SamplePrograms.Rewrite.TransIfTestE where
 
 import System.Hardware.Haskino
 import Control.Monad
 import Data.Word
 import Data.Boolean
 
-twoButtonProg1E :: Arduino (Expr ())
-twoButtonProg1E = do
+testTransProg1E :: Arduino (Expr ())
+testTransProg1E = do
     let led1 = 12
     let led2 = 13
     let button1 = 2
@@ -43,8 +42,8 @@ twoButtonProg1E = do
             return (a' &&* b) )
         delayMillisE 1000
 
-twoButtonProg2E :: Arduino (Expr ())
-twoButtonProg2E = do
+testTransProg2E :: Arduino (Expr ())
+testTransProg2E = do
     let led1 = 12
     let led2 = 13
     let button1 = 2
@@ -70,8 +69,8 @@ twoButtonProg2E = do
             return c )
         delayMillisE 1000
 
-twoButtonProg3E :: Arduino (Expr ())
-twoButtonProg3E = do
+testTransProg3E :: Arduino (Expr ())
+testTransProg3E = do
     let led1 = 12
     let led2 = 13
     let button1 = 2
@@ -93,8 +92,8 @@ twoButtonProg3E = do
             digitalWriteE led2 (notB b) )
         delayMillisE 1000
 
-twoButtonProg4E :: Arduino (Expr ())
-twoButtonProg4E = do
+testTransProg4E :: Arduino (Expr ())
+testTransProg4E = do
     let led1 = 12
     let led2 = 13
     let button1 = 2

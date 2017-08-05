@@ -1,23 +1,22 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonE
---                Based on System.Hardware.Arduino
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TransTestE
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Two button example used for rewrite
+-- Base test example used for rewrite written directly in deep version.
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonE where
+module System.Hardware.Haskino.SamplePrograms.Rewrite.TransTestE where
 
 import System.Hardware.Haskino
 import Control.Monad
 import Data.Word
 import Data.Boolean
 
-twoButtonProgE :: Arduino (Expr ())
-twoButtonProgE = do
+transTestProgE :: Arduino (Expr ())
+transTestProgE = do
     let led = 13
     let button1 = 2
     let button2 = 3

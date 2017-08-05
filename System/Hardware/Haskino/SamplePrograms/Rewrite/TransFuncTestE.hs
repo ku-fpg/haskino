@@ -1,15 +1,14 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonFuncE
---                Based on System.Hardware.Arduino
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TransFunTestE
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Two button example used for rewrite
+-- Function test example used for rewrite written directly in deep version.
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonFuncE where
+module System.Hardware.Haskino.SamplePrograms.Rewrite.TransFuncTestE where
 
 import System.Hardware.Haskino
 import Control.Monad
@@ -37,8 +36,8 @@ myWriteE p b = do
     delayMillisE 100
     digitalWriteE (p+1) (notB b)
 
-twoButtonProg1E :: Arduino (Expr ())
-twoButtonProg1E = do
+transTestProg1E :: Arduino (Expr ())
+transTestProg1E = do
     setPinModeE 13 OUTPUT
     setPinModeE 2 INPUT
     setPinModeE 3 INPUT
@@ -48,8 +47,8 @@ twoButtonProg1E = do
         myWriteE 13 (a ||* b)
         delayMillisE 1000
 
-twoButtonProg2E :: Arduino (Expr ())
-twoButtonProg2E = do
+transTestProg2E :: Arduino (Expr ())
+transTestProg2E = do
     setPinModeE 13 OUTPUT
     setPinModeE 2 INPUT
     setPinModeE 3 INPUT
@@ -59,8 +58,8 @@ twoButtonProg2E = do
         myWriteE 13 (a ||* b)
         delayMillisE 1000
 
-twoButtonProg3E :: Arduino (Expr ())
-twoButtonProg3E = do
+transTestProg3E :: Arduino (Expr ())
+transTestProg3E = do
     setPinModeE 13 OUTPUT
     setPinModeE 2 INPUT
     setPinModeE 3 INPUT

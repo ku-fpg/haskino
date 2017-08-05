@@ -1,23 +1,21 @@
 {-# OPTIONS_GHC -fplugin=System.Hardware.Haskino.ShallowDeepPlugin #-}
--- {-# OPTIONS_GHC -fenable-rewrite-rules #-}
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonFunc
---                Based on System.Hardware.Arduino
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TransFunTestE
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Two button example used for rewrite
+-- Function test example used for rewrite written in shallow version.
 -------------------------------------------------------------------------------
 
-module Main where
+module System.Hardware.Haskino.SamplePrograms.Rewrite.TransFuncTest(transFuncTest) where
 
 import System.Hardware.Haskino
 import Control.Monad
 import Data.Word
 import Data.Boolean
-import System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonFuncE
+import System.Hardware.Haskino.SamplePrograms.Rewrite.TransFuncTestE
 
 myRead1 :: Word8 -> Arduino Bool
 myRead1 p = do
@@ -40,8 +38,8 @@ myWrite p b = do
     delayMillis 100
     digitalWrite (p+1) (not b)
 
-twoButtonProg1 :: Arduino ()
-twoButtonProg1 = do
+transTestProg1 :: Arduino ()
+transTestProg1 = do
     setPinMode 13 OUTPUT
     setPinMode 2 INPUT
     setPinMode 3 INPUT
@@ -51,8 +49,8 @@ twoButtonProg1 = do
         myWrite 13 (a || b)
         delayMillis 1000
 
-twoButtonProg2 :: Arduino ()
-twoButtonProg2 = do
+transTestProg2 :: Arduino ()
+transTestProg2 = do
     setPinMode 13 OUTPUT
     setPinMode 2 INPUT
     setPinMode 3 INPUT
@@ -62,8 +60,8 @@ twoButtonProg2 = do
         myWrite 13 (a || b)
         delayMillis 1000
 
-twoButtonProg3 :: Arduino ()
-twoButtonProg3 = do
+transTestProg3 :: Arduino ()
+transTestProg3 = do
     setPinMode 13 OUTPUT
     setPinMode 2 INPUT
     setPinMode 3 INPUT
@@ -74,35 +72,36 @@ twoButtonProg3 = do
         delayMillis 1000
 
 test1 :: Bool
-test1 = (show twoButtonProg1) == (show twoButtonProg1E)
+test1 = (show transTestProg1) == (show transTestProg1E)
 
 test2 :: Bool
-test2 = (show twoButtonProg2) == (show twoButtonProg2E)
+test2 = (show transTestProg2) == (show transTestProg2E)
 
 test3 :: Bool
-test3 = (show twoButtonProg3) == (show twoButtonProg3E)
+test3 = (show transTestProg3) == (show transTestProg3E)
 
-main :: IO ()
-main = do
+transFuncTest :: IO ()
+transFuncTest = do
+  putStrLn "Function Translation Test"
   if test1
-  then putStrLn "*** Test1 Passed"
+  then putStrLn "    *** Function Test1 Passed"
   else do
-      putStrLn "*** Test1 Failed"
-      putStrLn $ show twoButtonProg1
-      putStrLn "-----------------"
-      putStrLn $ show twoButtonProg1E
+      putStrLn "    *** Function Test1 Failed"
+      putStrLn $ show transTestProg1
+      putStrLn "    -----------------"
+      putStrLn $ show transTestProg1E
   if test2
-  then putStrLn "*** Test2 Passed"
+  then putStrLn "    *** Function Test2 Passed"
   else do
-      putStrLn "*** Test2 Failed"
-      putStrLn $ show twoButtonProg2
-      putStrLn "-----------------"
-      putStrLn $ show twoButtonProg2E
+      putStrLn "    *** Function Test2 Failed"
+      putStrLn $ show transTestProg2
+      putStrLn "    -----------------"
+      putStrLn $ show transTestProg2E
   if test3
-  then putStrLn "*** Test3 Passed"
+  then putStrLn "    *** Function Test3 Passed"
   else do
-      putStrLn "*** Test3 Failed"
-      putStrLn $ show twoButtonProg3
-      putStrLn "-----------------"
-      putStrLn $ show twoButtonProg3E
+      putStrLn "    *** Function Test3 Failed"
+      putStrLn $ show transTestProg3
+      putStrLn "     -----------------"
+      putStrLn $ show transTestProg3E
 

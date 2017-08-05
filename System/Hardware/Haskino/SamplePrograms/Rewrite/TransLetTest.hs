@@ -8,19 +8,19 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Two button example used for rewrite
+-- Let test example used for rewrite written in shallow version.
 -------------------------------------------------------------------------------
 
-module Main where
+module System.Hardware.Haskino.SamplePrograms.Rewrite.TransLetTest(transLetTest) where
 
 import System.Hardware.Haskino
 import Control.Monad
 import Data.Word
 import Data.Boolean
-import System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonLetE
+import System.Hardware.Haskino.SamplePrograms.Rewrite.TransLetTestE
 
-twoButtonProg1 :: Arduino ()
-twoButtonProg1 = do
+transTestProg1 :: Arduino ()
+transTestProg1 = do
     let myWrite p b = do
         delayMillis 100
         digitalWrite (1) (not b)
@@ -35,9 +35,8 @@ twoButtonProg1 = do
         myWrite 13 (a || False)
         delayMillis 1000
 
-
-twoButtonProg2 :: Arduino ()
-twoButtonProg2 = do
+transTestProg2 :: Arduino ()
+transTestProg2 = do
     let myRead p = do
         delayMillis 100
         a <- digitalRead (p+1)
@@ -53,26 +52,26 @@ twoButtonProg2 = do
         myWrite 13 (a || False)
         delayMillis 1000
 
-
 test1 :: Bool
-test1 = (show twoButtonProg1) == (show twoButtonProg1E)
+test1 = (show transTestProg1) == (show transTestProg1E)
 
 test2 :: Bool
-test2 = (show twoButtonProg2) == (show twoButtonProg2E)
+test2 = (show transTestProg2) == (show transTestProg2E)
 
-main :: IO ()
-main = do
+transLetTest :: IO ()
+transLetTest = do
+  putStrLn "Let Translation Test"
   if test1
-  then putStrLn "*** Test1 Passed"
+  then putStrLn "    *** Let Test1 Passed"
   else do
-      putStrLn "*** Test1 Failed"
-      putStrLn $ show twoButtonProg1
-      putStrLn "-----------------"
-      putStrLn $ show twoButtonProg1E
+      putStrLn "    *** Let Test1 Failed"
+      putStrLn $ show transTestProg1
+      putStrLn "    -----------------"
+      putStrLn $ show transTestProg1E
   if test2
-  then putStrLn "*** Test2 Passed"
+  then putStrLn "    *** Let Test2 Passed"
   else do
-      putStrLn "*** Test2 Failed"
-      putStrLn $ show twoButtonProg2
-      putStrLn "-----------------"
-      putStrLn $ show twoButtonProg2E
+      putStrLn "    *** Let Test2 Failed"
+      putStrLn $ show transTestProg2
+      putStrLn "    -----------------"
+      putStrLn $ show transTestProg2E

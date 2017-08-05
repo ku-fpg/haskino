@@ -1,17 +1,15 @@
 {-# OPTIONS_GHC -fplugin=System.Hardware.Haskino.ShallowDeepPlugin #-}
--- {-# OPTIONS_GHC -fenable-rewrite-rules #-}
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonFunc1
---                Based on System.Hardware.Arduino
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TransMultiTest1.hs
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Two button example used for rewrite
+-- MultiModule test example used for rewrite written in shallow version.
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonFunc1 (myRead1, myRead2, myRead3, myWrite) where
+module System.Hardware.Haskino.SamplePrograms.Rewrite.TransMultiTest1 (myRead1, myRead2, myRead3, myWrite) where
 
 import System.Hardware.Haskino
 import Control.Monad

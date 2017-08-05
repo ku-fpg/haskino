@@ -1,17 +1,15 @@
 {-# OPTIONS_GHC -fplugin=System.Hardware.Haskino.ShallowDeepPlugin #-}
--- {-# OPTIONS_GHC -fenable-rewrite-rules #-}
 -------------------------------------------------------------------------------
 -- |
--- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonIf
---                Based on System.Hardware.Arduino
+-- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.TransIfTest
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- The /hello world/ of the arduino world, blinking the led.
+-- IfThenElse test example used for rewrite written in shallow version.
 -------------------------------------------------------------------------------
 
-module Main where
+module System.Hardware.Haskino.SamplePrograms.Rewrite.TransIfTest(transIfTest) where
 
 import Prelude hiding (abs)
 
@@ -19,10 +17,10 @@ import System.Hardware.Haskino
 import Control.Monad
 import Data.Word
 import Data.Boolean
-import System.Hardware.Haskino.SamplePrograms.Rewrite.TwoButtonIfE
+import System.Hardware.Haskino.SamplePrograms.Rewrite.TransIfTestE
 
-twoButtonProg1 :: Arduino ()
-twoButtonProg1 = do
+testTransProg1 :: Arduino ()
+testTransProg1 = do
     let led1 = 12
     let led2 = 13
     let button1 = 2
@@ -47,8 +45,8 @@ twoButtonProg1 = do
           return (a' && b)
         delayMillis 1000
 
-twoButtonProg2 :: Arduino ()
-twoButtonProg2 = do
+testTransProg2 :: Arduino ()
+testTransProg2 = do
     let led1 = 12
     let led2 = 13
     let button1 = 2
@@ -73,8 +71,8 @@ twoButtonProg2 = do
           return c
         delayMillis 1000
 
-twoButtonProg3 :: Arduino ()
-twoButtonProg3 = do
+testTransProg3 :: Arduino ()
+testTransProg3 = do
     let led1 = 12
     let led2 = 13
     let button1 = 2
@@ -95,8 +93,8 @@ twoButtonProg3 = do
           digitalWrite led2 (not b)
         delayMillis 1000
 
-twoButtonProg4 :: Arduino ()
-twoButtonProg4 = do
+testTransProg4 :: Arduino ()
+testTransProg4 = do
     let led1 = 12
     let led2 = 13
     let button1 = 2
@@ -122,8 +120,8 @@ twoButtonProg4 = do
         digitalWrite led2 c
         delayMillis 1000
 
-twoButtonProg5 :: Arduino ()
-twoButtonProg5 = do
+testTransProg5 :: Arduino ()
+testTransProg5 = do
     let led1 = 12 :: Word8
     let led2 = 13 :: Word8
     let button1 = 2
@@ -140,45 +138,46 @@ twoButtonProg5 = do
         delayMillis 1000
 
 test1 :: Bool
-test1 = (show twoButtonProg1) == (show twoButtonProg1E)
+test1 = (show testTransProg1) == (show testTransProg1E)
 
 test2 :: Bool
-test2 = (show twoButtonProg2) == (show twoButtonProg2E)
+test2 = (show testTransProg2) == (show testTransProg2E)
 
 test3 :: Bool
-test3 = (show twoButtonProg3) == (show twoButtonProg3E)
+test3 = (show testTransProg3) == (show testTransProg3E)
 
 test4 :: Bool
-test4 = (show twoButtonProg4) == (show twoButtonProg4E)
+test4 = (show testTransProg4) == (show testTransProg4E)
 
-main :: IO ()
-main = do
+transIfTest :: IO ()
+transIfTest = do
+  putStrLn "IfThenElse Translation Test"
   if test1
-  then putStrLn "*** Test1 Passed"
+  then putStrLn "    *** IfThenElse Test1 Passed"
   else do
-      putStrLn "*** Test1 Failed"
-      putStrLn $ show twoButtonProg1
-      putStrLn "-----------------"
-      putStrLn $ show twoButtonProg1E
+      putStrLn "    *** IfThenElse Test1 Failed"
+      putStrLn $ show testTransProg1
+      putStrLn "    -----------------"
+      putStrLn $ show testTransProg1E
   if test2
-  then putStrLn "*** Test2 Passed"
+  then putStrLn "    *** IfThenElse Test2 Passed"
   else do
-      putStrLn "*** Test2 Failed"
-      putStrLn $ show twoButtonProg2
-      putStrLn "-----------------"
-      putStrLn $ show twoButtonProg2E
+      putStrLn "    *** IfThenElse Test2 Failed"
+      putStrLn $ show testTransProg2
+      putStrLn "    -----------------"
+      putStrLn $ show testTransProg2E
   if test3
-  then putStrLn "*** Test3 Passed"
+  then putStrLn "    *** IfThenElse Test3 Passed"
   else do
-      putStrLn "*** Test3 Failed"
-      putStrLn $ show twoButtonProg3
-      putStrLn "-----------------"
-      putStrLn $ show twoButtonProg3E
+      putStrLn "    *** IfThenElse Test3 Failed"
+      putStrLn $ show testTransProg3
+      putStrLn "    -----------------"
+      putStrLn $ show testTransProg3E
   if test4
-  then putStrLn "*** Test4 Passed"
+  then putStrLn "    *** IfThenElse Test4 Passed"
   else do
-      putStrLn "*** Test4 Failed"
-      putStrLn $ show twoButtonProg4
-      putStrLn "-----------------"
-      putStrLn $ show twoButtonProg4E
+      putStrLn "    *** IfThenElse Test4 Failed"
+      putStrLn $ show testTransProg4
+      putStrLn "    -----------------"
+      putStrLn $ show testTransProg4E
 
