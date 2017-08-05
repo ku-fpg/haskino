@@ -64,6 +64,11 @@ addCommand cmd bs = return $ buildCommand cmd bs
 buildCommand :: FirmwareCmd -> [Word8] -> B.ByteString
 buildCommand cmd bs = B.pack $ firmwareCmdVal cmd : bs
 
+packageUnsupported :: String -> State CommandState B.ByteString
+packageUnsupported s = do
+  error $ "Error: Cannot package Shallow Task command, use deep version:" ++ s
+  return B.empty
+
 -- | Package a request as a sequence of bytes to be sent to the board
 -- using the Haskino Firmware protocol.
 packageCommand :: forall a . ArduinoPrimitive a -> State CommandState B.ByteString
@@ -95,24 +100,34 @@ packageCommand (ServoWriteE sv w) =
     addCommand SRVO_CMD_WRITE (packageExpr sv ++ packageExpr w)
 packageCommand (ServoWriteMicrosE sv w) =
     addCommand SRVO_CMD_WRITE_MICROS (packageExpr sv ++ packageExpr w)
+packageCommand (DeleteTask tid) = packageUnsupported $ "createTask " ++ show tid
 packageCommand (DeleteTaskE tid) =
     addCommand SCHED_CMD_DELETE_TASK (packageExpr tid)
+packageCommand (ScheduleTask tid tt) = packageUnsupported $ "scheduleTask " ++ show tid ++ " " ++ show tt
 packageCommand (ScheduleTaskE tid tt) =
     addCommand SCHED_CMD_SCHED_TASK (packageExpr tid ++ packageExpr tt)
+packageCommand ScheduleReset = packageUnsupported $ "scheduleReset"
 packageCommand ScheduleResetE =
     addCommand SCHED_CMD_RESET []
+packageCommand (AttachInt p t m) = packageUnsupported $ "attachInt " ++ show p ++ " " ++ show t
 packageCommand (AttachIntE p t m) =
     addCommand SCHED_CMD_ATTACH_INT (packageExpr p ++ packageExpr t ++ packageExpr m)
+packageCommand (DetachInt p) = packageUnsupported $ "detachInt " ++ show p
 packageCommand (DetachIntE p) =
     addCommand SCHED_CMD_DETACH_INT (packageExpr p)
+packageCommand Interrupts = packageUnsupported $ "interrupts"
 packageCommand (InterruptsE) =
     addCommand SCHED_CMD_INTERRUPTS []
+packageCommand NoInterrupts = packageUnsupported $ "noInterrupts"
 packageCommand (NoInterruptsE) =
     addCommand SCHED_CMD_NOINTERRUPTS []
+packageCommand (GiveSem id) = packageUnsupported $ "giveSem " ++ show id
 packageCommand (GiveSemE id) =
     addCommand SCHED_CMD_GIVE_SEM (packageExpr id)
+packageCommand (TakeSem id) = packageUnsupported $ "takeSem " ++ show id
 packageCommand (TakeSemE id) =
     addCommand SCHED_CMD_TAKE_SEM (packageExpr id)
+packageCommand (CreateTask tid m) = packageUnsupported $ "createTask " ++ show tid
 packageCommand (CreateTaskE tid m) = do
     (_, td) <- packageCodeBlock m
     s <- get

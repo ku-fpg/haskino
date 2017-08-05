@@ -35,7 +35,7 @@ data CompileState = CompileState {level :: Int
                      , forwards         :: String
                      , cmdList          :: [String]
                      , bindList         :: [String]
-                     , tasksToDo        :: [(Arduino (), String, Bool)]
+                     , tasksToDo        :: [(Arduino (Expr ()), String, Bool)]
                      , tasksDone        :: [String]
                      , errors           :: [String]
                      , iterBinds        :: [(Int, Int)]
@@ -103,7 +103,10 @@ nextBind = do
     return (ib s)
 
 compileProgram :: Arduino () -> FilePath -> IO ()
-compileProgram p f = do
+compileProgram p f = compileProgramE (lit <$> p) f
+
+compileProgramE :: Arduino (Expr ()) -> FilePath -> IO ()
+compileProgramE p f = do
     writeFile f prog
     if (length $ errors st) == 0
     then putStrLn "Compile Successful"
@@ -140,7 +143,7 @@ compileTasks = do
         compileTask m name int
         compileTasks
 
-compileTask :: Arduino () -> String -> Bool -> State CompileState ()
+compileTask :: Arduino (Expr ()) -> String -> Bool -> State CompileState ()
 compileTask t name int = do
     s <- get
     put s {level = 0, intTask = int, ib = 0, cmds = "",
@@ -199,8 +202,8 @@ compileError s1 s2 = do
     put st { errors = s2 : (errors st)}
     return LitUnit
 
-compileStrongProcedureError :: String -> State CompileState (Expr ())
-compileStrongProcedureError s = do
+compileShallowPrimitiveError :: String -> State CompileState (Expr ())
+compileShallowPrimitiveError s = do
     compileError ("/* " ++ errmsg ++ " */") errmsg
     return LitUnit
   where
@@ -270,8 +273,14 @@ compileCommand (ServoWriteE sv w) =
     compile2ExprCommand "servoWrite" sv w
 compileCommand (ServoWriteMicrosE sv w) =
     compile2ExprCommand "servoWriteMicros" sv w
+compileCommand (DeleteTask tid) = do
+    compileShallowPrimitiveError $ "deleteTask " ++ show tid
+    return ()
 compileCommand (DeleteTaskE tid) =
     compile1ExprCommand "deleteTask" tid
+compileCommand (CreateTask tid m) = do
+    compileShallowPrimitiveError $ "createTask " ++ show tid
+    return ()
 compileCommand (CreateTaskE (LitW8 tid) m) = do
     let taskName = "task" ++ show tid
     compileLine $ "createTask(" ++ show tid ++ ", " ++
@@ -281,10 +290,19 @@ compileCommand (CreateTaskE (LitW8 tid) m) = do
     s <- get
     put s {tasksToDo = (m, taskName, False) : (tasksToDo s)}
     return LitUnit
+compileCommand (ScheduleTask tid m) = do
+    compileShallowPrimitiveError $ "scheduleTask " ++ show tid ++ " " ++ show m
+    return ()
 compileCommand (ScheduleTaskE tid tt) =
     compile2ExprCommand "scheduleTask" tid tt
+compileCommand ScheduleReset = do
+    compileShallowPrimitiveError $ "scheduleReset"
+    return ()
 compileCommand ScheduleResetE =
     compileNoExprCommand "scheduleReset"
+compileCommand (AttachInt p t m) = do
+    compileShallowPrimitiveError $ "sttachInt " ++ show p ++ " " ++ show t
+    return ()
 compileCommand (AttachIntE p t m) = do
     let taskName = "task" ++ compileExpr t
     s <- get
@@ -294,11 +312,11 @@ compileCommand (AttachIntE p t m) = do
                                  compileExpr t ++ ", " ++
                                  compileExpr m ++ ");")
   where
-    addIntTask :: [(Arduino (), String, Bool)] -> String -> [(Arduino (), String, Bool)]
+    addIntTask :: [(Arduino (Expr ()), String, Bool)] -> String -> [(Arduino (Expr ()), String, Bool)]
     addIntTask [] _ = []
     addIntTask (t:ts) tn = matchTask t tn : addIntTask ts tn
 
-    matchTask :: (Arduino (), String, Bool) -> String -> (Arduino (), String, Bool)
+    matchTask :: (Arduino (Expr ()), String, Bool) -> String -> (Arduino (Expr ()), String, Bool)
     matchTask (m, tn1, i) tn2 = if tn1 == tn2
                                 then (m, tn1, True)
                                 else (m, tn1, i)
@@ -442,74 +460,74 @@ compileReadListRef ix = do
 
 compileProcedure :: ArduinoPrimitive a -> State CompileState a
 compileProcedure QueryFirmware = do
-    compileStrongProcedureError "queryFirmware"
+    compileShallowPrimitiveError "queryFirmware"
     return 0
 compileProcedure QueryFirmwareE = do
     b <- compileNoExprProcedure Word16Type "queryFirmware"
     return $ remBind b
 compileProcedure QueryProcessor = do
-    compileStrongProcedureError "queryProcessor"
+    compileShallowPrimitiveError "queryProcessor"
     return ATMEGA8
 compileProcedure QueryProcessorE = do
     b <- compileNoExprProcedure Word8Type "queryProcessor"
     return $ remBind b
 compileProcedure Millis = do
-    compileStrongProcedureError "millis"
+    compileShallowPrimitiveError "millis"
     return (0::Word32)
 compileProcedure MillisE = do
     b <- compileNoExprProcedure Word32Type "millis"
     return $ remBind b
 compileProcedure Micros = do
-    compileStrongProcedureError "micros"
+    compileShallowPrimitiveError "micros"
     return 0
 compileProcedure MicrosE = do
     b <- compileNoExprProcedure Word32Type "micros"
     return $ remBind b
 compileProcedure (DelayMillis ms) = do
-    compileStrongProcedureError $ "delayMillis " ++ show ms
+    compileShallowPrimitiveError $ "delayMillis " ++ show ms
     return ()
 compileProcedure (DelayMillisE ms) = do
     compile1ExprCommand "delayMilliseconds" ms
     return LitUnit
 compileProcedure (DelayMicros ms) = do
-    compileStrongProcedureError $ "delayMicros " ++ show ms
+    compileShallowPrimitiveError $ "delayMicros " ++ show ms
     return ()
 compileProcedure (DelayMicrosE ms) = do
     compile1ExprCommand "delayMicroseconds" ms
     return LitUnit
 compileProcedure (DigitalRead ms) = do
-    compileStrongProcedureError $ "digitalRead " ++ show ms
+    compileShallowPrimitiveError $ "digitalRead " ++ show ms
     return False
 compileProcedure (DigitalReadE p) = do
     b <- compile1ExprProcedure BoolType "digitalRead" p
     return $ remBind b
 compileProcedure (DigitalPortRead p m) = do
-    compileStrongProcedureError $ "digitalPortRead " ++ show p ++ " " ++ show m
+    compileShallowPrimitiveError $ "digitalPortRead " ++ show p ++ " " ++ show m
     return 0
 compileProcedure (DigitalPortReadE p m) = do
     b <- compile2ExprProcedure Word8Type "digitalPortRead" p m
     return $ remBind b
 compileProcedure (AnalogRead p) = do
-    compileStrongProcedureError $ "analogRead " ++ show p
+    compileShallowPrimitiveError $ "analogRead " ++ show p
     return 0
 compileProcedure (AnalogReadE p) = do
     b <- compile1ExprProcedure Word16Type "analogRead" p
     return $ remBind b
 compileProcedure (I2CRead p n) = do
-    compileStrongProcedureError $ "i2cRead " ++ show p ++ " " ++ show n
+    compileShallowPrimitiveError $ "i2cRead " ++ show p ++ " " ++ show n
     return []
 compileProcedure (I2CReadE p n) = do
     b <- compile2ExprListProcedure "i2cRead" p n
     return $ remBind b
 compileProcedure (Stepper2Pin s p1 p2) = do
-    compileStrongProcedureError $ "i2cRead " ++ show s ++ " " ++
+    compileShallowPrimitiveError $ "i2cRead " ++ show s ++ " " ++
                                    show p1 ++ " " ++ show p2
     return 0
 compileProcedure (Stepper2PinE s p1 p2) = do
     b <- compile3ExprProcedure Word8Type "stepper2Pin" s p1 p2
     return $ remBind b
 compileProcedure (Stepper4Pin s p1 p2 p3 p4) = do
-    compileStrongProcedureError $ "i2cRead " ++ show s ++ " " ++
+    compileShallowPrimitiveError $ "i2cRead " ++ show s ++ " " ++
                                    show p1 ++ " " ++ show p2 ++
                                    show p3 ++ " " ++ show p4
     return 0
@@ -520,26 +538,26 @@ compileProcedure (StepperStepE st s) = do
     compile2ExprCommand "stepperStep" st s
     return ()
 compileProcedure (ServoAttach p) = do
-    compileStrongProcedureError $ "servoAttach " ++ show p
+    compileShallowPrimitiveError $ "servoAttach " ++ show p
     return 0
 compileProcedure (ServoAttachE p) = do
     b <- compile1ExprProcedure Word8Type "servoAttach" p
     return $ remBind b
 compileProcedure (ServoAttachMinMax p min max) = do
-    compileStrongProcedureError $ "servoAttachMinMax " ++
+    compileShallowPrimitiveError $ "servoAttachMinMax " ++
                                   show min ++ " " ++ show max
     return 0
 compileProcedure (ServoAttachMinMaxE p min max) = do
     b <- compile3ExprProcedure Word8Type "servoAttachMinMax" p min max
     return $ remBind b
 compileProcedure (ServoRead sv) = do
-    compileStrongProcedureError $ "servoRead " ++ show sv
+    compileShallowPrimitiveError $ "servoRead " ++ show sv
     return 0
 compileProcedure (ServoReadE sv) = do
     b <- compile1ExprProcedure Word16Type "servoRead" sv
     return $ remBind b
 compileProcedure (ServoReadMicros sv) = do
-    compileStrongProcedureError $ "servoReadMicros" ++ show sv
+    compileShallowPrimitiveError $ "servoReadMicros" ++ show sv
     return 0
 compileProcedure (ServoReadMicrosE sv) = do
     b <- compile1ExprProcedure Word16Type "servoReadMicros" sv

@@ -170,15 +170,25 @@ data ArduinoPrimitive :: * -> * where
      ServoDetachE         :: Expr Word8                        -> ArduinoPrimitive (Expr ())
      ServoWriteE          :: Expr Word8 -> Expr Int16          -> ArduinoPrimitive (Expr ())
      ServoWriteMicrosE    :: Expr Word8 -> Expr Int16          -> ArduinoPrimitive (Expr ())
-     CreateTaskE          :: TaskIDE    -> Arduino ()          -> ArduinoPrimitive (Expr ())
+     CreateTask           :: TaskID     -> Arduino ()          -> ArduinoPrimitive ()
+     CreateTaskE          :: TaskIDE    -> Arduino (Expr ())   -> ArduinoPrimitive (Expr ())
+     DeleteTask           :: TaskID                            -> ArduinoPrimitive ()
      DeleteTaskE          :: TaskIDE                           -> ArduinoPrimitive (Expr ())
+     ScheduleTask         :: TaskID     -> TimeMillis          -> ArduinoPrimitive ()
      ScheduleTaskE        :: TaskIDE    -> TimeMillisE         -> ArduinoPrimitive (Expr ())
+     ScheduleReset        ::                                      ArduinoPrimitive ()
      ScheduleResetE       ::                                      ArduinoPrimitive (Expr ())
+     AttachInt            :: Pin  -> TaskID  -> Expr Word8     -> ArduinoPrimitive ()
      AttachIntE           :: PinE -> TaskIDE -> Expr Word8     -> ArduinoPrimitive (Expr ())
+     DetachInt            :: Pin                               -> ArduinoPrimitive ()
      DetachIntE           :: PinE                              -> ArduinoPrimitive (Expr ())
+     Interrupts           ::                                      ArduinoPrimitive ()
      InterruptsE          ::                                      ArduinoPrimitive (Expr ())
+     NoInterrupts         ::                                      ArduinoPrimitive ()
      NoInterruptsE        ::                                      ArduinoPrimitive (Expr ())
+     GiveSem              :: Word8                             -> ArduinoPrimitive ()
      GiveSemE             :: Expr Word8                        -> ArduinoPrimitive (Expr ())
+     TakeSem              :: Word8                             -> ArduinoPrimitive ()
      TakeSemE             :: Expr Word8                        -> ArduinoPrimitive (Expr ())
      WriteRemoteRefB      :: RemoteRef Bool    -> Expr Bool    -> ArduinoPrimitive (Expr ())
      WriteRemoteRefW8     :: RemoteRef Word8   -> Expr Word8   -> ArduinoPrimitive (Expr ())
@@ -490,15 +500,24 @@ instance KnownResult ArduinoPrimitive where
   knownResult (ServoDetachE {}         ) = Just LitUnit
   knownResult (ServoWriteE {}          ) = Just LitUnit
   knownResult (ServoWriteMicrosE {}    ) = Just LitUnit
+  knownResult (CreateTask {}           ) = Just ()
   knownResult (CreateTaskE {}          ) = Just LitUnit
+  knownResult (DeleteTask {}           ) = Just ()
   knownResult (DeleteTaskE {}          ) = Just LitUnit
+  knownResult (ScheduleTask  {}        ) = Just ()
   knownResult (ScheduleTaskE {}        ) = Just LitUnit
+  knownResult (ScheduleReset {}        ) = Just ()
   knownResult (ScheduleResetE {}       ) = Just LitUnit
+  knownResult (AttachInt {}            ) = Just ()
   knownResult (AttachIntE {}           ) = Just LitUnit
+  knownResult (DetachInt {}            ) = Just ()
   knownResult (DetachIntE {}           ) = Just LitUnit
+  knownResult (Interrupts {}           ) = Just ()
   knownResult (InterruptsE {}          ) = Just LitUnit
   knownResult (NoInterruptsE {}        ) = Just LitUnit
+  knownResult (GiveSem {}              ) = Just ()
   knownResult (GiveSemE {}             ) = Just LitUnit
+  knownResult (TakeSem {}              ) = Just ()
   knownResult (TakeSemE {}             ) = Just LitUnit
   knownResult (WriteRemoteRefB {}      ) = Just LitUnit
   knownResult (WriteRemoteRefW8 {}     ) = Just LitUnit
@@ -600,61 +619,61 @@ servoWriteMicrosE :: Expr Word8 -> Expr Int16 -> Arduino (Expr ())
 servoWriteMicrosE s w = Arduino $ primitive $ ServoWriteMicrosE s w
 
 createTask :: TaskID -> Arduino () -> Arduino ()
-createTask tid ps = evalExprUnit <$> (Arduino $ primitive $ CreateTaskE (lit tid) ps)
+createTask tid ps = Arduino $ primitive $ CreateTask tid ps
 
-createTaskE :: TaskIDE -> Arduino () -> Arduino (Expr ())
+createTaskE :: TaskIDE -> Arduino (Expr ()) -> Arduino (Expr ())
 createTaskE tid ps = Arduino $ primitive  $ CreateTaskE tid ps
 
 deleteTask :: TaskID -> Arduino ()
-deleteTask tid = evalExprUnit <$> (Arduino $ primitive $ DeleteTaskE (lit tid))
+deleteTask tid = Arduino $ primitive $ DeleteTask tid
 
 deleteTaskE :: TaskIDE -> Arduino (Expr ())
 deleteTaskE tid = Arduino $ primitive $ DeleteTaskE tid
 
 scheduleTask :: TaskID -> TimeMillis -> Arduino ()
-scheduleTask tid tt = evalExprUnit <$> (Arduino $ primitive $ ScheduleTaskE (lit tid) (lit tt))
+scheduleTask tid tt = Arduino $ primitive $ ScheduleTask tid tt
 
 scheduleTaskE :: TaskIDE -> TimeMillisE -> Arduino (Expr ())
 scheduleTaskE tid tt = Arduino $ primitive $ ScheduleTaskE tid tt
 
 attachInt :: Pin -> TaskID -> IntMode -> Arduino ()
-attachInt p tid m = evalExprUnit <$> (Arduino $ primitive $ AttachIntE (lit p) (lit tid) (lit $ fromIntegral $ fromEnum m))
+attachInt p tid m = Arduino $ primitive $ AttachInt p tid (fromIntegral $ fromEnum m)
 
 attachIntE :: PinE -> TaskIDE -> IntMode -> Arduino (Expr ())
 attachIntE p tid m = Arduino $ primitive $ AttachIntE p tid (lit $ fromIntegral $ fromEnum m)
 
 detachInt :: Pin -> Arduino ()
-detachInt p = evalExprUnit <$> (Arduino $ primitive $ DetachIntE (lit p))
+detachInt p = Arduino $ primitive $ DetachInt p
 
 detachIntE :: PinE -> Arduino (Expr ())
 detachIntE p = Arduino $ primitive $ DetachIntE p
 
 interrupts :: Arduino ()
-interrupts = evalExprUnit <$> (Arduino $ primitive $ InterruptsE)
+interrupts = Arduino $ primitive $ Interrupts
 
 interruptsE :: Arduino (Expr ())
 interruptsE = Arduino $ primitive $ InterruptsE
 
 noInterrupts :: Arduino ()
-noInterrupts = evalExprUnit <$> (Arduino $ primitive $ NoInterruptsE)
+noInterrupts = Arduino $ primitive $ NoInterrupts
 
 noInterruptsE :: Arduino (Expr ())
 noInterruptsE =  Arduino $ primitive $ NoInterruptsE
 
 scheduleReset :: Arduino ()
-scheduleReset = evalExprUnit <$> (Arduino $ primitive ScheduleResetE)
+scheduleReset = Arduino $ primitive ScheduleReset
 
 scheduleResetE :: Arduino (Expr ())
 scheduleResetE = Arduino $ primitive ScheduleResetE
 
 giveSem :: Word8 -> Arduino ()
-giveSem id = evalExprUnit <$> (Arduino $ primitive $ GiveSemE (lit id))
+giveSem id = Arduino $ primitive $ GiveSem id
 
 giveSemE :: Expr Word8 -> Arduino (Expr ())
 giveSemE id = Arduino $ primitive $ GiveSemE id
 
 takeSem :: Word8 -> Arduino ()
-takeSem id = evalExprUnit <$> (Arduino $ primitive $ TakeSemE (lit id))
+takeSem id = Arduino $ primitive $ TakeSem id
 
 takeSemE :: Expr Word8 -> Arduino (Expr ())
 takeSemE id = Arduino $ primitive $ TakeSemE id
