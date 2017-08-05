@@ -66,7 +66,7 @@ apRemoveExpr e = do
       case f of
           Var fv | fv == apId -> do
               case args of
-                  [_, _, _, Var fv', arg] -> return $ mkCoreApps (Var fv') [arg]
+                  [_, _, _, f', arg] -> return $ mkCoreApps f' [arg]
                   _ -> defaultReturn
           _ -> defaultReturn
     Lam tb e -> do

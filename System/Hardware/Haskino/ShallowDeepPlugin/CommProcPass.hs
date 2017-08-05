@@ -225,7 +225,9 @@ commProcXlat xe e = do
   let f' = Var newId
   if xlatRet
   then do
-    let (tyCon, [ty]) = splitTyConApp $ exprType e
+    -- ToDo: Handle Error cases using _maybe function varients.
+    let (argTys, retTy) = splitFunTys $ exprType e
+    let (tyCon, [ty]) = splitTyConApp retTy
     let e' = mkCoreApps f' args'
     fmapAbsExpr (mkTyConTy tyCon) ty e'
   else
