@@ -1,9 +1,7 @@
 {-# OPTIONS_GHC -fplugin=System.Hardware.Haskino.ShallowDeepPlugin #-}
--- {-# OPTIONS_GHC -fenable-rewrite-rules #-}
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.RecurTest
---                Based on System.Hardware.Arduino
 -- Copyright   :  (c) University of Kansas
 -- License     :  BSD3
 -- Stability   :  experimental
