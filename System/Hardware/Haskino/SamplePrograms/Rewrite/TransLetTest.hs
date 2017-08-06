@@ -11,7 +11,7 @@
 -- Let test example used for rewrite written in shallow version.
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.Rewrite.TransLetTest(transLetTest) where
+module System.Hardware.Haskino.SamplePrograms.Rewrite.TransLetTest where
 
 import System.Hardware.Haskino
 import Control.Monad

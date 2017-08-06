@@ -9,7 +9,7 @@
 -- Function test example used for rewrite written in shallow version.
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.Rewrite.TransFuncTest(transFuncTest) where
+module System.Hardware.Haskino.SamplePrograms.Rewrite.TransFuncTest where
 
 import System.Hardware.Haskino
 import Control.Monad

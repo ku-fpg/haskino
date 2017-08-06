@@ -9,7 +9,7 @@
 -- IfThenElse test example used for rewrite written in shallow version.
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.Rewrite.TransIfTest(transIfTest) where
+module System.Hardware.Haskino.SamplePrograms.Rewrite.TransIfTest where
 
 import Prelude hiding (abs)
 

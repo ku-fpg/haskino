@@ -15,6 +15,7 @@ import System.Hardware.Haskino.SamplePrograms.Rewrite.TransLetTest
 import System.Hardware.Haskino.SamplePrograms.Rewrite.TransFuncTest
 import System.Hardware.Haskino.SamplePrograms.Rewrite.TransMultiTest2
 import System.Hardware.Haskino.SamplePrograms.Rewrite.TransFuncTest
+import System.Hardware.Haskino.SamplePrograms.Rewrite.TransFuncArgTest
 import System.Hardware.Haskino.SamplePrograms.Rewrite.TransIfTest
 import System.Hardware.Haskino.SamplePrograms.Rewrite.TransRecurTest
 
@@ -23,6 +24,7 @@ main = do
   transTest
   transLetTest
   transFuncTest
+  transFuncArgTest
   transMultiTest
   transIfTest
   transRecurTest
