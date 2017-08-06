@@ -679,9 +679,19 @@ takeSemE :: Expr Word8 -> Arduino (Expr ())
 takeSemE id = Arduino $ primitive $ TakeSemE id
 
 class ExprB a => RemoteReference a where
+    newRemoteRef     :: a -> Arduino (RemoteRef a)
+    newRemoteRef v = newRemoteRefE $ lit v
     newRemoteRefE    :: Expr a -> Arduino (RemoteRef a)
+    readRemoteRef    :: RemoteRef a -> Arduino a
+    readRemoteRef r = eval' <$> (readRemoteRefE r)
     readRemoteRefE   :: RemoteRef a -> Arduino (Expr a)
+    writeRemoteRef   :: RemoteRef a -> a -> Arduino ()
+    writeRemoteRef r v = eval' <$> (writeRemoteRefE r $ lit v)
     writeRemoteRefE  :: RemoteRef a -> Expr a -> Arduino (Expr ())
+    modifyRemoteRef  :: RemoteRef a -> (a -> a) -> Arduino ()
+    modifyRemoteRef r f = do
+        v <- readRemoteRef r
+        writeRemoteRef r (f v)
     modifyRemoteRefE :: RemoteRef a -> (Expr a -> Expr a) ->
                              Arduino (Expr ())
 

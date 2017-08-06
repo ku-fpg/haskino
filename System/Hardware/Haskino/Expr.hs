@@ -269,6 +269,7 @@ deriving instance (Show a, Show b) => Show (ExprEither a b)
 
 class ExprB a where
     lit      :: a -> Expr a
+    eval'    :: Expr a -> a
     remBind  :: Int -> Expr a
     showE    :: Expr a -> Expr [Word8]
     lessE    :: Expr a -> Expr a -> Expr Bool
@@ -289,6 +290,7 @@ class ExprB a where
 
 instance ExprB () where
     lit _ = LitUnit
+    eval' = evalExprUnit
     remBind = RemBindUnit
     showE = ShowUnit
     {-# INLINE lessE #-}
@@ -300,6 +302,7 @@ instance ExprB () where
 
 instance ExprB Word8 where
     lit = LitW8
+    eval' = evalExprW8
     remBind = RemBindW8
     showE = ShowW8
     {-# INLINE lessE #-}
@@ -311,6 +314,7 @@ instance ExprB Word8 where
 
 instance ExprB Word16 where
     lit = LitW16
+    eval' = evalExprW16
     remBind = RemBindW16
     showE = ShowW16
     {-# INLINE lessE #-}
@@ -322,6 +326,7 @@ instance ExprB Word16 where
 
 instance ExprB Word32 where
     lit = LitW32
+    eval' = evalExprW32
     remBind = RemBindW32
     showE = ShowW32
     {-# INLINE lessE #-}
@@ -333,6 +338,7 @@ instance ExprB Word32 where
 
 instance ExprB Int8 where
     lit = LitI8
+    eval' = evalExprI8
     remBind = RemBindI8
     showE = ShowI8
     {-# INLINE lessE #-}
@@ -344,6 +350,7 @@ instance ExprB Int8 where
 
 instance ExprB Int16 where
     lit = LitI16
+    eval' = evalExprI16
     remBind = RemBindI16
     showE = ShowI16
     {-# INLINE lessE #-}
@@ -355,6 +362,7 @@ instance ExprB Int16 where
 
 instance ExprB Int32 where
     lit = LitI32
+    eval' = evalExprI32
     remBind = RemBindI32
     showE = ShowI32
     {-# INLINE lessE #-}
@@ -366,6 +374,7 @@ instance ExprB Int32 where
 
 instance ExprB Bool where
     lit = LitB
+    eval' = evalExprB
     remBind = RemBindB
     showE = ShowB
     {-# INLINE lessE #-}
@@ -377,6 +386,7 @@ instance ExprB Bool where
 
 instance ExprB [Word8] where
     lit = LitList8
+    eval' = evalExprL8
     remBind = RemBindList8
     showE = id
     {-# INLINE lessE #-}
@@ -388,6 +398,7 @@ instance ExprB [Word8] where
 
 instance ExprB Float where
     lit = LitFloat
+    eval' = evalExprFloat
     remBind = RemBindFloat
     showE = showFFloatE Nothing
     {-# INLINE lessE #-}
@@ -900,8 +911,47 @@ exprLCmdVal o = [toW8 EXPR_LIST8, toW8 o]
 exprFCmdVal :: ExprFloatOp -> [Word8]
 exprFCmdVal o = [toW8 EXPR_FLOAT, toW8 o]
 
+evalError :: Show a => Expr a -> a
+evalError e = error $ "Error: Can't evaluate non literal - " ++ show e
+
 evalExprUnit :: Expr () -> ()
 evalExprUnit _ = ()
+
+evalExprB :: Expr Bool -> Bool
+evalExprB (LitB v) = v
+evalExprB v        = evalError v
+
+evalExprW8 :: Expr Word8 -> Word8
+evalExprW8 (LitW8 v) = v
+evalExprW8 v         = evalError v
+
+evalExprW16 :: Expr Word16 -> Word16
+evalExprW16 (LitW16 v) = v
+evalExprW16 v          = evalError v
+
+evalExprW32 :: Expr Word32 -> Word32
+evalExprW32 (LitW32 v) = v
+evalExprW32 v          = evalError v
+
+evalExprI8 :: Expr Int8 -> Int8
+evalExprI8 (LitI8 v) = v
+evalExprI8 v         = evalError v
+
+evalExprI16 :: Expr Int16 -> Int16
+evalExprI16 (LitI16 v) = v
+evalExprI16 v          = evalError v
+
+evalExprI32 :: Expr Int32 -> Int32
+evalExprI32 (LitI32 v) = v
+evalExprI32 v          = evalError v
+
+evalExprL8 :: Expr [Word8] -> [Word8]
+evalExprL8 (LitList8 v) = v
+evalExprL8 v            = evalError v
+
+evalExprFloat :: Expr Float -> Float
+evalExprFloat (LitFloat v) = v
+evalExprFloat v            = evalError v
 
 {-# NOINLINE abs_ #-}
 abs_ :: Expr a -> a
