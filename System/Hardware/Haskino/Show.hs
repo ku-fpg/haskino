@@ -73,42 +73,42 @@ showCommand (TakeSemE id) = showCommand1 "TakeSemE" id
 showCommand (CreateTaskE tid m) = do
     (_, ts) <- showCodeBlock m
     return $ "CreateTaskE " ++ show tid ++ "\n" ++ ts
-showCommand (WriteRemoteRefB (RemoteRefB i) e) =
-    showCommand2 "WriteRemoteRefB" i e
-showCommand (WriteRemoteRefW8 (RemoteRefW8 i) e) =
-    showCommand2 "WriteRemoteRefW8" i e
-showCommand (WriteRemoteRefW16 (RemoteRefW16 i) e) =
-    showCommand2 "WriteRemoteRefW16" i e
-showCommand (WriteRemoteRefW32 (RemoteRefW32 i) e) =
-    showCommand2 "WriteRemoteRefW32" i e
-showCommand (WriteRemoteRefI8 (RemoteRefI8 i) e) =
-    showCommand2 "WriteRemoteRefI8" i e
-showCommand (WriteRemoteRefI16 (RemoteRefI16 i) e) =
-    showCommand2 "WriteRemoteRefI16" i e
-showCommand (WriteRemoteRefI32 (RemoteRefI32 i) e) =
-    showCommand2 "WriteRemoteRefI32" i e
-showCommand (WriteRemoteRefL8 (RemoteRefL8 i) e) =
-    showCommand2 "WriteRemoteRefL8" i e
-showCommand (WriteRemoteRefFloat (RemoteRefFloat i) e) =
-    showCommand2 "WriteRemoteRefFloat" i e
-showCommand (ModifyRemoteRefB (RemoteRefB i) f) =
-    showCommand2 "ModifyRemoteRefB" i f
-showCommand (ModifyRemoteRefW8 (RemoteRefW8 i) f) =
-    showCommand2 "ModifyRemoteRefW8" i f
-showCommand (ModifyRemoteRefW16 (RemoteRefW16 i) f) =
-    showCommand2 "ModifyRemoteRefW16" i f
-showCommand (ModifyRemoteRefW32 (RemoteRefW32 i) f) =
-    showCommand2 "ModifyRemoteRefW32" i f
-showCommand (ModifyRemoteRefI8 (RemoteRefI8 i) f) =
-    showCommand2 "ModifyRemoteRefI8" i f
-showCommand (ModifyRemoteRefI16 (RemoteRefI16 i) f) =
-    showCommand2 "ModifyRemoteRefI16" i f
-showCommand (ModifyRemoteRefI32 (RemoteRefI32 i) f) =
-    showCommand2 "ModifyRemoteRefI32" i f
-showCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) =
-    showCommand2 "ModifyRemoteRefL8" i f
-showCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) =
-    showCommand2 "ModifyRemoteRefFloat" i f
+showCommand (WriteRemoteRefBE (RemoteRefB i) e) =
+    showCommand2 "WriteRemoteRefBE" i e
+showCommand (WriteRemoteRefW8E (RemoteRefW8 i) e) =
+    showCommand2 "WriteRemoteRefW8E" i e
+showCommand (WriteRemoteRefW16E (RemoteRefW16 i) e) =
+    showCommand2 "WriteRemoteRefW16E" i e
+showCommand (WriteRemoteRefW32E (RemoteRefW32 i) e) =
+    showCommand2 "WriteRemoteRefW32E" i e
+showCommand (WriteRemoteRefI8E (RemoteRefI8 i) e) =
+    showCommand2 "WriteRemoteRefI8E" i e
+showCommand (WriteRemoteRefI16E (RemoteRefI16 i) e) =
+    showCommand2 "WriteRemoteRefI16E" i e
+showCommand (WriteRemoteRefI32E (RemoteRefI32 i) e) =
+    showCommand2 "WriteRemoteRefI32E" i e
+showCommand (WriteRemoteRefL8E (RemoteRefL8 i) e) =
+    showCommand2 "WriteRemoteRefL8E" i e
+showCommand (WriteRemoteRefFloatE (RemoteRefFloat i) e) =
+    showCommand2 "WriteRemoteRefFloatE" i e
+showCommand (ModifyRemoteRefBE (RemoteRefB i) f) =
+    showCommand2 "ModifyRemoteRefBE" i f
+showCommand (ModifyRemoteRefW8E (RemoteRefW8 i) f) =
+    showCommand2 "ModifyRemoteRefW8E" i f
+showCommand (ModifyRemoteRefW16E (RemoteRefW16 i) f) =
+    showCommand2 "ModifyRemoteRefW16E" i f
+showCommand (ModifyRemoteRefW32E (RemoteRefW32 i) f) =
+    showCommand2 "ModifyRemoteRefW32E" i f
+showCommand (ModifyRemoteRefI8E (RemoteRefI8 i) f) =
+    showCommand2 "ModifyRemoteRefI8E" i f
+showCommand (ModifyRemoteRefI16E (RemoteRefI16 i) f) =
+    showCommand2 "ModifyRemoteRefI16E" i f
+showCommand (ModifyRemoteRefI32E (RemoteRefI32 i) f) =
+    showCommand2 "ModifyRemoteRefI32E" i f
+showCommand (ModifyRemoteRefL8E (RemoteRefL8 i) f) =
+    showCommand2 "ModifyRemoteRefL8E" i f
+showCommand (ModifyRemoteRefFloatE (RemoteRefFloat i) f) =
+    showCommand2 "ModifyRemoteRefFloatE" i f
 showCommand (Loop cb) = do
     (_, c) <- showCodeBlock cb
     return $ "Loop\n" ++ c
@@ -334,60 +334,60 @@ showCodeBlock (Arduino commands) = do
       showProcedure (BootTaskE tids) = do
           i <- showDeep1Procedure "BootTaskE" tids
           return $ RemBindB i
-      showProcedure (ReadRemoteRefB (RemoteRefB i)) = do
-          i <- showDeep1Procedure "ReadRemoteRefB" (RefB i)
+      showProcedure (ReadRemoteRefBE (RemoteRefB i)) = do
+          i <- showDeep1Procedure "ReadRemoteRefBE" (RefB i)
           return $ RemBindB i
-      showProcedure (ReadRemoteRefW8 (RemoteRefW8 i)) = do
-          i <- showDeep1Procedure "ReadRemoteRefW8" (RefW8 i)
+      showProcedure (ReadRemoteRefW8E (RemoteRefW8 i)) = do
+          i <- showDeep1Procedure "ReadRemoteRefW8E" (RefW8 i)
           return $ RemBindW8 i
-      showProcedure (ReadRemoteRefW16 (RemoteRefW16 i)) = do
-          i <- showDeep1Procedure "ReadRemoteRefW16" (RefW16 i)
+      showProcedure (ReadRemoteRefW16E (RemoteRefW16 i)) = do
+          i <- showDeep1Procedure "ReadRemoteRefW16E" (RefW16 i)
           return $ RemBindW16 i
-      showProcedure (ReadRemoteRefW32 (RemoteRefW32 i)) = do
-          i <- showDeep1Procedure "ReadRemoteRefW32" (RefW32 i)
+      showProcedure (ReadRemoteRefW32E (RemoteRefW32 i)) = do
+          i <- showDeep1Procedure "ReadRemoteRefW32E" (RefW32 i)
           return $ RemBindW32 i
-      showProcedure (ReadRemoteRefI8 (RemoteRefI8 i)) = do
-          i <- showDeep1Procedure "ReadRemoteRefI8" (RefI8 i)
+      showProcedure (ReadRemoteRefI8E (RemoteRefI8 i)) = do
+          i <- showDeep1Procedure "ReadRemoteRefI8E" (RefI8 i)
           return $ RemBindI8 i
-      showProcedure (ReadRemoteRefI16 (RemoteRefI16 i)) = do
-          i <- showDeep1Procedure "ReadRemoteRefI16" (RefI16 i)
+      showProcedure (ReadRemoteRefI16E (RemoteRefI16 i)) = do
+          i <- showDeep1Procedure "ReadRemoteRefI16E" (RefI16 i)
           return $ RemBindI16 i
-      showProcedure (ReadRemoteRefI32 (RemoteRefI32 i)) = do
-          i <- showDeep1Procedure "ReadRemoteRefI32" (RefI32 i)
+      showProcedure (ReadRemoteRefI32E (RemoteRefI32 i)) = do
+          i <- showDeep1Procedure "ReadRemoteRefI32E" (RefI32 i)
           return $ RemBindI32 i
-      showProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) = do
-          i <- showDeep1Procedure "ReadRemoteRefL8" (RefList8 i)
+      showProcedure (ReadRemoteRefL8E (RemoteRefL8 i)) = do
+          i <- showDeep1Procedure "ReadRemoteRefL8E" (RefList8 i)
           return $ RemBindList8 i
-      showProcedure (ReadRemoteRefFloat (RemoteRefFloat i)) = do
-          i <- showDeep1Procedure "ReadRemoteRefFloat" (RefFloat i)
+      showProcedure (ReadRemoteRefFloatE (RemoteRefFloat i)) = do
+          i <- showDeep1Procedure "ReadRemoteRefFloatE" (RefFloat i)
           return $ RemBindFloat i
-      showProcedure (NewRemoteRefB e) = do
+      showProcedure (NewRemoteRefBE e) = do
           s <- get
-          showNewRef "NewRemoteRefB" e (RemoteRefB  (ix s))
-      showProcedure (NewRemoteRefW8 e) = do
+          showNewRef "NewRemoteRefBE" e (RemoteRefB  (ix s))
+      showProcedure (NewRemoteRefW8E e) = do
           s <- get
-          showNewRef "NewRemoteRefW8" e (RemoteRefW8 (ix s))
-      showProcedure (NewRemoteRefW16 e) = do
+          showNewRef "NewRemoteRefW8E" e (RemoteRefW8 (ix s))
+      showProcedure (NewRemoteRefW16E e) = do
           s <- get
-          showNewRef "NewRemoteRefW16" e (RemoteRefW16 (ix s))
-      showProcedure (NewRemoteRefW32 e) = do
+          showNewRef "NewRemoteRefW16E" e (RemoteRefW16 (ix s))
+      showProcedure (NewRemoteRefW32E e) = do
           s <- get
-          showNewRef "NewRemoteRefW32" e (RemoteRefW32 (ix s))
-      showProcedure (NewRemoteRefI8 e) = do
+          showNewRef "NewRemoteRefW32E" e (RemoteRefW32 (ix s))
+      showProcedure (NewRemoteRefI8E e) = do
           s <- get
-          showNewRef "NewRemoteRefI8" e (RemoteRefI8 (ix s))
-      showProcedure (NewRemoteRefI16 e) = do
+          showNewRef "NewRemoteRefI8E" e (RemoteRefI8 (ix s))
+      showProcedure (NewRemoteRefI16E e) = do
           s <- get
-          showNewRef "NewRemoteRefI16" e (RemoteRefI16 (ix s))
-      showProcedure (NewRemoteRefI32 e) = do
+          showNewRef "NewRemoteRefI16E" e (RemoteRefI16 (ix s))
+      showProcedure (NewRemoteRefI32E e) = do
           s <- get
-          showNewRef "NewRemoteRefI32" e (RemoteRefI32 (ix s))
-      showProcedure (NewRemoteRefL8 e) = do
+          showNewRef "NewRemoteRefI32E" e (RemoteRefI32 (ix s))
+      showProcedure (NewRemoteRefL8E e) = do
           s <- get
-          showNewRef "NewRemoteRefL8" e (RemoteRefL8 (ix s))
-      showProcedure (NewRemoteRefFloat e) = do
+          showNewRef "NewRemoteRefL8E" e (RemoteRefL8 (ix s))
+      showProcedure (NewRemoteRefFloatE e) = do
           s <- get
-          showNewRef "NewRemoteRefFloat" e (RemoteRefFloat (ix s))
+          showNewRef "NewRemoteRefFloatE" e (RemoteRefFloat (ix s))
       showProcedure (IfThenElseUnitE e cb1 cb2) = do
           i <- showIfThenElseProcedure e cb1 cb2
           return $ RemBindUnit i

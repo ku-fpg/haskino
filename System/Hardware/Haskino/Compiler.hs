@@ -330,24 +330,24 @@ compileCommand (GiveSemE id) =
     compile1ExprCommand "giveSem" id
 compileCommand (TakeSemE id) =
     compile1ExprCommand "takeSem" id
-compileCommand (WriteRemoteRefB (RemoteRefB i) e) = compileWriteRef i e
-compileCommand (WriteRemoteRefW8 (RemoteRefW8 i) e) = compileWriteRef i e
-compileCommand (WriteRemoteRefW16 (RemoteRefW16 i) e) = compileWriteRef i e
-compileCommand (WriteRemoteRefW32 (RemoteRefW32 i) e) = compileWriteRef i e
-compileCommand (WriteRemoteRefI8 (RemoteRefI8 i) e) = compileWriteRef i e
-compileCommand (WriteRemoteRefI16 (RemoteRefI16 i) e) = compileWriteRef i e
-compileCommand (WriteRemoteRefI32 (RemoteRefI32 i) e) = compileWriteRef i e
-compileCommand (WriteRemoteRefL8 (RemoteRefL8 i) e) = compileWriteListRef i e
-compileCommand (WriteRemoteRefFloat (RemoteRefFloat i) e) = compileWriteRef i e
-compileCommand (ModifyRemoteRefB (RemoteRefB i) f) = compileWriteRef i f
-compileCommand (ModifyRemoteRefW8 (RemoteRefW8 i) f) = compileWriteRef i f
-compileCommand (ModifyRemoteRefW16 (RemoteRefW16 i) f) = compileWriteRef i f
-compileCommand (ModifyRemoteRefW32 (RemoteRefW32 i) f) = compileWriteRef i f
-compileCommand (ModifyRemoteRefI8 (RemoteRefI8 i) f) = compileWriteRef i f
-compileCommand (ModifyRemoteRefI16 (RemoteRefI16 i) f) = compileWriteRef i f
-compileCommand (ModifyRemoteRefI32 (RemoteRefI32 i) f) = compileWriteRef i f
-compileCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) = compileWriteListRef i f
-compileCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) = compileWriteRef i f
+compileCommand (WriteRemoteRefBE (RemoteRefB i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefW8E (RemoteRefW8 i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefW16E (RemoteRefW16 i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefW32E (RemoteRefW32 i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefI8E (RemoteRefI8 i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefI16E (RemoteRefI16 i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefI32E (RemoteRefI32 i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefL8E (RemoteRefL8 i) e) = compileWriteListRef i e
+compileCommand (WriteRemoteRefFloatE (RemoteRefFloat i) e) = compileWriteRef i e
+compileCommand (ModifyRemoteRefBE (RemoteRefB i) f) = compileWriteRef i f
+compileCommand (ModifyRemoteRefW8E (RemoteRefW8 i) f) = compileWriteRef i f
+compileCommand (ModifyRemoteRefW16E (RemoteRefW16 i) f) = compileWriteRef i f
+compileCommand (ModifyRemoteRefW32E (RemoteRefW32 i) f) = compileWriteRef i f
+compileCommand (ModifyRemoteRefI8E (RemoteRefI8 i) f) = compileWriteRef i f
+compileCommand (ModifyRemoteRefI16E (RemoteRefI16 i) f) = compileWriteRef i f
+compileCommand (ModifyRemoteRefI32E (RemoteRefI32 i) f) = compileWriteRef i f
+compileCommand (ModifyRemoteRefL8E (RemoteRefL8 i) f) = compileWriteListRef i f
+compileCommand (ModifyRemoteRefFloatE (RemoteRefFloat i) f) = compileWriteRef i f
 compileCommand (IfThenElseUnitE e cb1 cb2) = do
     compileLine $ "if (" ++ compileExpr e ++ ")"
     compileCodeBlock cb1
@@ -587,58 +587,58 @@ compileProcedure DebugListen = do
 compileProcedure (Die _ _) = do
     compileUnsupportedError "die"
     return ()
-compileProcedure (NewRemoteRefB e) = do
+compileProcedure (NewRemoteRefBE e) = do
     x <- compileNewRef BoolType e
     return $ RemoteRefB x
-compileProcedure (NewRemoteRefW8 e) = do
+compileProcedure (NewRemoteRefW8E e) = do
     x <- compileNewRef Word8Type e
     return $ RemoteRefW8 x
-compileProcedure (NewRemoteRefW16 e) = do
+compileProcedure (NewRemoteRefW16E e) = do
     x <- compileNewRef Word16Type e
     return $ RemoteRefW16 x
-compileProcedure (NewRemoteRefW32 e) = do
+compileProcedure (NewRemoteRefW32E e) = do
     x <- compileNewRef Word32Type e
     return $ RemoteRefW32 x
-compileProcedure (NewRemoteRefI8 e) = do
+compileProcedure (NewRemoteRefI8E e) = do
     x <- compileNewRef Int8Type e
     return $ RemoteRefI8 x
-compileProcedure (NewRemoteRefI16 e) = do
+compileProcedure (NewRemoteRefI16E e) = do
     x <- compileNewRef Int16Type e
     return $ RemoteRefI16 x
-compileProcedure (NewRemoteRefI32 e) = do
+compileProcedure (NewRemoteRefI32E e) = do
     x <- compileNewRef Int32Type e
     return $ RemoteRefI32 x
-compileProcedure (NewRemoteRefL8 e) = do
+compileProcedure (NewRemoteRefL8E e) = do
     x <- compileNewListRef e
     return $ RemoteRefL8 x
-compileProcedure (NewRemoteRefFloat e) = do
+compileProcedure (NewRemoteRefFloatE e) = do
     x <- compileNewRef FloatType e
     return $ RemoteRefFloat x
-compileProcedure (ReadRemoteRefB (RemoteRefB i)) = do
+compileProcedure (ReadRemoteRefBE (RemoteRefB i)) = do
     b <- compileReadRef BoolType i
     return $ remBind b
-compileProcedure (ReadRemoteRefW8 (RemoteRefW8 i)) = do
+compileProcedure (ReadRemoteRefW8E (RemoteRefW8 i)) = do
     b <- compileReadRef Word8Type i
     return $ remBind b
-compileProcedure (ReadRemoteRefW16 (RemoteRefW16 i)) = do
+compileProcedure (ReadRemoteRefW16E (RemoteRefW16 i)) = do
     b <- compileReadRef Word16Type i
     return $ remBind b
-compileProcedure (ReadRemoteRefW32 (RemoteRefW32 i)) = do
+compileProcedure (ReadRemoteRefW32E (RemoteRefW32 i)) = do
     b <- compileReadRef Word32Type i
     return $ remBind b
-compileProcedure (ReadRemoteRefI8 (RemoteRefI8 i)) = do
+compileProcedure (ReadRemoteRefI8E (RemoteRefI8 i)) = do
     b <- compileReadRef Int8Type i
     return $ remBind b
-compileProcedure (ReadRemoteRefI16 (RemoteRefI16 i)) = do
+compileProcedure (ReadRemoteRefI16E (RemoteRefI16 i)) = do
     b <- compileReadRef Int16Type i
     return $ remBind b
-compileProcedure (ReadRemoteRefI32 (RemoteRefI32 i)) = do
+compileProcedure (ReadRemoteRefI32E (RemoteRefI32 i)) = do
     b <- compileReadRef Int32Type i
     return $ remBind b
-compileProcedure (ReadRemoteRefL8 (RemoteRefL8 i)) = do
+compileProcedure (ReadRemoteRefL8E (RemoteRefL8 i)) = do
     b <- compileReadListRef i
     return $ remBind b
-compileProcedure (ReadRemoteRefFloat (RemoteRefFloat i)) = do
+compileProcedure (ReadRemoteRefFloatE (RemoteRefFloat i)) = do
     b <- compileReadRef FloatType i
     return $ remBind b
 compileProcedure (IfThenElseBoolE e cb1 cb2) =

@@ -146,24 +146,24 @@ packageCommand (CreateTaskE tid m) = do
     addToTask tds' = framePackage $ buildCommand SCHED_CMD_ADD_TO_TASK ((packageExpr tid) ++
                                                                           (packageExpr (LitW8 (fromIntegral (B.length tds')))) ++
                                                                           (B.unpack tds'))
-packageCommand (WriteRemoteRefB (RemoteRefB i) e) = addWriteRefCommand EXPR_BOOL i e
-packageCommand (WriteRemoteRefW8 (RemoteRefW8 i) e) = addWriteRefCommand EXPR_WORD8 i e
-packageCommand (WriteRemoteRefW16 (RemoteRefW16 i) e) = addWriteRefCommand EXPR_WORD16 i e
-packageCommand (WriteRemoteRefW32 (RemoteRefW32 i) e) = addWriteRefCommand EXPR_WORD32 i e
-packageCommand (WriteRemoteRefI8 (RemoteRefI8 i) e) = addWriteRefCommand EXPR_INT8 i e
-packageCommand (WriteRemoteRefI16 (RemoteRefI16 i) e) = addWriteRefCommand EXPR_INT16 i e
-packageCommand (WriteRemoteRefI32 (RemoteRefI32 i) e) = addWriteRefCommand EXPR_INT32 i e
-packageCommand (WriteRemoteRefL8 (RemoteRefL8 i) e) = addWriteRefCommand EXPR_LIST8 i e
-packageCommand (WriteRemoteRefFloat (RemoteRefFloat i) e) = addWriteRefCommand EXPR_FLOAT i e
-packageCommand (ModifyRemoteRefB (RemoteRefB i) f) = addWriteRefCommand EXPR_BOOL i f
-packageCommand (ModifyRemoteRefW8 (RemoteRefW8 i) f) = addWriteRefCommand EXPR_WORD8 i f
-packageCommand (ModifyRemoteRefW16 (RemoteRefW16 i) f) = addWriteRefCommand EXPR_WORD16 i f
-packageCommand (ModifyRemoteRefW32 (RemoteRefW32 i) f) = addWriteRefCommand EXPR_WORD32 i f
-packageCommand (ModifyRemoteRefI8 (RemoteRefI8 i) f) = addWriteRefCommand EXPR_INT8 i f
-packageCommand (ModifyRemoteRefI16 (RemoteRefI16 i) f) = addWriteRefCommand EXPR_INT16 i f
-packageCommand (ModifyRemoteRefI32 (RemoteRefI32 i) f) = addWriteRefCommand EXPR_INT32 i f
-packageCommand (ModifyRemoteRefL8 (RemoteRefL8 i) f) = addWriteRefCommand EXPR_LIST8 i f
-packageCommand (ModifyRemoteRefFloat (RemoteRefFloat i) f) = addWriteRefCommand EXPR_FLOAT i f
+packageCommand (WriteRemoteRefBE (RemoteRefB i) e) = addWriteRefCommand EXPR_BOOL i e
+packageCommand (WriteRemoteRefW8E (RemoteRefW8 i) e) = addWriteRefCommand EXPR_WORD8 i e
+packageCommand (WriteRemoteRefW16E (RemoteRefW16 i) e) = addWriteRefCommand EXPR_WORD16 i e
+packageCommand (WriteRemoteRefW32E (RemoteRefW32 i) e) = addWriteRefCommand EXPR_WORD32 i e
+packageCommand (WriteRemoteRefI8E (RemoteRefI8 i) e) = addWriteRefCommand EXPR_INT8 i e
+packageCommand (WriteRemoteRefI16E (RemoteRefI16 i) e) = addWriteRefCommand EXPR_INT16 i e
+packageCommand (WriteRemoteRefI32E (RemoteRefI32 i) e) = addWriteRefCommand EXPR_INT32 i e
+packageCommand (WriteRemoteRefL8E (RemoteRefL8 i) e) = addWriteRefCommand EXPR_LIST8 i e
+packageCommand (WriteRemoteRefFloatE (RemoteRefFloat i) e) = addWriteRefCommand EXPR_FLOAT i e
+packageCommand (ModifyRemoteRefBE (RemoteRefB i) f) = addWriteRefCommand EXPR_BOOL i f
+packageCommand (ModifyRemoteRefW8E (RemoteRefW8 i) f) = addWriteRefCommand EXPR_WORD8 i f
+packageCommand (ModifyRemoteRefW16E (RemoteRefW16 i) f) = addWriteRefCommand EXPR_WORD16 i f
+packageCommand (ModifyRemoteRefW32E (RemoteRefW32 i) f) = addWriteRefCommand EXPR_WORD32 i f
+packageCommand (ModifyRemoteRefI8E (RemoteRefI8 i) f) = addWriteRefCommand EXPR_INT8 i f
+packageCommand (ModifyRemoteRefI16E (RemoteRefI16 i) f) = addWriteRefCommand EXPR_INT16 i f
+packageCommand (ModifyRemoteRefI32E (RemoteRefI32 i) f) = addWriteRefCommand EXPR_INT32 i f
+packageCommand (ModifyRemoteRefL8E (RemoteRefL8 i) f) = addWriteRefCommand EXPR_LIST8 i f
+packageCommand (ModifyRemoteRefFloatE (RemoteRefFloat i) f) = addWriteRefCommand EXPR_FLOAT i f
 packageCommand (IfThenElseUnitE e cb1 cb2) = do
     (_, pc1) <- packageCodeBlock cb1
     (_, pc2) <- packageCodeBlock cb2
@@ -292,60 +292,60 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (BootTaskE tids) = do
           i <- packDeepProcedure (BootTaskE tids)
           return $ RemBindB i
-      packProcedure (ReadRemoteRefB (RemoteRefB i')) = do
-          i <- packDeepProcedure (ReadRemoteRefB (RemoteRefB i'))
+      packProcedure (ReadRemoteRefBE (RemoteRefB i')) = do
+          i <- packDeepProcedure (ReadRemoteRefBE (RemoteRefB i'))
           return $ RemBindB i
-      packProcedure (ReadRemoteRefW8 (RemoteRefW8 i')) = do
-          i <- packDeepProcedure (ReadRemoteRefW8 (RemoteRefW8 i'))
+      packProcedure (ReadRemoteRefW8E (RemoteRefW8 i')) = do
+          i <- packDeepProcedure (ReadRemoteRefW8E (RemoteRefW8 i'))
           return $ RemBindW8 i
-      packProcedure (ReadRemoteRefW16 (RemoteRefW16 i')) = do
-          i <- packDeepProcedure (ReadRemoteRefW16 (RemoteRefW16 i'))
+      packProcedure (ReadRemoteRefW16E (RemoteRefW16 i')) = do
+          i <- packDeepProcedure (ReadRemoteRefW16E (RemoteRefW16 i'))
           return $ RemBindW16 i
-      packProcedure (ReadRemoteRefW32 (RemoteRefW32 i')) = do
-          i <- packDeepProcedure (ReadRemoteRefW32 (RemoteRefW32 i'))
+      packProcedure (ReadRemoteRefW32E (RemoteRefW32 i')) = do
+          i <- packDeepProcedure (ReadRemoteRefW32E (RemoteRefW32 i'))
           return $ RemBindW32 i
-      packProcedure (ReadRemoteRefI8 (RemoteRefI8 i')) = do
-          i <- packDeepProcedure (ReadRemoteRefI8 (RemoteRefI8 i'))
+      packProcedure (ReadRemoteRefI8E (RemoteRefI8 i')) = do
+          i <- packDeepProcedure (ReadRemoteRefI8E (RemoteRefI8 i'))
           return $ RemBindI8 i
-      packProcedure (ReadRemoteRefI16 (RemoteRefI16 i')) = do
-          i <- packDeepProcedure (ReadRemoteRefI16 (RemoteRefI16 i'))
+      packProcedure (ReadRemoteRefI16E (RemoteRefI16 i')) = do
+          i <- packDeepProcedure (ReadRemoteRefI16E (RemoteRefI16 i'))
           return $ RemBindI16 i
-      packProcedure (ReadRemoteRefI32 (RemoteRefI32 i')) = do
-          i <- packDeepProcedure (ReadRemoteRefI32 (RemoteRefI32 i'))
+      packProcedure (ReadRemoteRefI32E (RemoteRefI32 i')) = do
+          i <- packDeepProcedure (ReadRemoteRefI32E (RemoteRefI32 i'))
           return $ RemBindI32 i
-      packProcedure (ReadRemoteRefL8 (RemoteRefL8 i')) = do
-          i <- packDeepProcedure (ReadRemoteRefL8 (RemoteRefL8 i'))
+      packProcedure (ReadRemoteRefL8E (RemoteRefL8 i')) = do
+          i <- packDeepProcedure (ReadRemoteRefL8E (RemoteRefL8 i'))
           return $ RemBindList8 i
-      packProcedure (ReadRemoteRefFloat (RemoteRefFloat i')) = do
-          i <- packDeepProcedure (ReadRemoteRefFloat (RemoteRefFloat i'))
+      packProcedure (ReadRemoteRefFloatE (RemoteRefFloat i')) = do
+          i <- packDeepProcedure (ReadRemoteRefFloatE (RemoteRefFloat i'))
           return $ RemBindFloat i
-      packProcedure (NewRemoteRefB e) = do
+      packProcedure (NewRemoteRefBE e) = do
           s <- get
-          packNewRef (NewRemoteRefB e) (RemoteRefB (ix s))
-      packProcedure (NewRemoteRefW8 e) = do
+          packNewRef (NewRemoteRefBE e) (RemoteRefB (ix s))
+      packProcedure (NewRemoteRefW8E e) = do
           s <- get
-          packNewRef (NewRemoteRefW8 e) (RemoteRefW8 (ix s))
-      packProcedure (NewRemoteRefW16 e) = do
+          packNewRef (NewRemoteRefW8E e) (RemoteRefW8 (ix s))
+      packProcedure (NewRemoteRefW16E e) = do
           s <- get
-          packNewRef (NewRemoteRefW16 e) (RemoteRefW16 (ix s))
-      packProcedure (NewRemoteRefW32 e) = do
+          packNewRef (NewRemoteRefW16E e) (RemoteRefW16 (ix s))
+      packProcedure (NewRemoteRefW32E e) = do
           s <- get
-          packNewRef (NewRemoteRefW32 e) (RemoteRefW32 (ix s))
-      packProcedure (NewRemoteRefI8 e) = do
+          packNewRef (NewRemoteRefW32E e) (RemoteRefW32 (ix s))
+      packProcedure (NewRemoteRefI8E e) = do
           s <- get
-          packNewRef (NewRemoteRefI8 e) (RemoteRefI8 (ix s))
-      packProcedure (NewRemoteRefI16 e) = do
+          packNewRef (NewRemoteRefI8E e) (RemoteRefI8 (ix s))
+      packProcedure (NewRemoteRefI16E e) = do
           s <- get
-          packNewRef (NewRemoteRefI16 e) (RemoteRefI16 (ix s))
-      packProcedure (NewRemoteRefI32 e) = do
+          packNewRef (NewRemoteRefI16E e) (RemoteRefI16 (ix s))
+      packProcedure (NewRemoteRefI32E e) = do
           s <- get
-          packNewRef (NewRemoteRefI32 e) (RemoteRefI32 (ix s))
-      packProcedure (NewRemoteRefL8 e) = do
+          packNewRef (NewRemoteRefI32E e) (RemoteRefI32 (ix s))
+      packProcedure (NewRemoteRefL8E e) = do
           s <- get
-          packNewRef (NewRemoteRefL8 e) (RemoteRefL8 (ix s))
-      packProcedure (NewRemoteRefFloat e) = do
+          packNewRef (NewRemoteRefL8E e) (RemoteRefL8 (ix s))
+      packProcedure (NewRemoteRefFloatE e) = do
           s <- get
-          packNewRef (NewRemoteRefFloat e) (RemoteRefFloat (ix s))
+          packNewRef (NewRemoteRefFloatE e) (RemoteRefFloat (ix s))
       packProcedure (IfThenElseBoolE e cb1 cb2) = do
           i <- packDeepProcedure (IfThenElseBoolE e cb1 cb2)
           return $ RemBindB i
@@ -1069,15 +1069,15 @@ packageProcedure p = do
     packageProcedure' (DelayMicros ms) ib  = addCommand BC_CMD_DELAY_MICROS ((fromIntegral ib) : (packageExpr $ lit ms))
     packageProcedure' (DelayMicrosE ms) ib = addCommand BC_CMD_DELAY_MICROS ((fromIntegral ib) : (packageExpr ms))
     packageProcedure' (BootTaskE tids) ib = addCommand SCHED_CMD_BOOT_TASK ((fromIntegral ib) : (packageExpr tids))
-    packageProcedure' (ReadRemoteRefB (RemoteRefB i)) ib = packageReadRefProcedure EXPR_BOOL ib i
-    packageProcedure' (ReadRemoteRefW8 (RemoteRefW8 i)) ib = packageReadRefProcedure EXPR_WORD8 ib i
-    packageProcedure' (ReadRemoteRefW16 (RemoteRefW16 i)) ib = packageReadRefProcedure EXPR_WORD16 ib i
-    packageProcedure' (ReadRemoteRefW32 (RemoteRefW32 i)) ib = packageReadRefProcedure EXPR_WORD32 ib i
-    packageProcedure' (ReadRemoteRefI8 (RemoteRefI8 i)) ib = packageReadRefProcedure EXPR_INT8 ib i
-    packageProcedure' (ReadRemoteRefI16 (RemoteRefI16 i)) ib = packageReadRefProcedure EXPR_INT16 ib i
-    packageProcedure' (ReadRemoteRefI32 (RemoteRefI32 i)) ib = packageReadRefProcedure EXPR_INT32 ib i
-    packageProcedure' (ReadRemoteRefL8 (RemoteRefL8 i)) ib = packageReadRefProcedure EXPR_LIST8 ib i
-    packageProcedure' (ReadRemoteRefFloat (RemoteRefFloat i)) ib = packageReadRefProcedure EXPR_FLOAT ib i
+    packageProcedure' (ReadRemoteRefBE (RemoteRefB i)) ib = packageReadRefProcedure EXPR_BOOL ib i
+    packageProcedure' (ReadRemoteRefW8E (RemoteRefW8 i)) ib = packageReadRefProcedure EXPR_WORD8 ib i
+    packageProcedure' (ReadRemoteRefW16E (RemoteRefW16 i)) ib = packageReadRefProcedure EXPR_WORD16 ib i
+    packageProcedure' (ReadRemoteRefW32E (RemoteRefW32 i)) ib = packageReadRefProcedure EXPR_WORD32 ib i
+    packageProcedure' (ReadRemoteRefI8E (RemoteRefI8 i)) ib = packageReadRefProcedure EXPR_INT8 ib i
+    packageProcedure' (ReadRemoteRefI16E (RemoteRefI16 i)) ib = packageReadRefProcedure EXPR_INT16 ib i
+    packageProcedure' (ReadRemoteRefI32E (RemoteRefI32 i)) ib = packageReadRefProcedure EXPR_INT32 ib i
+    packageProcedure' (ReadRemoteRefL8E (RemoteRefL8 i)) ib = packageReadRefProcedure EXPR_LIST8 ib i
+    packageProcedure' (ReadRemoteRefFloatE (RemoteRefFloat i)) ib = packageReadRefProcedure EXPR_FLOAT ib i
     packageProcedure' (DebugE s) ib = addCommand BS_CMD_DEBUG ((fromIntegral ib) : (packageExpr s))
     packageProcedure' (IfThenElseBoolE e cb1 cb2) ib = packageIfThenElseProcedure EXPR_BOOL ib e cb1 cb2
     packageProcedure' (IfThenElseWord8E e cb1 cb2) ib = packageIfThenElseProcedure EXPR_WORD8 ib e cb1 cb2
@@ -1338,15 +1338,15 @@ packageRemoteBinding' rt e = do
     addCommand REF_CMD_NEW ([fromIntegral $ fromEnum rt, fromIntegral (ib s), fromIntegral (ix s)] ++ (packageExpr e))
 
 packageRemoteBinding :: ArduinoPrimitive a -> State CommandState B.ByteString
-packageRemoteBinding (NewRemoteRefB e) =  packageRemoteBinding' EXPR_BOOL e
-packageRemoteBinding (NewRemoteRefW8 e) =  packageRemoteBinding' EXPR_WORD8 e
-packageRemoteBinding (NewRemoteRefW16 e) =  packageRemoteBinding' EXPR_WORD16 e
-packageRemoteBinding (NewRemoteRefW32 e) =  packageRemoteBinding' EXPR_WORD32 e
-packageRemoteBinding (NewRemoteRefI8 e) =  packageRemoteBinding' EXPR_INT8 e
-packageRemoteBinding (NewRemoteRefI16 e) =  packageRemoteBinding' EXPR_INT16 e
-packageRemoteBinding (NewRemoteRefI32 e) =  packageRemoteBinding' EXPR_INT32 e
-packageRemoteBinding (NewRemoteRefL8 e) =  packageRemoteBinding' EXPR_LIST8 e
-packageRemoteBinding (NewRemoteRefFloat e) =  packageRemoteBinding' EXPR_FLOAT e
+packageRemoteBinding (NewRemoteRefBE e) =  packageRemoteBinding' EXPR_BOOL e
+packageRemoteBinding (NewRemoteRefW8E e) =  packageRemoteBinding' EXPR_WORD8 e
+packageRemoteBinding (NewRemoteRefW16E e) =  packageRemoteBinding' EXPR_WORD16 e
+packageRemoteBinding (NewRemoteRefW32E e) =  packageRemoteBinding' EXPR_WORD32 e
+packageRemoteBinding (NewRemoteRefI8E e) =  packageRemoteBinding' EXPR_INT8 e
+packageRemoteBinding (NewRemoteRefI16E e) =  packageRemoteBinding' EXPR_INT16 e
+packageRemoteBinding (NewRemoteRefI32E e) =  packageRemoteBinding' EXPR_INT32 e
+packageRemoteBinding (NewRemoteRefL8E e) =  packageRemoteBinding' EXPR_LIST8 e
+packageRemoteBinding (NewRemoteRefFloatE e) =  packageRemoteBinding' EXPR_FLOAT e
 packageRemoteBinding _ = error "packageRemoteBinding: Unsupported primitive"
 
 packageSubExpr :: [Word8] -> Expr a -> [Word8]
@@ -1715,24 +1715,24 @@ parseQueryResult QueryAllTasksE (QueryAllTasksReply ts) = Just (lit ts)
 parseQueryResult (QueryTask _) (QueryTaskReply tr) = Just tr
 parseQueryResult (QueryTaskE _) (QueryTaskReply tr) = Just tr
 parseQueryResult (BootTaskE _) (BootTaskResp b) = Just (if b == 0 then lit False else lit True)
-parseQueryResult (NewRemoteRefB _) (NewReply r) = Just $ RemoteRefB $ fromIntegral r
-parseQueryResult (NewRemoteRefW8 _) (NewReply r) = Just $ RemoteRefW8 $ fromIntegral r
-parseQueryResult (NewRemoteRefW16 _) (NewReply r) = Just $ RemoteRefW16 $ fromIntegral r
-parseQueryResult (NewRemoteRefW32 _) (NewReply r) = Just $ RemoteRefW32 $ fromIntegral r
-parseQueryResult (NewRemoteRefI8 _) (NewReply r) = Just $ RemoteRefI8 $ fromIntegral r
-parseQueryResult (NewRemoteRefI16 _) (NewReply r) = Just $ RemoteRefI16 $ fromIntegral r
-parseQueryResult (NewRemoteRefI32 _) (NewReply r) = Just $ RemoteRefI32 $ fromIntegral r
-parseQueryResult (NewRemoteRefL8 _) (NewReply r) = Just $ RemoteRefL8 $ fromIntegral r
-parseQueryResult (NewRemoteRefFloat _) (NewReply r) = Just $ RemoteRefFloat$ fromIntegral r
-parseQueryResult (ReadRemoteRefB _) (ReadRefBReply r) = Just $ lit r
-parseQueryResult (ReadRemoteRefW8 _) (ReadRefW8Reply r) = Just $ lit r
-parseQueryResult (ReadRemoteRefW16 _) (ReadRefW16Reply r) = Just $ lit r
-parseQueryResult (ReadRemoteRefW32 _) (ReadRefW32Reply r) = Just $ lit r
-parseQueryResult (ReadRemoteRefI8 _) (ReadRefI8Reply r) = Just $ lit r
-parseQueryResult (ReadRemoteRefI16 _) (ReadRefI16Reply r) = Just $ lit r
-parseQueryResult (ReadRemoteRefI32 _) (ReadRefI32Reply r) = Just $ lit r
-parseQueryResult (ReadRemoteRefL8 _) (ReadRefL8Reply r) = Just $ lit r
-parseQueryResult (ReadRemoteRefFloat _) (ReadRefFloatReply r) = Just $ lit r
+parseQueryResult (NewRemoteRefBE _) (NewReply r) = Just $ RemoteRefB $ fromIntegral r
+parseQueryResult (NewRemoteRefW8E _) (NewReply r) = Just $ RemoteRefW8 $ fromIntegral r
+parseQueryResult (NewRemoteRefW16E _) (NewReply r) = Just $ RemoteRefW16 $ fromIntegral r
+parseQueryResult (NewRemoteRefW32E _) (NewReply r) = Just $ RemoteRefW32 $ fromIntegral r
+parseQueryResult (NewRemoteRefI8E _) (NewReply r) = Just $ RemoteRefI8 $ fromIntegral r
+parseQueryResult (NewRemoteRefI16E _) (NewReply r) = Just $ RemoteRefI16 $ fromIntegral r
+parseQueryResult (NewRemoteRefI32E _) (NewReply r) = Just $ RemoteRefI32 $ fromIntegral r
+parseQueryResult (NewRemoteRefL8E _) (NewReply r) = Just $ RemoteRefL8 $ fromIntegral r
+parseQueryResult (NewRemoteRefFloatE _) (NewReply r) = Just $ RemoteRefFloat$ fromIntegral r
+parseQueryResult (ReadRemoteRefBE _) (ReadRefBReply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefW8E _) (ReadRefW8Reply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefW16E _) (ReadRefW16Reply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefW32E _) (ReadRefW32Reply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefI8E _) (ReadRefI8Reply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefI16E _) (ReadRefI16Reply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefI32E _) (ReadRefI32Reply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefL8E _) (ReadRefL8Reply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefFloatE _) (ReadRefFloatReply r) = Just $ lit r
 parseQueryResult (IfThenElseBoolE _ _ _) (IfThenElseBoolReply r) = Just $ lit r
 parseQueryResult (IfThenElseWord8E _ _ _) (IfThenElseW8Reply r) = Just $ lit r
 parseQueryResult (IfThenElseWord16E _ _ _) (IfThenElseW16Reply r) = Just $ lit r

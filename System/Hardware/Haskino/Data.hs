@@ -190,24 +190,24 @@ data ArduinoPrimitive :: * -> * where
      GiveSemE             :: Expr Word8                        -> ArduinoPrimitive (Expr ())
      TakeSem              :: Word8                             -> ArduinoPrimitive ()
      TakeSemE             :: Expr Word8                        -> ArduinoPrimitive (Expr ())
-     WriteRemoteRefB      :: RemoteRef Bool    -> Expr Bool    -> ArduinoPrimitive (Expr ())
-     WriteRemoteRefW8     :: RemoteRef Word8   -> Expr Word8   -> ArduinoPrimitive (Expr ())
-     WriteRemoteRefW16    :: RemoteRef Word16  -> Expr Word16  -> ArduinoPrimitive (Expr ())
-     WriteRemoteRefW32    :: RemoteRef Word32  -> Expr Word32  -> ArduinoPrimitive (Expr ())
-     WriteRemoteRefI8     :: RemoteRef Int8    -> Expr Int8    -> ArduinoPrimitive (Expr ())
-     WriteRemoteRefI16    :: RemoteRef Int16   -> Expr Int16   -> ArduinoPrimitive (Expr ())
-     WriteRemoteRefI32    :: RemoteRef Int32   -> Expr Int32   -> ArduinoPrimitive (Expr ())
-     WriteRemoteRefL8     :: RemoteRef [Word8] -> Expr [Word8] -> ArduinoPrimitive (Expr ())
-     WriteRemoteRefFloat  :: RemoteRef Float   -> Expr Float   -> ArduinoPrimitive (Expr ())
-     ModifyRemoteRefB     :: RemoteRef Bool    -> Expr Bool    -> ArduinoPrimitive (Expr ())
-     ModifyRemoteRefW8    :: RemoteRef Word8   -> Expr Word8   -> ArduinoPrimitive (Expr ())
-     ModifyRemoteRefW16   :: RemoteRef Word16  -> Expr Word16  -> ArduinoPrimitive (Expr ())
-     ModifyRemoteRefW32   :: RemoteRef Word32  -> Expr Word32  -> ArduinoPrimitive (Expr ())
-     ModifyRemoteRefI8    :: RemoteRef Int8    -> Expr Int8    -> ArduinoPrimitive (Expr ())
-     ModifyRemoteRefI16   :: RemoteRef Int16   -> Expr Int16   -> ArduinoPrimitive (Expr ())
-     ModifyRemoteRefI32   :: RemoteRef Int32   -> Expr Int32   -> ArduinoPrimitive (Expr ())
-     ModifyRemoteRefL8    :: RemoteRef [Word8] -> Expr [Word8] -> ArduinoPrimitive (Expr ())
-     ModifyRemoteRefFloat :: RemoteRef Float   -> Expr Float   -> ArduinoPrimitive (Expr ())
+     WriteRemoteRefBE     :: RemoteRef Bool    -> Expr Bool    -> ArduinoPrimitive (Expr ())
+     WriteRemoteRefW8E    :: RemoteRef Word8   -> Expr Word8   -> ArduinoPrimitive (Expr ())
+     WriteRemoteRefW16E   :: RemoteRef Word16  -> Expr Word16  -> ArduinoPrimitive (Expr ())
+     WriteRemoteRefW32E   :: RemoteRef Word32  -> Expr Word32  -> ArduinoPrimitive (Expr ())
+     WriteRemoteRefI8E    :: RemoteRef Int8    -> Expr Int8    -> ArduinoPrimitive (Expr ())
+     WriteRemoteRefI16E   :: RemoteRef Int16   -> Expr Int16   -> ArduinoPrimitive (Expr ())
+     WriteRemoteRefI32E   :: RemoteRef Int32   -> Expr Int32   -> ArduinoPrimitive (Expr ())
+     WriteRemoteRefL8E    :: RemoteRef [Word8] -> Expr [Word8] -> ArduinoPrimitive (Expr ())
+     WriteRemoteRefFloatE :: RemoteRef Float   -> Expr Float   -> ArduinoPrimitive (Expr ())
+     ModifyRemoteRefBE    :: RemoteRef Bool    -> Expr Bool    -> ArduinoPrimitive (Expr ())
+     ModifyRemoteRefW8E   :: RemoteRef Word8   -> Expr Word8   -> ArduinoPrimitive (Expr ())
+     ModifyRemoteRefW16E  :: RemoteRef Word16  -> Expr Word16  -> ArduinoPrimitive (Expr ())
+     ModifyRemoteRefW32E  :: RemoteRef Word32  -> Expr Word32  -> ArduinoPrimitive (Expr ())
+     ModifyRemoteRefI8E   :: RemoteRef Int8    -> Expr Int8    -> ArduinoPrimitive (Expr ())
+     ModifyRemoteRefI16E  :: RemoteRef Int16   -> Expr Int16   -> ArduinoPrimitive (Expr ())
+     ModifyRemoteRefI32E  :: RemoteRef Int32   -> Expr Int32   -> ArduinoPrimitive (Expr ())
+     ModifyRemoteRefL8E   :: RemoteRef [Word8] -> Expr [Word8] -> ArduinoPrimitive (Expr ())
+     ModifyRemoteRefFloatE :: RemoteRef Float   -> Expr Float   -> ArduinoPrimitive (Expr ())
      Loop                 :: Arduino ()                        -> ArduinoPrimitive ()
      -- ToDo: add SPI commands
      -- Procedures
@@ -249,24 +249,24 @@ data ArduinoPrimitive :: * -> * where
      QueryTask            :: TaskID -> ArduinoPrimitive (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
      QueryTaskE           :: TaskIDE -> ArduinoPrimitive (Maybe (TaskLength, TaskLength, TaskPos, TimeMillis))
      BootTaskE            :: Expr [Word8] -> ArduinoPrimitive (Expr Bool)
-     ReadRemoteRefB       :: RemoteRef Bool   -> ArduinoPrimitive (Expr Bool)
-     ReadRemoteRefW8      :: RemoteRef Word8  -> ArduinoPrimitive (Expr Word8)
-     ReadRemoteRefW16     :: RemoteRef Word16 -> ArduinoPrimitive (Expr Word16)
-     ReadRemoteRefW32     :: RemoteRef Word32 -> ArduinoPrimitive (Expr Word32)
-     ReadRemoteRefI8      :: RemoteRef Int8  -> ArduinoPrimitive (Expr Int8)
-     ReadRemoteRefI16     :: RemoteRef Int16 -> ArduinoPrimitive (Expr Int16)
-     ReadRemoteRefI32     :: RemoteRef Int32 -> ArduinoPrimitive (Expr Int32)
-     ReadRemoteRefL8      :: RemoteRef [Word8] -> ArduinoPrimitive (Expr [Word8])
-     ReadRemoteRefFloat   :: RemoteRef Float -> ArduinoPrimitive (Expr Float)
-     NewRemoteRefB        :: Expr Bool   -> ArduinoPrimitive (RemoteRef Bool)
-     NewRemoteRefW8       :: Expr Word8  -> ArduinoPrimitive (RemoteRef Word8)
-     NewRemoteRefW16      :: Expr Word16 -> ArduinoPrimitive (RemoteRef Word16)
-     NewRemoteRefW32      :: Expr Word32 -> ArduinoPrimitive (RemoteRef Word32)
-     NewRemoteRefI8       :: Expr Int8  -> ArduinoPrimitive (RemoteRef Int8)
-     NewRemoteRefI16      :: Expr Int16 -> ArduinoPrimitive (RemoteRef Int16)
-     NewRemoteRefI32      :: Expr Int32 -> ArduinoPrimitive (RemoteRef Int32)
-     NewRemoteRefL8       :: Expr [Word8] -> ArduinoPrimitive (RemoteRef [Word8])
-     NewRemoteRefFloat    :: Expr Float -> ArduinoPrimitive (RemoteRef Float)
+     ReadRemoteRefBE      :: RemoteRef Bool   -> ArduinoPrimitive (Expr Bool)
+     ReadRemoteRefW8E     :: RemoteRef Word8  -> ArduinoPrimitive (Expr Word8)
+     ReadRemoteRefW16E    :: RemoteRef Word16 -> ArduinoPrimitive (Expr Word16)
+     ReadRemoteRefW32E    :: RemoteRef Word32 -> ArduinoPrimitive (Expr Word32)
+     ReadRemoteRefI8E     :: RemoteRef Int8  -> ArduinoPrimitive (Expr Int8)
+     ReadRemoteRefI16E    :: RemoteRef Int16 -> ArduinoPrimitive (Expr Int16)
+     ReadRemoteRefI32E    :: RemoteRef Int32 -> ArduinoPrimitive (Expr Int32)
+     ReadRemoteRefL8E     :: RemoteRef [Word8] -> ArduinoPrimitive (Expr [Word8])
+     ReadRemoteRefFloatE  :: RemoteRef Float -> ArduinoPrimitive (Expr Float)
+     NewRemoteRefBE       :: Expr Bool   -> ArduinoPrimitive (RemoteRef Bool)
+     NewRemoteRefW8E      :: Expr Word8  -> ArduinoPrimitive (RemoteRef Word8)
+     NewRemoteRefW16E     :: Expr Word16 -> ArduinoPrimitive (RemoteRef Word16)
+     NewRemoteRefW32E     :: Expr Word32 -> ArduinoPrimitive (RemoteRef Word32)
+     NewRemoteRefI8E      :: Expr Int8  -> ArduinoPrimitive (RemoteRef Int8)
+     NewRemoteRefI16E     :: Expr Int16 -> ArduinoPrimitive (RemoteRef Int16)
+     NewRemoteRefI32E     :: Expr Int32 -> ArduinoPrimitive (RemoteRef Int32)
+     NewRemoteRefL8E      :: Expr [Word8] -> ArduinoPrimitive (RemoteRef [Word8])
+     NewRemoteRefFloatE   :: Expr Float -> ArduinoPrimitive (RemoteRef Float)
      IfThenElseUnitE      :: Expr Bool -> Arduino (Expr ()) -> Arduino (Expr ()) -> ArduinoPrimitive (Expr ())
      IfThenElseBoolE      :: Expr Bool -> Arduino (Expr Bool) -> Arduino (Expr Bool) -> ArduinoPrimitive (Expr Bool)
      IfThenElseWord8E     :: Expr Bool -> Arduino (Expr Word8) -> Arduino (Expr Word8) -> ArduinoPrimitive (Expr Word8)
@@ -519,24 +519,24 @@ instance KnownResult ArduinoPrimitive where
   knownResult (GiveSemE {}             ) = Just LitUnit
   knownResult (TakeSem {}              ) = Just ()
   knownResult (TakeSemE {}             ) = Just LitUnit
-  knownResult (WriteRemoteRefB {}      ) = Just LitUnit
-  knownResult (WriteRemoteRefW8 {}     ) = Just LitUnit
-  knownResult (WriteRemoteRefW16 {}    ) = Just LitUnit
-  knownResult (WriteRemoteRefW32  {}   ) = Just LitUnit
-  knownResult (WriteRemoteRefI8 {}     ) = Just LitUnit
-  knownResult (WriteRemoteRefI16 {}    ) = Just LitUnit
-  knownResult (WriteRemoteRefI32 {}    ) = Just LitUnit
-  knownResult (WriteRemoteRefL8 {}     ) = Just LitUnit
-  knownResult (WriteRemoteRefFloat {}  ) = Just LitUnit
-  knownResult (ModifyRemoteRefB {}     ) = Just LitUnit
-  knownResult (ModifyRemoteRefW8 {}    ) = Just LitUnit
-  knownResult (ModifyRemoteRefW16 {}   ) = Just LitUnit
-  knownResult (ModifyRemoteRefW32 {}   ) = Just LitUnit
-  knownResult (ModifyRemoteRefI8 {}    ) = Just LitUnit
-  knownResult (ModifyRemoteRefI16 {}   ) = Just LitUnit
-  knownResult (ModifyRemoteRefI32 {}   ) = Just LitUnit
-  knownResult (ModifyRemoteRefL8 {}    ) = Just LitUnit
-  knownResult (ModifyRemoteRefFloat {} ) = Just LitUnit
+  knownResult (WriteRemoteRefBE {}     ) = Just LitUnit
+  knownResult (WriteRemoteRefW8E {}    ) = Just LitUnit
+  knownResult (WriteRemoteRefW16E {}   ) = Just LitUnit
+  knownResult (WriteRemoteRefW32E  {}  ) = Just LitUnit
+  knownResult (WriteRemoteRefI8E {}    ) = Just LitUnit
+  knownResult (WriteRemoteRefI16E {}   ) = Just LitUnit
+  knownResult (WriteRemoteRefI32E {}   ) = Just LitUnit
+  knownResult (WriteRemoteRefL8E {}    ) = Just LitUnit
+  knownResult (WriteRemoteRefFloatE {} ) = Just LitUnit
+  knownResult (ModifyRemoteRefBE {}    ) = Just LitUnit
+  knownResult (ModifyRemoteRefW8E {}   ) = Just LitUnit
+  knownResult (ModifyRemoteRefW16E {}  ) = Just LitUnit
+  knownResult (ModifyRemoteRefW32E {}  ) = Just LitUnit
+  knownResult (ModifyRemoteRefI8E {}   ) = Just LitUnit
+  knownResult (ModifyRemoteRefI16E {}  ) = Just LitUnit
+  knownResult (ModifyRemoteRefI32E {}  ) = Just LitUnit
+  knownResult (ModifyRemoteRefL8E {}   ) = Just LitUnit
+  knownResult (ModifyRemoteRefFloatE {} ) = Just LitUnit
   knownResult _                          = Nothing
 
 systemReset :: Arduino ()
@@ -679,74 +679,74 @@ takeSemE :: Expr Word8 -> Arduino (Expr ())
 takeSemE id = Arduino $ primitive $ TakeSemE id
 
 class ExprB a => RemoteReference a where
-    newRemoteRef    :: Expr a -> Arduino (RemoteRef a)
-    readRemoteRef   :: RemoteRef a -> Arduino (Expr a)
-    writeRemoteRef  :: RemoteRef a -> Expr a -> Arduino (Expr ())
-    modifyRemoteRef :: RemoteRef a -> (Expr a -> Expr a) ->
+    newRemoteRefE    :: Expr a -> Arduino (RemoteRef a)
+    readRemoteRefE   :: RemoteRef a -> Arduino (Expr a)
+    writeRemoteRefE  :: RemoteRef a -> Expr a -> Arduino (Expr ())
+    modifyRemoteRefE :: RemoteRef a -> (Expr a -> Expr a) ->
                              Arduino (Expr ())
 
 instance RemoteReference Bool where
-    newRemoteRef n      = Arduino $ primitive $ NewRemoteRefB n
-    readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefB n
-    writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefB r e
-    modifyRemoteRef (RemoteRefB i) f =
-        Arduino $ primitive $ ModifyRemoteRefB (RemoteRefB i) (f $ RefB i)
+    newRemoteRefE n      = Arduino $ primitive $ NewRemoteRefBE n
+    readRemoteRefE n     = Arduino $ primitive $ ReadRemoteRefBE n
+    writeRemoteRefE r e  = Arduino $ primitive $ WriteRemoteRefBE r e
+    modifyRemoteRefE (RemoteRefB i) f =
+        Arduino $ primitive $ ModifyRemoteRefBE (RemoteRefB i) (f $ RefB i)
 
 instance RemoteReference Word8 where
-    newRemoteRef n      = Arduino $ primitive $ NewRemoteRefW8 n
-    readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefW8 n
-    writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefW8 r e
-    modifyRemoteRef (RemoteRefW8 i) f =
-        Arduino $ primitive $ ModifyRemoteRefW8 (RemoteRefW8 i) (f $ RefW8 i)
+    newRemoteRefE n      = Arduino $ primitive $ NewRemoteRefW8E n
+    readRemoteRefE n     = Arduino $ primitive $ ReadRemoteRefW8E n
+    writeRemoteRefE r e  = Arduino $ primitive $ WriteRemoteRefW8E r e
+    modifyRemoteRefE (RemoteRefW8 i) f =
+        Arduino $ primitive $ ModifyRemoteRefW8E (RemoteRefW8 i) (f $ RefW8 i)
 
 instance RemoteReference Word16 where
-    newRemoteRef n      = Arduino $ primitive $ NewRemoteRefW16 n
-    readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefW16 n
-    writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefW16 r e
-    modifyRemoteRef (RemoteRefW16 i) f =
-        Arduino $ primitive $ ModifyRemoteRefW16 (RemoteRefW16 i) (f $ RefW16 i)
+    newRemoteRefE n      = Arduino $ primitive $ NewRemoteRefW16E n
+    readRemoteRefE n     = Arduino $ primitive $ ReadRemoteRefW16E n
+    writeRemoteRefE r e  = Arduino $ primitive $ WriteRemoteRefW16E r e
+    modifyRemoteRefE (RemoteRefW16 i) f =
+        Arduino $ primitive $ ModifyRemoteRefW16E (RemoteRefW16 i) (f $ RefW16 i)
 
 instance RemoteReference Word32 where
-    newRemoteRef n      = Arduino $ primitive $ NewRemoteRefW32 n
-    readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefW32 n
-    writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefW32 r e
-    modifyRemoteRef (RemoteRefW32 i) f =
-        Arduino $ primitive $ ModifyRemoteRefW32 (RemoteRefW32 i) (f $ RefW32 i)
+    newRemoteRefE n      = Arduino $ primitive $ NewRemoteRefW32E n
+    readRemoteRefE n     = Arduino $ primitive $ ReadRemoteRefW32E n
+    writeRemoteRefE r e  = Arduino $ primitive $ WriteRemoteRefW32E r e
+    modifyRemoteRefE (RemoteRefW32 i) f =
+        Arduino $ primitive $ ModifyRemoteRefW32E (RemoteRefW32 i) (f $ RefW32 i)
 
 instance RemoteReference Int8 where
-    newRemoteRef n      = Arduino $ primitive $ NewRemoteRefI8 n
-    readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefI8 n
-    writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefI8 r e
-    modifyRemoteRef (RemoteRefI8 i) f =
-        Arduino $ primitive $ ModifyRemoteRefI8 (RemoteRefI8 i) (f $ RefI8 i)
+    newRemoteRefE n      = Arduino $ primitive $ NewRemoteRefI8E n
+    readRemoteRefE n     = Arduino $ primitive $ ReadRemoteRefI8E n
+    writeRemoteRefE r e  = Arduino $ primitive $ WriteRemoteRefI8E r e
+    modifyRemoteRefE (RemoteRefI8 i) f =
+        Arduino $ primitive $ ModifyRemoteRefI8E (RemoteRefI8 i) (f $ RefI8 i)
 
 instance RemoteReference Int16 where
-    newRemoteRef n      = Arduino $ primitive $ NewRemoteRefI16 n
-    readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefI16 n
-    writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefI16 r e
-    modifyRemoteRef (RemoteRefI16 i) f =
-        Arduino $ primitive $ ModifyRemoteRefI16 (RemoteRefI16 i) (f $ RefI16 i)
+    newRemoteRefE n      = Arduino $ primitive $ NewRemoteRefI16E n
+    readRemoteRefE n     = Arduino $ primitive $ ReadRemoteRefI16E n
+    writeRemoteRefE r e  = Arduino $ primitive $ WriteRemoteRefI16E r e
+    modifyRemoteRefE (RemoteRefI16 i) f =
+        Arduino $ primitive $ ModifyRemoteRefI16E (RemoteRefI16 i) (f $ RefI16 i)
 
 instance RemoteReference Int32 where
-    newRemoteRef n      = Arduino $ primitive $ NewRemoteRefI32 n
-    readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefI32 n
-    writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefI32 r e
-    modifyRemoteRef (RemoteRefI32 i) f =
-        Arduino $ primitive $ ModifyRemoteRefI32 (RemoteRefI32 i) (f $ RefI32 i)
+    newRemoteRefE n      = Arduino $ primitive $ NewRemoteRefI32E n
+    readRemoteRefE n     = Arduino $ primitive $ ReadRemoteRefI32E n
+    writeRemoteRefE r e  = Arduino $ primitive $ WriteRemoteRefI32E r e
+    modifyRemoteRefE (RemoteRefI32 i) f =
+        Arduino $ primitive $ ModifyRemoteRefI32E (RemoteRefI32 i) (f $ RefI32 i)
 
 instance RemoteReference [Word8] where
-    newRemoteRef n      = Arduino $ primitive $ NewRemoteRefL8 n
-    readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefL8 n
-    writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefL8 r e
-    modifyRemoteRef (RemoteRefL8 i) f =
-        Arduino $ primitive $ ModifyRemoteRefL8 (RemoteRefL8 i) (f $ RefList8 i)
+    newRemoteRefE n      = Arduino $ primitive $ NewRemoteRefL8E n
+    readRemoteRefE n     = Arduino $ primitive $ ReadRemoteRefL8E n
+    writeRemoteRefE r e  = Arduino $ primitive $ WriteRemoteRefL8E r e
+    modifyRemoteRefE (RemoteRefL8 i) f =
+        Arduino $ primitive $ ModifyRemoteRefL8E (RemoteRefL8 i) (f $ RefList8 i)
 
 instance RemoteReference Float where
-    newRemoteRef n      = Arduino $ primitive $ NewRemoteRefFloat n
-    readRemoteRef n     = Arduino $ primitive $ ReadRemoteRefFloat n
-    writeRemoteRef r e  = Arduino $ primitive $ WriteRemoteRefFloat r e
-    modifyRemoteRef (RemoteRefFloat i) f =
-        Arduino $ primitive $ ModifyRemoteRefFloat (RemoteRefFloat i) (f $ RefFloat i)
+    newRemoteRefE n      = Arduino $ primitive $ NewRemoteRefFloatE n
+    readRemoteRefE n     = Arduino $ primitive $ ReadRemoteRefFloatE n
+    writeRemoteRefE r e  = Arduino $ primitive $ WriteRemoteRefFloatE r e
+    modifyRemoteRefE (RemoteRefFloat i) f =
+        Arduino $ primitive $ ModifyRemoteRefFloatE (RemoteRefFloat i) (f $ RefFloat i)
 
 loop :: Arduino () -> Arduino ()
 loop m = Arduino $ primitive $ Loop m

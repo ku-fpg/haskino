@@ -241,15 +241,15 @@ sendProcedureCmds c (Debug msg) cmds = do
     message c msg
     sendToArduino c cmds
 sendProcedureCmds c (Die msg msgs) cmds = runDie c msg msgs
-sendProcedureCmds c (NewRemoteRefB r) cmds = sendRemoteBindingCmds c (NewRemoteRefB r) cmds
-sendProcedureCmds c (NewRemoteRefW8 r) cmds  = sendRemoteBindingCmds c (NewRemoteRefW8 r) cmds
-sendProcedureCmds c (NewRemoteRefW16 r) cmds = sendRemoteBindingCmds c (NewRemoteRefW16 r) cmds
-sendProcedureCmds c (NewRemoteRefW32 r) cmds = sendRemoteBindingCmds c (NewRemoteRefW32 r) cmds
-sendProcedureCmds c (NewRemoteRefI8 r) cmds = sendRemoteBindingCmds c (NewRemoteRefI8 r) cmds
-sendProcedureCmds c (NewRemoteRefI16 r) cmds = sendRemoteBindingCmds c (NewRemoteRefI16 r) cmds
-sendProcedureCmds c (NewRemoteRefI32 r) cmds = sendRemoteBindingCmds c (NewRemoteRefI32 r) cmds
-sendProcedureCmds c (NewRemoteRefL8 r) cmds = sendRemoteBindingCmds c (NewRemoteRefL8 r) cmds
-sendProcedureCmds c (NewRemoteRefFloat r) cmds = sendRemoteBindingCmds c (NewRemoteRefFloat r) cmds
+sendProcedureCmds c (NewRemoteRefBE r) cmds = sendRemoteBindingCmds c (NewRemoteRefBE r) cmds
+sendProcedureCmds c (NewRemoteRefW8E r) cmds  = sendRemoteBindingCmds c (NewRemoteRefW8E r) cmds
+sendProcedureCmds c (NewRemoteRefW16E r) cmds = sendRemoteBindingCmds c (NewRemoteRefW16E r) cmds
+sendProcedureCmds c (NewRemoteRefW32E r) cmds = sendRemoteBindingCmds c (NewRemoteRefW32E r) cmds
+sendProcedureCmds c (NewRemoteRefI8E r) cmds = sendRemoteBindingCmds c (NewRemoteRefI8E r) cmds
+sendProcedureCmds c (NewRemoteRefI16E r) cmds = sendRemoteBindingCmds c (NewRemoteRefI16E r) cmds
+sendProcedureCmds c (NewRemoteRefI32E r) cmds = sendRemoteBindingCmds c (NewRemoteRefI32E r) cmds
+sendProcedureCmds c (NewRemoteRefL8E r) cmds = sendRemoteBindingCmds c (NewRemoteRefL8E r) cmds
+sendProcedureCmds c (NewRemoteRefFloatE r) cmds = sendRemoteBindingCmds c (NewRemoteRefFloatE r) cmds
 sendProcedureCmds c (LiftIO m) cmds = do
     sendToArduino c cmds
     m

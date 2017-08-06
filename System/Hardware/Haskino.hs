@@ -54,8 +54,8 @@ module System.Hardware.Haskino (
   -- ** Control structures
   , loop, loopE, ArduinoConditional(..), forInE, whileE, repeatUntilE
   -- ** Expressions
-  , Expr(..), RemoteRef, lit, newRemoteRef, readRemoteRef, writeRemoteRef
-  , modifyRemoteRef, (++*), (*:), (!!*), len, pack, litString, showE, showFFloatE
+  , Expr(..), RemoteRef, lit, newRemoteRefE, readRemoteRefE, writeRemoteRefE
+  , modifyRemoteRefE, (++*), (*:), (!!*), len, pack, litString, showE, showFFloatE
   , ExprB, abs_, rep_, lessE, lesseqE, greatE, greateqE, eqE, neqE
   -- ** Debugging
   , debug, debugE, debugListen, die, deframe
