@@ -17,6 +17,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            fmapAbsExpr,
                                            fmapRepBindReturn,
                                            fmapRepExpr,
+                                           isExprClassType,
                                            modId,
                                            repExpr,
                                            stringToId,
@@ -71,6 +72,7 @@ import DsMonad (initDsTc)
 import Control.Arrow (first, second)
 import Control.Monad
 import Data.Functor
+import Data.Word
 import Encoding (zEncodeString)
 import OccName
 import Var
@@ -97,6 +99,29 @@ ifThenElseEitherNameTH = 'System.Hardware.Haskino.ifThenElseEither
 iterateETH             = 'System.Hardware.Haskino.iterateE
 leftNameTH             = 'System.Hardware.Haskino.ExprLeft
 rightNameTH            = 'System.Hardware.Haskino.ExprRight
+litUnitNameTH          = 'System.Hardware.Haskino.LitUnit 
+litBNameTH             = 'System.Hardware.Haskino.LitB 
+litW8NameTH            = 'System.Hardware.Haskino.LitW8
+litW16NameTH           = 'System.Hardware.Haskino.LitW16
+litW32NameTH           = 'System.Hardware.Haskino.LitW32
+litI8NameTH            = 'System.Hardware.Haskino.LitI8
+litI16NameTH           = 'System.Hardware.Haskino.LitI16
+litI32NameTH           = 'System.Hardware.Haskino.LitI32
+litL8NameTH            = 'System.Hardware.Haskino.LitList8
+litFloatNameTH         = 'System.Hardware.Haskino.LitFloat
+
+exprClassNames :: [TH.Name]
+exprClassNames = [litUnitNameTH, litBNameTH, litW8NameTH, litW16NameTH,
+                  litW32NameTH, litI8NameTH, litI16NameTH, litI32NameTH,
+                  litL8NameTH, litFloatNameTH]
+
+isExprClassType :: PassCoreM m => Type -> m Bool
+isExprClassType ty = do
+    ectys <- exprClassTypes
+    return $ any (eqType ty) ectys
+  where
+    exprClassTypes :: PassCoreM m => m [Type]
+    exprClassTypes = mapM thNameToReturnBaseType exprClassNames
 
 -- The following lines contain definitions of Template Haskell namde
 -- for standard Haskell functions.
@@ -175,6 +200,13 @@ thNameTyToTyConApp :: PassCoreM m => TH.Name -> Type -> m Type
 thNameTyToTyConApp n ty = do
   tyCon <- thNameToTyCon n
   return $  mkTyConApp tyCon [ty]
+
+thNameToReturnBaseType :: PassCoreM m => TH.Name -> m Type
+thNameToReturnBaseType th = do
+    id <- thNameToId th
+    let (_, retTy) = splitFunTys $ varType id
+    let (_, [baseTy]) = splitTyConApp retTy
+    return baseTy
 
 varString :: Id -> String
 varString = occNameString . nameOccName . Var.varName

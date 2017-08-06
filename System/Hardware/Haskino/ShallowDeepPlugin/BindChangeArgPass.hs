@@ -62,8 +62,8 @@ comProcList = [ "systemReset"
               , "takeSemE"
               , "loopE"
               , "forInE"
-              , "writeRemoteRef"
-              , "modifyRemoteRef"
+              , "writeRemoteRefE"
+              , "modifyRemoteRefE"
               , "queryFirmwareE"
               , "queryProcessorE"
               , "microsE"
@@ -84,8 +84,8 @@ comProcList = [ "systemReset"
               , "queryAllTasksE"
               , "queryTaskE"
               , "bootTaskE"
-              , "readRemoteRef"
-              , "newRemoteRef"
+              , "readRemoteRefE"
+              , "newRemoteRefE"
               , "ifThenElseBoolE"
               , "ifThenElseWord8E"
               , "ifThenElseWord16E"
@@ -365,19 +365,23 @@ changeSubBind b e = do
   case tyCon_m of
       -- We are looking for return types of Arduino a
       Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
+          -- Calculate which args we should translate, only
+          -- ones of our languages expression types
+          xlats <- mapM isExprClassType argTys
           -- Change the binds and arg types to Expr a
-          zipBsArgTys <- mapM changeArg (zip bs argTys)
+          zipBsArgTys <- mapM changeArg (zip3 bs argTys xlats)
           let (bs', argTys') = unzip zipBsArgTys
 
-          -- Put arg types into state
+          -- Put arg names to translate in body into state
+          let (bs'', _) = unzip $ filter snd $ zip bs' xlats
           s <- get
-          put s{args = bs'}
+          put s{args = bs''}
 
-          -- Change any apps of the args in the body
+          -- Change any apps of the changed args in the body
           e'' <- changeArgAppsExpr e'
 
           -- Generate args for new shallow body
-          deepArgs <- mapM repExpr (map Var bs)
+          deepArgs <- mapM repShallowArg $ zip (map Var bs) xlats
 
           -- Change return type
           exprTyCon <- thNameToTyCon exprTyConTH
@@ -401,19 +405,27 @@ changeSubBind b e = do
           return [(b, mkLams bs absExpr), (b', mkLams bs' e''')]
       _ -> return [(b, e)]
 
-changeArg :: (CoreBndr, Type) -> BindM (CoreBndr, Type)
-changeArg (b, ty) = do
-  let tyCon_m = splitTyConApp_maybe ty
-  case tyCon_m of
-    Just (_, []) -> do
-        -- ToDo:  Check that type is a valid Haskino Expr Type?
-        -- Lookup the GHC type constructor of Expr
-        exprTyCon <- thNameToTyCon exprTyConTH
-        -- Make the type of the Expr for the specified type
-        let ty' = mkTyConApp exprTyCon [ty]
-        let b' = setVarType b ty'
-        return (b', ty')
-    _       -> return (b, ty)
+changeArg :: (CoreBndr, Type, Bool) -> BindM (CoreBndr, Type)
+changeArg (b, ty, p) = do
+  if p then do
+    let tyCon_m = splitTyConApp_maybe ty
+    case tyCon_m of
+      Just (_, []) -> do
+          -- Lookup the GHC type constructor of Expr
+          exprTyCon <- thNameToTyCon exprTyConTH
+          -- Make the type of the Expr for the specified type
+          let ty' = mkTyConApp exprTyCon [ty]
+          let b' = setVarType b ty'
+          return (b', ty')
+      _       -> return (b, ty)
+  else return (b, ty)
+
+repShallowArg :: (CoreExpr, Bool) -> BindM CoreExpr
+repShallowArg (e, p) =
+  if p then do
+    e' <- repExpr e 
+    return e' 
+  else return e
 
 changeArgAppsExpr :: CoreExpr -> BindM CoreExpr
 changeArgAppsExpr e = do
@@ -533,7 +545,11 @@ changeAppExpr e = do
                 vb' <- if vb `M.member` sdMap
                        then return $ sdMap M.! vb
                        else stringToId $ (varString vb) ++ deepSuffix
-                args' <- mapM repExpr args
+                -- Calculate which args we should translate, only
+                -- ones of our languages expression types
+                xlats <- mapM isExprClassType argTys
+                args' <- mapM repShallowArg $ zip args xlats
+                -- args' <- mapM repExpr args
                 let e' = mkCoreApps (Var vb') args'
                 absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' e'
                 return $ absExpr
