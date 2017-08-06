@@ -8,7 +8,10 @@
 -- Function test example used for rewrite written directly in deep version.
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.SamplePrograms.Rewrite.TransFuncArgTestE(transTestProg1E) where
+module System.Hardware.Haskino.SamplePrograms.Rewrite.TransFuncArgTestE(transTestProg1E
+                                                                      , transTestProg2E
+                                                                      , transTestProg3E 
+                                                                      ) where
 
 import System.Hardware.Haskino
 import Control.Monad
@@ -51,11 +54,33 @@ ps = PinData { pin1 = 2
 
 transTestProg1E :: Arduino (Expr ())
 transTestProg1E = do
-    setPinModeE 13 OUTPUT
+    setPinModeE (pin3 ps) OUTPUT
     setPinModeE 2 INPUT
     setPinModeE 3 INPUT
     loopE $ do 
         a <- myRead1 ps
         b <- myRead1 ps
+        myWrite ps (a ||* b)
+        delayMillisE 1000
+
+transTestProg2E :: Arduino (Expr ())
+transTestProg2E = do
+    setPinModeE 13 OUTPUT
+    setPinModeE 2 INPUT
+    setPinModeE 3 INPUT
+    loopE $ do 
+        a <- myRead2 ps
+        b <- myRead2 ps
+        myWrite ps (a ||* b)
+        delayMillisE 1000
+
+transTestProg3E :: Arduino (Expr ())
+transTestProg3E = do
+    setPinModeE (pin3 ps) OUTPUT
+    setPinModeE (pin1 ps) INPUT
+    setPinModeE (pin2 ps) INPUT
+    loopE $ do 
+        a <- myRead2 ps
+        b <- myRead3 ps
         myWrite ps (a ||* b)
         delayMillisE 1000
