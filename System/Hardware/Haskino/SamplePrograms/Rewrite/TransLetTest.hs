@@ -38,18 +38,38 @@ transTestProg1 = do
 transTestProg2 :: Arduino ()
 transTestProg2 = do
     let myRead p = do
-        delayMillis 100
+        delayMillis 101
         a <- digitalRead (p+1)
         return (not a)
     let myWrite p b = do
-        delayMillis 100
+        delayMillis 101
         digitalWrite (1) (not b)
     setPinMode 13 OUTPUT
     setPinMode 2 INPUT
     setPinMode 3 INPUT
     loop $ do
         a <- myRead 2
+        b <- myRead 3
         myWrite 13 (a || False)
+        delayMillis 1000
+
+transTestProg3 :: Arduino ()
+transTestProg3 = do
+    let myRead p = do
+        delayMillis 102
+        a <- digitalRead (p+1)
+        return (not a)
+    let myWrite p b = do
+        delayMillis 102
+        digitalWrite (p) (not b)
+    setPinMode 13 OUTPUT
+    setPinMode 2 INPUT
+    setPinMode 3 INPUT
+    loop $ do
+        a <- myRead 2
+        b <- myRead 3
+        myWrite 13 (a || False)
+        myWrite 14 b
         delayMillis 1000
 
 test1 :: Bool
@@ -57,6 +77,9 @@ test1 = (show transTestProg1) == (show transTestProg1E)
 
 test2 :: Bool
 test2 = (show transTestProg2) == (show transTestProg2E)
+
+test3 :: Bool
+test3 = (show transTestProg3) == (show transTestProg3E)
 
 transLetTest :: IO ()
 transLetTest = do
@@ -75,3 +98,10 @@ transLetTest = do
       putStrLn $ show transTestProg2
       putStrLn "    -----------------"
       putStrLn $ show transTestProg2E
+  if test3
+  then putStrLn "    *** Let Test3 Passed"
+  else do
+      putStrLn "    *** Let Test3 Failed"
+      putStrLn $ show transTestProg3
+      putStrLn "    -----------------"
+      putStrLn $ show transTestProg3E

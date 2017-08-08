@@ -306,9 +306,10 @@ comProcList = [ "systemReset"
 
 data BindEnv
     = BindEnv
-      { pluginModGuts :: ModGuts,
-        args :: [CoreBndr],
-        shallowDeepMap :: M.Map Id Id
+      { pluginModGuts   :: ModGuts,
+        args            :: [CoreBndr],
+        shallowDeepMap  :: M.Map Id Id,
+        shallowDeepMaps :: [M.Map Id Id]
       }
 
 newtype BindM a = BindM { runBindM :: StateT BindEnv CoreM a }
@@ -324,12 +325,12 @@ deepSuffix = "_deep'"
 
 bindChangeArgRetAppPass :: ModGuts -> CoreM ModGuts
 bindChangeArgRetAppPass guts = do
-    (bindsL', s) <- (\x -> (runStateT (runBindM $ (mapM changeArgBind) x) (BindEnv guts [] M.empty))) (mg_binds guts)
+    (bindsL', s) <- (\x -> (runStateT (runBindM $ (mapM changeArgBind) x) (BindEnv guts [] M.empty []))) (mg_binds guts)
     let availNames = nameSetElems $ availsToNameSet $ mg_exports guts
     let shallowDeepMap' = M.filterWithKey (keyExported availNames) (shallowDeepMap s)
     let es = M.elems $ shallowDeepMap'
     let guts' = guts { mg_binds = concat bindsL', mg_exports = mg_exports guts ++ (map (Avail NotPatSyn)(map varName es)) }
-    bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM changeAppBind) x) (BindEnv guts' [] (shallowDeepMap s)))) guts'
+    bindsOnlyPass (\x -> fst <$> (runStateT (runBindM $ (mapM changeAppBind) x) (BindEnv guts' [] (shallowDeepMap s) []))) guts'
   where
     keyExported :: [Name] -> Id  -> Id -> Bool
     keyExported ns sId _ = (varName sId) `elem` ns
@@ -447,7 +448,6 @@ changeArgAppsExpr e = do
       e' <- changeArgAppsExpr e
       return $ Lam tb e'
     Let bind body -> do
-      body' <- changeArgAppsExpr body
       bind' <- case bind of
                   (NonRec v e) -> do
                     e' <- changeArgAppsExpr e
@@ -455,6 +455,7 @@ changeArgAppsExpr e = do
                   (Rec rbs) -> do
                     rbs' <- changeArgAppsExpr' rbs
                     return $ Rec rbs'
+      body' <- changeArgAppsExpr body
       return $ Let bind' body'
     Case e tb ty alts -> do
       e' <- changeArgAppsExpr e
@@ -501,6 +502,21 @@ changeAppBind' ((b, e) : bs) = do
   bs' <- changeAppBind' bs
   return $ (b, e''') : bs'
 
+findDeepId :: Id -> BindM Id
+findDeepId v = do
+  s <- get
+  let sdMap = shallowDeepMap s
+  let sdMaps = shallowDeepMaps s
+  if v `M.member` sdMap
+    then return $ sdMap M.! v
+    else case findDeepId' v sdMaps of
+      Nothing -> stringToId $ (varString v) ++ deepSuffix
+      Just v' -> return v'
+  where
+    findDeepId' :: Id -> [M.Map Id Id] -> Maybe Id
+    findDeepId' v' []     = Nothing
+    findDeepId' v' (m:ms) = if v `M.member` m then Just $ m M.! v else findDeepId' v' ms
+
 changeAppExpr :: CoreExpr -> BindM CoreExpr
 changeAppExpr e = do
   df <- liftCoreM getDynFlags
@@ -520,9 +536,7 @@ changeAppExpr e = do
               case exprtyCon_m of
                   Just (exprTy, [exprTy']) -> defaultRet
                   _ -> do
-                      v' <- if v `M.member` sdMap
-                            then return $ sdMap M.! v
-                            else stringToId $ (varString v) ++ deepSuffix
+                      v' <- findDeepId v
                       fmapAbsExpr (mkTyConTy retTyCon) retTy' (Var v')
           _ -> defaultRet
     Lit l -> return $ Lit l
@@ -542,9 +556,7 @@ changeAppExpr e = do
       then defaultRet
       else case tyCon_m of
             Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
-                vb' <- if vb `M.member` sdMap
-                       then return $ sdMap M.! vb
-                       else stringToId $ (varString vb) ++ deepSuffix
+                vb' <- findDeepId vb
                 -- Calculate which args we should translate, only
                 -- ones of our languages expression types
                 xlats <- mapM isExprClassType argTys
@@ -558,15 +570,38 @@ changeAppExpr e = do
       e' <- changeAppExpr e
       return $ Lam tb e'
     Let bind body -> do
-      body' <- changeAppExpr body
-      bind' <- case bind of
-                  (NonRec v e) -> do
-                    e' <- changeAppExpr e
-                    return $ NonRec v e'
-                  (Rec rbs) -> do
-                    rbs' <- changeAppExpr' rbs
-                    return $ Rec rbs'
-      return $ Let bind' body'
+      put s {shallowDeepMap  = M.empty,
+             shallowDeepMaps = shallowDeepMap s : shallowDeepMaps s}
+      e' <- case bind of
+              (NonRec lb le) -> do
+                ides <- changeSubBind lb le
+                body' <- changeAppExpr body
+                case ides of
+                  [(b1,e1),(b2,e2)] -> do
+                    e2' <- changeAppExpr e2
+                    -- ToDo:  Do we need to retain shallow vesion of
+                    -- let expression?  It's never called after
+                    -- transformation.
+                    -- return $ Let (NonRec b2 e2') (Let (NonRec b1 e1) body')
+                    return $ Let (NonRec b2 e2') body'
+                  [(b1,e1)]         -> do
+                    e1' <- changeAppExpr e1
+                    return $ Let (NonRec b1 e1') body'
+              (Rec rbs) -> do
+                (nrbs', rbs') <- changeArgBind' rbs
+                rbs'' <- changeAppExpr' rbs'               
+                body' <- changeAppExpr body
+                case nrbs' of
+                  []        -> return $ Let (Rec rbs'') body'
+                  [NonRec b1 e1] -> do
+                    e1' <- changeAppExpr e1
+                    -- ToDo: Same as above, do we need shallow?
+                    -- return $ Let (Rec rbs'') (Let (NonRec b1 e1') body')
+                    return $ Let (Rec rbs'') body'
+      s' <- get
+      put s' {shallowDeepMap  = head $ shallowDeepMaps s', 
+              shallowDeepMaps = tail $ shallowDeepMaps s'}
+      return e'
     Case e tb ty alts -> do
       e' <- changeAppExpr e
       alts' <- changeAppExprAlts alts
