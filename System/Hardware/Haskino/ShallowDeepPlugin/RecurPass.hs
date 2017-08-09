@@ -293,3 +293,60 @@ changeVarExprAlts f t ((ac, b, a) : as) = do
   a' <- changeVarExpr f t a
   bs' <- changeVarExprAlts f t as
   return $ (ac, b, a') : bs'
+
+recurSubExpr :: CoreExpr -> BindM CoreExpr
+recurSubExpr e = do
+  apId <- thNameToId apNameTH
+  df <- liftCoreM getDynFlags
+  case e of
+    Var v -> return e
+    Lit l -> return $ Lit l
+    Type ty -> return $ Type ty
+    Coercion co -> return $ Coercion co
+    App e1 e2 -> do
+      e1' <- recurSubExpr e1
+      e2' <- recurSubExpr e2
+      return $ App e1' e2'
+    Lam tb e -> do
+      e' <- recurSubExpr e
+      return $ Lam tb e'
+    Let bind body -> do
+      case bind of
+        (NonRec v e) -> do
+          e' <- recurSubExpr e
+          body' <- recurSubExpr body
+          return $ Let (NonRec v e') body'
+        (Rec rbs) -> do
+          rbs' <- recurSubExpr' rbs
+          body' <- recurSubExpr body
+          (nonRec, rbs'') <- recurBind' rbs'
+          case nonRec of
+            []        -> return $ Let (Rec rbs'') body'
+            [NonRec b1 e1] -> do
+              e1' <- recurSubExpr e1
+              return $ Let (Rec rbs'') (Let (NonRec b1 e1') body')
+            -- ToDo:  Could we have multiple NonRec's? 
+    Case e tb ty alts -> do
+      e' <- recurSubExpr e
+      alts' <- recurSubExprAlts alts
+      return $ Case e' tb ty alts'
+    Tick t e -> do
+      e' <- recurSubExpr e
+      return $ Tick t e'
+    Cast e co -> do
+      e' <- recurSubExpr e
+      return $ Cast e' co
+
+recurSubExpr' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
+recurSubExpr' [] = return []
+recurSubExpr' ((b, e) : bs) = do
+  e' <- recurSubExpr e
+  bs' <- recurSubExpr' bs
+  return $ (b, e') : bs'
+
+recurSubExprAlts :: [GhcPlugins.Alt CoreBndr] -> BindM [GhcPlugins.Alt CoreBndr]
+recurSubExprAlts [] = return []
+recurSubExprAlts ((ac, b, a) : as) = do
+  a' <- recurSubExpr a
+  bs' <- recurSubExprAlts as
+  return $ (ac, b, a') : bs'

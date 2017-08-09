@@ -18,6 +18,7 @@ import System.Hardware.Haskino.SamplePrograms.Rewrite.TransFuncTest
 import System.Hardware.Haskino.SamplePrograms.Rewrite.TransFuncArgTest
 import System.Hardware.Haskino.SamplePrograms.Rewrite.TransIfTest
 import System.Hardware.Haskino.SamplePrograms.Rewrite.TransRecurTest
+import System.Hardware.Haskino.SamplePrograms.Rewrite.TransRecurLetTest
 
 main :: IO ()
 main = do
@@ -28,3 +29,4 @@ main = do
   transMultiTest
   transIfTest
   transRecurTest
+  transRecurLetTest
