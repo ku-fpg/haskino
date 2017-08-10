@@ -79,56 +79,6 @@ data IntMode = LOW
              | RISING
         deriving (Eq, Show, Enum)
 
--- | LCD's connected to the board
-data LCD = LCD {
-                 lcdController     :: LCDController -- ^ Actual controller
-               , lcdState          :: MVar LCDData  -- ^ State information
-               }
-
-data LCDE = LCDE {
-                  lcdControllerE   :: LCDController  -- ^ Actual controller
-                , lcdStateE        :: LCDDataE  -- ^ State information
-                }
-
--- | Hitachi LCD controller: See: <http://en.wikipedia.org/wiki/Hitachi_HD44780_LCD_controller>.
--- We model only the 4-bit variant, with RS and EN lines only. (The most common Arduino usage.)
--- The data sheet can be seen at: <http://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf>.
-data LCDController =
-    Hitachi44780 {
-                       lcdRS       :: Pin  -- ^ Hitachi pin @ 4@: Register-select
-                     , lcdEN       :: Pin  -- ^ Hitachi pin @ 6@: Enable
-                     , lcdD4       :: Pin  -- ^ Hitachi pin @11@: Data line @4@
-                     , lcdD5       :: Pin  -- ^ Hitachi pin @12@: Data line @5@
-                     , lcdD6       :: Pin  -- ^ Hitachi pin @13@: Data line @6@
-                     , lcdD7       :: Pin  -- ^ Hitachi pin @14@: Data line @7@
-                     , lcdBL       :: Maybe Pin -- ^ Backlight control pin (if present)
-                     , lcdRows     :: Word8  -- ^ Number of rows (typically 1 or 2, upto 4)
-                     , lcdCols     :: Word8  -- ^ Number of cols (typically 16 or 20, upto 40)
-                     , dotMode5x10 :: Bool -- ^ Set to True if 5x10 dots are used
-                     }
-    | I2CHitachi44780 {
-                       address     :: Word8 -- ^ I2C Slave Address of LCD
-                     , lcdRows     :: Word8  -- ^ Number of rows (typically 1 or 2, upto 4)
-                     , lcdCols     :: Word8  -- ^ Number of cols (typically 16 or 20, upto 40)
-                     , dotMode5x10 :: Bool -- ^ Set to True if 5x10 dots are used
-                     }
-                     deriving Show
-
--- | State of the LCD, a mere 8-bit word for the Hitachi
-data LCDData = LCDData {
-                  lcdDisplayMode    :: Word8         -- ^ Display mode (left/right/scrolling etc.)
-                , lcdDisplayControl :: Word8         -- ^ Display control (blink on/off, display on/off etc.)
-                , lcdGlyphCount     :: Word8         -- ^ Count of custom created glyphs (typically at most 8)
-                , lcdBacklightState :: Bool
-                }
-
-data LCDDataE = LCDDataE {
-                  lcdDisplayModeE    :: RemoteRef Word8         -- ^ Display mode (left/right/scrolling etc.)
-                , lcdDisplayControlE :: RemoteRef Word8         -- ^ Display control (blink on/off, display on/off etc.)
-                , lcdGlyphCountE     :: RemoteRef Word8         -- ^ Count of custom created glyphs (typically at most 8)
-                , lcdBacklightStateE :: RemoteRef Bool
-                }
-
 -- | State of the connection
 data ArduinoConnection = ArduinoConnection {
                 message       :: String -> IO ()                      -- ^ Current debugging routine
