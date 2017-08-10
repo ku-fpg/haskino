@@ -36,8 +36,8 @@ prop_neg :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> Property
 prop_neg c r x = monadicIO $ do
     let local = negate x
     remote <- run $ send c $ do
-        writeRemoteRef r $ negate (lit x)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ negate (lit x)
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -45,8 +45,8 @@ prop_sign :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> Property
 prop_sign c r x = monadicIO $ do
     let local = signum x
     remote <- run $ send c $ do
-        writeRemoteRef r $ signum (lit x)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ signum (lit x)
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -54,8 +54,8 @@ prop_add :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> Word16 -> Propert
 prop_add c r x y = monadicIO $ do
     let local = x + y
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit x) + (lit y)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit x) + (lit y)
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -63,8 +63,8 @@ prop_sub :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> Word16 -> Propert
 prop_sub c r x y = monadicIO $ do
     let local = x - y
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit x) - (lit y)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit x) - (lit y)
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -72,8 +72,8 @@ prop_mult :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> Word16 -> Proper
 prop_mult c r x y = monadicIO $ do
     let local = x * y
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit x) * (lit y)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit x) * (lit y)
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -81,8 +81,8 @@ prop_div :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> NonZero Word16 ->
 prop_div c r x (NonZero y) = monadicIO $ do
     let local = x `P.div` y
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit x) `div` (lit y)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit x) `div` (lit y)
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -90,8 +90,8 @@ prop_rem :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> NonZero Word16 ->
 prop_rem c r x (NonZero y) = monadicIO $ do
     let local = x `P.rem` y
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit x) `rem` (lit y)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit x) `rem` (lit y)
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -99,8 +99,8 @@ prop_quot :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> NonZero Word16 -
 prop_quot c r x (NonZero y) = monadicIO $ do
     let local = x `P.quot` y
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit x) `quot` (lit y)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit x) `quot` (lit y)
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -108,8 +108,8 @@ prop_mod :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> NonZero Word16 ->
 prop_mod c r x (NonZero y) = monadicIO $ do
     let local = x `P.mod` y
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit x) `mod` (lit y)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit x) `mod` (lit y)
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -117,8 +117,8 @@ prop_comp :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> Property
 prop_comp c r x = monadicIO $ do
     let local = DB.complement x
     remote <- run $ send c $ do
-        writeRemoteRef r $ complement (lit x) 
-        v <- readRemoteRef r
+        writeRemoteRefE r $ complement (lit x) 
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -126,8 +126,8 @@ prop_and :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> Word16 -> Propert
 prop_and c r x y = monadicIO $ do
     let local = x DB..&. y
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit x) .&. (lit y)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit x) .&. (lit y)
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -135,8 +135,8 @@ prop_or :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> Word16 -> Property
 prop_or c r x y = monadicIO $ do
     let local = x DB..|. y
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit x) .|. (lit y)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit x) .|. (lit y)
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -144,8 +144,8 @@ prop_xor :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> Word16 -> Propert
 prop_xor c r x y = monadicIO $ do
     let local = x `DB.xor` y
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit x) `xor` (lit y)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit x) `xor` (lit y)
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -153,8 +153,8 @@ prop_shiftL :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> Word8 -> Prope
 prop_shiftL c r x y = monadicIO $ do
     let local = x `DB.shiftL` (fromIntegral y)
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit x) `shiftL` (lit y)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit x) `shiftL` (lit y)
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -162,8 +162,8 @@ prop_shiftR :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> Word8 -> Prope
 prop_shiftR c r x y = monadicIO $ do
     let local = x `DB.shiftR` (fromIntegral y)
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit x) `shiftR` (lit y)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit x) `shiftR` (lit y)
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -171,8 +171,8 @@ prop_setBit :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> Word8 -> Prope
 prop_setBit c r x y = monadicIO $ do
     let local = x `DB.setBit` (fromIntegral y)
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit x) `setBit` (lit y)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit x) `setBit` (lit y)
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -180,8 +180,8 @@ prop_clearBit :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> Word8 -> Pro
 prop_clearBit c r x y = monadicIO $ do
     let local = x `DB.clearBit` (fromIntegral y)
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit x) `clearBit` (lit y)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit x) `clearBit` (lit y)
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -189,8 +189,8 @@ prop_testBit :: ArduinoConnection -> RemoteRef Bool -> Word16 -> Word8 -> Proper
 prop_testBit c r x y = monadicIO $ do
     let local = x `DB.testBit` (fromIntegral y)
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit x) `testBit` (lit y)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit x) `testBit` (lit y)
+        v <- readRemoteRefE r
         return v
     assert (local == litEvalB remote)
 
@@ -198,8 +198,8 @@ prop_from8 :: ArduinoConnection -> RemoteRef Word16 -> Word8 -> Property
 prop_from8 c r x = monadicIO $ do
     let local = fromIntegral x
     remote <- run $ send c $ do
-        writeRemoteRef r $ fromIntegralB (lit x)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ fromIntegralB (lit x)
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -207,8 +207,8 @@ prop_from32 :: ArduinoConnection -> RemoteRef Word16 -> Word32 -> Property
 prop_from32 c r x = monadicIO $ do
     let local = fromIntegral x
     remote <- run $ send c $ do
-        writeRemoteRef r $ fromIntegralB (lit x)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ fromIntegralB (lit x)
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -216,8 +216,8 @@ prop_fromI8 :: ArduinoConnection -> RemoteRef Word16 -> Int8 -> Property
 prop_fromI8 c r x = monadicIO $ do
     let local = fromIntegral x
     remote <- run $ send c $ do
-        writeRemoteRef r $ fromIntegralB (lit x)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ fromIntegralB (lit x)
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -225,8 +225,8 @@ prop_fromI16 :: ArduinoConnection -> RemoteRef Word16 -> Int16 -> Property
 prop_fromI16 c r x = monadicIO $ do
     let local = fromIntegral x
     remote <- run $ send c $ do
-        writeRemoteRef r $ fromIntegralB (lit x)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ fromIntegralB (lit x)
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -234,8 +234,8 @@ prop_fromI32 :: ArduinoConnection -> RemoteRef Word16 -> Int32 -> Property
 prop_fromI32 c r x = monadicIO $ do
     let local = fromIntegral x
     remote <- run $ send c $ do
-        writeRemoteRef r $ fromIntegralB (lit x)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ fromIntegralB (lit x)
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -243,8 +243,8 @@ prop_ifb :: ArduinoConnection -> RemoteRef Word16 -> Bool -> Word16 -> Word16 ->
 prop_ifb c r b x y = monadicIO $ do
     let local = if b then x + y else x - y
     remote <- run $ send c $ do
-        writeRemoteRef r $ ifB (lit b) (lit x + lit y) (lit x - lit y)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ ifB (lit b) (lit x + lit y) (lit x - lit y)
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -252,8 +252,8 @@ prop_eq :: ArduinoConnection -> RemoteRef Bool -> Word16 -> Word16 -> Property
 prop_eq c r x y = monadicIO $ do
     let local = x == y
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit x) ==* (lit y)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit x) ==* (lit y)
+        v <- readRemoteRefE r
         return v
     assert (local == litEvalB remote)
 
@@ -261,8 +261,8 @@ prop_neq :: ArduinoConnection -> RemoteRef Bool -> Word16 -> Word16 -> Property
 prop_neq c r x y = monadicIO $ do
     let local = x /= y
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit x) /=* (lit y)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit x) /=* (lit y)
+        v <- readRemoteRefE r
         return v
     assert (local == litEvalB remote)
 
@@ -270,8 +270,8 @@ prop_lt :: ArduinoConnection -> RemoteRef Bool -> Word16 -> Word16 -> Property
 prop_lt c r x y = monadicIO $ do
     let local = x < y
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit x) <* (lit y)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit x) <* (lit y)
+        v <- readRemoteRefE r
         return v
     assert (local == litEvalB remote)
 
@@ -279,8 +279,8 @@ prop_gt :: ArduinoConnection -> RemoteRef Bool -> Word16 -> Word16 -> Property
 prop_gt c r x y = monadicIO $ do
     let local = x > y
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit x) >* (lit y)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit x) >* (lit y)
+        v <- readRemoteRefE r
         return v
     assert (local == litEvalB remote)
 
@@ -288,8 +288,8 @@ prop_lte :: ArduinoConnection -> RemoteRef Bool -> Word16 -> Word16 -> Property
 prop_lte c r x y = monadicIO $ do
     let local = x <= y
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit x) <=* (lit y)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit x) <=* (lit y)
+        v <- readRemoteRefE r
         return v
     assert (local == litEvalB remote)
 
@@ -297,8 +297,8 @@ prop_gte :: ArduinoConnection -> RemoteRef Bool -> Word16 -> Word16 -> Property
 prop_gte c r x y = monadicIO $ do
     let local = x >= y
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit x) >=* (lit y)
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit x) >=* (lit y)
+        v <- readRemoteRefE r
         return v
     assert (local == litEvalB remote)
 
@@ -307,8 +307,8 @@ prop_arith :: ArduinoConnection -> RemoteRef Word16 ->
 prop_arith c r a b d e f (NonZero g) = monadicIO $ do
     let local = a * b + d * e - f `P.div` g
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit a) * (lit b) + (lit d) * (lit e) - (lit f) `div` (lit g) 
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit a) * (lit b) + (lit d) * (lit e) - (lit f) `div` (lit g) 
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -316,17 +316,17 @@ prop_bind :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> Word16 -> Word16
 prop_bind c r a b d e = monadicIO $ do
     let local = a * b + d * e
     remote <- run $ send c $ do
-        writeRemoteRef r $ (lit a) 
-        a' <- readRemoteRef r
-        writeRemoteRef r $ a' * (lit b) 
-        ab' <- readRemoteRef r
-        writeRemoteRef r $ (lit d) 
-        d' <- readRemoteRef r
-        v <- readRemoteRef r
-        writeRemoteRef r $ d' * (lit e) 
-        de' <- readRemoteRef r
-        writeRemoteRef r $ ab' + de' 
-        v <- readRemoteRef r
+        writeRemoteRefE r $ (lit a) 
+        a' <- readRemoteRefE r
+        writeRemoteRefE r $ a' * (lit b) 
+        ab' <- readRemoteRefE r
+        writeRemoteRefE r $ (lit d) 
+        d' <- readRemoteRefE r
+        v <- readRemoteRefE r
+        writeRemoteRefE r $ d' * (lit e) 
+        de' <- readRemoteRefE r
+        writeRemoteRefE r $ ab' + de' 
+        v <- readRemoteRefE r
         return v
     assert (local == litEval16 remote)
 
@@ -350,8 +350,8 @@ prop_while c (NonZero x) = monadicIO $ do
 main :: IO ()
 main = do
     conn <- openArduino False "/dev/cu.usbmodem1421"
-    refW16 <- send conn $ newRemoteRef 0
-    refB  <- send conn $ newRemoteRef (lit False)
+    refW16 <- send conn $ newRemoteRefE 0
+    refB  <- send conn $ newRemoteRefE (lit False)
     print "Negation Tests:"
     quickCheck (prop_neg conn refW16)
     print "Signum Tests:"
