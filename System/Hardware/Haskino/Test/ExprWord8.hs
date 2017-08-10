@@ -385,7 +385,7 @@ prop_while c (NonZero x) = monadicIO $ do
 
 main :: IO ()
 main = do
-    conn <- openArduino True "/dev/cu.usbmodem1421"
+    conn <- openArduino False "/dev/cu.usbmodem1421"
     refW8 <- send conn $ newRemoteRefE 0
     refB <- send conn $ newRemoteRefE (lit False)
     print "Negation Tests:"

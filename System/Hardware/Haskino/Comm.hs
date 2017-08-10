@@ -254,7 +254,7 @@ sendProcedureCmds c (LiftIO m) cmds = do
     sendToArduino c cmds
     m
 sendProcedureCmds c procedure cmds = do
-    let (pc, _) = runState (packageProcedure procedure) (CommandState 0 0 B.empty [])
+    let (pc, _) = runState (packageProcedure procedure) (CommandState 0 0 B.empty [] False [] [])
     checkPackageLength c pc
     sendToArduino c (B.append cmds (framePackage pc))
     qr <- waitResponse c (procDelay procedure) procedure
@@ -263,7 +263,7 @@ sendProcedureCmds c procedure cmds = do
 sendRemoteBindingCmds :: ArduinoConnection -> ArduinoPrimitive a -> B.ByteString -> IO a
 sendRemoteBindingCmds c b cmds = do
     ix <- takeMVar (refIndex c)
-    let (prb, _) = runState (packageRemoteBinding b) (CommandState ix 0 B.empty [])
+    let (prb, _) = runState (packageRemoteBinding b) (CommandState ix 0 B.empty [] False [] [])
     checkPackageLength c prb
     putMVar (refIndex c) (ix+1)
     sendToArduino c (B.append cmds (framePackage prb))
@@ -273,7 +273,7 @@ sendRemoteBindingCmds c b cmds = do
 packageCommandIndex :: ArduinoConnection -> ArduinoPrimitive a -> IO B.ByteString
 packageCommandIndex c cmd = do
     index <- takeMVar (refIndex c)
-    let (pc, st) = runState (packageCommand cmd) (CommandState index 0 B.empty [])
+    let (pc, st) = runState (packageCommand cmd) (CommandState index 0 B.empty [] False [] [])
     putMVar (refIndex c) (ix st)
     return pc
 
@@ -281,7 +281,7 @@ checkPackageLength :: ArduinoConnection -> B.ByteString -> IO ()
 checkPackageLength c p = if B.length p > (maxFirmwareSize - 2)
                          then runDie c ("Protocol Frame Too Large (" ++ (show $ B.length p) ++ " bytes)")
                                       ["Frame in Error starts with " ++ (show $ firmwareValCmd $ B.head p),
-                                       "Common error is a control structure (while, ifThenElse, loopE)",
+                                       "Common error is a control structure (iterateE or ifThenElseE)",
                                        "which exceeds frame limits is used outside of a task"]
                          else return ()
 
