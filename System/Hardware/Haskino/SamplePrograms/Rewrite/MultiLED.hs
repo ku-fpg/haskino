@@ -1,4 +1,4 @@
--- {-# OPTIONS_GHC -fplugin=System.Hardware.Haskino.ShallowDeepPlugin #-}
+{-# OPTIONS_GHC -fplugin=System.Hardware.Haskino.ShallowDeepPlugin #-}
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  System.Hardware.Haskino.SamplePrograms.Rewrite.MultiLED
@@ -54,6 +54,6 @@ compile :: IO ()
 compile = compileProgram initExample "multiLED.ino"
 
 main :: IO ()
--- main = ledExample
-main = compile
+main = ledExample
+-- main = compile
 
