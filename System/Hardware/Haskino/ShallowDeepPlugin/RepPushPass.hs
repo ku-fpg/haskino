@@ -109,6 +109,16 @@ xlatList = [  XlatEntry (thNameToId 'not)
                         (thNameToId 'BB.rotateL)
             , XlatEntry (thNameToId 'DB.rotateR)
                         (thNameToId 'BB.rotateR)
+            , XlatEntry (thNameToId '(++))
+                        (thNameToId '(++*))
+            , XlatEntry (thNameToId '(:))
+                        (thNameToId '(*:))
+            , XlatEntry (thNameToId '(!!))
+                        (thNameToId '(!!*))
+            , XlatEntry (thNameToId 'head)
+                        (thNameToId 'headE)
+            , XlatEntry (thNameToId 'tail)
+                        (thNameToId 'tailE)
            ]
 -- TBD add floating to above
 

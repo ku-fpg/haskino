@@ -354,6 +354,7 @@ decodeListOp elop bs =
     EXPRL_LEN  -> decodeExprOps 1 "" bs
     EXPRL_CONS -> decodeExprOps 2 "" bs
     EXPRL_APND -> decodeExprOps 2 "" bs
+    EXPRL_SLIC -> decodeExprOps 3 "" bs
     EXPRL_PACK -> case bs of
                     Empty        -> decodeErr bs
                     (x :< Empty) -> ("[]", B.tail bs)

@@ -1728,6 +1728,10 @@ byte sizeList8Expr(byte **ppExpr, CONTEXT *context)
             evalWord8Expr(ppExpr, context);
             size = 1 + sizeList8Expr(ppExpr, context);
             break;
+        case EXPRL_SLIC:
+            *ppExpr += 2; // Use Type and command byte
+            size = sizeList8Expr(ppExpr, context);
+            break;
         default:
 #ifdef DEBUG
             sendStringf("sL8E:O%d", exprOp);
@@ -1744,6 +1748,7 @@ int evalList8SubExpr(byte **ppExpr, CONTEXT *context, byte *listMem, byte index)
     byte bind, refNum;
     int size = 0;
     byte *bindPtr, *refPtr;
+    byte len, sindex;
 
     switch (exprOp)
         {
@@ -1787,6 +1792,43 @@ int evalList8SubExpr(byte **ppExpr, CONTEXT *context, byte *listMem, byte index)
             *ppExpr += 2; // Use Type and command byte
             listMem[index] = evalWord8Expr(ppExpr, context);
             size = evalList8SubExpr(ppExpr, context, listMem, index + 1) + 1;
+            break;
+        case EXPRL_SLIC:
+            *ppExpr += 2; // Use Type and command byte
+            size = evalList8SubExpr(ppExpr, context, listMem, index);
+            sindex = evalWord8Expr(ppExpr, context);
+            len = evalWord8Expr(ppExpr, context);
+            if (len == 0)
+                {
+                if (sindex < size)
+                    {
+                    size = size - sindex;
+                    }
+                else
+                    {
+                    size = 0;
+                    }
+                }
+            else
+                {
+                if (sindex < size)
+                    {
+                    if (sindex + len < size)
+                        {
+                        size = len;
+                        }
+                    else
+                        {
+                        size = size - sindex;
+                        }
+                    }
+                else
+                    {
+                    size = 0;
+                    }
+                }
+            memcpy(&listMem[index],&listMem[index + sindex], size);
+            listMem[index-1] = size;
             break;
         default:
 #ifdef DEBUG

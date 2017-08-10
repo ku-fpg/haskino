@@ -255,6 +255,7 @@ data Expr a where
   ConsList8    :: Expr Word8   -> Expr [Word8] -> Expr [Word8]
   ApndList8    :: Expr [Word8] -> Expr [Word8] -> Expr [Word8]
   PackList8    :: [Expr Word8] -> Expr [Word8]
+  SliceList8   :: Expr [Word8] -> Expr Word8 -> Expr Word8 -> Expr [Word8]
   EqL8         :: Expr [Word8] -> Expr [Word8] -> Expr Bool
   LessL8       :: Expr [Word8] -> Expr [Word8] -> Expr Bool
   IfL8         :: Expr Bool  -> Expr [Word8] -> Expr [Word8] -> Expr [Word8]
@@ -794,6 +795,18 @@ infixl 5 *:, ++*
 (++*) :: Expr [Word8] -> Expr [Word8] -> Expr [Word8]
 (++*) l1 l2 = ApndList8 l1 l2
 
+headE :: Expr [Word8] -> Expr Word8
+headE l = ElemList8 l 0
+
+tailE :: Expr [Word8] -> Expr [Word8]
+tailE l = SliceList8 l 1 0
+
+--dropE :: Expr Int -> Expr [Word8] -> Expr [Word8]
+--dropE n l = SliceList8 l n 0
+
+--takeE :: Expr Int -> Expr [Word8] -> Expr [Word8]
+--takeE n l = SliceList8 l 0 n
+
 -- ToDo: overload length (or implement foldable class)
 len :: Expr [Word8] -> Expr Word8
 len l = LenList8 l
@@ -861,6 +874,7 @@ data ExprListOp = EXPRL_LIT
             | EXPRL_CONS
             | EXPRL_APND
             | EXPRL_PACK
+            | EXPRL_SLIC
           deriving (Show, Enum, Ord, Eq)
 
 data ExprFloatOp = EXPRF_LIT

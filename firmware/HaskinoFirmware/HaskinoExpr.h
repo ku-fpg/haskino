@@ -58,7 +58,8 @@
 #define EXPRL_CONS          0x09
 #define EXPRL_APND          0x0A
 #define EXPRL_PACK          0x0B
-#define EXPRL_PTR           0x0C
+#define EXPRL_SLIC          0x0C
+#define EXPRL_PTR           0xFF
 
 // Float Expression Ops
 #define EXPRF_TRUNC         0x0F

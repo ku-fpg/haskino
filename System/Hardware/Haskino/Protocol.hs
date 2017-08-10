@@ -1355,6 +1355,9 @@ packageSubExpr ec e = ec ++ packageExpr e
 packageTwoSubExpr :: [Word8] -> Expr a -> Expr b -> [Word8]
 packageTwoSubExpr ec e1 e2 = ec ++ (packageExpr e1) ++ (packageExpr e2)
 
+packageThreeSubExpr :: [Word8] -> Expr a -> Expr b -> Expr c -> [Word8]
+packageThreeSubExpr ec e1 e2 e3 = ec ++ (packageExpr e1) ++ (packageExpr e2)  ++ (packageExpr e3)
+
 packageIfBSubExpr :: [Word8] -> Expr a -> Expr b -> Expr b -> [Word8]
 packageIfBSubExpr ec e1 e2 e3 = ec ++ thenSize ++ elseSize ++ pcond ++ pthen ++ pelse
   where
@@ -1562,6 +1565,7 @@ packageExpr (LenList8 e) = packageSubExpr (exprLCmdVal EXPRL_LEN) e
 packageExpr (ConsList8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_CONS) e1 e2
 packageExpr (ApndList8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_APND) e1 e2
 packageExpr (PackList8 es) = (exprLCmdVal EXPRL_PACK) ++ [fromIntegral $ length es] ++ (foldl (++) [] (map packageExpr es))
+packageExpr (SliceList8 e1 e2 e3) = packageThreeSubExpr (exprLCmdVal EXPRL_SLIC) e1 e2 e3
 packageExpr (LitFloat f) = (exprFCmdVal EXPRF_LIT) ++ floatToBytes f
 packageExpr (ShowFloat e1 e2) = packageTwoSubExpr (exprFCmdVal EXPRF_SHOW) e1 e2
 packageExpr (RefFloat n) = packageRef n (exprFCmdVal EXPRF_REF)

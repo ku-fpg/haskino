@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fplugin=System.Hardware.Haskino.ShallowDeepPlugin #-}
 -------------------------------------------------------------------------------------------------
 -- |
 -- Module      :  System.Hardware.Haskino.Parts.LCD
@@ -34,12 +35,31 @@ module System.Hardware.Haskino.SamplePrograms.Rewrite.LCD(
   , lcdCursorOn, lcdCursorOff
   , lcdDisplayOn, lcdDisplayOff
   -- * Accessing internal symbols,
-  , LCDSymbol, lcdInternalSymbol, lcdWriteSymbol
+  --, LCDSymbol, lcdInternalSymbol, lcdWriteSymbol
   -- Creating custom symbols
-  , lcdCreateSymbol
+  --, lcdCreateSymbol
   -- * Misc helpers
   , lcdFlash, lcdBacklightOn, lcdBacklightOff
   )  where
+
+import Control.Monad       (when)
+import Control.Monad.State (gets, liftIO)
+-- import Data.Bits           (testBit, (.|.), (.&.), setBit, clearBit, shiftL, bit, complement)
+import Data.Char           (ord, isSpace)
+import Data.Maybe          (fromMaybe, isJust)
+import Data.Word           (Word8, Word32)
+import qualified Data.Bits as B
+import Data.Boolean
+import Data.Boolean.Bits
+
+import qualified Data.Map as M
+
+import System.Hardware.Haskino.Comm
+import System.Hardware.Haskino.Data
+import System.Hardware.Haskino.Expr
+import System.Hardware.Haskino.Protocol
+
+import qualified System.Hardware.Haskino.Utils as U
 
 -- | LCD's connected to the board
 data LCD = LCD {
@@ -79,29 +99,6 @@ data LCDData = LCDData {
                 , lcdBacklightState :: RemoteRef Bool
                 }
 
-import Control.Monad       (when)
-import Control.Monad.State (gets, liftIO)
--- import Data.Bits           (testBit, (.|.), (.&.), setBit, clearBit, shiftL, bit, complement)
-import Data.Char           (ord, isSpace)
-import Data.Maybe          (fromMaybe, isJust)
-import Data.Word           (Word8, Word32)
-import qualified Data.Bits as B
-import Data.Boolean
-import Data.Boolean.Bits
-
-import qualified Data.Map as M
-
-import System.Hardware.Haskino.Comm
-import System.Hardware.Haskino.Data
-import System.Hardware.Haskino.Expr
-import System.Hardware.Haskino.Protocol
-
-import qualified System.Hardware.Haskino.Utils as U
-
----------------------------------------------------------------------------------------
--- Low level interface, not available to the user
----------------------------------------------------------------------------------------
-
 -- | Commands understood by Hitachi
 data Cmd = LCD_INITIALIZE
          | LCD_INITIALIZE_END
@@ -125,7 +122,7 @@ getCmdVal c cmd = get cmd
           | (dotMode5x10 c) = 0x04 :: Word8
           | True        = 0x00 :: Word8
         displayFunction = multiLine .|. dotMode
-        get :: Cmd -> Expr Word8
+        get :: Cmd -> Word8
         get LCD_NOOP               = 0x00
         get LCD_INITIALIZE         = 0x33
         get LCD_INITIALIZE_END     = 0x32
@@ -163,7 +160,7 @@ initLCD lcd = do
 -- | Initialize the LCD. Follows the data sheet <http://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf>,
 -- page 46; figure 24.
 initLCDDigital :: LCDController -> Arduino ()
-initLCDDigital c@Hitachi44780{lcdRS, lcdEN, lcdD4, lcdBL} = do
+initLCDDigital c@Hitachi44780{lcdRS, lcdEN, lcdD4, lcdD5, lcdD6, lcdD7, lcdBL} = do
     if isJust lcdBL then let Just p = lcdBL in setPinMode p OUTPUT else return ()
     setPinMode lcdRS OUTPUT
     setPinMode lcdEN OUTPUT
@@ -173,8 +170,8 @@ initLCDDigital c@Hitachi44780{lcdRS, lcdEN, lcdD4, lcdBL} = do
     setPinMode lcdD7 OUTPUT
 
 -- | Send a command to the LCD controller
-sendCmd :: LCD -> LCDController -> Cmd -> Arduino ()
-sendCmd lcd c = transmit False (lcdController lcd) . getCmdVal c
+sendCmd :: LCD -> Cmd -> Arduino ()
+sendCmd lcd c = transmit False (lcdController lcd) . getCmdVal c cmd
 
 -- | Send 4-bit data to the LCD controller
 sendData :: LCD -> Word8 -> Arduino ()
@@ -249,13 +246,6 @@ pulseEnableI2C c@I2CHitachi44780{address} d = do
   where
     en = lcdI2CBitsToVal LCD_I2C_ENABLE
 
--- | Helper function to simplify library programming, not exposed to the user.
-withLCD :: LCD -> String -> (LCDController -> Arduino a) -> Arduino a
-withLCD lcd what action = do
-        let c = lcdController lcd 
-        debugE $ litString what
-        action c
-
 ---------------------------------------------------------------------------------------
 -- High level interface, exposed to the user
 ---------------------------------------------------------------------------------------
@@ -318,8 +308,14 @@ lcdBacklight lcd on = do
 
 -- | Write a string on the LCD at the current cursor position
 lcdWrite :: LCD -> [Word8] -> Arduino ()
-lcdWrite lcd ws = withLCD lcd ("Writing " ++ show ws ++ " to LCD") $ \c -> writeWs c
-   where writeWs c = forInE ws (\w -> sendData lcd c w)
+lcdWrite lcd ws = lcdWrite' 0
+  where
+    lcdWrite' :: Word8 -> Arduino ()
+    lcdWrite' i = if i == (fromIntegral $ length ws) 
+                  then return () 
+                  else do
+                    lcdWriteChar lcd (ws !! fromIntegral i)
+                    lcdWrite' i+1 
 
 -- | Write a string on the LCD at the current cursor position
 lcdWriteChar :: LCD -> Word8 -> Arduino ()
@@ -346,12 +342,11 @@ lcdHome lcd = do sendCmd lcd LCD_RETURNHOME
 --   * If the new location is out-of-bounds of your LCD, we will put it the cursor to the closest
 --     possible location on the LCD.
 lcdSetCursor :: LCD -> Word8 -> Word8 -> Arduino ()
-lcdSetCursor lcd givenCol givenRow = withLCD lcd ("Sending the cursor to Row: " ++ show givenRow ++ " Col: " ++ show givenCol) set
-  where set c = sendCmd lcd c (LCD_SETDDRAMADDR offset)
+lcdSetCursor lcd givenCol givenRow = sendCmd lcd (LCD_SETDDRAMADDR offset)
               where align :: Word8 -> Word8 -> Word8
                     align i m = ifB (i >= m) (m-1) i
-                    col = align givenCol $ lcdCols c
-                    row = align givenRow $ lcdRows c
+                    col = align givenCol $ lcdCols (lcdController lcd)
+                    row = align givenRow $ lcdRows (lcdController lcd)
                     -- The magic row-offsets come from various web sources
                     -- I don't follow the logic in these numbers, but it seems to work
                     offset = col + ifB (row ==* 0) 0
@@ -361,12 +356,12 @@ lcdSetCursor lcd givenCol givenRow = withLCD lcd ("Sending the cursor to Row: " 
 -- | Scroll the display to the left by 1 character. Project idea: Using a tilt sensor, scroll the contents of the display
 -- left/right depending on the tilt. 
 lcdScrollDisplayLeft :: LCD -> Arduino ()
-lcdScrollDisplayLeft lcd = sendCmd lcd c (LCD_CURSORSHIFT lcdMoveLeft)
+lcdScrollDisplayLeft lcd = sendCmd lcd (LCD_CURSORSHIFT lcdMoveLeft)
   where lcdMoveLeft = 0x00
 
 -- | Scroll the display to the right by 1 character
-lcdScrollDisplayRight :: LCDE -> Arduino ()
-lcdScrollDisplayRight lcd = sendCmd lcd c (LCD_CURSORSHIFT lcdMoveRight)
+lcdScrollDisplayRight :: LCD -> Arduino ()
+lcdScrollDisplayRight lcd = sendCmd lcd (LCD_CURSORSHIFT lcdMoveRight)
   where lcdMoveRight = 0x04
 
 -- | Update the display control word
@@ -375,14 +370,14 @@ updateDisplayControl f lcd = do
   let c = lcdController lcd
   let lcds = lcdState lcd
   modifyRemoteRef (lcdDisplayControl lcds) f
-  newC <- readRemoteRef (lcdDisplayControlE lcds)
+  newC <- readRemoteRef (lcdDisplayControl lcds)
   sendCmd lcd (LCD_DISPLAYCONTROL newC)
 
 -- | Update the display mode word
 updateDisplayMode :: (Word8 -> Word8) -> LCD -> Arduino ()
 updateDisplayMode g lcd = do
-  let c = lcdControllerE lcd
-  let lcds = lcdStateE lcd
+  let c = lcdController lcd
+  let lcds = lcdState lcd
   modifyRemoteRef (lcdDisplayMode lcds) g
   newM <- readRemoteRef (lcdDisplayMode lcds)
   sendCmd lcd (LCD_ENTRYMODESET newM)
@@ -468,11 +463,19 @@ lcdAutoScrollOff = updateDisplayMode (clearMask LCD_ENTRYSHIFTINCREMENT)
 
 -- | Flash contents of the LCD screen
 lcdFlashE :: LCD
-         -> Int  -- ^ Flash count
+         -> Word32  -- ^ Flash count
          -> Word32  -- ^ Delay amount (in milli-seconds)
          -> Arduino ()
-lcdFlashE lcd n d = sequence_ $ concat $ replicate n [lcdDisplayOffE lcd, delayMillisE d, lcdDisplayOnE lcd, delayMillisE d]
-
+lcdFlashE lcd n d = lcdFlash' 0
+  where
+    lcdFlash' :: Word32 -> Arduino ()
+    lcdFlash' c = if c == n then return () else do
+        lcdDisplayOff lcd
+        delayMillis d
+        lcdDisplayOn lcd
+        delayMillis d
+        lcdFlash' c+1
+{-
 -- | An abstract symbol type for user created symbols
 newtype LCDSymbol = LCDSymbol Word8
 
@@ -498,8 +501,8 @@ newtype LCDSymbol = LCDSymbol Word8
 -- >   , "     "
 -- >   ]
 -- >
-lcdCreateSymE :: LCD -> [Word8] -> Arduino LCDSymbolE
-lcdCreateSymE lcd glyph =
+lcdCreateSym :: LCD -> [Word8] -> Arduino LCDSymbol
+lcdCreateSym lcd glyph =
     do let c = lcdControllerE lcd 
        let lcds = lcdStateE lcd
        i <- readRemoteRef (lcdGlyphCountE lcds)
@@ -508,13 +511,13 @@ lcdCreateSymE lcd glyph =
        forInE glyph (\w -> sendData lcd c w)
        return $ LCDSymbolE i
 
-lcdCreateSymbolE :: LCDE -> [String] -> Arduino LCDSymbolE
-lcdCreateSymbolE lcd glyph
+lcdCreateSymbol :: LCD -> [String] -> Arduino LCDSymbol
+lcdCreateSymbol lcd glyph
   | length glyph /= 8 || any (/= 5) (map length glyph)
   = do die "Haskino: lcdCreateSymbol: Invalid glyph description: must be 8x5!" ("Received:" : glyph)
        return $ LCDSymbolE 255
   | True
-  = do let cvt :: String -> Expr Word8
+  = do let cvt :: String -> Word8
            cvt s = lit $ foldr (B..|.) 0 [B.bit p | (ch, p) <- zip (reverse s) [0..], not (isSpace ch)]
        let rawGlyph = pack $ map cvt glyph
        lcdCreateSymE lcd rawGlyph
@@ -535,5 +538,6 @@ lcdWriteSymbol lcd (LCDSymbol i) = lcdWriteChar lcd i
 --
 --   * So, right-arrow can be accessed by symbol code 'lcdInternalSymbol' @0x7E@, which will give us a 'LCDSymbol' value
 --   that can be passed to the 'lcdWriteSymbol' function. The code would look like this: @lcdWriteSymbol lcd (lcdInternalSymbol 0x7E)@.
-lcdInternalSymbolE :: Expr Word8 -> LCDSymbolE
-lcdInternalSymbolE = LCDSymbolE
+lcdInternalSymbol :: Word8 -> LCDSymbol
+lcdInternalSymbol = LCDSymbol
+-}

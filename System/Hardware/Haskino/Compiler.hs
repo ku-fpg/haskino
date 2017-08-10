@@ -1687,6 +1687,11 @@ compileTwoSubExpr :: String -> Expr a -> Expr b -> String
 compileTwoSubExpr ec e1 e2 = ec ++ "(" ++ compileExpr e1 ++
                              "," ++ compileExpr e2 ++ ")"
 
+compileThreeSubExpr :: String -> Expr a -> Expr b -> Expr c -> String
+compileThreeSubExpr ec e1 e2 e3 = ec ++ "(" ++ compileExpr e1 ++
+                             "," ++ compileExpr e2 ++
+                             "," ++ compileExpr e3 ++ ")"
+
 compileInfixSubExpr :: String -> Expr a -> Expr b -> String
 compileInfixSubExpr ec e1 e2 = "(" ++ compileExpr e1 ++ " " ++ ec ++
                                " " ++ compileExpr e2 ++ ")"
@@ -1946,6 +1951,7 @@ compileExpr (ElemList8 e1 e2) = compileTwoSubExpr "list8Elem" e1 e2
 compileExpr (LenList8 e) = compileSubExpr "list8Len" e
 compileExpr (ConsList8 e1 e2) = compileTwoSubExpr "list8Cons" e1 e2
 compileExpr (ApndList8 e1 e2) = compileTwoSubExpr "list8Apnd" e1 e2
+compileExpr (SliceList8 e1 e2 e3) = compileThreeSubExpr "list8Slice" e1 e2 e3
 -- ToDo:
 -- compileExpr (PackList8 es) = [exprLCmdVal EXPRL_PACK, fromIntegral $ length es] ++ (foldl (++) [] (map compileExpr es))
 compileExpr (LitFloat f) = show f -- ToDo:  Is this correct?
