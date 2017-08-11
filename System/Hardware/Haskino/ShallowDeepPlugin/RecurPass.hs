@@ -41,7 +41,9 @@ recurPass guts = do
     return (guts { mg_binds = concat bindsL' })
 
 recurBind :: CoreBind -> BindM [CoreBind]
-recurBind bndr@(NonRec b e) = return [bndr]
+recurBind bndr@(NonRec b e) = do
+    e' <- recurSubExpr e
+    return [NonRec b e']
 recurBind (Rec bs) = do
     (nonRec, bs') <- recurBind' bs
     return $ nonRec ++ [Rec bs']
@@ -73,12 +75,13 @@ recurBind' ((b, e) : bs) = do
                 put s {funcId = [b]}
 
                 let (lbs, e') = collectBinders e
+                e'' <- recurSubExpr e'
                 let arg = head lbs
 
                 -- Build the step body of the While
-                e''  <- transformRecur argTyArg retTyArg e'
+                e'''  <- transformRecur argTyArg retTyArg e''
                 newStepB <- buildId ("x") argTyArg
-                stepE <- changeVarExpr arg newStepB e''
+                stepE <- changeVarExpr arg newStepB e'''
                 let stepLam = mkLams [newStepB] stepE
 
                 -- Build the iterate expression
@@ -99,7 +102,7 @@ recurBind' ((b, e) : bs) = do
                               Just (rTyCon, [])      -> mkTyConTy rTyCon
                               Just (rTyCon, rTyArgs) -> head rTyArgs
                               Nothing                -> head retTyArgs
-            
+
             unitTyCon <- thNameToTyCon unitTyConTH
             let unitTyConTy = mkTyConTy unitTyCon
             -- Generate "Expr retTy"
@@ -132,7 +135,7 @@ recurBind' ((b, e) : bs) = do
             (nonrecs, bs') <- recurBind' bs
             return $ ([nonrecBind, wrapperBind] ++ nonrecs, bs')
         else if retTyCon == monadTyCon
-        then error $ "*** Haskiono RecurPass: " ++ getOccString b ++ ": Unable to translate recursive function with\ngreater than one arguments" 
+        then error $ "*** Haskiono RecurPass: " ++ getOccString b ++ ": Unable to translate recursive function with\ngreater than one arguments"
         else defaultRet
       _ -> defaultRet
 
@@ -178,7 +181,7 @@ transformRecur argTy retTy e = do
       Var fv | fv == head funcId -> do
           -- Find the argument for the Left call
           unitValueId <- thNameToId unitValueTH
-          let leftArg = if length args == 0 
+          let leftArg = if length args == 0
                         then Var unitValueId
                         else head args
           -- Generate the ExprLeft expression with the function arg
@@ -210,7 +213,7 @@ transformRecur argTy retTy e = do
               _ -> return e -- TBD non-recursive call
       -- This branch is not a recursive call
       Var fv | fv == returnId -> do
-          case args of 
+          case args of
             [Type mTy, dict, Type ty, retE] -> do
                 -- Generate the ExprRight expression with the function arg
                 argDict <- thNameTyToDict exprClassTyConTH argTy
@@ -222,13 +225,13 @@ transformRecur argTy retTy e = do
                 let monadTyConTy = mkTyConTy monadTyConId
                 monadDict <- thNameTyToDict monadClassTyConTH monadTyConTy
                 let returnExpr = mkCoreApps (Var returnId) [Type monadTyConTy, monadDict, Type eitherTyp, rightExpr]
-                return $ mkLams bs returnExpr        
+                return $ mkLams bs returnExpr
             _ -> return e
-      -- This is another Arduino function, so we need to fmap ExprRight to it. 
+      -- This is another Arduino function, so we need to fmap ExprRight to it.
       _ -> do
           -- Generate "Expr retTy"
           exprTyConApp <- thNameTyToTyConApp exprTyConTH retTy
-          -- Generate functorArduino ditctionary 
+          -- Generate functorArduino ditctionary
           monadTyConId <- thNameToTyCon monadTyConTH
           let monadTyConTy = mkTyConTy monadTyConId
           functDict <- thNameTyToDict functTyConTH monadTyConTy
@@ -317,6 +320,8 @@ recurSubExpr e = do
           body' <- recurSubExpr body
           return $ Let (NonRec v e') body'
         (Rec rbs) -> do
+          liftCoreM $ putMsgS "****************  Here we are!!!"
+          liftCoreM $ putMsg $ ppr e
           rbs' <- recurSubExpr' rbs
           body' <- recurSubExpr body
           (nonRec, rbs'') <- recurBind' rbs'
@@ -325,7 +330,7 @@ recurSubExpr e = do
             [NonRec b1 e1] -> do
               e1' <- recurSubExpr e1
               return $ Let (Rec rbs'') (Let (NonRec b1 e1') body')
-            -- ToDo:  Could we have multiple NonRec's? 
+            -- ToDo:  Could we have multiple NonRec's?
     Case e tb ty alts -> do
       e' <- recurSubExpr e
       alts' <- recurSubExprAlts alts

@@ -54,6 +54,6 @@ compile :: IO ()
 compile = compileProgram initExample "multiLED.ino"
 
 main :: IO ()
-main = ledExample
--- main = compile
+-- main = ledExample
+main = compile
 

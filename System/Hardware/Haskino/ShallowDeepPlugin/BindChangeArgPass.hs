@@ -397,7 +397,10 @@ changeSubBind b e = do
 
           -- Apply the abs <$> to the new shallow body
           let shallowE = mkCoreApps (Var b') deepArgs
-          absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' shallowE
+          isExpr <- isExprClassType retTy'
+          absExpr <- if isExpr
+                     then fmapAbsExpr (mkTyConTy retTyCon) retTy' shallowE
+                     else return shallowE
 
           -- Put id pair into state
           s <- get
@@ -424,8 +427,8 @@ changeArg (b, ty, p) = do
 repShallowArg :: (CoreExpr, Bool) -> BindM CoreExpr
 repShallowArg (e, p) =
   if p then do
-    e' <- repExpr e 
-    return e' 
+    e' <- repExpr e
+    return e'
   else return e
 
 changeArgAppsExpr :: CoreExpr -> BindM CoreExpr
@@ -589,7 +592,7 @@ changeAppExpr e = do
                     return $ Let (NonRec b1 e1') body'
               (Rec rbs) -> do
                 (nrbs', rbs') <- changeArgBind' rbs
-                rbs'' <- changeAppExpr' rbs'               
+                rbs'' <- changeAppExpr' rbs'
                 body' <- changeAppExpr body
                 case nrbs' of
                   []        -> return $ Let (Rec rbs'') body'
@@ -599,7 +602,7 @@ changeAppExpr e = do
                     -- return $ Let (Rec rbs'') (Let (NonRec b1 e1') body')
                     return $ Let (Rec rbs'') body'
       s' <- get
-      put s' {shallowDeepMap  = head $ shallowDeepMaps s', 
+      put s' {shallowDeepMap  = head $ shallowDeepMaps s',
               shallowDeepMaps = tail $ shallowDeepMaps s'}
       return e'
     Case e tb ty alts -> do

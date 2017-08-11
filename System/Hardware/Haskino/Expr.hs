@@ -807,6 +807,9 @@ tailE l = SliceList8 l 1 0
 --takeE :: Expr Int -> Expr [Word8] -> Expr [Word8]
 --takeE n l = SliceList8 l 0 n
 
+nullE :: Expr [Word8] -> Expr Bool
+nullE l = len l ==* 0
+
 -- ToDo: overload length (or implement foldable class)
 len :: Expr [Word8] -> Expr Word8
 len l = LenList8 l

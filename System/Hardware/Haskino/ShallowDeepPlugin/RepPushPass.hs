@@ -119,6 +119,8 @@ xlatList = [  XlatEntry (thNameToId 'not)
                         (thNameToId 'headE)
             , XlatEntry (thNameToId 'tail)
                         (thNameToId 'tailE)
+            , XlatEntry (thNameToId 'null)
+                        (thNameToId 'nullE)
            ]
 -- TBD add floating to above
 

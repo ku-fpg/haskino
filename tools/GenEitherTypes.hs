@@ -11,15 +11,15 @@
 module Main where
 
 typeNameList       = ["Unit", "Bool", "W8", "W16", "W32",
-                      "I8", "I16", "I32", "L8", "Float"]
+                      "I8", "I16", "I32", "I", "L8", "Float"]
 typeList           = ["()", "Bool", "Word8", "Word16", "Word32",
-                      "Int8", "Int16", "Int32", "[Word8]", "Float"]
+                      "Int8", "Int16", "Int32", "Int", "[Word8]", "Float"]
 bindList           = ["Unit", "B", "W8", "W16", "W32",
-                      "I8", "I16", "I32", "List8", "Float"]
+                      "I8", "I16", "I32", "I", "List8", "Float"]
 compTypeList       = ["Unit", "Bool", "Word8", "Word16", "Word32",
-                      "Int8", "Int16", "Int32", "List8", "Float"]
+                      "Int8", "Int16", "Int32", "Int", "List8", "Float"]
 packTypeList       = ["UNIT", "BOOL", "WORD8", "WORD16", "WORD32",
-                      "INT8", "INT16", "INT32", "LIST8", "FLOAT"]
+                      "INT8", "INT16", "INT32", "INT", "LIST8", "FLOAT"]
 typeNameTypeList   = zip typeNameList typeList
 typeNameTypeCombos = [ (x,y) | x<-typeNameTypeList, y<-typeNameTypeList ]
 typeNameCombos = [ (x,y)  | x<-typeNameList, y<-typeNameList]
@@ -92,7 +92,7 @@ genCompIter ((tyn1, ty1, cty1), (tyn2, ty2, cty2)) =
 genPackIf :: ((String, String) , (String, String)) -> String
 genPackIf ((tyn1,ty1), (tyn2,_)) =
     "      packProcedure (IfThenElse" ++ tyn1 ++ tyn2 ++ " e cb1 cb2) = do\n" ++
-    "          i <- packDeepProcedure (IfThenElse" ++ tyn1 ++ tyn2 ++ " e cb1 cb2)\n" ++
+    "          i <- packIfEitherProcedure (IfThenElse" ++ tyn1 ++ tyn2 ++ " e cb1 cb2)\n" ++
     "          return $ ExprLeft $ RemBind" ++ ty1 ++ " i\n"
 
 genPackIter :: ((String, String) , (String, String)) -> String

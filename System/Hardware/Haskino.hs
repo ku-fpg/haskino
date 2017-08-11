@@ -56,7 +56,7 @@ module System.Hardware.Haskino (
   -- ** Expressions
   , Expr(..), RemoteRef, lit, newRemoteRefE, readRemoteRefE, writeRemoteRefE
   , modifyRemoteRefE, (++*), (*:), (!!*), len, pack, litString, showE, showFFloatE
-  , ExprB, abs_, rep_, lessE, lesseqE, greatE, greateqE, eqE, neqE, headE, tailE
+  , ExprB, abs_, rep_, lessE, lesseqE, greatE, greateqE, eqE, neqE, headE, tailE, nullE
   -- ** Debugging
   , debug, debugE, debugListen, die, deframe
   -- ** Compiler

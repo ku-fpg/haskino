@@ -74,9 +74,11 @@ changeRetExpr e = do
                   return $ App e1' e2'
       case b of
         Var bv -> do
-          case head args of
-            Type ty -> do
-              if bv == returnId && ty `eqType` monadTy
+          case args of
+            Type tyCon : _ : Type ty : _ -> do
+              -- Type must be a DSL Expr type to translate
+              isExpr <- isExprClassType ty
+              if bv == returnId && tyCon `eqType` monadTy && isExpr
               then do
                   e' <- changeReturnTypes e
                   return e'
