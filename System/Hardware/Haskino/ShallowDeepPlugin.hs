@@ -21,6 +21,7 @@ import System.Hardware.Haskino.ShallowDeepPlugin.CommProcPass
 import System.Hardware.Haskino.ShallowDeepPlugin.CondPass
 import System.Hardware.Haskino.ShallowDeepPlugin.RecurPass
 import System.Hardware.Haskino.ShallowDeepPlugin.RepAbsFusePass
+import System.Hardware.Haskino.ShallowDeepPlugin.RepCasePushPass
 import System.Hardware.Haskino.ShallowDeepPlugin.RepPushPass
 import System.Hardware.Haskino.ShallowDeepPlugin.ReturnsPass
 import System.Hardware.Haskino.ShallowDeepPlugin.CoreShow
@@ -41,6 +42,7 @@ install _ todo = do
   let returnsToDo = [CoreDoPluginPass "ReturnsTransform" returnsPass]
   let bindArgRetAppToDo = [CoreDoPluginPass "BindArgRetAppTransform" bindChangeArgRetAppPass]
   let commProcToDo = [CoreDoPluginPass "CommProcTransform" commProcPass]
+  let repCasePushToDo = [CoreDoPluginPass "RepCasePush" repCasePushPass]
   let repPushToDo = [CoreDoPluginPass "RepPush" repPushPass]
   let repAbsFuseToDo = [CoreDoPluginPass "RepAbsFuse" repAbsFusePass]
   let absThenToDo = [CoreDoPluginPass "AbsThen" absThenPass]
@@ -49,9 +51,9 @@ install _ todo = do
 -- ToDo: the BindChangeArgRetAppPass and RecurPass need work to handle Let's and Cases
 --  embedded in the bind sequence.  (And maybe AbsLambdsPass too?)
   return $ [simplPass] ++ apRemoveToDo ++ condToDo ++ commProcToDo ++ returnsToDo ++
-           bindArgRetAppToDo ++ repPushToDo ++ absLambdaToDo ++
+           bindArgRetAppToDo ++ repCasePushToDo ++ repPushToDo ++ absLambdaToDo ++
            repAbsFuseToDo ++ recurToDo ++ absThenToDo ++ todo ++ dumpToDo
-
+--   
 -- This pass is needed to simplify inlined applications that may be introduced
 -- by the compiler to inline single use let statements before it passes us
 -- the Core.

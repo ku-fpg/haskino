@@ -116,20 +116,13 @@ data Cmd = LCD_INITIALIZE
 getCmdVal :: LCDController -> Cmd -> Word8 -> Word8
 getCmdVal c cmd w = get cmd w
   where 
-    multiLine :: Word8
-    multiLine = if (lcdRows c) > 1 
-                then 0x08 
-                else 0x00  -- bit 3
-    dotMode :: Word8
-    dotMode = if (dotMode5x10 c)
-              then 0x04 :: Word8 
-              else 0x00 :: Word8 -- bit 2
-    displayFunction = multiLine B..|. dotMode
     get :: Cmd -> Word8 -> Word8
     get LCD_NOOP _             = 0x00
     get LCD_INITIALIZE _       = 0x33
     get LCD_INITIALIZE_END _   = 0x32
-    get LCD_FUNCTIONSET _      = 0x20 B..|. displayFunction
+    get LCD_FUNCTIONSET _      = 0x20 B..|.
+                                 if (lcdRows c) > 1 then 0x08 else 0x00 B..|.
+                                 if (dotMode5x10 c) then 0x04 else 0x00 
     get LCD_DISPLAYCONTROL w   = 0x08 B..|. w
     get LCD_CLEARDISPLAY _     = 0x01
     get LCD_ENTRYMODESET w     = 0x04 B..|. w
@@ -164,7 +157,7 @@ initLCD lcd = do
 -- page 46; figure 24.
 initLCDDigital :: LCDController -> Arduino ()
 initLCDDigital c@Hitachi44780{lcdRS, lcdEN, lcdD4, lcdD5, lcdD6, lcdD7, lcdBL} = do
-    if isJust lcdBL then let Just p = lcdBL in setPinMode p OUTPUT else return ()
+    -- if isJust lcdBL then let Just p = lcdBL in setPinMode p OUTPUT else return ()
     setPinMode lcdRS OUTPUT
     setPinMode lcdEN OUTPUT
     setPinMode lcdD4 OUTPUT
@@ -307,9 +300,9 @@ lcdBacklight lcd on = do
    case lcdc of
       Hitachi44780{} -> do
         let bl = lcdBL lcdc
-        if isJust bl
-            then let Just p = bl in digitalWrite p on
-            else return()
+        --if isJust bl
+        --    then let Just p = bl in digitalWrite p on
+        return()
       I2CHitachi44780{} -> do
         let lcds = lcdState lcd
         writeRemoteRef (lcdBacklightState lcds) on
