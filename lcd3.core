@@ -1,0 +1,2776 @@
+[$tcHitachi44780Mask_sqAS :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 60 20}]
+ $tcHitachi44780Mask_sqAS = GHC.Types.TrNameS "Hitachi44780Mask"#,
+ $tc'LCD_BLINKON_sqAR :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 50 20}]
+ $tc'LCD_BLINKON_sqAR = GHC.Types.TrNameS "'LCD_BLINKON"#,
+ $tc'LCD_CURSORON_sqAQ :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 60 20}]
+ $tc'LCD_CURSORON_sqAQ = GHC.Types.TrNameS "'LCD_CURSORON"#,
+ $tc'LCD_DISPLAYON_sqAP :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 60 20}]
+ $tc'LCD_DISPLAYON_sqAP = GHC.Types.TrNameS "'LCD_DISPLAYON"#,
+ $tc'LCD_ENTRYSHIFTINCREMENT_sqAO :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 80 20}]
+ $tc'LCD_ENTRYSHIFTINCREMENT_sqAO =
+   GHC.Types.TrNameS "'LCD_ENTRYSHIFTINCREMENT"#,
+ $tc'LCD_ENTRYLEFT_sqAN :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 60 20}]
+ $tc'LCD_ENTRYLEFT_sqAN = GHC.Types.TrNameS "'LCD_ENTRYLEFT"#,
+ $tcLCD_I2C_Bits_sqAM :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 50 20}]
+ $tcLCD_I2C_Bits_sqAM = GHC.Types.TrNameS "LCD_I2C_Bits"#,
+ $tc'LCD_I2C_BACKLIGHT_sqAL :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 70 20}]
+ $tc'LCD_I2C_BACKLIGHT_sqAL =
+   GHC.Types.TrNameS "'LCD_I2C_BACKLIGHT"#,
+ $tc'LCD_I2C_ENABLE_sqAK :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 60 20}]
+ $tc'LCD_I2C_ENABLE_sqAK = GHC.Types.TrNameS "'LCD_I2C_ENABLE"#,
+ $tc'LCD_I2C_RS_sqAJ :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 50 20}]
+ $tc'LCD_I2C_RS_sqAJ = GHC.Types.TrNameS "'LCD_I2C_RS"#,
+ $tcCmd_sqAI :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 30 20}]
+ $tcCmd_sqAI = GHC.Types.TrNameS "Cmd"#,
+ $tc'LCD_INITIALIZE_sqAH :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 60 20}]
+ $tc'LCD_INITIALIZE_sqAH = GHC.Types.TrNameS "'LCD_INITIALIZE"#,
+ $tc'LCD_INITIALIZE_END_sqAG :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 70 20}]
+ $tc'LCD_INITIALIZE_END_sqAG =
+   GHC.Types.TrNameS "'LCD_INITIALIZE_END"#,
+ $tc'LCD_FUNCTIONSET_sqAF :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 60 20}]
+ $tc'LCD_FUNCTIONSET_sqAF = GHC.Types.TrNameS "'LCD_FUNCTIONSET"#,
+ $tc'LCD_DISPLAYCONTROL_sqAE :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 70 20}]
+ $tc'LCD_DISPLAYCONTROL_sqAE =
+   GHC.Types.TrNameS "'LCD_DISPLAYCONTROL"#,
+ $tc'LCD_CLEARDISPLAY_sqAD :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 70 20}]
+ $tc'LCD_CLEARDISPLAY_sqAD = GHC.Types.TrNameS "'LCD_CLEARDISPLAY"#,
+ $tc'LCD_ENTRYMODESET_sqAC :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 70 20}]
+ $tc'LCD_ENTRYMODESET_sqAC = GHC.Types.TrNameS "'LCD_ENTRYMODESET"#,
+ $tc'LCD_RETURNHOME_sqAB :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 60 20}]
+ $tc'LCD_RETURNHOME_sqAB = GHC.Types.TrNameS "'LCD_RETURNHOME"#,
+ $tc'LCD_SETDDRAMADDR_sqAA :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 70 20}]
+ $tc'LCD_SETDDRAMADDR_sqAA = GHC.Types.TrNameS "'LCD_SETDDRAMADDR"#,
+ $tc'LCD_CURSORSHIFT_sqAz :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 60 20}]
+ $tc'LCD_CURSORSHIFT_sqAz = GHC.Types.TrNameS "'LCD_CURSORSHIFT"#,
+ $tc'LCD_SETCGRAMADDR_sqAy :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 70 20}]
+ $tc'LCD_SETCGRAMADDR_sqAy = GHC.Types.TrNameS "'LCD_SETCGRAMADDR"#,
+ $tc'LCD_NOOP_sqAx :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 50 20}]
+ $tc'LCD_NOOP_sqAx = GHC.Types.TrNameS "'LCD_NOOP"#,
+ $tcLCD_sqAw :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 30 20}]
+ $tcLCD_sqAw = GHC.Types.TrNameS "LCD"#,
+ $tc'LCD_sqAv :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 30 20}]
+ $tc'LCD_sqAv = GHC.Types.TrNameS "'LCD"#,
+ $tcLCDData_sqAu :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 40 20}]
+ $tcLCDData_sqAu = GHC.Types.TrNameS "LCDData"#,
+ $tc'LCDData_sqAt :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 40 20}]
+ $tc'LCDData_sqAt = GHC.Types.TrNameS "'LCDData"#,
+ $tcLCDController_sqAs :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 60 20}]
+ $tcLCDController_sqAs = GHC.Types.TrNameS "LCDController"#,
+ $tc'Hitachi44780_sqAr :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 60 20}]
+ $tc'Hitachi44780_sqAr = GHC.Types.TrNameS "'Hitachi44780"#,
+ $tc'I2CHitachi44780_sqAq :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 60 20}]
+ $tc'I2CHitachi44780_sqAq = GHC.Types.TrNameS "'I2CHitachi44780"#,
+ $trModule_sqAp :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 150 20}]
+ $trModule_sqAp =
+   GHC.Types.TrNameS
+     "System.Hardware.Haskino.SamplePrograms.Rewrite.LCD"#,
+ $trModule_sqAo :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 30 20}]
+ $trModule_sqAo = GHC.Types.TrNameS "main"#,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+   :: GHC.Types.Module
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 30}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule =
+   GHC.Types.Module $trModule_sqAo $trModule_sqAp,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'I2CHitachi44780
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'I2CHitachi44780 =
+   GHC.Types.TyCon
+     17622945040073447108##
+     3360610396157545391##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'I2CHitachi44780_sqAq,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'Hitachi44780
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'Hitachi44780 =
+   GHC.Types.TyCon
+     3887064107191201##
+     9448894954215475052##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'Hitachi44780_sqAr,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tcLCDController
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tcLCDController =
+   GHC.Types.TyCon
+     9126452719520041907##
+     333434016085671121##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tcLCDController_sqAs,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCDData
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCDData =
+   GHC.Types.TyCon
+     3148102760398050549##
+     8607100707949538069##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'LCDData_sqAt,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tcLCDData
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tcLCDData =
+   GHC.Types.TyCon
+     92621398633280908##
+     9296230521153716316##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tcLCDData_sqAu,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD =
+   GHC.Types.TyCon
+     15626086884565918868##
+     1684971045746764432##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'LCD_sqAv,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tcLCD
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tcLCD =
+   GHC.Types.TyCon
+     13638502149564972126##
+     17773735607887678005##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tcLCD_sqAw,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_NOOP
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_NOOP =
+   GHC.Types.TyCon
+     9909176109718781913##
+     13043272025378498967##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'LCD_NOOP_sqAx,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_SETCGRAMADDR
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_SETCGRAMADDR =
+   GHC.Types.TyCon
+     5354479577886764664##
+     8297984865870523249##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'LCD_SETCGRAMADDR_sqAy,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_CURSORSHIFT
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_CURSORSHIFT =
+   GHC.Types.TyCon
+     11360363923462964789##
+     4291622769328969620##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'LCD_CURSORSHIFT_sqAz,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_SETDDRAMADDR
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_SETDDRAMADDR =
+   GHC.Types.TyCon
+     58997865522941559##
+     14949520412607951183##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'LCD_SETDDRAMADDR_sqAA,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_RETURNHOME
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_RETURNHOME =
+   GHC.Types.TyCon
+     15343329230140903005##
+     15408005145379171745##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'LCD_RETURNHOME_sqAB,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_ENTRYMODESET
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_ENTRYMODESET =
+   GHC.Types.TyCon
+     13941123503408205229##
+     4711061161456785422##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'LCD_ENTRYMODESET_sqAC,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_CLEARDISPLAY
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_CLEARDISPLAY =
+   GHC.Types.TyCon
+     3247318348835693761##
+     1370336206652716807##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'LCD_CLEARDISPLAY_sqAD,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_DISPLAYCONTROL
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_DISPLAYCONTROL =
+   GHC.Types.TyCon
+     10697995384665822447##
+     15999431035681542673##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'LCD_DISPLAYCONTROL_sqAE,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_FUNCTIONSET
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_FUNCTIONSET =
+   GHC.Types.TyCon
+     614012851826168478##
+     9609822734357026796##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'LCD_FUNCTIONSET_sqAF,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_INITIALIZE_END
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_INITIALIZE_END =
+   GHC.Types.TyCon
+     17264992994509755952##
+     5314952585651943670##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'LCD_INITIALIZE_END_sqAG,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_INITIALIZE
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_INITIALIZE =
+   GHC.Types.TyCon
+     17176829981535532639##
+     10978260415946239223##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'LCD_INITIALIZE_sqAH,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tcCmd
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tcCmd =
+   GHC.Types.TyCon
+     1700613377078302402##
+     18143741809537245940##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tcCmd_sqAI,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_I2C_RS
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_I2C_RS =
+   GHC.Types.TyCon
+     9570426909142419407##
+     5824438166808351839##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'LCD_I2C_RS_sqAJ,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_I2C_ENABLE
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_I2C_ENABLE =
+   GHC.Types.TyCon
+     12859433047072262890##
+     15768448597450115097##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'LCD_I2C_ENABLE_sqAK,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_I2C_BACKLIGHT
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_I2C_BACKLIGHT =
+   GHC.Types.TyCon
+     13087374062976409360##
+     12546101111512509551##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'LCD_I2C_BACKLIGHT_sqAL,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tcLCD_I2C_Bits
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tcLCD_I2C_Bits =
+   GHC.Types.TyCon
+     14459758055302852694##
+     12104025973194550637##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tcLCD_I2C_Bits_sqAM,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_ENTRYLEFT
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_ENTRYLEFT =
+   GHC.Types.TyCon
+     13354878403344658075##
+     13254941960714738470##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'LCD_ENTRYLEFT_sqAN,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_ENTRYSHIFTINCREMENT
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_ENTRYSHIFTINCREMENT =
+   GHC.Types.TyCon
+     13143062599186301493##
+     18339635904685587502##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'LCD_ENTRYSHIFTINCREMENT_sqAO,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_DISPLAYON
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_DISPLAYON =
+   GHC.Types.TyCon
+     6485841148585126352##
+     7108013356868212471##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'LCD_DISPLAYON_sqAP,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_CURSORON
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_CURSORON =
+   GHC.Types.TyCon
+     14782405478491921533##
+     2680305880273703871##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'LCD_CURSORON_sqAQ,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_BLINKON
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tc'LCD_BLINKON =
+   GHC.Types.TyCon
+     13090530450569987344##
+     12162195251989661952##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tc'LCD_BLINKON_sqAR,
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tcHitachi44780Mask
+   :: GHC.Types.TyCon
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$tcHitachi44780Mask =
+   GHC.Types.TyCon
+     2513925994454248890##
+     11533484192458391913##
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$trModule
+     $tcHitachi44780Mask_sqAS,
+ lcdController :: LCD -> LCDController
+ [LclIdX[[RecSel]],
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True,
+          Guidance=ALWAYS_IF(arity=1,unsat_ok=True,boring_ok=True)}]
+ lcdController =
+   \ (ds_dqwp :: LCD) ->
+     case ds_dqwp of _ [Occ=Dead] { LCD ds_dqwq ds_dqwr -> ds_dqwq },
+ lcdState :: LCD -> LCDData
+ [LclIdX[[RecSel]],
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True,
+          Guidance=ALWAYS_IF(arity=1,unsat_ok=True,boring_ok=True)}]
+ lcdState =
+   \ (ds_dqws :: LCD) ->
+     case ds_dqws of _ [Occ=Dead] { LCD ds_dqwt ds_dqwu -> ds_dqwu },
+ lcdDisplayMode :: LCDData -> RemoteRef Word8
+ [LclIdX[[RecSel]],
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True,
+          Guidance=ALWAYS_IF(arity=1,unsat_ok=True,boring_ok=True)}]
+ lcdDisplayMode =
+   \ (ds_dqwv :: LCDData) ->
+     case ds_dqwv
+     of _ [Occ=Dead] { LCDData ds_dqww ds_dqwx ds_dqwy ds_dqwz ->
+     ds_dqww
+     },
+ lcdDisplayControl :: LCDData -> RemoteRef Word8
+ [LclIdX[[RecSel]],
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True,
+          Guidance=ALWAYS_IF(arity=1,unsat_ok=True,boring_ok=True)}]
+ lcdDisplayControl =
+   \ (ds_dqwA :: LCDData) ->
+     case ds_dqwA
+     of _ [Occ=Dead] { LCDData ds_dqwB ds_dqwC ds_dqwD ds_dqwE ->
+     ds_dqwC
+     },
+ lcdGlyphCount :: LCDData -> RemoteRef Word8
+ [LclIdX[[RecSel]],
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True,
+          Guidance=ALWAYS_IF(arity=1,unsat_ok=True,boring_ok=True)}]
+ lcdGlyphCount =
+   \ (ds_dqwF :: LCDData) ->
+     case ds_dqwF
+     of _ [Occ=Dead] { LCDData ds_dqwG ds_dqwH ds_dqwI ds_dqwJ ->
+     ds_dqwI
+     },
+ lcdBacklightState :: LCDData -> RemoteRef Bool
+ [LclIdX[[RecSel]],
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True,
+          Guidance=ALWAYS_IF(arity=1,unsat_ok=True,boring_ok=True)}]
+ lcdBacklightState =
+   \ (ds_dqwK :: LCDData) ->
+     case ds_dqwK
+     of _ [Occ=Dead] { LCDData ds_dqwL ds_dqwM ds_dqwN ds_dqwO ->
+     ds_dqwO
+     },
+ address :: LCDController -> Word8
+ [LclIdX[[RecSel]],
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [30] 70 0}]
+ address =
+   \ (ds_dqwP :: LCDController) ->
+     case ds_dqwP of _ [Occ=Dead] {
+       Hitachi44780 ipv ipv ipv ipv ipv ipv ipv ipv ipv ipv ->
+         Control.Exception.Base.recSelError
+           @ 'GHC.Types.PtrRepLifted @ Word8 "address"#;
+       I2CHitachi44780 ds_dqwQ ds_dqwR ds_dqwS ds_dqwT -> ds_dqwQ
+     },
+ dotMode5x10 :: LCDController -> Bool
+ [LclIdX[[RecSel]],
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True,
+          Guidance=ALWAYS_IF(arity=1,unsat_ok=True,boring_ok=True)}]
+ dotMode5x10 =
+   \ (ds_dqwW :: LCDController) ->
+     case ds_dqwW of _ [Occ=Dead] {
+       Hitachi44780 ds_dqwX ds_dqwY ds_dqwZ ds_dqx0 ds_dqx1 ds_dqx2
+                    ds_dqx3 ds_dqx4 ds_dqx5 ds_dqx6 ->
+         ds_dqx6;
+       I2CHitachi44780 ds_dqx7 ds_dqx8 ds_dqx9 ds_dqxa -> ds_dqxa
+     },
+ lcdBL :: LCDController -> Maybe Pin
+ [LclIdX[[RecSel]],
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [30] 70 0}]
+ lcdBL =
+   \ (ds_dqxb :: LCDController) ->
+     case ds_dqxb of _ [Occ=Dead] {
+       Hitachi44780 ds_dqxc ds_dqxd ds_dqxe ds_dqxf ds_dqxg ds_dqxh
+                    ds_dqxi ds_dqxj ds_dqxk ds_dqxl ->
+         ds_dqxi;
+       I2CHitachi44780 ipv ipv ipv ipv ->
+         Control.Exception.Base.recSelError
+           @ 'GHC.Types.PtrRepLifted @ (Maybe Pin) "lcdBL"#
+     },
+ lcdCols :: LCDController -> Word8
+ [LclIdX[[RecSel]],
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True,
+          Guidance=ALWAYS_IF(arity=1,unsat_ok=True,boring_ok=True)}]
+ lcdCols =
+   \ (ds_dqxo :: LCDController) ->
+     case ds_dqxo of _ [Occ=Dead] {
+       Hitachi44780 ds_dqxp ds_dqxq ds_dqxr ds_dqxs ds_dqxt ds_dqxu
+                    ds_dqxv ds_dqxw ds_dqxx ds_dqxy ->
+         ds_dqxx;
+       I2CHitachi44780 ds_dqxz ds_dqxA ds_dqxB ds_dqxC -> ds_dqxB
+     },
+ lcdD4 :: LCDController -> Pin
+ [LclIdX[[RecSel]],
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [30] 70 0}]
+ lcdD4 =
+   \ (ds_dqxD :: LCDController) ->
+     case ds_dqxD of _ [Occ=Dead] {
+       Hitachi44780 ds_dqxE ds_dqxF ds_dqxG ds_dqxH ds_dqxI ds_dqxJ
+                    ds_dqxK ds_dqxL ds_dqxM ds_dqxN ->
+         ds_dqxG;
+       I2CHitachi44780 ipv ipv ipv ipv ->
+         Control.Exception.Base.recSelError
+           @ 'GHC.Types.PtrRepLifted @ Pin "lcdD4"#
+     },
+ lcdD5 :: LCDController -> Pin
+ [LclIdX[[RecSel]],
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [30] 70 0}]
+ lcdD5 =
+   \ (ds_dqxQ :: LCDController) ->
+     case ds_dqxQ of _ [Occ=Dead] {
+       Hitachi44780 ds_dqxR ds_dqxS ds_dqxT ds_dqxU ds_dqxV ds_dqxW
+                    ds_dqxX ds_dqxY ds_dqxZ ds_dqy0 ->
+         ds_dqxU;
+       I2CHitachi44780 ipv ipv ipv ipv ->
+         Control.Exception.Base.recSelError
+           @ 'GHC.Types.PtrRepLifted @ Pin "lcdD5"#
+     },
+ lcdD6 :: LCDController -> Pin
+ [LclIdX[[RecSel]],
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [30] 70 0}]
+ lcdD6 =
+   \ (ds_dqy3 :: LCDController) ->
+     case ds_dqy3 of _ [Occ=Dead] {
+       Hitachi44780 ds_dqy4 ds_dqy5 ds_dqy6 ds_dqy7 ds_dqy8 ds_dqy9
+                    ds_dqya ds_dqyb ds_dqyc ds_dqyd ->
+         ds_dqy8;
+       I2CHitachi44780 ipv ipv ipv ipv ->
+         Control.Exception.Base.recSelError
+           @ 'GHC.Types.PtrRepLifted @ Pin "lcdD6"#
+     },
+ lcdD7 :: LCDController -> Pin
+ [LclIdX[[RecSel]],
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [30] 70 0}]
+ lcdD7 =
+   \ (ds_dqyg :: LCDController) ->
+     case ds_dqyg of _ [Occ=Dead] {
+       Hitachi44780 ds_dqyh ds_dqyi ds_dqyj ds_dqyk ds_dqyl ds_dqym
+                    ds_dqyn ds_dqyo ds_dqyp ds_dqyq ->
+         ds_dqym;
+       I2CHitachi44780 ipv ipv ipv ipv ->
+         Control.Exception.Base.recSelError
+           @ 'GHC.Types.PtrRepLifted @ Pin "lcdD7"#
+     },
+ lcdEN :: LCDController -> Pin
+ [LclIdX[[RecSel]],
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [30] 70 0}]
+ lcdEN =
+   \ (ds_dqyt :: LCDController) ->
+     case ds_dqyt of _ [Occ=Dead] {
+       Hitachi44780 ds_dqyu ds_dqyv ds_dqyw ds_dqyx ds_dqyy ds_dqyz
+                    ds_dqyA ds_dqyB ds_dqyC ds_dqyD ->
+         ds_dqyv;
+       I2CHitachi44780 ipv ipv ipv ipv ->
+         Control.Exception.Base.recSelError
+           @ 'GHC.Types.PtrRepLifted @ Pin "lcdEN"#
+     },
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.pulseEnableDig_deep'
+   :: LCDController -> Arduino (Expr ())
+ [LclId,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=NEVER}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.pulseEnableDig_deep' =
+   \ (c :: LCDController) ->
+     >>
+       @ Arduino
+       System.Hardware.Haskino.Data.$fMonadArduino
+       @ ()
+       @ ()
+       (digitalWriteE
+          (rep_
+             @ Pin
+             System.Hardware.Haskino.Expr.$fExprBWord8
+             (case c of _ [Occ=Dead] {
+                Hitachi44780 ds_dqyu ds_dqyv ds_dqyw ds_dqyx ds_dqyy ds_dqyz
+                             ds_dqyA ds_dqyB ds_dqyC ds_dqyD ->
+                  ds_dqyv;
+                I2CHitachi44780 ipv ipv ipv ipv ->
+                  Control.Exception.Base.recSelError
+                    @ 'GHC.Types.PtrRepLifted @ Pin "lcdEN"#
+              }))
+          (rep_
+             @ Bool System.Hardware.Haskino.Expr.$fExprBBool GHC.Types.False))
+       (>>
+          @ Arduino
+          System.Hardware.Haskino.Data.$fMonadArduino
+          @ ()
+          @ ()
+          (delayMicrosE
+             (rep_
+                @ TimeMicros
+                System.Hardware.Haskino.Expr.$fExprBWord32
+                (fromInteger @ TimeMicros GHC.Word.$fNumWord32 1)))
+          (>>
+             @ Arduino
+             System.Hardware.Haskino.Data.$fMonadArduino
+             @ ()
+             @ ()
+             (digitalWriteE
+                (rep_
+                   @ Pin
+                   System.Hardware.Haskino.Expr.$fExprBWord8
+                   (case c of _ [Occ=Dead] {
+                      Hitachi44780 ds_dqyu ds_dqyv ds_dqyw ds_dqyx ds_dqyy ds_dqyz
+                                   ds_dqyA ds_dqyB ds_dqyC ds_dqyD ->
+                        ds_dqyv;
+                      I2CHitachi44780 ipv ipv ipv ipv ->
+                        Control.Exception.Base.recSelError
+                          @ 'GHC.Types.PtrRepLifted @ Pin "lcdEN"#
+                    }))
+                (rep_
+                   @ Bool System.Hardware.Haskino.Expr.$fExprBBool GHC.Types.True))
+             (>>
+                @ Arduino
+                System.Hardware.Haskino.Data.$fMonadArduino
+                @ ()
+                @ ()
+                (delayMicrosE
+                   (rep_
+                      @ TimeMicros
+                      System.Hardware.Haskino.Expr.$fExprBWord32
+                      (fromInteger @ TimeMicros GHC.Word.$fNumWord32 1)))
+                (>>
+                   @ Arduino
+                   System.Hardware.Haskino.Data.$fMonadArduino
+                   @ ()
+                   @ ()
+                   (digitalWriteE
+                      (rep_
+                         @ Pin
+                         System.Hardware.Haskino.Expr.$fExprBWord8
+                         (case c of _ [Occ=Dead] {
+                            Hitachi44780 ds_dqyu ds_dqyv ds_dqyw ds_dqyx ds_dqyy ds_dqyz
+                                         ds_dqyA ds_dqyB ds_dqyC ds_dqyD ->
+                              ds_dqyv;
+                            I2CHitachi44780 ipv ipv ipv ipv ->
+                              Control.Exception.Base.recSelError
+                                @ 'GHC.Types.PtrRepLifted @ Pin "lcdEN"#
+                          }))
+                      (rep_
+                         @ Bool System.Hardware.Haskino.Expr.$fExprBBool GHC.Types.False))
+                   (delayMicrosE
+                      (rep_
+                         @ TimeMicros
+                         System.Hardware.Haskino.Expr.$fExprBWord32
+                         (fromInteger @ TimeMicros GHC.Word.$fNumWord32 2000))))))),
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.transmit_deep'
+   :: Expr Bool -> LCD -> Expr Word8 -> Arduino (Expr ())
+ [LclId,
+  Arity=3,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=NEVER}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.transmit_deep' =
+   \ (mode :: Expr Bool) (c :: LCD) (val :: Expr Word8) ->
+     case c of _ [Occ=Dead] { LCD ds_dqwq ds_dqwr ->
+     case ds_dqwq of wild_X2R {
+       Hitachi44780 ds_dqse ds_dqsf ds_dqsg ds_dqsh ds_dqsi ds_dqsj
+                    ds_dqsk ds_dqsl ds_dqsm ds_dqsn ->
+         >>
+           @ Arduino
+           System.Hardware.Haskino.Data.$fMonadArduino
+           @ ()
+           @ ()
+           (digitalWriteE
+              (rep_ @ Pin System.Hardware.Haskino.Expr.$fExprBWord8 ds_dqse)
+              mode)
+           (>>
+              @ Arduino
+              System.Hardware.Haskino.Data.$fMonadArduino
+              @ ()
+              @ ()
+              (digitalWriteE
+                 (rep_ @ Pin System.Hardware.Haskino.Expr.$fExprBWord8 ds_dqsf)
+                 (rep_
+                    @ Bool
+                    System.Hardware.Haskino.Expr.$fExprBBool
+                    (false @ Bool Data.Boolean.$fBooleanBool)))
+              (>>
+                 @ Arduino
+                 System.Hardware.Haskino.Data.$fMonadArduino
+                 @ ()
+                 @ ()
+                 (digitalPortWriteE
+                    (rep_ @ Pin System.Hardware.Haskino.Expr.$fExprBWord8 ds_dqsg)
+                    (* @ (Expr Word8)
+                       System.Hardware.Haskino.Expr.$fNumExpr5
+                       val
+                       (rep_
+                          @ Word8
+                          System.Hardware.Haskino.Expr.$fExprBWord8
+                          (fromInteger @ Word8 GHC.Word.$fNumWord8 16)))
+                    (rep_
+                       @ Word8
+                       System.Hardware.Haskino.Expr.$fExprBWord8
+                       (fromInteger @ Word8 GHC.Word.$fNumWord8 15)))
+                 (>>
+                    @ Arduino
+                    System.Hardware.Haskino.Data.$fMonadArduino
+                    @ ()
+                    @ ()
+                    (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.pulseEnableDig_deep'
+                       wild_X2R)
+                    (>>
+                       @ Arduino
+                       System.Hardware.Haskino.Data.$fMonadArduino
+                       @ ()
+                       @ ()
+                       (digitalPortWriteE
+                          (rep_ @ Pin System.Hardware.Haskino.Expr.$fExprBWord8 ds_dqsg)
+                          (.&.
+                             @ (Expr Word8)
+                             System.Hardware.Haskino.Expr.$fBitsBExpr4
+                             val
+                             (rep_
+                                @ Word8
+                                System.Hardware.Haskino.Expr.$fExprBWord8
+                                (fromInteger @ Word8 GHC.Word.$fNumWord8 15)))
+                          (rep_
+                             @ Word8
+                             System.Hardware.Haskino.Expr.$fExprBWord8
+                             (fromInteger @ Word8 GHC.Word.$fNumWord8 15)))
+                       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.pulseEnableDig_deep'
+                          wild_X2R)))));
+       I2CHitachi44780 ipv ipv ipv ipv ->
+         <$>
+           @ Arduino
+           @ ()
+           @ (Expr ())
+           System.Hardware.Haskino.Data.$fFunctorArduino
+           (rep_ @ () System.Hardware.Haskino.Expr.$fExprB())
+           (Control.Exception.Base.patError
+              @ 'GHC.Types.PtrRepLifted
+              @ (Arduino ())
+              "System/Hardware/Haskino/SamplePrograms/Rewrite/LCD.hs:(203,1)-(211,18)|function transmitDig"#)
+     }
+     },
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdWriteChar_deep'
+   :: LCD -> Expr Word8 -> Arduino (Expr ())
+ [LclIdX,
+  Arity=2,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0 0] 70 0}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdWriteChar_deep' =
+   \ (lcd :: LCD) (w :: Expr Word8) ->
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.transmit_deep'
+       (rep_
+          @ Bool System.Hardware.Haskino.Expr.$fExprBBool GHC.Types.True)
+       lcd
+       w,
+ lcdWriteChar :: LCD -> Word8 -> Arduino ()
+ [LclIdX,
+  Arity=2,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0 0] 140 0}]
+ lcdWriteChar =
+   \ (lcd :: LCD) (w :: Word8) ->
+     <$>
+       @ Arduino
+       @ (Expr ())
+       @ ()
+       System.Hardware.Haskino.Data.$fFunctorArduino
+       (abs_ @ ())
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.transmit_deep'
+          (rep_
+             @ Bool System.Hardware.Haskino.Expr.$fExprBBool GHC.Types.True)
+          lcd
+          (rep_ @ Word8 System.Hardware.Haskino.Expr.$fExprBWord8 w)),
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdWrite_deep'
+   :: LCD -> [Word8] -> Arduino (Expr ())
+ [LclIdX,
+  Arity=2,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0 0] 380 0}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdWrite_deep' =
+   \ (lcd :: LCD) (ws :: [Word8]) ->
+     iterateE
+       @ Word8
+       @ ()
+       System.Hardware.Haskino.Data.$fArduinoIterateWord8()
+       ws
+       (\ (x :: Word8) ->
+          ifThenElseEither
+            @ Word8
+            @ ()
+            System.Hardware.Haskino.Data.$fArduinoIterateWord8()
+            (nullE x)
+            (return
+               @ Arduino
+               System.Hardware.Haskino.Data.$fMonadArduino
+               @ (ExprEither Word8 ())
+               (System.Hardware.Haskino.Expr.ExprRight
+                  @ Word8
+                  @ ()
+                  System.Hardware.Haskino.Expr.$fExprBWord8
+                  System.Hardware.Haskino.Expr.$fExprB()
+                  (rep_ @ () System.Hardware.Haskino.Expr.$fExprB() GHC.Tuple.())))
+            (>>
+               @ Arduino
+               System.Hardware.Haskino.Data.$fMonadArduino
+               @ ()
+               @ (ExprEither Word8 ())
+               (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.transmit_deep'
+                  (rep_
+                     @ Bool System.Hardware.Haskino.Expr.$fExprBBool GHC.Types.True)
+                  lcd
+                  (headE x))
+               (return
+                  @ Arduino
+                  System.Hardware.Haskino.Data.$fMonadArduino
+                  @ (ExprEither Word8 ())
+                  (System.Hardware.Haskino.Expr.ExprLeft
+                     @ Word8
+                     @ ()
+                     System.Hardware.Haskino.Expr.$fExprBWord8
+                     System.Hardware.Haskino.Expr.$fExprB()
+                     (tailE x))))),
+ lcdWrite :: LCD -> [Word8] -> Arduino ()
+ [LclIdX,
+  Arity=2,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0 0] 100 0}]
+ lcdWrite =
+   \ (lcd :: LCD) (ws :: [Word8]) ->
+     <$>
+       @ Arduino
+       @ (Expr ())
+       @ ()
+       System.Hardware.Haskino.Data.$fFunctorArduino
+       (abs_ @ ())
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdWrite_deep'
+          lcd (rep_ @ [Word8] System.Hardware.Haskino.Expr.$fExprB[] ws)),
+ lcdRS :: LCDController -> Pin
+ [LclIdX[[RecSel]],
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [30] 70 0}]
+ lcdRS =
+   \ (ds_dqyG :: LCDController) ->
+     case ds_dqyG of _ [Occ=Dead] {
+       Hitachi44780 ds_dqyH ds_dqyI ds_dqyJ ds_dqyK ds_dqyL ds_dqyM
+                    ds_dqyN ds_dqyO ds_dqyP ds_dqyQ ->
+         ds_dqyH;
+       I2CHitachi44780 ipv ipv ipv ipv ->
+         Control.Exception.Base.recSelError
+           @ 'GHC.Types.PtrRepLifted @ Pin "lcdRS"#
+     },
+ lcdRows :: LCDController -> Word8
+ [LclIdX[[RecSel]],
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True,
+          Guidance=ALWAYS_IF(arity=1,unsat_ok=True,boring_ok=True)}]
+ lcdRows =
+   \ (ds_dqyT :: LCDController) ->
+     case ds_dqyT of _ [Occ=Dead] {
+       Hitachi44780 ds_dqyU ds_dqyV ds_dqyW ds_dqyX ds_dqyY ds_dqyZ
+                    ds_dqz0 ds_dqz1 ds_dqz2 ds_dqz3 ->
+         ds_dqz1;
+       I2CHitachi44780 ds_dqz4 ds_dqz5 ds_dqz6 ds_dqz7 -> ds_dqz5
+     },
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.sendCmd_deep'
+   :: LCD -> Cmd -> Arduino (Expr ())
+ [LclId,
+  Arity=2,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=NEVER}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.sendCmd_deep' =
+   \ (lcd :: LCD) (c :: Cmd) ->
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.transmit_deep'
+       (rep_
+          @ Bool System.Hardware.Haskino.Expr.$fExprBBool GHC.Types.False)
+       lcd
+       (rep_
+          @ Word8
+          System.Hardware.Haskino.Expr.$fExprBWord8
+          (let {
+             c :: LCDController
+             [LclId,
+              Str=DmdType,
+              Unf=Unf{Src=<vanilla>, TopLvl=False, Value=False, ConLike=False,
+                      WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 0}]
+             c =
+               case lcd of _ [Occ=Dead] { LCD ds_dqwq ds_dqwr -> ds_dqwq } } in
+           case c of _ [Occ=Dead] {
+             LCD_INITIALIZE -> fromInteger @ Word8 GHC.Word.$fNumWord8 51;
+             LCD_INITIALIZE_END -> fromInteger @ Word8 GHC.Word.$fNumWord8 50;
+             LCD_FUNCTIONSET ->
+               B..|.
+                 @ Word8
+                 GHC.Word.$fBitsWord8
+                 (fromInteger @ Word8 GHC.Word.$fNumWord8 32)
+                 (B..|.
+                    @ Word8
+                    GHC.Word.$fBitsWord8
+                    (case > @ Word8
+                            GHC.Word.$fOrdWord8
+                            (case c of _ [Occ=Dead] {
+                               Hitachi44780 ds_dqyU ds_dqyV ds_dqyW ds_dqyX ds_dqyY ds_dqyZ
+                                            ds_dqz0 ds_dqz1 ds_dqz2 ds_dqz3 ->
+                                 ds_dqz1;
+                               I2CHitachi44780 ds_dqz4 ds_dqz5 ds_dqz6 ds_dqz7 -> ds_dqz5
+                             })
+                            (fromInteger @ Word8 GHC.Word.$fNumWord8 1)
+                     of _ [Occ=Dead] {
+                       False -> fromInteger @ Word8 GHC.Word.$fNumWord8 0;
+                       True -> fromInteger @ Word8 GHC.Word.$fNumWord8 8
+                     })
+                    (case c of _ [Occ=Dead] {
+                       Hitachi44780 ds_dqwX ds_dqwY ds_dqwZ ds_dqx0 ds_dqx1 ds_dqx2
+                                    ds_dqx3 ds_dqx4 ds_dqx5 ds_dqx6 ->
+                         case ds_dqx6 of _ [Occ=Dead] {
+                           False -> fromInteger @ Word8 GHC.Word.$fNumWord8 0;
+                           True -> fromInteger @ Word8 GHC.Word.$fNumWord8 4
+                         };
+                       I2CHitachi44780 ds_dqx7 ds_dqx8 ds_dqx9 ds_dqxa ->
+                         case ds_dqxa of _ [Occ=Dead] {
+                           False -> fromInteger @ Word8 GHC.Word.$fNumWord8 0;
+                           True -> fromInteger @ Word8 GHC.Word.$fNumWord8 4
+                         }
+                     }));
+             LCD_DISPLAYCONTROL w ->
+               B..|.
+                 @ Word8
+                 GHC.Word.$fBitsWord8
+                 (fromInteger @ Word8 GHC.Word.$fNumWord8 8)
+                 w;
+             LCD_CLEARDISPLAY -> fromInteger @ Word8 GHC.Word.$fNumWord8 1;
+             LCD_ENTRYMODESET w ->
+               B..|.
+                 @ Word8
+                 GHC.Word.$fBitsWord8
+                 (fromInteger @ Word8 GHC.Word.$fNumWord8 4)
+                 w;
+             LCD_RETURNHOME -> fromInteger @ Word8 GHC.Word.$fNumWord8 2;
+             LCD_SETDDRAMADDR w ->
+               B..|.
+                 @ Word8
+                 GHC.Word.$fBitsWord8
+                 (fromInteger @ Word8 GHC.Word.$fNumWord8 128)
+                 w;
+             LCD_CURSORSHIFT w ->
+               B..|.
+                 @ Word8
+                 GHC.Word.$fBitsWord8
+                 (B..|.
+                    @ Word8
+                    GHC.Word.$fBitsWord8
+                    (fromInteger @ Word8 GHC.Word.$fNumWord8 16)
+                    (fromInteger @ Word8 GHC.Word.$fNumWord8 8))
+                 w;
+             LCD_SETCGRAMADDR w ->
+               B..|.
+                 @ Word8
+                 GHC.Word.$fBitsWord8
+                 (fromInteger @ Word8 GHC.Word.$fNumWord8 64)
+                 (B.shiftL @ Word8 GHC.Word.$fBitsWord8 w (GHC.Types.I# 3#));
+             LCD_NOOP -> fromInteger @ Word8 GHC.Word.$fNumWord8 0
+           })),
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdBacklight_deep'
+   :: LCD -> Expr Bool -> Arduino (Expr ())
+ [LclId,
+  Arity=2,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [20 0] 630 0}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdBacklight_deep' =
+   \ (lcd :: LCD) (on :: Expr Bool) ->
+     case lcd of wild_X1M { LCD ds_dqwq ds_dqwr ->
+     case ds_dqwq of wild_X2T {
+       Hitachi44780 ds_dqut ds_dquu ds_dquv ds_dquw ds_dqux ds_dquy
+                    ds_dquz ds_dquA ds_dquB ds_dquC ->
+         let {
+           bl :: Maybe Pin
+           [LclId,
+            Str=DmdType,
+            Unf=Unf{Src=<vanilla>, TopLvl=False, Value=False, ConLike=False,
+                    WorkFree=False, Expandable=True, Guidance=IF_ARGS [] 70 0}]
+           bl =
+             case wild_X2T of _ [Occ=Dead] {
+               Hitachi44780 ds_dqxc ds_dqxd ds_dqxe ds_dqxf ds_dqxg ds_dqxh
+                            ds_dqxi ds_dqxj ds_dqxk ds_dqxl ->
+                 ds_dqxi;
+               I2CHitachi44780 ipv ipv ipv ipv ->
+                 Control.Exception.Base.recSelError
+                   @ 'GHC.Types.PtrRepLifted @ (Maybe Pin) "lcdBL"#
+             } } in
+         ifThenElseE
+           @ ()
+           System.Hardware.Haskino.Data.$fArduinoConditional()
+           (rep_
+              @ Bool System.Hardware.Haskino.Expr.$fExprBBool (isJust @ Pin bl))
+           (digitalWriteE
+              (rep_
+                 @ Pin
+                 System.Hardware.Haskino.Expr.$fExprBWord8
+                 (case bl of _ [Occ=Dead] {
+                    Nothing ->
+                      case Control.Exception.Base.irrefutPatError
+                             @ 'GHC.Types.PtrRepLifted
+                             @ (Pin)
+                             "System/Hardware/Haskino/SamplePrograms/Rewrite/LCD.hs:308:22-32|Just p"#
+                      of wild_00 {
+                      };
+                    Just p -> p
+                  }))
+              on)
+           (return
+              @ Arduino
+              System.Hardware.Haskino.Data.$fMonadArduino
+              @ (Expr ())
+              (rep_ @ () System.Hardware.Haskino.Expr.$fExprB() GHC.Tuple.()));
+       I2CHitachi44780 ds_dquD ds_dquE ds_dquF ds_dquG ->
+         >>
+           @ Arduino
+           System.Hardware.Haskino.Data.$fMonadArduino
+           @ ()
+           @ ()
+           writeRemoteRefE
+           (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.sendCmd_deep'
+              wild_X1M
+              System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.LCD_NOOP)
+     }
+     },
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdBacklightOn_deep'
+   :: LCD -> Arduino (Expr ())
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 60 0}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdBacklightOn_deep' =
+   \ (lcd :: LCD) ->
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdBacklight_deep'
+       lcd
+       (rep_
+          @ Bool System.Hardware.Haskino.Expr.$fExprBBool GHC.Types.True),
+ lcdBacklightOn :: LCD -> Arduino ()
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 60 0}]
+ lcdBacklightOn =
+   \ (lcd :: LCD) ->
+     <$>
+       @ Arduino
+       @ (Expr ())
+       @ ()
+       System.Hardware.Haskino.Data.$fFunctorArduino
+       (abs_ @ ())
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdBacklightOn_deep'
+          lcd),
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdBacklightOff_deep'
+   :: LCD -> Arduino (Expr ())
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 60 0}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdBacklightOff_deep' =
+   \ (lcd :: LCD) ->
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdBacklight_deep'
+       lcd
+       (rep_
+          @ Bool System.Hardware.Haskino.Expr.$fExprBBool GHC.Types.False),
+ lcdBacklightOff :: LCD -> Arduino ()
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 60 0}]
+ lcdBacklightOff =
+   \ (lcd :: LCD) ->
+     <$>
+       @ Arduino
+       @ (Expr ())
+       @ ()
+       System.Hardware.Haskino.Data.$fFunctorArduino
+       (abs_ @ ())
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdBacklightOff_deep'
+          lcd),
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdClear_deep'
+   :: LCD -> Arduino (Expr ())
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 250 0}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdClear_deep' =
+   \ (lcd :: LCD) ->
+     >>
+       @ Arduino
+       System.Hardware.Haskino.Data.$fMonadArduino
+       @ ()
+       @ ()
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.sendCmd_deep'
+          lcd
+          System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.LCD_CLEARDISPLAY)
+       (delayMicrosE
+          (rep_
+             @ TimeMicros
+             System.Hardware.Haskino.Expr.$fExprBWord32
+             (fromInteger @ TimeMicros GHC.Word.$fNumWord32 200))),
+ lcdClear :: LCD -> Arduino ()
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 60 0}]
+ lcdClear =
+   \ (lcd :: LCD) ->
+     <$>
+       @ Arduino
+       @ (Expr ())
+       @ ()
+       System.Hardware.Haskino.Data.$fFunctorArduino
+       (abs_ @ ())
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdClear_deep'
+          lcd),
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdHome_deep'
+   :: LCD -> Arduino (Expr ())
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 250 0}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdHome_deep' =
+   \ (lcd :: LCD) ->
+     >>
+       @ Arduino
+       System.Hardware.Haskino.Data.$fMonadArduino
+       @ ()
+       @ ()
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.sendCmd_deep'
+          lcd
+          System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.LCD_RETURNHOME)
+       (delayMicrosE
+          (rep_
+             @ TimeMicros
+             System.Hardware.Haskino.Expr.$fExprBWord32
+             (fromInteger @ TimeMicros GHC.Word.$fNumWord32 200))),
+ lcdHome :: LCD -> Arduino ()
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 60 0}]
+ lcdHome =
+   \ (lcd :: LCD) ->
+     <$>
+       @ Arduino
+       @ (Expr ())
+       @ ()
+       System.Hardware.Haskino.Data.$fFunctorArduino
+       (abs_ @ ())
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdHome_deep'
+          lcd),
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdScrollDisplayLeft_deep'
+   :: LCD -> Arduino (Expr ())
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 170 0}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdScrollDisplayLeft_deep' =
+   \ (lcd :: LCD) ->
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.sendCmd_deep'
+       lcd
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.LCD_CURSORSHIFT
+          (fromInteger @ Word8 GHC.Word.$fNumWord8 0)),
+ lcdScrollDisplayLeft :: LCD -> Arduino ()
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 60 0}]
+ lcdScrollDisplayLeft =
+   \ (lcd :: LCD) ->
+     <$>
+       @ Arduino
+       @ (Expr ())
+       @ ()
+       System.Hardware.Haskino.Data.$fFunctorArduino
+       (abs_ @ ())
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdScrollDisplayLeft_deep'
+          lcd),
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdScrollDisplayRight_deep'
+   :: LCD -> Arduino (Expr ())
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 170 0}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdScrollDisplayRight_deep' =
+   \ (lcd :: LCD) ->
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.sendCmd_deep'
+       lcd
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.LCD_CURSORSHIFT
+          (fromInteger @ Word8 GHC.Word.$fNumWord8 4)),
+ lcdScrollDisplayRight :: LCD -> Arduino ()
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 60 0}]
+ lcdScrollDisplayRight =
+   \ (lcd :: LCD) ->
+     <$>
+       @ Arduino
+       @ (Expr ())
+       @ ()
+       System.Hardware.Haskino.Data.$fFunctorArduino
+       (abs_ @ ())
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdScrollDisplayRight_deep'
+          lcd),
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.updateDisplayControl_deep'
+   :: Expr Bool -> Expr Word8 -> LCD -> Arduino (Expr ())
+ [LclId,
+  Arity=3,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0 0 0] 250 0}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.updateDisplayControl_deep' =
+   \ (set :: Expr Bool) _ [Occ=Dead] (lcd :: LCD) ->
+     >>=
+       @ Arduino
+       System.Hardware.Haskino.Data.$fMonadArduino
+       @ (Expr Word8)
+       @ ()
+       readRemoteRefE
+       (\ _ [Occ=Dead] ->
+          >>
+            @ Arduino
+            System.Hardware.Haskino.Data.$fMonadArduino
+            @ ()
+            @ ()
+            (ifThenElseE
+               @ ()
+               System.Hardware.Haskino.Data.$fArduinoConditional()
+               set
+               writeRemoteRefE
+               writeRemoteRefE)
+            (>>=
+               @ Arduino
+               System.Hardware.Haskino.Data.$fMonadArduino
+               @ (Expr Word8)
+               @ ()
+               readRemoteRefE
+               (\ (new_abs :: Expr Word8) ->
+                  System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.sendCmd_deep'
+                    lcd
+                    (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.LCD_DISPLAYCONTROL
+                       (abs_ @ Word8 new_abs))))),
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdBlinkOff_deep'
+   :: LCD -> Arduino (Expr ())
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 230 0}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdBlinkOff_deep' =
+   \ (lcd :: LCD) ->
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.updateDisplayControl_deep'
+       (rep_
+          @ Bool System.Hardware.Haskino.Expr.$fExprBBool GHC.Types.False)
+       (rep_
+          @ Word8
+          System.Hardware.Haskino.Expr.$fExprBWord8
+          (fromInteger @ Word8 GHC.Word.$fNumWord8 0))
+       lcd,
+ lcdBlinkOff :: LCD -> Arduino ()
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 60 0}]
+ lcdBlinkOff =
+   \ (lcd :: LCD) ->
+     <$>
+       @ Arduino
+       @ (Expr ())
+       @ ()
+       System.Hardware.Haskino.Data.$fFunctorArduino
+       (abs_ @ ())
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdBlinkOff_deep'
+          lcd),
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdBlinkOn_deep'
+   :: LCD -> Arduino (Expr ())
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 230 0}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdBlinkOn_deep' =
+   \ (lcd :: LCD) ->
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.updateDisplayControl_deep'
+       (rep_
+          @ Bool System.Hardware.Haskino.Expr.$fExprBBool GHC.Types.True)
+       (rep_
+          @ Word8
+          System.Hardware.Haskino.Expr.$fExprBWord8
+          (fromInteger @ Word8 GHC.Word.$fNumWord8 0))
+       lcd,
+ lcdBlinkOn :: LCD -> Arduino ()
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 60 0}]
+ lcdBlinkOn =
+   \ (lcd :: LCD) ->
+     <$>
+       @ Arduino
+       @ (Expr ())
+       @ ()
+       System.Hardware.Haskino.Data.$fFunctorArduino
+       (abs_ @ ())
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdBlinkOn_deep'
+          lcd),
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdCursorOff_deep'
+   :: LCD -> Arduino (Expr ())
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 230 0}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdCursorOff_deep' =
+   \ (lcd :: LCD) ->
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.updateDisplayControl_deep'
+       (rep_
+          @ Bool System.Hardware.Haskino.Expr.$fExprBBool GHC.Types.False)
+       (rep_
+          @ Word8
+          System.Hardware.Haskino.Expr.$fExprBWord8
+          (fromInteger @ Word8 GHC.Word.$fNumWord8 1))
+       lcd,
+ lcdCursorOff :: LCD -> Arduino ()
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 60 0}]
+ lcdCursorOff =
+   \ (lcd :: LCD) ->
+     <$>
+       @ Arduino
+       @ (Expr ())
+       @ ()
+       System.Hardware.Haskino.Data.$fFunctorArduino
+       (abs_ @ ())
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdCursorOff_deep'
+          lcd),
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdCursorOn_deep'
+   :: LCD -> Arduino (Expr ())
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 230 0}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdCursorOn_deep' =
+   \ (lcd :: LCD) ->
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.updateDisplayControl_deep'
+       (rep_
+          @ Bool System.Hardware.Haskino.Expr.$fExprBBool GHC.Types.True)
+       (rep_
+          @ Word8
+          System.Hardware.Haskino.Expr.$fExprBWord8
+          (fromInteger @ Word8 GHC.Word.$fNumWord8 1))
+       lcd,
+ lcdCursorOn :: LCD -> Arduino ()
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 60 0}]
+ lcdCursorOn =
+   \ (lcd :: LCD) ->
+     <$>
+       @ Arduino
+       @ (Expr ())
+       @ ()
+       System.Hardware.Haskino.Data.$fFunctorArduino
+       (abs_ @ ())
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdCursorOn_deep'
+          lcd),
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdDisplayOff_deep'
+   :: LCD -> Arduino (Expr ())
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 230 0}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdDisplayOff_deep' =
+   \ (lcd :: LCD) ->
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.updateDisplayControl_deep'
+       (rep_
+          @ Bool System.Hardware.Haskino.Expr.$fExprBBool GHC.Types.False)
+       (rep_
+          @ Word8
+          System.Hardware.Haskino.Expr.$fExprBWord8
+          (fromInteger @ Word8 GHC.Word.$fNumWord8 2))
+       lcd,
+ lcdDisplayOff :: LCD -> Arduino ()
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 60 0}]
+ lcdDisplayOff =
+   \ (lcd :: LCD) ->
+     <$>
+       @ Arduino
+       @ (Expr ())
+       @ ()
+       System.Hardware.Haskino.Data.$fFunctorArduino
+       (abs_ @ ())
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdDisplayOff_deep'
+          lcd),
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdDisplayOn_deep'
+   :: LCD -> Arduino (Expr ())
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 230 0}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdDisplayOn_deep' =
+   \ (lcd :: LCD) ->
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.updateDisplayControl_deep'
+       (rep_
+          @ Bool System.Hardware.Haskino.Expr.$fExprBBool GHC.Types.True)
+       (rep_
+          @ Word8
+          System.Hardware.Haskino.Expr.$fExprBWord8
+          (fromInteger @ Word8 GHC.Word.$fNumWord8 2))
+       lcd,
+ lcdDisplayOn :: LCD -> Arduino ()
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 60 0}]
+ lcdDisplayOn =
+   \ (lcd :: LCD) ->
+     <$>
+       @ Arduino
+       @ (Expr ())
+       @ ()
+       System.Hardware.Haskino.Data.$fFunctorArduino
+       (abs_ @ ())
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdDisplayOn_deep'
+          lcd),
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdFlash_deep'
+   :: LCD -> Expr Word32 -> Expr Word32 -> Arduino (Expr ())
+ [LclIdX,
+  Arity=3,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=NEVER}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdFlash_deep' =
+   \ (lcd :: LCD) (n :: Expr Word32) (d :: Expr Word32) ->
+     iterateE
+       @ Word32
+       @ ()
+       System.Hardware.Haskino.Data.$fArduinoIterateWord32()
+       (rep_
+          @ Word32
+          System.Hardware.Haskino.Expr.$fExprBWord32
+          (fromInteger @ Word32 GHC.Word.$fNumWord32 0))
+       (\ (x :: Word32) ->
+          ifThenElseEither
+            @ Word32
+            @ ()
+            System.Hardware.Haskino.Data.$fArduinoIterateWord32()
+            (eqE @ (Expr Bool) System.Hardware.Haskino.Expr.$fExprBWord32 x n)
+            (return
+               @ Arduino
+               System.Hardware.Haskino.Data.$fMonadArduino
+               @ (ExprEither Word32 ())
+               (System.Hardware.Haskino.Expr.ExprRight
+                  @ Word32
+                  @ ()
+                  System.Hardware.Haskino.Expr.$fExprBWord32
+                  System.Hardware.Haskino.Expr.$fExprB()
+                  (rep_ @ () System.Hardware.Haskino.Expr.$fExprB() GHC.Tuple.())))
+            (>>
+               @ Arduino
+               System.Hardware.Haskino.Data.$fMonadArduino
+               @ ()
+               @ (ExprEither Word32 ())
+               (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdDisplayOff_deep'
+                  lcd)
+               (>>
+                  @ Arduino
+                  System.Hardware.Haskino.Data.$fMonadArduino
+                  @ ()
+                  @ (ExprEither Word32 ())
+                  (delayMillisE d)
+                  (>>
+                     @ Arduino
+                     System.Hardware.Haskino.Data.$fMonadArduino
+                     @ ()
+                     @ (ExprEither Word32 ())
+                     (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdDisplayOn_deep'
+                        lcd)
+                     (>>
+                        @ Arduino
+                        System.Hardware.Haskino.Data.$fMonadArduino
+                        @ ()
+                        @ (ExprEither Word32 ())
+                        (delayMillisE d)
+                        (return
+                           @ Arduino
+                           System.Hardware.Haskino.Data.$fMonadArduino
+                           @ (ExprEither Word32 ())
+                           (System.Hardware.Haskino.Expr.ExprLeft
+                              @ Word32
+                              @ ()
+                              System.Hardware.Haskino.Expr.$fExprBWord32
+                              System.Hardware.Haskino.Expr.$fExprB()
+                              (+ @ (Expr Word32)
+                                 System.Hardware.Haskino.Expr.$fNumExpr3
+                                 x
+                                 (rep_
+                                    @ Word32
+                                    System.Hardware.Haskino.Expr.$fExprBWord32
+                                    (fromInteger @ Word32 GHC.Word.$fNumWord32 1)))))))))),
+ lcdFlash :: LCD -> Word32 -> Word32 -> Arduino ()
+ [LclIdX,
+  Arity=3,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0 0 0] 140 0}]
+ lcdFlash =
+   \ (lcd :: LCD) (n :: Word32) (d :: Word32) ->
+     <$>
+       @ Arduino
+       @ (Expr ())
+       @ ()
+       System.Hardware.Haskino.Data.$fFunctorArduino
+       (abs_ @ ())
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdFlash_deep'
+          lcd
+          (rep_ @ Word32 System.Hardware.Haskino.Expr.$fExprBWord32 n)
+          (rep_ @ Word32 System.Hardware.Haskino.Expr.$fExprBWord32 d)),
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.updateDisplayMode_deep'
+   :: Expr Bool -> Expr Word8 -> LCD -> Arduino (Expr ())
+ [LclId,
+  Arity=3,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0 0 0] 250 0}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.updateDisplayMode_deep' =
+   \ (set :: Expr Bool) _ [Occ=Dead] (lcd :: LCD) ->
+     >>=
+       @ Arduino
+       System.Hardware.Haskino.Data.$fMonadArduino
+       @ (Expr Word8)
+       @ ()
+       readRemoteRefE
+       (\ _ [Occ=Dead] ->
+          >>
+            @ Arduino
+            System.Hardware.Haskino.Data.$fMonadArduino
+            @ ()
+            @ ()
+            (ifThenElseE
+               @ ()
+               System.Hardware.Haskino.Data.$fArduinoConditional()
+               set
+               writeRemoteRefE
+               writeRemoteRefE)
+            (>>=
+               @ Arduino
+               System.Hardware.Haskino.Data.$fMonadArduino
+               @ (Expr Word8)
+               @ ()
+               readRemoteRefE
+               (\ (new_abs :: Expr Word8) ->
+                  System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.sendCmd_deep'
+                    lcd
+                    (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.LCD_DISPLAYCONTROL
+                       (abs_ @ Word8 new_abs))))),
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdLeftToRight_deep'
+   :: LCD -> Arduino (Expr ())
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 230 0}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdLeftToRight_deep' =
+   \ (lcd :: LCD) ->
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.updateDisplayMode_deep'
+       (rep_
+          @ Bool System.Hardware.Haskino.Expr.$fExprBBool GHC.Types.True)
+       (rep_
+          @ Word8
+          System.Hardware.Haskino.Expr.$fExprBWord8
+          (fromInteger @ Word8 GHC.Word.$fNumWord8 1))
+       lcd,
+ lcdLeftToRight :: LCD -> Arduino ()
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 60 0}]
+ lcdLeftToRight =
+   \ (lcd :: LCD) ->
+     <$>
+       @ Arduino
+       @ (Expr ())
+       @ ()
+       System.Hardware.Haskino.Data.$fFunctorArduino
+       (abs_ @ ())
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdLeftToRight_deep'
+          lcd),
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdRightToLeft_deep'
+   :: LCD -> Arduino (Expr ())
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 230 0}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdRightToLeft_deep' =
+   \ (lcd :: LCD) ->
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.updateDisplayMode_deep'
+       (rep_
+          @ Bool System.Hardware.Haskino.Expr.$fExprBBool GHC.Types.False)
+       (rep_
+          @ Word8
+          System.Hardware.Haskino.Expr.$fExprBWord8
+          (fromInteger @ Word8 GHC.Word.$fNumWord8 1))
+       lcd,
+ lcdRightToLeft :: LCD -> Arduino ()
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 60 0}]
+ lcdRightToLeft =
+   \ (lcd :: LCD) ->
+     <$>
+       @ Arduino
+       @ (Expr ())
+       @ ()
+       System.Hardware.Haskino.Data.$fFunctorArduino
+       (abs_ @ ())
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdRightToLeft_deep'
+          lcd),
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdAutoScrollOn_deep'
+   :: LCD -> Arduino (Expr ())
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 230 0}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdAutoScrollOn_deep' =
+   \ (lcd :: LCD) ->
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.updateDisplayMode_deep'
+       (rep_
+          @ Bool System.Hardware.Haskino.Expr.$fExprBBool GHC.Types.True)
+       (rep_
+          @ Word8
+          System.Hardware.Haskino.Expr.$fExprBWord8
+          (fromInteger @ Word8 GHC.Word.$fNumWord8 0))
+       lcd,
+ lcdAutoScrollOn :: LCD -> Arduino ()
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 60 0}]
+ lcdAutoScrollOn =
+   \ (lcd :: LCD) ->
+     <$>
+       @ Arduino
+       @ (Expr ())
+       @ ()
+       System.Hardware.Haskino.Data.$fFunctorArduino
+       (abs_ @ ())
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdAutoScrollOn_deep'
+          lcd),
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdAutoScrollOff_deep'
+   :: LCD -> Arduino (Expr ())
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 230 0}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdAutoScrollOff_deep' =
+   \ (lcd :: LCD) ->
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.updateDisplayMode_deep'
+       (rep_
+          @ Bool System.Hardware.Haskino.Expr.$fExprBBool GHC.Types.False)
+       (rep_
+          @ Word8
+          System.Hardware.Haskino.Expr.$fExprBWord8
+          (fromInteger @ Word8 GHC.Word.$fNumWord8 0))
+       lcd,
+ lcdAutoScrollOff :: LCD -> Arduino ()
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0] 60 0}]
+ lcdAutoScrollOff =
+   \ (lcd :: LCD) ->
+     <$>
+       @ Arduino
+       @ (Expr ())
+       @ ()
+       System.Hardware.Haskino.Data.$fFunctorArduino
+       (abs_ @ ())
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdAutoScrollOff_deep'
+          lcd),
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdRegister_deep'
+   :: LCDController -> Arduino (Expr LCD)
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=NEVER}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdRegister_deep' =
+   \ (controller :: LCDController) ->
+     >>=
+       @ Arduino
+       System.Hardware.Haskino.Data.$fMonadArduino
+       @ (RemoteRef Word8)
+       @ LCD
+       (newRemoteRef
+          @ Word8
+          System.Hardware.Haskino.Data.$fRemoteReferenceWord8
+          (fromInteger @ Word8 GHC.Word.$fNumWord8 0))
+       (\ (mode :: RemoteRef Word8) ->
+          >>=
+            @ Arduino
+            System.Hardware.Haskino.Data.$fMonadArduino
+            @ (RemoteRef Word8)
+            @ LCD
+            (newRemoteRef
+               @ Word8
+               System.Hardware.Haskino.Data.$fRemoteReferenceWord8
+               (fromInteger @ Word8 GHC.Word.$fNumWord8 0))
+            (\ (control :: RemoteRef Word8) ->
+               >>=
+                 @ Arduino
+                 System.Hardware.Haskino.Data.$fMonadArduino
+                 @ (RemoteRef Word8)
+                 @ LCD
+                 (newRemoteRef
+                    @ Word8
+                    System.Hardware.Haskino.Data.$fRemoteReferenceWord8
+                    (fromInteger @ Word8 GHC.Word.$fNumWord8 0))
+                 (\ (count :: RemoteRef Word8) ->
+                    >>=
+                      @ Arduino
+                      System.Hardware.Haskino.Data.$fMonadArduino
+                      @ (RemoteRef Bool)
+                      @ LCD
+                      (newRemoteRef
+                         @ Bool
+                         System.Hardware.Haskino.Data.$fRemoteReferenceBool
+                         GHC.Types.True)
+                      (\ (backlight :: RemoteRef Bool) ->
+                         let {
+                           ld :: LCDData
+                           [LclId,
+                            Str=DmdType,
+                            Unf=Unf{Src=<vanilla>, TopLvl=False, Value=True, ConLike=True,
+                                    WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 50}]
+                           ld =
+                             System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.LCDData
+                               mode control count backlight } in
+                         let {
+                           c :: LCD
+                           [LclId,
+                            Str=DmdType,
+                            Unf=Unf{Src=<vanilla>, TopLvl=False, Value=True, ConLike=True,
+                                    WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 30}]
+                           c =
+                             System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.LCD
+                               controller ld } in
+                         >>
+                           @ Arduino
+                           System.Hardware.Haskino.Data.$fMonadArduino
+                           @ ()
+                           @ LCD
+                           (>>
+                              @ Arduino
+                              System.Hardware.Haskino.Data.$fMonadArduino
+                              @ ()
+                              @ ()
+                              (case c of _ [Occ=Dead] { LCD ds_dqwq ds_dqwr ->
+                               case ds_dqwq of wild_X3m {
+                                 Hitachi44780 ds_dqw2 ds_dqw3 ds_dqw4 ds_dqw5 ds_dqw6 ds_dqw7
+                                              ds_dqw8 ds_dqw9 ds_dqwa ds_dqwb ->
+                                   case wild_X3m of _ [Occ=Dead] {
+                                     Hitachi44780 ds_dqsX ds_dqsY ds_dqsZ ds_dqt0 ds_dqt1 ds_dqt2
+                                                  ds_dqt3 ds_dqt4 ds_dqt5 ds_dqt6 ->
+                                       >>
+                                         @ Arduino
+                                         System.Hardware.Haskino.Data.$fMonadArduino
+                                         @ ()
+                                         @ ()
+                                         (ifThenElseE
+                                            @ ()
+                                            System.Hardware.Haskino.Data.$fArduinoConditional()
+                                            (rep_
+                                               @ Bool
+                                               System.Hardware.Haskino.Expr.$fExprBBool
+                                               (isJust @ Pin ds_dqt3))
+                                            (setPinModeE
+                                               (rep_
+                                                  @ Pin
+                                                  System.Hardware.Haskino.Expr.$fExprBWord8
+                                                  (case ds_dqt3 of _ [Occ=Dead] {
+                                                     Nothing ->
+                                                       case Control.Exception.Base.irrefutPatError
+                                                              @ 'GHC.Types.PtrRepLifted
+                                                              @ (Pin)
+                                                              "System/Hardware/Haskino/SamplePrograms/Rewrite/LCD.hs:164:30-43|Just p"#
+                                                       of wild_00 {
+                                                       };
+                                                     Just p -> p
+                                                   }))
+                                               System.Hardware.Haskino.Data.OUTPUT)
+                                            (return
+                                               @ Arduino
+                                               System.Hardware.Haskino.Data.$fMonadArduino
+                                               @ (Expr ())
+                                               (rep_
+                                                  @ ()
+                                                  System.Hardware.Haskino.Expr.$fExprB()
+                                                  GHC.Tuple.())))
+                                         (>>
+                                            @ Arduino
+                                            System.Hardware.Haskino.Data.$fMonadArduino
+                                            @ ()
+                                            @ ()
+                                            (setPinModeE
+                                               (rep_
+                                                  @ Pin
+                                                  System.Hardware.Haskino.Expr.$fExprBWord8
+                                                  ds_dqsX)
+                                               System.Hardware.Haskino.Data.OUTPUT)
+                                            (>>
+                                               @ Arduino
+                                               System.Hardware.Haskino.Data.$fMonadArduino
+                                               @ ()
+                                               @ ()
+                                               (setPinModeE
+                                                  (rep_
+                                                     @ Pin
+                                                     System.Hardware.Haskino.Expr.$fExprBWord8
+                                                     ds_dqsY)
+                                                  System.Hardware.Haskino.Data.OUTPUT)
+                                               (>>
+                                                  @ Arduino
+                                                  System.Hardware.Haskino.Data.$fMonadArduino
+                                                  @ ()
+                                                  @ ()
+                                                  (setPinModeE
+                                                     (rep_
+                                                        @ Pin
+                                                        System.Hardware.Haskino.Expr.$fExprBWord8
+                                                        ds_dqsZ)
+                                                     System.Hardware.Haskino.Data.OUTPUT)
+                                                  (>>
+                                                     @ Arduino
+                                                     System.Hardware.Haskino.Data.$fMonadArduino
+                                                     @ ()
+                                                     @ ()
+                                                     (setPinModeE
+                                                        (rep_
+                                                           @ Pin
+                                                           System.Hardware.Haskino.Expr.$fExprBWord8
+                                                           ds_dqt0)
+                                                        System.Hardware.Haskino.Data.OUTPUT)
+                                                     (>>
+                                                        @ Arduino
+                                                        System.Hardware.Haskino.Data.$fMonadArduino
+                                                        @ ()
+                                                        @ ()
+                                                        (setPinModeE
+                                                           (rep_
+                                                              @ Pin
+                                                              System.Hardware.Haskino.Expr.$fExprBWord8
+                                                              ds_dqt1)
+                                                           System.Hardware.Haskino.Data.OUTPUT)
+                                                        (<$>
+                                                           @ Arduino
+                                                           @ (Expr ())
+                                                           @ ()
+                                                           System.Hardware.Haskino.Data.$fFunctorArduino
+                                                           (abs_ @ ())
+                                                           (setPinModeE
+                                                              (rep_
+                                                                 @ Pin
+                                                                 System.Hardware.Haskino.Expr.$fExprBWord8
+                                                                 ds_dqt2)
+                                                              System.Hardware.Haskino.Data.OUTPUT)))))));
+                                     I2CHitachi44780 ipv ipv ipv ipv ->
+                                       Control.Exception.Base.patError
+                                         @ 'GHC.Types.PtrRepLifted
+                                         @ (Arduino ())
+                                         "System/Hardware/Haskino/SamplePrograms/Rewrite/LCD.hs:(163,1)-(170,27)|function initLCDDigital"#
+                                   };
+                                 I2CHitachi44780 ds_dqwc ds_dqwd ds_dqwe ds_dqwf -> i2cConfig
+                               }
+                               })
+                              (>>
+                                 @ Arduino
+                                 System.Hardware.Haskino.Data.$fMonadArduino
+                                 @ ()
+                                 @ ()
+                                 (delayMillisE
+                                    (rep_
+                                       @ TimeMillis
+                                       System.Hardware.Haskino.Expr.$fExprBWord32
+                                       (fromInteger @ TimeMillis GHC.Word.$fNumWord32 50)))
+                                 (>>
+                                    @ Arduino
+                                    System.Hardware.Haskino.Data.$fMonadArduino
+                                    @ ()
+                                    @ ()
+                                    (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.sendCmd_deep'
+                                       c
+                                       System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.LCD_INITIALIZE)
+                                    (>>
+                                       @ Arduino
+                                       System.Hardware.Haskino.Data.$fMonadArduino
+                                       @ ()
+                                       @ ()
+                                       (delayMillisE
+                                          (rep_
+                                             @ TimeMillis
+                                             System.Hardware.Haskino.Expr.$fExprBWord32
+                                             (fromInteger @ TimeMillis GHC.Word.$fNumWord32 5)))
+                                       (>>
+                                          @ Arduino
+                                          System.Hardware.Haskino.Data.$fMonadArduino
+                                          @ ()
+                                          @ ()
+                                          (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.sendCmd_deep'
+                                             c
+                                             System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.LCD_INITIALIZE_END)
+                                          (>>
+                                             @ Arduino
+                                             System.Hardware.Haskino.Data.$fMonadArduino
+                                             @ ()
+                                             @ ()
+                                             (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.sendCmd_deep'
+                                                c
+                                                System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.LCD_FUNCTIONSET)
+                                             (>>
+                                                @ Arduino
+                                                System.Hardware.Haskino.Data.$fMonadArduino
+                                                @ ()
+                                                @ ()
+                                                (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdCursorOff_deep'
+                                                   c)
+                                                (>>
+                                                   @ Arduino
+                                                   System.Hardware.Haskino.Data.$fMonadArduino
+                                                   @ ()
+                                                   @ ()
+                                                   (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdBlinkOff_deep'
+                                                      c)
+                                                   (>>
+                                                      @ Arduino
+                                                      System.Hardware.Haskino.Data.$fMonadArduino
+                                                      @ ()
+                                                      @ ()
+                                                      (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdLeftToRight_deep'
+                                                         c)
+                                                      (>>
+                                                         @ Arduino
+                                                         System.Hardware.Haskino.Data.$fMonadArduino
+                                                         @ ()
+                                                         @ ()
+                                                         (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdAutoScrollOff_deep'
+                                                            c)
+                                                         (>>
+                                                            @ Arduino
+                                                            System.Hardware.Haskino.Data.$fMonadArduino
+                                                            @ ()
+                                                            @ ()
+                                                            (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdHome_deep'
+                                                               c)
+                                                            (>>
+                                                               @ Arduino
+                                                               System.Hardware.Haskino.Data.$fMonadArduino
+                                                               @ ()
+                                                               @ ()
+                                                               (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdClear_deep'
+                                                                  c)
+                                                               (<$>
+                                                                  @ Arduino
+                                                                  @ (Expr ())
+                                                                  @ ()
+                                                                  System.Hardware.Haskino.Data.$fFunctorArduino
+                                                                  (abs_ @ ())
+                                                                  (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdDisplayOn_deep'
+                                                                     c))))))))))))))
+                           (return
+                              @ Arduino System.Hardware.Haskino.Data.$fMonadArduino @ LCD c))))),
+ lcdRegister :: LCDController -> Arduino LCD
+ [LclIdX,
+  Arity=1,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True,
+          Guidance=ALWAYS_IF(arity=0,unsat_ok=True,boring_ok=True)}]
+ lcdRegister =
+   System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdRegister_deep',
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdSetCursor_deep'
+   :: LCD -> Expr Word8 -> Expr Word8 -> Arduino (Expr ())
+ [LclIdX,
+  Arity=3,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=NEVER}]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdSetCursor_deep' =
+   \ (lcd :: LCD) (givenCol :: Expr Word8) (givenRow :: Expr Word8) ->
+     let {
+       align :: Word8 -> Word8 -> Word8
+       [LclId,
+        Arity=2,
+        Str=DmdType,
+        Unf=Unf{Src=<vanilla>, TopLvl=False, Value=True, ConLike=True,
+                WorkFree=True, Expandable=True, Guidance=IF_ARGS [0 0] 230 0}]
+       align =
+         \ (i :: Word8) (m :: Word8) ->
+           case >= @ Word8 GHC.Word.$fOrdWord8 i m of _ [Occ=Dead] {
+             False -> i;
+             True ->
+               - @ Word8
+                 GHC.Word.$fNumWord8
+                 m
+                 (fromInteger @ Word8 GHC.Word.$fNumWord8 1)
+           } } in
+     let {
+       row :: Word8
+       [LclId,
+        Str=DmdType,
+        Unf=Unf{Src=<vanilla>, TopLvl=False, Value=False, ConLike=False,
+                WorkFree=False, Expandable=False, Guidance=IF_ARGS [] 80 0}]
+       row =
+         align
+           (abs_ @ Word8 givenRow)
+           (case lcd of _ [Occ=Dead] { LCD ds_dqwq ds_dqwr ->
+            case ds_dqwq of _ [Occ=Dead] {
+              Hitachi44780 ds_dqyU ds_dqyV ds_dqyW ds_dqyX ds_dqyY ds_dqyZ
+                           ds_dqz0 ds_dqz1 ds_dqz2 ds_dqz3 ->
+                ds_dqz1;
+              I2CHitachi44780 ds_dqz4 ds_dqz5 ds_dqz6 ds_dqz7 -> ds_dqz5
+            }
+            }) } in
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.sendCmd_deep'
+       lcd
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.LCD_SETDDRAMADDR
+          (+ @ Word8
+             GHC.Word.$fNumWord8
+             (align
+                (abs_ @ Word8 givenCol)
+                (case lcd of _ [Occ=Dead] { LCD ds_dqwq ds_dqwr ->
+                 case ds_dqwq of _ [Occ=Dead] {
+                   Hitachi44780 ds_dqxp ds_dqxq ds_dqxr ds_dqxs ds_dqxt ds_dqxu
+                                ds_dqxv ds_dqxw ds_dqxx ds_dqxy ->
+                     ds_dqxx;
+                   I2CHitachi44780 ds_dqxz ds_dqxA ds_dqxB ds_dqxC -> ds_dqxB
+                 }
+                 }))
+             (case ==
+                     @ Word8
+                     GHC.Word.$fEqWord8
+                     row
+                     (fromInteger @ Word8 GHC.Word.$fNumWord8 0)
+              of _ [Occ=Dead] {
+                False ->
+                  case ==
+                         @ Word8
+                         GHC.Word.$fEqWord8
+                         row
+                         (fromInteger @ Word8 GHC.Word.$fNumWord8 1)
+                  of _ [Occ=Dead] {
+                    False ->
+                      case ==
+                             @ Word8
+                             GHC.Word.$fEqWord8
+                             row
+                             (fromInteger @ Word8 GHC.Word.$fNumWord8 2)
+                      of _ [Occ=Dead] {
+                        False -> fromInteger @ Word8 GHC.Word.$fNumWord8 84;
+                        True -> fromInteger @ Word8 GHC.Word.$fNumWord8 20
+                      };
+                    True -> fromInteger @ Word8 GHC.Word.$fNumWord8 64
+                  };
+                True -> fromInteger @ Word8 GHC.Word.$fNumWord8 0
+              }))),
+ lcdSetCursor :: LCD -> Word8 -> Word8 -> Arduino ()
+ [LclIdX,
+  Arity=3,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [0 0 0] 140 0}]
+ lcdSetCursor =
+   \ (lcd :: LCD) (givenCol :: Word8) (givenRow :: Word8) ->
+     <$>
+       @ Arduino
+       @ (Expr ())
+       @ ()
+       System.Hardware.Haskino.Data.$fFunctorArduino
+       (abs_ @ ())
+       (System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.lcdSetCursor_deep'
+          lcd
+          (rep_ @ Word8 System.Hardware.Haskino.Expr.$fExprBWord8 givenCol)
+          (rep_ @ Word8 System.Hardware.Haskino.Expr.$fExprBWord8 givenRow)),
+ $dShow_aqp7 :: Show (Maybe Pin)
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=False, ConLike=False,
+          WorkFree=False, Expandable=True, Guidance=IF_ARGS [] 20 0}]
+ $dShow_aqp7 = GHC.Show.$fShowMaybe @ Word8 GHC.Word.$fShowWord8,
+ $cshowsPrec :: Int -> LCDController -> ShowS
+ [LclId,
+  Arity=2,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=NEVER}]
+ $cshowsPrec =
+   \ (a :: Int) (ds_dqz8 :: LCDController) ->
+     case ds_dqz8 of _ [Occ=Dead] {
+       Hitachi44780 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 ->
+         showParen
+           (>= @ Int GHC.Classes.$fOrdInt a (GHC.Types.I# 11#))
+           (. @ String
+              @ String
+              @ String
+              (showString (GHC.CString.unpackCString# "Hitachi44780 {"#))
+              (. @ String
+                 @ String
+                 @ String
+                 (showString (GHC.CString.unpackCString# "lcdRS = "#))
+                 (. @ String
+                    @ String
+                    @ String
+                    (showsPrec @ Pin GHC.Word.$fShowWord8 (GHC.Types.I# 0#) b1)
+                    (. @ String
+                       @ String
+                       @ String
+                       (showString (GHC.CString.unpackCString# ", "#))
+                       (. @ String
+                          @ String
+                          @ String
+                          (showString (GHC.CString.unpackCString# "lcdEN = "#))
+                          (. @ String
+                             @ String
+                             @ String
+                             (showsPrec @ Pin GHC.Word.$fShowWord8 (GHC.Types.I# 0#) b2)
+                             (. @ String
+                                @ String
+                                @ String
+                                (showString (GHC.CString.unpackCString# ", "#))
+                                (. @ String
+                                   @ String
+                                   @ String
+                                   (showString (GHC.CString.unpackCString# "lcdD4 = "#))
+                                   (. @ String
+                                      @ String
+                                      @ String
+                                      (showsPrec @ Pin GHC.Word.$fShowWord8 (GHC.Types.I# 0#) b3)
+                                      (. @ String
+                                         @ String
+                                         @ String
+                                         (showString (GHC.CString.unpackCString# ", "#))
+                                         (. @ String
+                                            @ String
+                                            @ String
+                                            (showString (GHC.CString.unpackCString# "lcdD5 = "#))
+                                            (. @ String
+                                               @ String
+                                               @ String
+                                               (showsPrec
+                                                  @ Pin GHC.Word.$fShowWord8 (GHC.Types.I# 0#) b4)
+                                               (. @ String
+                                                  @ String
+                                                  @ String
+                                                  (showString (GHC.CString.unpackCString# ", "#))
+                                                  (. @ String
+                                                     @ String
+                                                     @ String
+                                                     (showString
+                                                        (GHC.CString.unpackCString# "lcdD6 = "#))
+                                                     (. @ String
+                                                        @ String
+                                                        @ String
+                                                        (showsPrec
+                                                           @ Pin
+                                                           GHC.Word.$fShowWord8
+                                                           (GHC.Types.I# 0#)
+                                                           b5)
+                                                        (. @ String
+                                                           @ String
+                                                           @ String
+                                                           (showString
+                                                              (GHC.CString.unpackCString# ", "#))
+                                                           (. @ String
+                                                              @ String
+                                                              @ String
+                                                              (showString
+                                                                 (GHC.CString.unpackCString#
+                                                                    "lcdD7 = "#))
+                                                              (. @ String
+                                                                 @ String
+                                                                 @ String
+                                                                 (showsPrec
+                                                                    @ Pin
+                                                                    GHC.Word.$fShowWord8
+                                                                    (GHC.Types.I# 0#)
+                                                                    b6)
+                                                                 (. @ String
+                                                                    @ String
+                                                                    @ String
+                                                                    (showString
+                                                                       (GHC.CString.unpackCString#
+                                                                          ", "#))
+                                                                    (. @ String
+                                                                       @ String
+                                                                       @ String
+                                                                       (showString
+                                                                          (GHC.CString.unpackCString#
+                                                                             "lcdBL = "#))
+                                                                       (. @ String
+                                                                          @ String
+                                                                          @ String
+                                                                          (showsPrec
+                                                                             @ (Maybe Pin)
+                                                                             $dShow_aqp7
+                                                                             (GHC.Types.I# 0#)
+                                                                             b7)
+                                                                          (. @ String
+                                                                             @ String
+                                                                             @ String
+                                                                             (showString
+                                                                                (GHC.CString.unpackCString#
+                                                                                   ", "#))
+                                                                             (. @ String
+                                                                                @ String
+                                                                                @ String
+                                                                                (showString
+                                                                                   (GHC.CString.unpackCString#
+                                                                                      "lcdRows = "#))
+                                                                                (. @ String
+                                                                                   @ String
+                                                                                   @ String
+                                                                                   (showsPrec
+                                                                                      @ Word8
+                                                                                      GHC.Word.$fShowWord8
+                                                                                      (GHC.Types.I#
+                                                                                         0#)
+                                                                                      b8)
+                                                                                   (. @ String
+                                                                                      @ String
+                                                                                      @ String
+                                                                                      (showString
+                                                                                         (GHC.CString.unpackCString#
+                                                                                            ", "#))
+                                                                                      (. @ String
+                                                                                         @ String
+                                                                                         @ String
+                                                                                         (showString
+                                                                                            (GHC.CString.unpackCString#
+                                                                                               "lcdCols = "#))
+                                                                                         (. @ String
+                                                                                            @ String
+                                                                                            @ String
+                                                                                            (showsPrec
+                                                                                               @ Word8
+                                                                                               GHC.Word.$fShowWord8
+                                                                                               (GHC.Types.I#
+                                                                                                  0#)
+                                                                                               b9)
+                                                                                            (. @ String
+                                                                                               @ String
+                                                                                               @ String
+                                                                                               (showString
+                                                                                                  (GHC.CString.unpackCString#
+                                                                                                     ", "#))
+                                                                                               (. @ String
+                                                                                                  @ String
+                                                                                                  @ String
+                                                                                                  (showString
+                                                                                                     (GHC.CString.unpackCString#
+                                                                                                        "dotMode5x10 = "#))
+                                                                                                  (. @ String
+                                                                                                     @ String
+                                                                                                     @ String
+                                                                                                     (showsPrec
+                                                                                                        @ Bool
+                                                                                                        GHC.Show.$fShowBool
+                                                                                                        (GHC.Types.I#
+                                                                                                           0#)
+                                                                                                        b10)
+                                                                                                     (showString
+                                                                                                        (GHC.CString.unpackCString#
+                                                                                                           "}"#))))))))))))))))))))))))))))))));
+       I2CHitachi44780 b1 b2 b3 b4 ->
+         showParen
+           (>= @ Int GHC.Classes.$fOrdInt a (GHC.Types.I# 11#))
+           (. @ String
+              @ String
+              @ String
+              (showString (GHC.CString.unpackCString# "I2CHitachi44780 {"#))
+              (. @ String
+                 @ String
+                 @ String
+                 (showString (GHC.CString.unpackCString# "address = "#))
+                 (. @ String
+                    @ String
+                    @ String
+                    (showsPrec @ Word8 GHC.Word.$fShowWord8 (GHC.Types.I# 0#) b1)
+                    (. @ String
+                       @ String
+                       @ String
+                       (showString (GHC.CString.unpackCString# ", "#))
+                       (. @ String
+                          @ String
+                          @ String
+                          (showString (GHC.CString.unpackCString# "lcdRows = "#))
+                          (. @ String
+                             @ String
+                             @ String
+                             (showsPrec @ Word8 GHC.Word.$fShowWord8 (GHC.Types.I# 0#) b2)
+                             (. @ String
+                                @ String
+                                @ String
+                                (showString (GHC.CString.unpackCString# ", "#))
+                                (. @ String
+                                   @ String
+                                   @ String
+                                   (showString (GHC.CString.unpackCString# "lcdCols = "#))
+                                   (. @ String
+                                      @ String
+                                      @ String
+                                      (showsPrec @ Word8 GHC.Word.$fShowWord8 (GHC.Types.I# 0#) b3)
+                                      (. @ String
+                                         @ String
+                                         @ String
+                                         (showString (GHC.CString.unpackCString# ", "#))
+                                         (. @ String
+                                            @ String
+                                            @ String
+                                            (showString
+                                               (GHC.CString.unpackCString# "dotMode5x10 = "#))
+                                            (. @ String
+                                               @ String
+                                               @ String
+                                               (showsPrec
+                                                  @ Bool GHC.Show.$fShowBool (GHC.Types.I# 0#) b4)
+                                               (showString
+                                                  (GHC.CString.unpackCString# "}"#))))))))))))))
+     },
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$fShowLCDController [InlPrag=[ALWAYS] CONLIKE]
+   :: Show LCDController
+ [LclIdX[DFunId],
+  Str=DmdType,
+  Unf=DFun: \ ->
+        GHC.Show.C:Show TYPE: LCDController $cshowsPrec $cshow $cshowList]
+ System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$fShowLCDController =
+   GHC.Show.C:Show @ LCDController $cshowsPrec $cshow $cshowList;
+ $cshow [Occ=LoopBreaker] :: LCDController -> String
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=False, ConLike=False,
+          WorkFree=False, Expandable=True, Guidance=IF_ARGS [] 20 0}]
+ $cshow =
+   GHC.Show.$dmshow
+     @ LCDController
+     System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$fShowLCDController;
+ $cshowList [Occ=LoopBreaker] :: [LCDController] -> ShowS
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=False, ConLike=False,
+          WorkFree=False, Expandable=False, Guidance=IF_ARGS [] 60 0}]
+ $cshowList =
+   GHC.Show.showList__
+     @ LCDController
+     (showsPrec
+        @ LCDController
+        System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.$fShowLCDController
+        (GHC.Types.I# 0#));]
+[hitachi_svVb :: Bool
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=False, ConLike=False,
+          WorkFree=False, Expandable=True, Guidance=IF_ARGS [] 20 0}]
+ hitachi_svVb = false @ Bool Data.Boolean.$fBooleanBool,
+ hitachi_svVa :: Word8
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=False, ConLike=False,
+          WorkFree=False, Expandable=False, Guidance=IF_ARGS [] 130 0}]
+ hitachi_svVa = fromInteger @ Word8 GHC.Word.$fNumWord8 16,
+ hitachi_svV9 :: Word8
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=False, ConLike=False,
+          WorkFree=False, Expandable=False, Guidance=IF_ARGS [] 130 0}]
+ hitachi_svV9 = fromInteger @ Word8 GHC.Word.$fNumWord8 2,
+ hitachi_svV8 :: Pin
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=False, ConLike=False,
+          WorkFree=False, Expandable=False, Guidance=IF_ARGS [] 130 0}]
+ hitachi_svV8 = fromInteger @ Pin GHC.Word.$fNumWord8 10,
+ hitachi_svV7 :: Maybe Pin
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 20}]
+ hitachi_svV7 = GHC.Base.Just @ Pin hitachi_svV8,
+ hitachi_svV6 :: Pin
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=False, ConLike=False,
+          WorkFree=False, Expandable=False, Guidance=IF_ARGS [] 130 0}]
+ hitachi_svV6 = fromInteger @ Pin GHC.Word.$fNumWord8 7,
+ hitachi_svV5 :: Pin
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=False, ConLike=False,
+          WorkFree=False, Expandable=False, Guidance=IF_ARGS [] 130 0}]
+ hitachi_svV5 = fromInteger @ Pin GHC.Word.$fNumWord8 6,
+ hitachi_svV4 :: Pin
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=False, ConLike=False,
+          WorkFree=False, Expandable=False, Guidance=IF_ARGS [] 130 0}]
+ hitachi_svV4 = fromInteger @ Pin GHC.Word.$fNumWord8 5,
+ hitachi_svV3 :: Pin
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=False, ConLike=False,
+          WorkFree=False, Expandable=False, Guidance=IF_ARGS [] 130 0}]
+ hitachi_svV3 = fromInteger @ Pin GHC.Word.$fNumWord8 4,
+ hitachi_svV2 :: Pin
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=False, ConLike=False,
+          WorkFree=False, Expandable=False, Guidance=IF_ARGS [] 130 0}]
+ hitachi_svV2 = fromInteger @ Pin GHC.Word.$fNumWord8 9,
+ hitachi_svV1 :: Pin
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=False, ConLike=False,
+          WorkFree=False, Expandable=False, Guidance=IF_ARGS [] 130 0}]
+ hitachi_svV1 = fromInteger @ Pin GHC.Word.$fNumWord8 8,
+ hitachi :: LCDController
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 110}]
+ hitachi =
+   System.Hardware.Haskino.SamplePrograms.Rewrite.LCD.Hitachi44780
+     hitachi_svV1
+     hitachi_svV2
+     hitachi_svV3
+     hitachi_svV4
+     hitachi_svV5
+     hitachi_svV6
+     hitachi_svV7
+     hitachi_svV9
+     hitachi_svVa
+     hitachi_svVb,
+ Main.myTask_deep' :: Arduino (Expr ())
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=False, ConLike=False,
+          WorkFree=False, Expandable=False, Guidance=IF_ARGS [] 380 0}]
+ Main.myTask_deep' =
+   >>=
+     @ Arduino
+     System.Hardware.Haskino.Data.$fMonadArduino
+     @ LCD
+     @ ()
+     (lcdRegister_deep' hitachi)
+     (\ (lcd :: LCD) ->
+        >>
+          @ Arduino
+          System.Hardware.Haskino.Data.$fMonadArduino
+          @ ()
+          @ ()
+          (lcdBacklightOn_deep' lcd)
+          (>>
+             @ Arduino
+             System.Hardware.Haskino.Data.$fMonadArduino
+             @ ()
+             @ ()
+             (lcdHome_deep' lcd)
+             (lcdWriteChar_deep'
+                lcd
+                (rep_
+                   @ Word8
+                   System.Hardware.Haskino.Expr.$fExprBWord8
+                   (fromInteger @ Word8 GHC.Word.$fNumWord8 64))))),
+ myTask :: Arduino ()
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=False, ConLike=False,
+          WorkFree=False, Expandable=False, Guidance=IF_ARGS [] 40 0}]
+ myTask =
+   <$>
+     @ Arduino
+     @ (Expr ())
+     @ ()
+     System.Hardware.Haskino.Data.$fFunctorArduino
+     (abs_ @ ())
+     Main.myTask_deep',
+ main :: IO ()
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=False, ConLike=False,
+          WorkFree=False, Expandable=False, Guidance=IF_ARGS [] 170 0}]
+ main =
+   compileProgramE
+     (<$>
+        @ Arduino
+        @ (Expr ())
+        @ ()
+        System.Hardware.Haskino.Data.$fFunctorArduino
+        (abs_ @ ())
+        (<$>
+           @ Arduino
+           @ (Expr ())
+           @ ()
+           System.Hardware.Haskino.Data.$fFunctorArduino
+           (abs_ @ ())
+           Main.myTask_deep'))
+     (GHC.CString.unpackCString# "theTest.ino"#),
+ :Main.main :: IO ()
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=False, ConLike=False,
+          WorkFree=False, Expandable=False, Guidance=IF_ARGS [] 20 0}]
+ :Main.main = GHC.TopHandler.runMainIO @ () main,
+ $trModule_svV0 :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 30 20}]
+ $trModule_svV0 = GHC.Types.TrNameS "Main"#,
+ $trModule_svUZ :: GHC.Types.TrName
+ [LclId,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 30 20}]
+ $trModule_svUZ = GHC.Types.TrNameS "main"#,
+ Main.$trModule :: GHC.Types.Module
+ [LclIdX,
+  Str=DmdType,
+  Unf=Unf{Src=<vanilla>, TopLvl=True, Value=True, ConLike=True,
+          WorkFree=True, Expandable=True, Guidance=IF_ARGS [] 10 30}]
+ Main.$trModule = GHC.Types.Module $trModule_svUZ $trModule_svV0]

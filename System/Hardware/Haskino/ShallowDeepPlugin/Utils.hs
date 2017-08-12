@@ -289,7 +289,6 @@ fmapRepBindReturn e = do
             let (tyCon,[ty']) = splitTyConApp $ exprType e''
             retExpr <- fmapRepExpr (mkTyConTy tyCon) ty' e''
             return $ mkLets ls $ mkLams bs retExpr
-      -- ToDo: Handle the Case case.
       -- Question: Do we need to change the type of the case, ty?
       -- Do we need to include the other types of Core contructors?
       -- Push through them also?
@@ -298,16 +297,16 @@ fmapRepBindReturn e = do
         return $ Case e tb ty alts'
       _ -> return e
 
-collectLets :: CoreExpr -> ([CoreBind], CoreExpr)
-collectLets (Let b e) = let (bs,expr) = collectLets e in (b:bs, expr)
-collectLets expr      = ([],expr)
-
 fmapRepBindReturnAlts :: PassCoreM m => [GhcPlugins.Alt CoreBndr] -> m [GhcPlugins.Alt CoreBndr]
 fmapRepBindReturnAlts [] = return []
 fmapRepBindReturnAlts ((ac, b, a) : as) = do
   a' <- fmapRepBindReturn a
   as' <- fmapRepBindReturnAlts as
   return $ (ac, b, a') : as'
+
+collectLets :: CoreExpr -> ([CoreBind], CoreExpr)
+collectLets (Let b e) = let (bs,expr) = collectLets e in (b:bs, expr)
+collectLets expr      = ([],expr)
 
 -- Adapted from HERMIT.Monad
 runTcM :: PassCoreM m => TcM a -> m a
