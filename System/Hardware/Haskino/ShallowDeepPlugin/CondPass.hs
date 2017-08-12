@@ -95,7 +95,19 @@ condExpr e = do
                     else defaultReturn
                   _ -> defaultReturn
             else defaultReturn
-        _ -> defaultReturn
+        _ -> do
+          isExpr <- isExprClassType ty
+          if isExpr && length alts' == 2
+          then case alts' of
+            [(ac1, _, _), _] -> do
+              case ac1 of
+                DataAlt d -> do
+                  Just falseName <- liftCoreM $ thNameToGhcName falseNameTH
+                  if (getName d) == falseName
+                  then condExprTransform ty e' alts'
+                  else defaultReturn
+                _ -> defaultReturn
+          else defaultReturn
     Tick t e -> do
       e' <- condExpr e
       return $ Tick t e'
@@ -146,3 +158,16 @@ condTransform ty e alts = do
       -- Apply fmap of abs_
       tyCon <- thNameToTyCon monadTyConTH
       fmapAbsExpr (mkTyConTy tyCon) ty' ifteExpr
+
+condExprTransform :: Type -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CondM CoreExpr
+condExprTransform ty e alts = do
+  case alts of
+    [(_, _, e1),(_, _, e2)] -> do
+      ifbId <- thNameToId ifBNameTH
+      ifbDict <- thNameTyToDict exprClassTyConTH ty
+
+      -- Build the ifBE expression
+      arg1 <- repExpr e
+      arg2 <- repExpr e1
+      arg3 <- repExpr e2
+      absExpr $ mkCoreApps (Var ifbId) [Type ty, ifbDict, arg1, arg2, arg3]

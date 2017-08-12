@@ -14,6 +14,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            buildDictionaryT,
                                            buildDictionaryTyConT,
                                            buildId,
+                                           collectLets,
                                            fmapAbsExpr,
                                            fmapRepBindReturn,
                                            fmapRepExpr,
@@ -41,6 +42,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            repNameTH,
                                            ifThenElseNameTH,
                                            ifThenElseEitherNameTH,
+                                           ifBNameTH,
                                            iterateETH,
                                            leftNameTH,
                                            rightNameTH,
@@ -96,6 +98,7 @@ absNameTH              = 'System.Hardware.Haskino.abs_
 repNameTH              = 'System.Hardware.Haskino.rep_
 ifThenElseNameTH       = 'System.Hardware.Haskino.ifThenElseE
 ifThenElseEitherNameTH = 'System.Hardware.Haskino.ifThenElseEither
+ifBNameTH              = 'System.Hardware.Haskino.ifBE
 iterateETH             = 'System.Hardware.Haskino.iterateE
 leftNameTH             = 'System.Hardware.Haskino.ExprLeft
 rightNameTH            = 'System.Hardware.Haskino.ExprRight
