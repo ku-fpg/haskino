@@ -103,37 +103,40 @@ data LCDData = LCDData {
 data Cmd = LCD_INITIALIZE
          | LCD_INITIALIZE_END
          | LCD_FUNCTIONSET
-         | LCD_DISPLAYCONTROL Word8
+         | LCD_DISPLAYCONTROL
          | LCD_CLEARDISPLAY
-         | LCD_ENTRYMODESET   Word8
+         | LCD_ENTRYMODESET
          | LCD_RETURNHOME
-         | LCD_SETDDRAMADDR   Word8
-         | LCD_CURSORSHIFT    Word8
-         | LCD_SETCGRAMADDR   Word8
+         | LCD_SETDDRAMADDR
+         | LCD_CURSORSHIFT
+         | LCD_SETCGRAMADDR
          | LCD_NOOP
 
 -- | Convert a command to a data-word
-getCmdVal :: LCDController -> Cmd -> Word8
-getCmdVal c cmd = get cmd
-  where multiLine -- bit 3
-          | (lcdRows c) > 1 = 0x08 :: Word8
-          | True        = 0x00 :: Word8
-        dotMode   -- bit 2
-          | (dotMode5x10 c) = 0x04 :: Word8
-          | True        = 0x00 :: Word8
-        displayFunction = multiLine B..|. dotMode
-        get :: Cmd -> Word8
-        get LCD_NOOP               = 0x00
-        get LCD_INITIALIZE         = 0x33
-        get LCD_INITIALIZE_END     = 0x32
-        get LCD_FUNCTIONSET        = 0x20 B..|. displayFunction
-        get (LCD_DISPLAYCONTROL w) = 0x08 B..|. w
-        get LCD_CLEARDISPLAY       = 0x01
-        get (LCD_ENTRYMODESET w)   = 0x04 B..|. w
-        get LCD_RETURNHOME         = 0x02
-        get (LCD_SETDDRAMADDR w)   = 0x80 B..|. w
-        get (LCD_CURSORSHIFT w)    = 0x10 B..|. 0x08 B..|. w   -- NB. LCD_DISPLAYMOVE (0x08) hard coded here
-        get (LCD_SETCGRAMADDR w)   = 0x40 B..|. w `B.shiftL` 3
+getCmdVal :: LCDController -> Cmd -> Word8 -> Word8
+getCmdVal c cmd w = get cmd w
+  where 
+    multiLine :: Word8
+    multiLine = if (lcdRows c) > 1 
+                then 0x08 
+                else 0x00  -- bit 3
+    dotMode :: Word8
+    dotMode = if (dotMode5x10 c)
+              then 0x04 :: Word8 
+              else 0x00 :: Word8 -- bit 2
+    displayFunction = multiLine B..|. dotMode
+    get :: Cmd -> Word8 -> Word8
+    get LCD_NOOP _             = 0x00
+    get LCD_INITIALIZE _       = 0x33
+    get LCD_INITIALIZE_END _   = 0x32
+    get LCD_FUNCTIONSET _      = 0x20 B..|. displayFunction
+    get LCD_DISPLAYCONTROL w   = 0x08 B..|. w
+    get LCD_CLEARDISPLAY _     = 0x01
+    get LCD_ENTRYMODESET w     = 0x04 B..|. w
+    get LCD_RETURNHOME _       = 0x02
+    get LCD_SETDDRAMADDR w     = 0x80 B..|. w
+    get LCD_CURSORSHIFT w      = 0x10 B..|. 0x08 B..|. w   -- NB. LCD_DISPLAYMOVE (0x08) hard coded here
+    get LCD_SETCGRAMADDR w     = 0x40 B..|. (w * 3)
 
 -- | Initialize the LCD. Follows the data sheet <http://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf>,
 -- page 46; figure 24.
@@ -145,10 +148,10 @@ initLCD lcd = do
         I2CHitachi44780{} -> i2cConfig
     -- Wait for 50ms, data-sheet says at least 40ms for 2.7V version, so be safe
     delayMillis 50
-    sendCmd lcd LCD_INITIALIZE
+    sendCmd lcd LCD_INITIALIZE 0
     delayMillis 5
-    sendCmd lcd LCD_INITIALIZE_END
-    sendCmd lcd LCD_FUNCTIONSET
+    sendCmd lcd LCD_INITIALIZE_END 0
+    sendCmd lcd LCD_FUNCTIONSET 0
     lcdCursorOff lcd
     lcdBlinkOff lcd
     lcdLeftToRight lcd
@@ -170,8 +173,8 @@ initLCDDigital c@Hitachi44780{lcdRS, lcdEN, lcdD4, lcdD5, lcdD6, lcdD7, lcdBL} =
     setPinMode lcdD7 OUTPUT
 
 -- | Send a command to the LCD controller
-sendCmd :: LCD -> Cmd -> Arduino ()
-sendCmd lcd c = transmit False lcd $ getCmdVal (lcdController lcd) c
+sendCmd :: LCD -> Cmd -> Word8 -> Arduino ()
+sendCmd lcd c w = transmit False lcd $ getCmdVal (lcdController lcd) c w
 
 -- | Send 4-bit data to the LCD controller
 sendData :: LCD -> Word8 -> Arduino ()
@@ -311,7 +314,7 @@ lcdBacklight lcd on = do
         let lcds = lcdState lcd
         writeRemoteRef (lcdBacklightState lcds) on
         -- Send a noop so backlight state line gets updated
-        sendCmd lcd LCD_NOOP
+        sendCmd lcd LCD_NOOP 0
 
 -- | Write a string on the LCD at the current cursor position
 lcdWrite :: LCD -> [Word8] -> Arduino ()
@@ -330,12 +333,12 @@ lcdWriteChar lcd w = sendData lcd w
 
 -- | Clear the LCD
 lcdClear :: LCD -> Arduino ()
-lcdClear lcd = do sendCmd lcd LCD_CLEARDISPLAY
+lcdClear lcd = do sendCmd lcd LCD_CLEARDISPLAY 0
                   delayMicros 200 -- give some time to make sure LCD is really cleared
 
 -- | Send the cursor to home position
 lcdHome :: LCD -> Arduino ()
-lcdHome lcd = do sendCmd lcd LCD_RETURNHOME
+lcdHome lcd = do sendCmd lcd LCD_RETURNHOME 0
                  delayMicros 200
 
 -- | Set the cursor location. The pair of arguments is the new column and row numbers
@@ -349,7 +352,7 @@ lcdHome lcd = do sendCmd lcd LCD_RETURNHOME
 --   * If the new location is out-of-bounds of your LCD, we will put it the cursor to the closest
 --     possible location on the LCD.
 lcdSetCursor :: LCD -> Word8 -> Word8 -> Arduino ()
-lcdSetCursor lcd givenCol givenRow = sendCmd lcd (LCD_SETDDRAMADDR offset)
+lcdSetCursor lcd givenCol givenRow = sendCmd lcd LCD_SETDDRAMADDR offset
               where align :: Word8 -> Word8 -> Word8
                     align i m = if (i >= m) then (m-1) else i
                     col = align givenCol $ lcdCols (lcdController lcd)
@@ -363,12 +366,12 @@ lcdSetCursor lcd givenCol givenRow = sendCmd lcd (LCD_SETDDRAMADDR offset)
 -- | Scroll the display to the left by 1 character. Project idea: Using a tilt sensor, scroll the contents of the display
 -- left/right depending on the tilt.
 lcdScrollDisplayLeft :: LCD -> Arduino ()
-lcdScrollDisplayLeft lcd = sendCmd lcd (LCD_CURSORSHIFT lcdMoveLeft)
+lcdScrollDisplayLeft lcd = sendCmd lcd LCD_CURSORSHIFT lcdMoveLeft
   where lcdMoveLeft = 0x00
 
 -- | Scroll the display to the right by 1 character
 lcdScrollDisplayRight :: LCD -> Arduino ()
-lcdScrollDisplayRight lcd = sendCmd lcd (LCD_CURSORSHIFT lcdMoveRight)
+lcdScrollDisplayRight lcd = sendCmd lcd LCD_CURSORSHIFT lcdMoveRight
   where lcdMoveRight = 0x04
 
 -- | Update the display control word
@@ -381,7 +384,7 @@ updateDisplayControl set w lcd = do
   then writeRemoteRef (lcdDisplayControl lcds) (fred B..|. w )
   else writeRemoteRef (lcdDisplayControl lcds) (fred B..&. w )
   new <- readRemoteRef (lcdDisplayControl lcds)
-  sendCmd lcd (LCD_DISPLAYCONTROL new)
+  sendCmd lcd LCD_DISPLAYCONTROL new
 
 -- | Update the display mode word
 updateDisplayMode :: Bool -> Word8 -> LCD -> Arduino ()
@@ -393,7 +396,7 @@ updateDisplayMode set w lcd = do
   then writeRemoteRef (lcdDisplayMode lcds) (fred B..|. w )
   else writeRemoteRef (lcdDisplayMode lcds) (fred B..&. w )
   new <- readRemoteRef (lcdDisplayMode lcds)
-  sendCmd lcd (LCD_DISPLAYCONTROL new)
+  sendCmd lcd LCD_DISPLAYCONTROL new
 
 -- | Various control masks for the Hitachi44780
 data Hitachi44780Mask = LCD_BLINKON              -- ^ bit @0@ Controls whether cursor blinks
