@@ -257,9 +257,25 @@ genXlatBools :: BindM Id -> BindM Id -> BindM (Bool, [Bool])
 genXlatBools from to = do
   f <- from
   t <- to
-  let (fTys, fRetTy) = splitFunTys $ exprType $ Var f
-  let (tTys, tRetTy) = splitFunTys $ exprType $ Var t
+  let (fromForAlls, fromFuncTy) = splitForAllTys $ idType f
+  let (fromArgTys, fromRetTy) = splitFunTys fromFuncTy
+  let (toForAlls, toFuncTy) = splitForAllTys $ idType t
+  let (toArgTys, toRetTy) = splitFunTys toFuncTy
+  -- Get the count of non-dictionary args in the new function
+  let argCount  = countNonDictTypes fromArgTys
+  let dictCount = (length fromArgTys) - argCount
+  -- Get the non dictionary types dictCount
+  let fTys = drop dictCount fromArgTys
+  let tTys = drop dictCount toArgTys
   let zTys = zip fTys tTys
+  -- Calculate which args and returns have to change
   let changeArgs = map (\(x,y) -> not $ x `eqType` y) zTys
-  return $ (not $ fRetTy `eqType` tRetTy, changeArgs)
+  let changeNonArgs = replicate (dictCount + length fromForAlls)  False
+  return $ (not $ fromRetTy `eqType` toRetTy, changeNonArgs ++ changeArgs)
+
+countNonDictTypes :: [Type] -> Int
+countNonDictTypes [] = 0
+countNonDictTypes (ty:tys) = if isDictTy ty
+                           then countNonDictTypes tys
+                           else 1 + countNonDictTypes tys
 
