@@ -99,8 +99,8 @@ ifThenElseEitherNameTH = 'System.Hardware.Haskino.ifThenElseEither
 iterateETH             = 'System.Hardware.Haskino.iterateE
 leftNameTH             = 'System.Hardware.Haskino.ExprLeft
 rightNameTH            = 'System.Hardware.Haskino.ExprRight
-litUnitNameTH          = 'System.Hardware.Haskino.LitUnit 
-litBNameTH             = 'System.Hardware.Haskino.LitB 
+litUnitNameTH          = 'System.Hardware.Haskino.LitUnit
+litBNameTH             = 'System.Hardware.Haskino.LitB
 litW8NameTH            = 'System.Hardware.Haskino.LitW8
 litW16NameTH           = 'System.Hardware.Haskino.LitW16
 litW32NameTH           = 'System.Hardware.Haskino.LitW32
@@ -210,7 +210,7 @@ thNameToReturnBaseType th = do
 
 varString :: Id -> String
 varString = occNameString . nameOccName . Var.varName
- 
+
 buildId :: PassCoreM m => String -> Type -> m Id
 buildId varName typ = do
   dunique <- liftCoreM getUniqueM
@@ -269,8 +269,13 @@ fmapRepExpr tyConTy ty e = do
 
 fmapRepBindReturn :: PassCoreM m => CoreExpr -> m CoreExpr
 fmapRepBindReturn e = do
+{-
     let (bs, e') = collectBinders e
-    let (f, args) = collectArgs e'
+    let (ls, e'') = collectLets e'
+  -}
+    let (ls, e')  = collectLets e
+    let (bs, e'') = collectBinders e'
+    let (f, args) = collectArgs e''
     bindId <- thNameToId bindNameTH
     thenId <- thNameToId bindThenNameTH
     case f of
@@ -279,12 +284,30 @@ fmapRepBindReturn e = do
         then do
             la' <- fmapRepBindReturn $ last args
             let args' = init args ++ [la']
-            return $ mkLams bs (mkCoreApps f args')
+            return $ mkLets ls $ mkLams bs (mkCoreApps f args')
         else do
-            let (tyCon,[ty']) = splitTyConApp $ exprType e'
-            retExpr <- fmapRepExpr (mkTyConTy tyCon) ty' e'
-            return $ mkLams bs retExpr
+            let (tyCon,[ty']) = splitTyConApp $ exprType e''
+            retExpr <- fmapRepExpr (mkTyConTy tyCon) ty' e''
+            return $ mkLets ls $ mkLams bs retExpr
+      -- ToDo: Handle the Case case.
+      -- Question: Do we need to change the type of the case, ty?
+      -- Do we need to include the other types of Core contructors?
+      -- Push through them also?
+      Case e tb ty alts -> do
+        alts' <- fmapRepBindReturnAlts alts
+        return $ Case e tb ty alts'
       _ -> return e
+
+collectLets :: CoreExpr -> ([CoreBind], CoreExpr)
+collectLets (Let b e) = let (bs,expr) = collectLets e in (b:bs, expr)
+collectLets expr      = ([],expr)
+
+fmapRepBindReturnAlts :: PassCoreM m => [GhcPlugins.Alt CoreBndr] -> m [GhcPlugins.Alt CoreBndr]
+fmapRepBindReturnAlts [] = return []
+fmapRepBindReturnAlts ((ac, b, a) : as) = do
+  a' <- fmapRepBindReturn a
+  as' <- fmapRepBindReturnAlts as
+  return $ (ac, b, a') : as'
 
 -- Adapted from HERMIT.Monad
 runTcM :: PassCoreM m => TcM a -> m a

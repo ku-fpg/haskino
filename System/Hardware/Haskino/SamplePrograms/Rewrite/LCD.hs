@@ -376,9 +376,11 @@ updateDisplayControl :: Bool -> Word8 -> LCD -> Arduino ()
 updateDisplayControl set w lcd = do
   let c = lcdController lcd
   let lcds = lcdState lcd
-  old <- readRemoteRef (lcdDisplayControl lcds)
-  let new = if set then old B..|. w else old B..&. w
-  writeRemoteRef (lcdDisplayControl lcds) new
+  fred <- readRemoteRef (lcdDisplayControl lcds)
+  if set
+  then writeRemoteRef (lcdDisplayControl lcds) (fred B..|. w )
+  else writeRemoteRef (lcdDisplayControl lcds) (fred B..&. w )
+  new <- readRemoteRef (lcdDisplayControl lcds)
   sendCmd lcd (LCD_DISPLAYCONTROL new)
 
 -- | Update the display mode word
@@ -386,9 +388,11 @@ updateDisplayMode :: Bool -> Word8 -> LCD -> Arduino ()
 updateDisplayMode set w lcd = do
   let c = lcdController lcd
   let lcds = lcdState lcd
-  old <- readRemoteRef (lcdDisplayMode lcds)
-  let new = if set then old B..|. w else old B..&. w
-  writeRemoteRef (lcdDisplayMode lcds) new
+  fred <- readRemoteRef (lcdDisplayMode lcds)
+  if set
+  then writeRemoteRef (lcdDisplayMode lcds) (fred B..|. w )
+  else writeRemoteRef (lcdDisplayMode lcds) (fred B..&. w )
+  new <- readRemoteRef (lcdDisplayMode lcds)
   sendCmd lcd (LCD_DISPLAYCONTROL new)
 
 -- | Various control masks for the Hitachi44780

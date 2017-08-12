@@ -45,4 +45,4 @@ myTask = do
     lcdWriteChar lcd 0x40
 
 main :: IO ()
-main = compileProgram myTask "theTest.ino"        
+main = compileProgram myTask "theTest.ino"

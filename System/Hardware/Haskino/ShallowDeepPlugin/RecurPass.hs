@@ -320,8 +320,6 @@ recurSubExpr e = do
           body' <- recurSubExpr body
           return $ Let (NonRec v e') body'
         (Rec rbs) -> do
-          liftCoreM $ putMsgS "****************  Here we are!!!"
-          liftCoreM $ putMsg $ ppr e
           rbs' <- recurSubExpr' rbs
           body' <- recurSubExpr body
           (nonRec, rbs'') <- recurBind' rbs'

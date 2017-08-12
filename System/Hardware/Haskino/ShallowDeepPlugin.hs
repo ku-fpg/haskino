@@ -14,6 +14,7 @@ import StaticFlags   -- This is required on Windows
 import CoreMonad
 import GhcPlugins
 import System.Hardware.Haskino.ShallowDeepPlugin.AbsLambdaPass
+import System.Hardware.Haskino.ShallowDeepPlugin.AbsThenPass
 import System.Hardware.Haskino.ShallowDeepPlugin.ApRemovePass
 import System.Hardware.Haskino.ShallowDeepPlugin.BindChangeArgPass
 import System.Hardware.Haskino.ShallowDeepPlugin.CommProcPass
@@ -42,12 +43,14 @@ install _ todo = do
   let commProcToDo = [CoreDoPluginPass "CommProcTransform" commProcPass]
   let repPushToDo = [CoreDoPluginPass "RepPush" repPushPass]
   let repAbsFuseToDo = [CoreDoPluginPass "RepAbsFuse" repAbsFusePass]
+  let absThenToDo = [CoreDoPluginPass "AbsThen" absThenPass]
   let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
   let showToDo = [CoreDoPluginPass "ShowPass" showPass]
-
+-- ToDo: the BindChangeArgRetAppPass and RecurPass need work to handle Let's and Cases
+--  embedded in the bind sequence.  (And maybe AbsLambdsPass too?)
   return $ [simplPass] ++ apRemoveToDo ++ condToDo ++ commProcToDo ++ returnsToDo ++
            bindArgRetAppToDo ++ repPushToDo ++ absLambdaToDo ++
-           repAbsFuseToDo ++ recurToDo ++ todo -- ++ dumpToDo
+           repAbsFuseToDo ++ recurToDo ++ absThenToDo ++ todo ++ dumpToDo
 
 -- This pass is needed to simplify inlined applications that may be introduced
 -- by the compiler to inline single use let statements before it passes us

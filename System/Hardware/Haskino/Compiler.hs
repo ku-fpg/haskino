@@ -11,7 +11,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module System.Hardware.Haskino.Compiler(compileProgram) where
+module System.Hardware.Haskino.Compiler(compileProgram, compileProgramE) where
 
 import           Control.Monad.State
 import           Control.Remote.Applicative.Types as T

@@ -110,6 +110,8 @@ xlatList = [  XlatEntry (thNameToId 'System.Hardware.Haskino.setPinMode)
                         (thNameToId 'System.Hardware.Haskino.bootTaskE)
             , XlatEntry (thNameToId 'System.Hardware.Haskino.debug)
                         (thNameToId 'System.Hardware.Haskino.debugE)
+            , XlatEntry (thNameToId 'System.Hardware.Haskino.compileProgram)
+                        (thNameToId 'System.Hardware.Haskino.compileProgramE)
            ]
 
 data BindEnv

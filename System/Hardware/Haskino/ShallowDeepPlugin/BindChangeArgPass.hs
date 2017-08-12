@@ -393,7 +393,7 @@ changeSubBind b e = do
 
           -- Create a new top level bind type with the deep tyep
           bDeep <- modId b deepSuffix
-          let b' = setVarType bDeep $ mkFunTys argTys (mkTyConApp retTyCon [exprTyConApp])
+          let b' = setVarType bDeep $ mkFunTys argTys' (mkTyConApp retTyCon [exprTyConApp])
 
           -- Apply the abs <$> to the new shallow body
           let shallowE = mkCoreApps (Var b') deepArgs
