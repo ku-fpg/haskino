@@ -398,15 +398,15 @@ changeSubBind b e = do
           -- Apply the abs <$> to the new shallow body
           let shallowE = mkCoreApps (Var b') deepArgs
           isExpr <- isExprClassType retTy'
-          absExpr <- if isExpr
-                     then fmapAbsExpr (mkTyConTy retTyCon) retTy' shallowE
-                     else return shallowE
+          absE <- if isExpr
+                  then fmapAbsExpr (mkTyConTy retTyCon) retTy' shallowE
+                  else return shallowE
 
           -- Put id pair into state
           s <- get
           put s{shallowDeepMap = M.insert b b' (shallowDeepMap s)}
 
-          return [(b, mkLams bs absExpr), (b', mkLams bs' e''')]
+          return [(b, mkLams bs absE), (b', mkLams bs' e''')]
       _ -> return [(b, e)]
 
 changeArg :: (CoreBndr, Type, Bool) -> BindM (CoreBndr, Type)
@@ -566,8 +566,11 @@ changeAppExpr e = do
                 args' <- mapM repShallowArg $ zip args xlats
                 -- args' <- mapM repExpr args
                 let e' = mkCoreApps (Var vb') args'
-                absExpr <- fmapAbsExpr (mkTyConTy retTyCon) retTy' e'
-                return $ absExpr
+                isExpr <- isExprClassType retTy'
+                absE <- if isExpr
+                        then fmapAbsExpr (mkTyConTy retTyCon) retTy' e'
+                        else return e'
+                return $ absE
             _ -> defaultRet
     Lam tb e -> do
       e' <- changeAppExpr e
