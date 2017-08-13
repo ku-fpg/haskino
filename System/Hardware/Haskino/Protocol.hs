@@ -1639,6 +1639,8 @@ unpackageResponse (cmdWord:args)
   | Right cmd <- getFirmwareReply cmdWord
   = case (cmd, args) of
       (BC_RESP_DELAY, [])               -> DelayResp
+      (BC_RESP_IF_THEN_ELSE , [t,l])   | t == toW8 EXPR_UNIT && l == toW8 EXPR_LIT
+                                      -> IfThenElseUnitReply ()
       (BC_RESP_IF_THEN_ELSE , [t,l,b]) | t == toW8 EXPR_BOOL && l == toW8 EXPR_LIT
                                       -> IfThenElseBoolReply (if b == 0 then False else True)
       (BC_RESP_IF_THEN_ELSE , [t,l,b]) | t == toW8 EXPR_WORD8 && l == toW8 EXPR_LIT
@@ -1800,6 +1802,7 @@ parseQueryResult (ReadRemoteRefI16E _) (ReadRefI16Reply r) = Just $ lit r
 parseQueryResult (ReadRemoteRefI32E _) (ReadRefI32Reply r) = Just $ lit r
 parseQueryResult (ReadRemoteRefL8E _) (ReadRefL8Reply r) = Just $ lit r
 parseQueryResult (ReadRemoteRefFloatE _) (ReadRefFloatReply r) = Just $ lit r
+parseQueryResult (IfThenElseUnitE _ _ _) (IfThenElseUnitReply r) = Just $ lit r
 parseQueryResult (IfThenElseBoolE _ _ _) (IfThenElseBoolReply r) = Just $ lit r
 parseQueryResult (IfThenElseWord8E _ _ _) (IfThenElseW8Reply r) = Just $ lit r
 parseQueryResult (IfThenElseWord16E _ _ _) (IfThenElseW16Reply r) = Just $ lit r
