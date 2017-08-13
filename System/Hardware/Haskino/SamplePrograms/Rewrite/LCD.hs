@@ -157,7 +157,7 @@ initLCD lcd = do
 -- page 46; figure 24.
 initLCDDigital :: LCDController -> Arduino ()
 initLCDDigital c@Hitachi44780{lcdRS, lcdEN, lcdD4, lcdD5, lcdD6, lcdD7, lcdBL} = do
-    -- if isJust lcdBL then let Just p = lcdBL in setPinMode p OUTPUT else return ()
+    if isJust lcdBL then let Just p = lcdBL in setPinMode p OUTPUT else return ()
     setPinMode lcdRS OUTPUT
     setPinMode lcdEN OUTPUT
     setPinMode lcdD4 OUTPUT
@@ -300,9 +300,9 @@ lcdBacklight lcd on = do
    case lcdc of
       Hitachi44780{} -> do
         let bl = lcdBL lcdc
-        --if isJust bl
-        --    then let Just p = bl in digitalWrite p on
-        return()
+        if isJust bl
+            then let Just p = bl in digitalWrite p on
+            else return()
       I2CHitachi44780{} -> do
         let lcds = lcdState lcd
         writeRemoteRef (lcdBacklightState lcds) on
@@ -372,10 +372,10 @@ updateDisplayControl :: Bool -> Word8 -> LCD -> Arduino ()
 updateDisplayControl set w lcd = do
   let c = lcdController lcd
   let lcds = lcdState lcd
-  fred <- readRemoteRef (lcdDisplayControl lcds)
+  old <- readRemoteRef (lcdDisplayControl lcds)
   if set
-  then writeRemoteRef (lcdDisplayControl lcds) (fred B..|. w )
-  else writeRemoteRef (lcdDisplayControl lcds) (fred B..&. w )
+  then writeRemoteRef (lcdDisplayControl lcds) (old B..|. w )
+  else writeRemoteRef (lcdDisplayControl lcds) (old B..&. w )
   new <- readRemoteRef (lcdDisplayControl lcds)
   sendCmd lcd LCD_DISPLAYCONTROL new
 
@@ -384,10 +384,10 @@ updateDisplayMode :: Bool -> Word8 -> LCD -> Arduino ()
 updateDisplayMode set w lcd = do
   let c = lcdController lcd
   let lcds = lcdState lcd
-  fred <- readRemoteRef (lcdDisplayMode lcds)
+  old <- readRemoteRef (lcdDisplayMode lcds)
   if set
-  then writeRemoteRef (lcdDisplayMode lcds) (fred B..|. w )
-  else writeRemoteRef (lcdDisplayMode lcds) (fred B..&. w )
+  then writeRemoteRef (lcdDisplayMode lcds) (old B..|. w )
+  else writeRemoteRef (lcdDisplayMode lcds) (old B..&. w )
   new <- readRemoteRef (lcdDisplayMode lcds)
   sendCmd lcd LCD_DISPLAYCONTROL new
 
