@@ -42,11 +42,19 @@ myTask = do
     lcd <- lcdRegister hitachi
     lcdBacklightOn lcd
     lcdHome lcd
-    lcdWrite lcd (stringToBytes "Rock")
+    lcdWrite lcd (stringToBytes "Rock   ")
+    delayMillis 1500   
+    lcdHome lcd
+    lcdWrite lcd (stringToBytes "Chalk  ")
+    delayMillis 1500   
+    lcdHome lcd
+    lcdWrite lcd (stringToBytes "Jayhawk")
+    delayMillis 1500
+    myTask   
 
 -- Execute this function to run program with firmware interpreter
-ledExample :: IO ()
-ledExample = withArduino False "/dev/cu.usbmodem1421" $ do
+lcdExample :: IO ()
+lcdExample = withArduino False "/dev/cu.usbmodem1421" $ do
     myTask
 
 main :: IO ()
