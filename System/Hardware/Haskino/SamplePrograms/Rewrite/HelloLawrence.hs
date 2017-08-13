@@ -42,7 +42,7 @@ myTask = do
     lcd <- lcdRegister hitachi
     lcdBacklightOn lcd
     lcdHome lcd
-    lcdWriteChar lcd 0x41
+    lcdWrite lcd (stringToBytes "Rock")
 
 -- Execute this function to run program with firmware interpreter
 ledExample :: IO ()

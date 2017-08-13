@@ -59,6 +59,7 @@ recurBind' ((b, e) : bs) = do
     let (argTys, retTy) = splitFunTys $ exprType e
     let retTyCon_m = splitTyConApp_maybe retTy
     monadTyCon <- thNameToTyCon monadTyConTH
+    listTyCon <- thNameToTyCon listTyConTH
     case retTyCon_m of
       Just (retTyCon, retTyArgs) -> do
         if length argTys == 1 && retTyCon == monadTyCon && length retTyArgs == 1
@@ -66,7 +67,9 @@ recurBind' ((b, e) : bs) = do
           let argTyCon_m = splitTyConApp_maybe $ head argTys
           case argTyCon_m of
             Just (argTyCon, argTyArgs) -> do
-                let argTyArg = head argTyArgs
+                let argTyArg = if argTyCon == listTyCon
+                               then head argTys
+                               else head argTyArgs
                 let retTyArg = case splitTyConApp_maybe $ head retTyArgs of
                                   Just (rTyCon, [])      -> mkTyConTy rTyCon
                                   Just (rTyCon, rTyArgs) -> head rTyArgs
