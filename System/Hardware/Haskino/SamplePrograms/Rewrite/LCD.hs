@@ -200,7 +200,7 @@ transmitDig mode c@Hitachi44780{lcdRS, lcdEN, lcdD4} val = do
   digitalWrite lcdRS mode
   digitalWrite lcdEN false
   -- Send down the first 4 bits
-  digitalPortWrite lcdD4 (val * 16) 0x0F
+  digitalPortWrite lcdD4 (val `div` 16) 0x0F
   pulseEnableDig c
   -- Send down the remaining batch
   digitalPortWrite lcdD4 (val B..&. 0x0F) 0x0F

@@ -58,9 +58,6 @@ repCasePush' ((b, e) : bs) = do
 repCasePushExpr :: CoreExpr -> BindM CoreExpr
 repCasePushExpr e = do
   df <- liftCoreM getDynFlags
-  thenId <- thNameToId bindThenNameTH
-  fmapId <- thNameToId fmapNameTH
-  absId  <- thNameToId absNameTH
   case e of
     Var v -> return $ Var v
     Lit l -> return $ Lit l
@@ -111,10 +108,6 @@ repCasePushAlt ty (ac, b, a) = do
   repId <- thNameToId repNameTH
   repDict <- thNameTyToDict exprClassTyConTH ty
   let repE = mkCoreApps (Var repId) [Type ty, repDict, a']
-  liftCoreM $ putMsgS "==============="
-  liftCoreM $ putMsg $ ppr a
-  liftCoreM $ putMsgS "---------------"
-  liftCoreM $ putMsg $ ppr repE
   return (ac, b, repE)
 
 repCasePushExpr' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]

@@ -360,6 +360,9 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (NewRemoteRefFloatE e) = do
           s <- get
           packNewRef (NewRemoteRefFloatE e) (RemoteRefFloat (ix s))
+      packProcedure (IfThenElseUnitE e cb1 cb2) = do
+          i <- packDeepProcedure (IfThenElseUnitE e cb1 cb2)
+          return $ RemBindUnit i
       packProcedure (IfThenElseBoolE e cb1 cb2) = do
           i <- packDeepProcedure (IfThenElseBoolE e cb1 cb2)
           return $ RemBindB i
@@ -1100,6 +1103,7 @@ packageProcedure p = do
     packageProcedure' (ReadRemoteRefL8E (RemoteRefL8 i)) ib = packageReadRefProcedure EXPR_LIST8 ib i
     packageProcedure' (ReadRemoteRefFloatE (RemoteRefFloat i)) ib = packageReadRefProcedure EXPR_FLOAT ib i
     packageProcedure' (DebugE s) ib = addCommand BS_CMD_DEBUG ((fromIntegral ib) : (packageExpr s))
+    packageProcedure' (IfThenElseUnitE e cb1 cb2) ib = packageIfThenElseProcedure EXPR_UNIT ib e cb1 cb2
     packageProcedure' (IfThenElseBoolE e cb1 cb2) ib = packageIfThenElseProcedure EXPR_BOOL ib e cb1 cb2
     packageProcedure' (IfThenElseWord8E e cb1 cb2) ib = packageIfThenElseProcedure EXPR_WORD8 ib e cb1 cb2
     packageProcedure' (IfThenElseWord16E e cb1 cb2) ib = packageIfThenElseProcedure EXPR_WORD16 ib e cb1 cb2

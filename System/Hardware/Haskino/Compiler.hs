@@ -348,14 +348,6 @@ compileCommand (ModifyRemoteRefI16E (RemoteRefI16 i) f) = compileWriteRef i f
 compileCommand (ModifyRemoteRefI32E (RemoteRefI32 i) f) = compileWriteRef i f
 compileCommand (ModifyRemoteRefL8E (RemoteRefL8 i) f) = compileWriteListRef i f
 compileCommand (ModifyRemoteRefFloatE (RemoteRefFloat i) f) = compileWriteRef i f
-compileCommand (IfThenElseUnitE e cb1 cb2) = do
-    compileLine $ "if (" ++ compileExpr e ++ ")"
-    compileCodeBlock cb1
-    compileLineIndent "}"
-    compileLine "else"
-    compileCodeBlock cb2
-    compileLineIndent "}"
-    return LitUnit
 
 compileSimpleProcedure :: CompileType -> String -> State CompileState Int
 compileSimpleProcedure t p = do
@@ -641,6 +633,8 @@ compileProcedure (ReadRemoteRefL8E (RemoteRefL8 i)) = do
 compileProcedure (ReadRemoteRefFloatE (RemoteRefFloat i)) = do
     b <- compileReadRef FloatType i
     return $ remBind b
+compileProcedure (IfThenElseUnitE e cb1 cb2) =
+    compileIfThenElseProcedure UnitType e cb1 cb2
 compileProcedure (IfThenElseBoolE e cb1 cb2) =
     compileIfThenElseProcedure BoolType e cb1 cb2
 compileProcedure (IfThenElseWord8E e cb1 cb2) =
