@@ -42,11 +42,11 @@ myTask = do
     lcd <- lcdRegister hitachi
     lcdBacklightOn lcd
     lcdHome lcd
-    lcdWriteChar lcd 0x40
+    lcdWriteChar lcd 0x41
 
 -- Execute this function to run program with firmware interpreter
 ledExample :: IO ()
-ledExample = withArduino True "/dev/cu.usbmodem1421" $ do
+ledExample = withArduino False "/dev/cu.usbmodem1421" $ do
     myTask
 
 main :: IO ()

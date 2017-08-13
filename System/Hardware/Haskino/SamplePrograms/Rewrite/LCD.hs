@@ -121,8 +121,8 @@ getCmdVal c cmd w = get cmd w
     get LCD_INITIALIZE _       = 0x33
     get LCD_INITIALIZE_END _   = 0x32
     get LCD_FUNCTIONSET _      = 0x20 B..|.
-                                 if (lcdRows c) > 1 then 0x08 else 0x00 B..|.
-                                 if (dotMode5x10 c) then 0x04 else 0x00 
+                                 (if (lcdRows c) > 1 then 0x08 else 0x00) B..|.
+                                 (if (dotMode5x10 c) then 0x04 else 0x00) 
     get LCD_DISPLAYCONTROL w   = 0x08 B..|. w
     get LCD_CLEARDISPLAY _     = 0x01
     get LCD_ENTRYMODESET w     = 0x04 B..|. w
@@ -400,11 +400,11 @@ data Hitachi44780Mask = LCD_BLINKON              -- ^ bit @0@ Controls whether c
 
 -- | Convert the mask value to the bit no
 maskBit :: Hitachi44780Mask -> Word8
-maskBit LCD_BLINKON             = 0
-maskBit LCD_CURSORON            = 1
-maskBit LCD_DISPLAYON           = 2
-maskBit LCD_ENTRYSHIFTINCREMENT = 0
-maskBit LCD_ENTRYLEFT           = 1
+maskBit LCD_BLINKON             = 1
+maskBit LCD_CURSORON            = 2
+maskBit LCD_DISPLAYON           = 4
+maskBit LCD_ENTRYSHIFTINCREMENT = 1
+maskBit LCD_ENTRYLEFT           = 2
 
 --- | Do not blink the cursor
 lcdBlinkOff :: LCD -> Arduino ()
