@@ -42,13 +42,13 @@ myTask = do
     lcd <- lcdRegister hitachi
     lcdBacklightOn lcd
     lcdHome lcd
-    lcdWrite lcd (stringToBytes "Rock   ")
+    lcdWrite lcd $ litString "Rock   "
     delayMillis 1500   
     lcdHome lcd
-    lcdWrite lcd (stringToBytes "Chalk  ")
+    lcdWrite lcd $ litString "Chalk  "
     delayMillis 1500   
     lcdHome lcd
-    lcdWrite lcd (stringToBytes "Jayhawk")
+    lcdWrite lcd $ litString "Jayhawk"
     delayMillis 1500
     myTask   
 

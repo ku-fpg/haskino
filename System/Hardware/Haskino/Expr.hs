@@ -409,8 +409,11 @@ instance ExprB Float where
     {-# INLINE ifBE #-}
     ifBE = ifB
 
-litString :: String -> Expr [Word8]
-litString s = LitList8 $ stringToBytes s
+litString :: String -> [Word8]
+litString = stringToBytes
+
+litStringE :: String -> Expr [Word8]
+litStringE s = LitList8 $ stringToBytes s
 
 showFFloatE :: Maybe (Expr Word8) -> Expr Float -> Expr [Word8]
 showFFloatE Nothing ef = showFFloatE (Just 2) ef

@@ -559,7 +559,7 @@ compileProcedure QueryAllTasks = do
     return []
 compileProcedure QueryAllTasksE = do
     compileUnsupportedError "queryAllTasksE"
-    return (litString "")
+    return (litStringE "")
 compileProcedure (QueryTaskE _) = do
     compileUnsupportedError "queryTaskE"
     return Nothing
