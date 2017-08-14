@@ -326,12 +326,11 @@ recurSubExpr e = do
           rbs' <- recurSubExpr' rbs
           body' <- recurSubExpr body
           (nonRec, rbs'') <- recurBind' rbs'
-          case nonRec of
-            []        -> return $ Let (Rec rbs'') body'
-            [NonRec b1 e1] -> do
-              e1' <- recurSubExpr e1
-              return $ Let (Rec rbs'') (Let (NonRec b1 e1') body')
-            -- ToDo:  Could we have multiple NonRec's?
+          -- ToDo: Recurse inside of bind expressions.
+          let ls = case rbs'' of
+                    [] -> nonRec
+                    _  -> (Rec rbs'') : nonRec
+          return $ mkCoreLets ls body'
     Case e tb ty alts -> do
       e' <- recurSubExpr e
       alts' <- recurSubExprAlts alts

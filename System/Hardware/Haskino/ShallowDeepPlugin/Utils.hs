@@ -274,10 +274,6 @@ fmapRepExpr tyConTy ty e = do
 
 fmapRepBindReturn :: PassCoreM m => CoreExpr -> m CoreExpr
 fmapRepBindReturn e = do
-{-
-    let (bs, e') = collectBinders e
-    let (ls, e'') = collectLets e'
-  -}
     let (ls, e')  = collectLets e
     let (bs, e'') = collectBinders e'
     let (f, args) = collectArgs e''

@@ -37,25 +37,33 @@ hitachi = Hitachi44780 { lcdRS = 8
 -- Task which will execute on Arduino, write an 'Rock' to the display, delay a
 -- second, write a 'Chalk' to the display, delay a second, write a 'Jayhawk'
 -- to the display and repeat
-myTask :: Arduino ()
-myTask = do
-    lcd <- lcdRegister hitachi
-    lcdBacklightOn lcd
-    lcdHome lcd
-    lcdWrite lcd $ litString "Rock   "
-    delayMillis 1500   
-    lcdHome lcd
-    lcdWrite lcd $ litString "Chalk  "
-    delayMillis 1500   
-    lcdHome lcd
-    lcdWrite lcd $ litString "Jayhawk"
-    delayMillis 1500
-    myTask   
+
+theProgram :: Arduino ()
+theProgram = do
+  lcd <- lcdRegister hitachi
+  lcdBacklightOn lcd
+  helloLawrence lcd
+
+helloLawrence :: LCD -> Arduino ()
+helloLawrence lcd = do
+  helloLawrence'
+    where 
+      helloLawrence' :: Arduino ()
+      helloLawrence' = do
+        lcdHome lcd
+        lcdWrite lcd $ litString "Rock   "
+        delayMillis 1500   
+        lcdHome lcd
+        lcdWrite lcd $ litString "Chalk  "
+        delayMillis 1500   
+        lcdHome lcd
+        lcdWrite lcd $ litString "Jayhawk"
+        delayMillis 1500
+        helloLawrence'
 
 -- Execute this function to run program with firmware interpreter
 lcdExample :: IO ()
-lcdExample = withArduino False "/dev/cu.usbmodem1421" $ do
-    myTask
+lcdExample = withArduino False "/dev/cu.usbmodem1421" theProgram
 
 main :: IO ()
-main = compileProgram myTask "theTest.ino"
+main = compileProgram theProgram "helloLawrence.ino"
