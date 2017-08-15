@@ -115,14 +115,14 @@ data Cmd = LCD_INITIALIZE
 -- | Convert a command to a data-word
 getCmdVal :: LCDController -> Cmd -> Word8 -> Word8
 getCmdVal c cmd w = get cmd w
-  where 
+  where
     get :: Cmd -> Word8 -> Word8
     get LCD_NOOP _             = 0x00
     get LCD_INITIALIZE _       = 0x33
     get LCD_INITIALIZE_END _   = 0x32
     get LCD_FUNCTIONSET _      = 0x20 B..|.
-                                 (if (lcdRows c) < 1 then 0x08 else 0x00) B..|.
-                                 (if (dotMode5x10 c) then 0x04 else 0x00) 
+                                 (if (lcdRows c) > 1 then 0x08 else 0x00) B..|.
+                                 (if (dotMode5x10 c) then 0x04 else 0x00)
     get LCD_DISPLAYCONTROL w   = 0x08 B..|. w
     get LCD_CLEARDISPLAY _     = 0x01
     get LCD_ENTRYMODESET w     = 0x04 B..|. w

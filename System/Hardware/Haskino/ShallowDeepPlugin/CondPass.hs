@@ -168,6 +168,6 @@ condExprTransform ty e alts = do
 
       -- Build the ifBE expression
       arg1 <- repExpr e
-      arg2 <- repExpr e1
-      arg3 <- repExpr e2
+      arg2 <- repExpr e2
+      arg3 <- repExpr e1
       absExpr $ mkCoreApps (Var ifbId) [Type ty, ifbDict, arg1, arg2, arg3]
