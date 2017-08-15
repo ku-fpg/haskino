@@ -415,6 +415,9 @@ litString = stringToBytes
 litStringE :: String -> Expr [Word8]
 litStringE s = LitList8 $ stringToBytes s
 
+showB :: Show a => a -> [Word8]
+showB = litString . show
+
 showFFloatE :: Maybe (Expr Word8) -> Expr Float -> Expr [Word8]
 showFFloatE Nothing ef = showFFloatE (Just 2) ef
 showFFloatE (Just ep) ef = ShowFloat ef ep
