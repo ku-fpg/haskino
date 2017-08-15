@@ -9,7 +9,7 @@
 --
 -- Internal representation of the Haskino Firmware protocol.
 -------------------------------------------------------------------------------
-{-# OPTIONS_GHC -fmax-pmcheck-iterations=8000000 #-}
+{-# OPTIONS_GHC -fmax-pmcheck-iterations=9000000 #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -156,6 +156,7 @@ packageCommand (WriteRemoteRefW32E (RemoteRefW32 i) e) = addWriteRefCommand EXPR
 packageCommand (WriteRemoteRefI8E (RemoteRefI8 i) e) = addWriteRefCommand EXPR_INT8 i e
 packageCommand (WriteRemoteRefI16E (RemoteRefI16 i) e) = addWriteRefCommand EXPR_INT16 i e
 packageCommand (WriteRemoteRefI32E (RemoteRefI32 i) e) = addWriteRefCommand EXPR_INT32 i e
+packageCommand (WriteRemoteRefIE (RemoteRefI i) e) = addWriteRefCommand EXPR_INT32 i e
 packageCommand (WriteRemoteRefL8E (RemoteRefL8 i) e) = addWriteRefCommand EXPR_LIST8 i e
 packageCommand (WriteRemoteRefFloatE (RemoteRefFloat i) e) = addWriteRefCommand EXPR_FLOAT i e
 packageCommand (ModifyRemoteRefBE (RemoteRefB i) f) = addWriteRefCommand EXPR_BOOL i f
@@ -165,6 +166,7 @@ packageCommand (ModifyRemoteRefW32E (RemoteRefW32 i) f) = addWriteRefCommand EXP
 packageCommand (ModifyRemoteRefI8E (RemoteRefI8 i) f) = addWriteRefCommand EXPR_INT8 i f
 packageCommand (ModifyRemoteRefI16E (RemoteRefI16 i) f) = addWriteRefCommand EXPR_INT16 i f
 packageCommand (ModifyRemoteRefI32E (RemoteRefI32 i) f) = addWriteRefCommand EXPR_INT32 i f
+packageCommand (ModifyRemoteRefIE (RemoteRefI i) f) = addWriteRefCommand EXPR_INT32 i f
 packageCommand (ModifyRemoteRefL8E (RemoteRefL8 i) f) = addWriteRefCommand EXPR_LIST8 i f
 packageCommand (ModifyRemoteRefFloatE (RemoteRefFloat i) f) = addWriteRefCommand EXPR_FLOAT i f
 packageCommand _ = error $ "packageCommand: Error Command not supported (It may have been a procedure)"
@@ -327,6 +329,9 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (ReadRemoteRefI32E (RemoteRefI32 i')) = do
           i <- packDeepProcedure (ReadRemoteRefI32E (RemoteRefI32 i'))
           return $ RemBindI32 i
+      packProcedure (ReadRemoteRefIE (RemoteRefI i')) = do
+          i <- packDeepProcedure (ReadRemoteRefIE (RemoteRefI i'))
+          return $ RemBindI i
       packProcedure (ReadRemoteRefL8E (RemoteRefL8 i')) = do
           i <- packDeepProcedure (ReadRemoteRefL8E (RemoteRefL8 i'))
           return $ RemBindList8 i
@@ -354,6 +359,9 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (NewRemoteRefI32E e) = do
           s <- get
           packNewRef (NewRemoteRefI32E e) (RemoteRefI32 (ix s))
+      packProcedure (NewRemoteRefIE e) = do
+          s <- get
+          packNewRef (NewRemoteRefIE e) (RemoteRefI (ix s))
       packProcedure (NewRemoteRefL8E e) = do
           s <- get
           packNewRef (NewRemoteRefL8E e) (RemoteRefL8 (ix s))
@@ -384,6 +392,9 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (IfThenElseInt32E e cb1 cb2) = do
           i <- packDeepProcedure (IfThenElseInt32E e cb1 cb2)
           return $ RemBindI32 i
+      packProcedure (IfThenElseIntE e cb1 cb2) = do
+          i <- packDeepProcedure (IfThenElseIntE e cb1 cb2)
+          return $ RemBindI i
       packProcedure (IfThenElseL8E e cb1 cb2) = do
           i <- packDeepProcedure (IfThenElseL8E e cb1 cb2)
           return $ RemBindList8 i
@@ -415,6 +426,9 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (IfThenElseUnitI32 e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseUnitI32 e cb1 cb2)
           return $ ExprLeft $ RemBindUnit i
+      packProcedure (IfThenElseUnitI e cb1 cb2) = do
+          i <- packIfEitherProcedure (IfThenElseUnitI e cb1 cb2)
+          return $ ExprLeft $ RemBindUnit i
       packProcedure (IfThenElseUnitL8 e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseUnitL8 e cb1 cb2)
           return $ ExprLeft $ RemBindUnit i
@@ -444,6 +458,9 @@ packageCodeBlock (Arduino commands) = do
           return $ ExprLeft $ RemBindB i
       packProcedure (IfThenElseBoolI32 e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseBoolI32 e cb1 cb2)
+          return $ ExprLeft $ RemBindB i
+      packProcedure (IfThenElseBoolI e cb1 cb2) = do
+          i <- packIfEitherProcedure (IfThenElseBoolI e cb1 cb2)
           return $ ExprLeft $ RemBindB i
       packProcedure (IfThenElseBoolL8 e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseBoolL8 e cb1 cb2)
@@ -475,6 +492,9 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (IfThenElseW8I32 e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseW8I32 e cb1 cb2)
           return $ ExprLeft $ RemBindW8 i
+      packProcedure (IfThenElseW8I e cb1 cb2) = do
+          i <- packIfEitherProcedure (IfThenElseW8I e cb1 cb2)
+          return $ ExprLeft $ RemBindW8 i
       packProcedure (IfThenElseW8L8 e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseW8L8 e cb1 cb2)
           return $ ExprLeft $ RemBindW8 i
@@ -504,6 +524,9 @@ packageCodeBlock (Arduino commands) = do
           return $ ExprLeft $ RemBindW16 i
       packProcedure (IfThenElseW16I32 e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseW16I32 e cb1 cb2)
+          return $ ExprLeft $ RemBindW16 i
+      packProcedure (IfThenElseW16I e cb1 cb2) = do
+          i <- packIfEitherProcedure (IfThenElseW16I e cb1 cb2)
           return $ ExprLeft $ RemBindW16 i
       packProcedure (IfThenElseW16L8 e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseW16L8 e cb1 cb2)
@@ -535,6 +558,9 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (IfThenElseW32I32 e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseW32I32 e cb1 cb2)
           return $ ExprLeft $ RemBindW32 i
+      packProcedure (IfThenElseW32I e cb1 cb2) = do
+          i <- packIfEitherProcedure (IfThenElseW32I e cb1 cb2)
+          return $ ExprLeft $ RemBindW32 i
       packProcedure (IfThenElseW32L8 e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseW32L8 e cb1 cb2)
           return $ ExprLeft $ RemBindW32 i
@@ -564,6 +590,9 @@ packageCodeBlock (Arduino commands) = do
           return $ ExprLeft $ RemBindI8 i
       packProcedure (IfThenElseI8I32 e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseI8I32 e cb1 cb2)
+          return $ ExprLeft $ RemBindI8 i
+      packProcedure (IfThenElseI8I e cb1 cb2) = do
+          i <- packIfEitherProcedure (IfThenElseI8I e cb1 cb2)
           return $ ExprLeft $ RemBindI8 i
       packProcedure (IfThenElseI8L8 e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseI8L8 e cb1 cb2)
@@ -595,6 +624,9 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (IfThenElseI16I32 e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseI16I32 e cb1 cb2)
           return $ ExprLeft $ RemBindI16 i
+      packProcedure (IfThenElseI16I e cb1 cb2) = do
+          i <- packIfEitherProcedure (IfThenElseI16I e cb1 cb2)
+          return $ ExprLeft $ RemBindI16 i
       packProcedure (IfThenElseI16L8 e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseI16L8 e cb1 cb2)
           return $ ExprLeft $ RemBindI16 i
@@ -625,12 +657,48 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (IfThenElseI32I32 e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseI32I32 e cb1 cb2)
           return $ ExprLeft $ RemBindI32 i
+      packProcedure (IfThenElseI32I e cb1 cb2) = do
+          i <- packIfEitherProcedure (IfThenElseI32I e cb1 cb2)
+          return $ ExprLeft $ RemBindI32 i
       packProcedure (IfThenElseI32L8 e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseI32L8 e cb1 cb2)
           return $ ExprLeft $ RemBindI32 i
       packProcedure (IfThenElseI32Float e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseI32Float e cb1 cb2)
           return $ ExprLeft $ RemBindI32 i
+      packProcedure (IfThenElseIUnit e cb1 cb2) = do
+          i <- packIfEitherProcedure (IfThenElseIUnit e cb1 cb2)
+          return $ ExprLeft $ RemBindI i
+      packProcedure (IfThenElseIBool e cb1 cb2) = do
+          i <- packIfEitherProcedure (IfThenElseIBool e cb1 cb2)
+          return $ ExprLeft $ RemBindI i
+      packProcedure (IfThenElseIW8 e cb1 cb2) = do
+          i <- packIfEitherProcedure (IfThenElseIW8 e cb1 cb2)
+          return $ ExprLeft $ RemBindI i
+      packProcedure (IfThenElseIW16 e cb1 cb2) = do
+          i <- packIfEitherProcedure (IfThenElseIW16 e cb1 cb2)
+          return $ ExprLeft $ RemBindI i
+      packProcedure (IfThenElseIW32 e cb1 cb2) = do
+          i <- packIfEitherProcedure (IfThenElseIW32 e cb1 cb2)
+          return $ ExprLeft $ RemBindI i
+      packProcedure (IfThenElseII8 e cb1 cb2) = do
+          i <- packIfEitherProcedure (IfThenElseII8 e cb1 cb2)
+          return $ ExprLeft $ RemBindI i
+      packProcedure (IfThenElseII16 e cb1 cb2) = do
+          i <- packIfEitherProcedure (IfThenElseII16 e cb1 cb2)
+          return $ ExprLeft $ RemBindI i
+      packProcedure (IfThenElseII32 e cb1 cb2) = do
+          i <- packIfEitherProcedure (IfThenElseII32 e cb1 cb2)
+          return $ ExprLeft $ RemBindI i
+      packProcedure (IfThenElseII e cb1 cb2) = do
+          i <- packIfEitherProcedure (IfThenElseII e cb1 cb2)
+          return $ ExprLeft $ RemBindI i
+      packProcedure (IfThenElseIL8 e cb1 cb2) = do
+          i <- packIfEitherProcedure (IfThenElseIL8 e cb1 cb2)
+          return $ ExprLeft $ RemBindI i
+      packProcedure (IfThenElseIFloat e cb1 cb2) = do
+          i <- packIfEitherProcedure (IfThenElseIFloat e cb1 cb2)
+          return $ ExprLeft $ RemBindI i
       packProcedure (IfThenElseL8Unit e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseL8Unit e cb1 cb2)
           return $ ExprLeft $ RemBindList8 i
@@ -654,6 +722,9 @@ packageCodeBlock (Arduino commands) = do
           return $ ExprLeft $ RemBindList8 i
       packProcedure (IfThenElseL8I32 e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseL8I32 e cb1 cb2)
+          return $ ExprLeft $ RemBindList8 i
+      packProcedure (IfThenElseL8I e cb1 cb2) = do
+          i <- packIfEitherProcedure (IfThenElseL8I e cb1 cb2)
           return $ ExprLeft $ RemBindList8 i
       packProcedure (IfThenElseL8L8 e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseL8L8 e cb1 cb2)
@@ -685,12 +756,16 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (IfThenElseFloatI32 e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseFloatI32 e cb1 cb2)
           return $ ExprLeft $ RemBindFloat i
+      packProcedure (IfThenElseFloatI e cb1 cb2) = do
+          i <- packIfEitherProcedure (IfThenElseFloatI e cb1 cb2)
+          return $ ExprLeft $ RemBindFloat i
       packProcedure (IfThenElseFloatL8 e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseFloatL8 e cb1 cb2)
           return $ ExprLeft $ RemBindFloat i
       packProcedure (IfThenElseFloatFloat e cb1 cb2) = do
           i <- packIfEitherProcedure (IfThenElseFloatFloat e cb1 cb2)
           return $ ExprLeft $ RemBindFloat i
+      -- The following Iterate*E functions generated by toold/GenEitherTypes.hs
       packProcedure (IterateUnitUnitE iv bf) = do
           i <- packIterateProcedure (IterateUnitUnitE iv bf)
           return $ RemBindUnit i
@@ -715,6 +790,9 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (IterateUnitI32E iv bf) = do
           i <- packIterateProcedure (IterateUnitI32E iv bf)
           return $ RemBindI32 i
+      packProcedure (IterateUnitIE iv bf) = do
+          i <- packIterateProcedure (IterateUnitIE iv bf)
+          return $ RemBindI i
       packProcedure (IterateUnitL8E iv bf) = do
           i <- packIterateProcedure (IterateUnitL8E iv bf)
           return $ RemBindList8 i
@@ -745,13 +823,15 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (IterateBoolI32E iv bf) = do
           i <- packIterateProcedure (IterateBoolI32E iv bf)
           return $ RemBindI32 i
+      packProcedure (IterateBoolIE iv bf) = do
+          i <- packIterateProcedure (IterateBoolIE iv bf)
+          return $ RemBindI i
       packProcedure (IterateBoolL8E iv bf) = do
           i <- packIterateProcedure (IterateBoolL8E iv bf)
           return $ RemBindList8 i
       packProcedure (IterateBoolFloatE iv bf) = do
           i <- packIterateProcedure (IterateBoolFloatE iv bf)
           return $ RemBindFloat i
-      -- The following Iterate*E functions generated by toold/GenEitherTypes.hs
       packProcedure (IterateW8UnitE iv bf) = do
           i <- packIterateProcedure (IterateW8UnitE iv bf)
           return $ RemBindUnit i
@@ -776,6 +856,9 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (IterateW8I32E iv bf) = do
           i <- packIterateProcedure (IterateW8I32E iv bf)
           return $ RemBindI32 i
+      packProcedure (IterateW8IE iv bf) = do
+          i <- packIterateProcedure (IterateW8IE iv bf)
+          return $ RemBindI i
       packProcedure (IterateW8L8E iv bf) = do
           i <- packIterateProcedure (IterateW8L8E iv bf)
           return $ RemBindList8 i
@@ -806,6 +889,9 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (IterateW16I32E iv bf) = do
           i <- packIterateProcedure (IterateW16I32E iv bf)
           return $ RemBindI32 i
+      packProcedure (IterateW16IE iv bf) = do
+          i <- packIterateProcedure (IterateW16IE iv bf)
+          return $ RemBindI i
       packProcedure (IterateW16L8E iv bf) = do
           i <- packIterateProcedure (IterateW16L8E iv bf)
           return $ RemBindList8 i
@@ -836,6 +922,9 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (IterateW32I32E iv bf) = do
           i <- packIterateProcedure (IterateW32I32E iv bf)
           return $ RemBindI32 i
+      packProcedure (IterateW32IE iv bf) = do
+          i <- packIterateProcedure (IterateW32IE iv bf)
+          return $ RemBindI i
       packProcedure (IterateW32L8E iv bf) = do
           i <- packIterateProcedure (IterateW32L8E iv bf)
           return $ RemBindList8 i
@@ -866,6 +955,9 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (IterateI8I32E iv bf) = do
           i <- packIterateProcedure (IterateI8I32E iv bf)
           return $ RemBindI32 i
+      packProcedure (IterateI8IE iv bf) = do
+          i <- packIterateProcedure (IterateI8IE iv bf)
+          return $ RemBindI i
       packProcedure (IterateI8L8E iv bf) = do
           i <- packIterateProcedure (IterateI8L8E iv bf)
           return $ RemBindList8 i
@@ -896,6 +988,9 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (IterateI16I32E iv bf) = do
           i <- packIterateProcedure (IterateI16I32E iv bf)
           return $ RemBindI32 i
+      packProcedure (IterateI16IE iv bf) = do
+          i <- packIterateProcedure (IterateI16IE iv bf)
+          return $ RemBindI i
       packProcedure (IterateI16L8E iv bf) = do
           i <- packIterateProcedure (IterateI16L8E iv bf)
           return $ RemBindList8 i
@@ -926,11 +1021,47 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (IterateI32I32E iv bf) = do
           i <- packIterateProcedure (IterateI32I32E iv bf)
           return $ RemBindI32 i
+      packProcedure (IterateI32IE iv bf) = do
+          i <- packIterateProcedure (IterateI32IE iv bf)
+          return $ RemBindI i
       packProcedure (IterateI32L8E iv bf) = do
           i <- packIterateProcedure (IterateI32L8E iv bf)
           return $ RemBindList8 i
       packProcedure (IterateI32FloatE iv bf) = do
           i <- packIterateProcedure (IterateI32FloatE iv bf)
+          return $ RemBindFloat i
+      packProcedure (IterateIUnitE iv bf) = do
+          i <- packIterateProcedure (IterateIUnitE iv bf)
+          return $ RemBindUnit i
+      packProcedure (IterateIBoolE iv bf) = do
+          i <- packIterateProcedure (IterateIBoolE iv bf)
+          return $ RemBindB i
+      packProcedure (IterateIW8E iv bf) = do
+          i <- packIterateProcedure (IterateIW8E iv bf)
+          return $ RemBindW8 i
+      packProcedure (IterateIW16E iv bf) = do
+          i <- packIterateProcedure (IterateIW16E iv bf)
+          return $ RemBindW16 i
+      packProcedure (IterateIW32E iv bf) = do
+          i <- packIterateProcedure (IterateIW32E iv bf)
+          return $ RemBindW32 i
+      packProcedure (IterateII8E iv bf) = do
+          i <- packIterateProcedure (IterateII8E iv bf)
+          return $ RemBindI8 i
+      packProcedure (IterateII16E iv bf) = do
+          i <- packIterateProcedure (IterateII16E iv bf)
+          return $ RemBindI16 i
+      packProcedure (IterateII32E iv bf) = do
+          i <- packIterateProcedure (IterateII32E iv bf)
+          return $ RemBindI32 i
+      packProcedure (IterateIIE iv bf) = do
+          i <- packIterateProcedure (IterateIIE iv bf)
+          return $ RemBindI i
+      packProcedure (IterateIL8E iv bf) = do
+          i <- packIterateProcedure (IterateIL8E iv bf)
+          return $ RemBindList8 i
+      packProcedure (IterateIFloatE iv bf) = do
+          i <- packIterateProcedure (IterateIFloatE iv bf)
           return $ RemBindFloat i
       packProcedure (IterateL8UnitE iv bf) = do
           i <- packIterateProcedure (IterateL8UnitE iv bf)
@@ -956,6 +1087,9 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (IterateL8I32E iv bf) = do
           i <- packIterateProcedure (IterateL8I32E iv bf)
           return $ RemBindI32 i
+      packProcedure (IterateL8IE iv bf) = do
+          i <- packIterateProcedure (IterateL8IE iv bf)
+          return $ RemBindI i
       packProcedure (IterateL8L8E iv bf) = do
           i <- packIterateProcedure (IterateL8L8E iv bf)
           return $ RemBindList8 i
@@ -986,6 +1120,9 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (IterateFloatI32E iv bf) = do
           i <- packIterateProcedure (IterateFloatI32E iv bf)
           return $ RemBindI32 i
+      packProcedure (IterateFloatIE iv bf) = do
+          i <- packIterateProcedure (IterateFloatIE iv bf)
+          return $ RemBindI i
       packProcedure (IterateFloatL8E iv bf) = do
           i <- packIterateProcedure (IterateFloatL8E iv bf)
           return $ RemBindList8 i
@@ -1100,6 +1237,7 @@ packageProcedure p = do
     packageProcedure' (ReadRemoteRefI8E (RemoteRefI8 i)) ib = packageReadRefProcedure EXPR_INT8 ib i
     packageProcedure' (ReadRemoteRefI16E (RemoteRefI16 i)) ib = packageReadRefProcedure EXPR_INT16 ib i
     packageProcedure' (ReadRemoteRefI32E (RemoteRefI32 i)) ib = packageReadRefProcedure EXPR_INT32 ib i
+    packageProcedure' (ReadRemoteRefIE (RemoteRefI i)) ib = packageReadRefProcedure EXPR_INT32 ib i
     packageProcedure' (ReadRemoteRefL8E (RemoteRefL8 i)) ib = packageReadRefProcedure EXPR_LIST8 ib i
     packageProcedure' (ReadRemoteRefFloatE (RemoteRefFloat i)) ib = packageReadRefProcedure EXPR_FLOAT ib i
     packageProcedure' (DebugE s) ib = addCommand BS_CMD_DEBUG ((fromIntegral ib) : (packageExpr s))
@@ -1111,6 +1249,7 @@ packageProcedure p = do
     packageProcedure' (IfThenElseInt8E e cb1 cb2) ib = packageIfThenElseProcedure EXPR_INT8 ib e cb1 cb2
     packageProcedure' (IfThenElseInt16E e cb1 cb2) ib = packageIfThenElseProcedure EXPR_INT16 ib e cb1 cb2
     packageProcedure' (IfThenElseInt32E e cb1 cb2) ib = packageIfThenElseProcedure EXPR_INT32 ib e cb1 cb2
+    packageProcedure' (IfThenElseIntE e cb1 cb2) ib = packageIfThenElseProcedure EXPR_INT32 ib e cb1 cb2
     packageProcedure' (IfThenElseL8E e cb1 cb2) ib = packageIfThenElseProcedure EXPR_LIST8 ib e cb1 cb2
     packageProcedure' (IfThenElseFloatE e cb1 cb2) ib = packageIfThenElseProcedure EXPR_FLOAT ib e cb1 cb2
     -- The following IfThenElse* functions generated by toold/GenEitherTypes.hs
@@ -1122,6 +1261,7 @@ packageProcedure p = do
     packageProcedure' (IfThenElseUnitI8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_UNIT EXPR_INT8 ib e cb1 cb2
     packageProcedure' (IfThenElseUnitI16 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_UNIT EXPR_INT16 ib e cb1 cb2
     packageProcedure' (IfThenElseUnitI32 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_UNIT EXPR_INT32 ib e cb1 cb2
+    packageProcedure' (IfThenElseUnitI e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_UNIT EXPR_INT32 ib e cb1 cb2
     packageProcedure' (IfThenElseUnitL8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_UNIT EXPR_LIST8 ib e cb1 cb2
     packageProcedure' (IfThenElseUnitFloat e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_UNIT EXPR_FLOAT ib e cb1 cb2
     packageProcedure' (IfThenElseBoolUnit e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_BOOL EXPR_UNIT ib e cb1 cb2
@@ -1132,6 +1272,7 @@ packageProcedure p = do
     packageProcedure' (IfThenElseBoolI8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_BOOL EXPR_INT8 ib e cb1 cb2
     packageProcedure' (IfThenElseBoolI16 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_BOOL EXPR_INT16 ib e cb1 cb2
     packageProcedure' (IfThenElseBoolI32 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_BOOL EXPR_INT32 ib e cb1 cb2
+    packageProcedure' (IfThenElseBoolI e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_BOOL EXPR_INT32 ib e cb1 cb2
     packageProcedure' (IfThenElseBoolL8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_BOOL EXPR_LIST8 ib e cb1 cb2
     packageProcedure' (IfThenElseBoolFloat e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_BOOL EXPR_FLOAT ib e cb1 cb2
     packageProcedure' (IfThenElseW8Unit e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD8 EXPR_UNIT ib e cb1 cb2
@@ -1142,6 +1283,7 @@ packageProcedure p = do
     packageProcedure' (IfThenElseW8I8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD8 EXPR_INT8 ib e cb1 cb2
     packageProcedure' (IfThenElseW8I16 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD8 EXPR_INT16 ib e cb1 cb2
     packageProcedure' (IfThenElseW8I32 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD8 EXPR_INT32 ib e cb1 cb2
+    packageProcedure' (IfThenElseW8I e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD8 EXPR_INT32 ib e cb1 cb2
     packageProcedure' (IfThenElseW8L8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD8 EXPR_LIST8 ib e cb1 cb2
     packageProcedure' (IfThenElseW8Float e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD8 EXPR_FLOAT ib e cb1 cb2
     packageProcedure' (IfThenElseW16Unit e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD16 EXPR_UNIT ib e cb1 cb2
@@ -1152,6 +1294,7 @@ packageProcedure p = do
     packageProcedure' (IfThenElseW16I8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD16 EXPR_INT8 ib e cb1 cb2
     packageProcedure' (IfThenElseW16I16 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD16 EXPR_INT16 ib e cb1 cb2
     packageProcedure' (IfThenElseW16I32 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD16 EXPR_INT32 ib e cb1 cb2
+    packageProcedure' (IfThenElseW16I e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD16 EXPR_INT32 ib e cb1 cb2
     packageProcedure' (IfThenElseW16L8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD16 EXPR_LIST8 ib e cb1 cb2
     packageProcedure' (IfThenElseW16Float e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD16 EXPR_FLOAT ib e cb1 cb2
     packageProcedure' (IfThenElseW32Unit e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD32 EXPR_UNIT ib e cb1 cb2
@@ -1162,6 +1305,7 @@ packageProcedure p = do
     packageProcedure' (IfThenElseW32I8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD32 EXPR_INT8 ib e cb1 cb2
     packageProcedure' (IfThenElseW32I16 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD32 EXPR_INT16 ib e cb1 cb2
     packageProcedure' (IfThenElseW32I32 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD32 EXPR_INT32 ib e cb1 cb2
+    packageProcedure' (IfThenElseW32I e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD32 EXPR_INT32 ib e cb1 cb2
     packageProcedure' (IfThenElseW32L8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD32 EXPR_LIST8 ib e cb1 cb2
     packageProcedure' (IfThenElseW32Float e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_WORD32 EXPR_FLOAT ib e cb1 cb2
     packageProcedure' (IfThenElseI8Unit e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT8 EXPR_UNIT ib e cb1 cb2
@@ -1172,6 +1316,7 @@ packageProcedure p = do
     packageProcedure' (IfThenElseI8I8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT8 EXPR_INT8 ib e cb1 cb2
     packageProcedure' (IfThenElseI8I16 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT8 EXPR_INT16 ib e cb1 cb2
     packageProcedure' (IfThenElseI8I32 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT8 EXPR_INT32 ib e cb1 cb2
+    packageProcedure' (IfThenElseI8I e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT8 EXPR_INT32 ib e cb1 cb2
     packageProcedure' (IfThenElseI8L8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT8 EXPR_LIST8 ib e cb1 cb2
     packageProcedure' (IfThenElseI8Float e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT8 EXPR_FLOAT ib e cb1 cb2
     packageProcedure' (IfThenElseI16Unit e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT16 EXPR_UNIT ib e cb1 cb2
@@ -1182,6 +1327,7 @@ packageProcedure p = do
     packageProcedure' (IfThenElseI16I8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT16 EXPR_INT8 ib e cb1 cb2
     packageProcedure' (IfThenElseI16I16 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT16 EXPR_INT16 ib e cb1 cb2
     packageProcedure' (IfThenElseI16I32 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT16 EXPR_INT32 ib e cb1 cb2
+    packageProcedure' (IfThenElseI16I e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT16 EXPR_INT32 ib e cb1 cb2
     packageProcedure' (IfThenElseI16L8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT16 EXPR_LIST8 ib e cb1 cb2
     packageProcedure' (IfThenElseI16Float e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT16 EXPR_FLOAT ib e cb1 cb2
     packageProcedure' (IfThenElseI32Unit e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT32 EXPR_UNIT ib e cb1 cb2
@@ -1192,8 +1338,20 @@ packageProcedure p = do
     packageProcedure' (IfThenElseI32I8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT32 EXPR_INT8 ib e cb1 cb2
     packageProcedure' (IfThenElseI32I16 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT32 EXPR_INT16 ib e cb1 cb2
     packageProcedure' (IfThenElseI32I32 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT32 EXPR_INT32 ib e cb1 cb2
+    packageProcedure' (IfThenElseI32I e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT32 EXPR_INT32 ib e cb1 cb2
     packageProcedure' (IfThenElseI32L8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT32 EXPR_LIST8 ib e cb1 cb2
     packageProcedure' (IfThenElseI32Float e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT32 EXPR_FLOAT ib e cb1 cb2
+    packageProcedure' (IfThenElseIUnit e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT32 EXPR_UNIT ib e cb1 cb2
+    packageProcedure' (IfThenElseIBool e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT32 EXPR_BOOL ib e cb1 cb2
+    packageProcedure' (IfThenElseIW8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT32 EXPR_WORD8 ib e cb1 cb2
+    packageProcedure' (IfThenElseIW16 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT32 EXPR_WORD16 ib e cb1 cb2
+    packageProcedure' (IfThenElseIW32 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT32 EXPR_WORD32 ib e cb1 cb2
+    packageProcedure' (IfThenElseII8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT32 EXPR_INT8 ib e cb1 cb2
+    packageProcedure' (IfThenElseII16 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT32 EXPR_INT16 ib e cb1 cb2
+    packageProcedure' (IfThenElseII32 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT32 EXPR_INT32 ib e cb1 cb2
+    packageProcedure' (IfThenElseII e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT32 EXPR_INT32 ib e cb1 cb2
+    packageProcedure' (IfThenElseIL8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT32 EXPR_LIST8 ib e cb1 cb2
+    packageProcedure' (IfThenElseIFloat e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_INT32 EXPR_FLOAT ib e cb1 cb2
     packageProcedure' (IfThenElseL8Unit e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_LIST8 EXPR_UNIT ib e cb1 cb2
     packageProcedure' (IfThenElseL8Bool e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_LIST8 EXPR_BOOL ib e cb1 cb2
     packageProcedure' (IfThenElseL8W8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_LIST8 EXPR_WORD8 ib e cb1 cb2
@@ -1202,6 +1360,7 @@ packageProcedure p = do
     packageProcedure' (IfThenElseL8I8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_LIST8 EXPR_INT8 ib e cb1 cb2
     packageProcedure' (IfThenElseL8I16 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_LIST8 EXPR_INT16 ib e cb1 cb2
     packageProcedure' (IfThenElseL8I32 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_LIST8 EXPR_INT32 ib e cb1 cb2
+    packageProcedure' (IfThenElseL8I e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_LIST8 EXPR_INT32 ib e cb1 cb2
     packageProcedure' (IfThenElseL8L8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_LIST8 EXPR_LIST8 ib e cb1 cb2
     packageProcedure' (IfThenElseL8Float e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_LIST8 EXPR_FLOAT ib e cb1 cb2
     packageProcedure' (IfThenElseFloatUnit e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_FLOAT EXPR_UNIT ib e cb1 cb2
@@ -1212,6 +1371,7 @@ packageProcedure p = do
     packageProcedure' (IfThenElseFloatI8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_FLOAT EXPR_INT8 ib e cb1 cb2
     packageProcedure' (IfThenElseFloatI16 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_FLOAT EXPR_INT16 ib e cb1 cb2
     packageProcedure' (IfThenElseFloatI32 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_FLOAT EXPR_INT32 ib e cb1 cb2
+    packageProcedure' (IfThenElseFloatI e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_FLOAT EXPR_INT32 ib e cb1 cb2
     packageProcedure' (IfThenElseFloatL8 e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_FLOAT EXPR_LIST8 ib e cb1 cb2
     packageProcedure' (IfThenElseFloatFloat e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_FLOAT EXPR_FLOAT ib e cb1 cb2
       -- The following Iterate*E functions generated by toold/GenEitherTypes.hs
@@ -1223,6 +1383,7 @@ packageProcedure p = do
     packageProcedure' (IterateUnitI8E iv bf) ib = packageIterateProcedure EXPR_UNIT EXPR_INT8 ib (RemBindUnit ib) iv bf
     packageProcedure' (IterateUnitI16E iv bf) ib = packageIterateProcedure EXPR_UNIT EXPR_INT16 ib (RemBindUnit ib) iv bf
     packageProcedure' (IterateUnitI32E iv bf) ib = packageIterateProcedure EXPR_UNIT EXPR_INT32 ib (RemBindUnit ib) iv bf
+    packageProcedure' (IterateUnitIE iv bf) ib = packageIterateProcedure EXPR_UNIT EXPR_INT32 ib (RemBindUnit ib) iv bf
     packageProcedure' (IterateUnitL8E iv bf) ib = packageIterateProcedure EXPR_UNIT EXPR_LIST8 ib (RemBindUnit ib) iv bf
     packageProcedure' (IterateUnitFloatE iv bf) ib = packageIterateProcedure EXPR_UNIT EXPR_FLOAT ib (RemBindUnit ib) iv bf
     packageProcedure' (IterateBoolUnitE iv bf) ib = packageIterateProcedure EXPR_BOOL EXPR_UNIT ib (RemBindB ib) iv bf
@@ -1233,6 +1394,7 @@ packageProcedure p = do
     packageProcedure' (IterateBoolI8E iv bf) ib = packageIterateProcedure EXPR_BOOL EXPR_INT8 ib (RemBindB ib) iv bf
     packageProcedure' (IterateBoolI16E iv bf) ib = packageIterateProcedure EXPR_BOOL EXPR_INT16 ib (RemBindB ib) iv bf
     packageProcedure' (IterateBoolI32E iv bf) ib = packageIterateProcedure EXPR_BOOL EXPR_INT32 ib (RemBindB ib) iv bf
+    packageProcedure' (IterateBoolIE iv bf) ib = packageIterateProcedure EXPR_BOOL EXPR_INT32 ib (RemBindB ib) iv bf
     packageProcedure' (IterateBoolL8E iv bf) ib = packageIterateProcedure EXPR_BOOL EXPR_LIST8 ib (RemBindB ib) iv bf
     packageProcedure' (IterateBoolFloatE iv bf) ib = packageIterateProcedure EXPR_BOOL EXPR_FLOAT ib (RemBindB ib) iv bf
     packageProcedure' (IterateW8UnitE iv bf) ib = packageIterateProcedure EXPR_WORD8 EXPR_UNIT ib (RemBindW8 ib) iv bf
@@ -1243,6 +1405,7 @@ packageProcedure p = do
     packageProcedure' (IterateW8I8E iv bf) ib = packageIterateProcedure EXPR_WORD8 EXPR_INT8 ib (RemBindW8 ib) iv bf
     packageProcedure' (IterateW8I16E iv bf) ib = packageIterateProcedure EXPR_WORD8 EXPR_INT16 ib (RemBindW8 ib) iv bf
     packageProcedure' (IterateW8I32E iv bf) ib = packageIterateProcedure EXPR_WORD8 EXPR_INT32 ib (RemBindW8 ib) iv bf
+    packageProcedure' (IterateW8IE iv bf) ib = packageIterateProcedure EXPR_WORD8 EXPR_INT32 ib (RemBindW8 ib) iv bf
     packageProcedure' (IterateW8L8E iv bf) ib = packageIterateProcedure EXPR_WORD8 EXPR_LIST8 ib (RemBindW8 ib) iv bf
     packageProcedure' (IterateW8FloatE iv bf) ib = packageIterateProcedure EXPR_WORD8 EXPR_FLOAT ib (RemBindW8 ib) iv bf
     packageProcedure' (IterateW16UnitE iv bf) ib = packageIterateProcedure EXPR_WORD16 EXPR_UNIT ib (RemBindW16 ib) iv bf
@@ -1253,6 +1416,7 @@ packageProcedure p = do
     packageProcedure' (IterateW16I8E iv bf) ib = packageIterateProcedure EXPR_WORD16 EXPR_INT8 ib (RemBindW16 ib) iv bf
     packageProcedure' (IterateW16I16E iv bf) ib = packageIterateProcedure EXPR_WORD16 EXPR_INT16 ib (RemBindW16 ib) iv bf
     packageProcedure' (IterateW16I32E iv bf) ib = packageIterateProcedure EXPR_WORD16 EXPR_INT32 ib (RemBindW16 ib) iv bf
+    packageProcedure' (IterateW16IE iv bf) ib = packageIterateProcedure EXPR_WORD16 EXPR_INT32 ib (RemBindW16 ib) iv bf
     packageProcedure' (IterateW16L8E iv bf) ib = packageIterateProcedure EXPR_WORD16 EXPR_LIST8 ib (RemBindW16 ib) iv bf
     packageProcedure' (IterateW16FloatE iv bf) ib = packageIterateProcedure EXPR_WORD16 EXPR_FLOAT ib (RemBindW16 ib) iv bf
     packageProcedure' (IterateW32UnitE iv bf) ib = packageIterateProcedure EXPR_WORD32 EXPR_UNIT ib (RemBindW32 ib) iv bf
@@ -1263,6 +1427,7 @@ packageProcedure p = do
     packageProcedure' (IterateW32I8E iv bf) ib = packageIterateProcedure EXPR_WORD32 EXPR_INT8 ib (RemBindW32 ib) iv bf
     packageProcedure' (IterateW32I16E iv bf) ib = packageIterateProcedure EXPR_WORD32 EXPR_INT16 ib (RemBindW32 ib) iv bf
     packageProcedure' (IterateW32I32E iv bf) ib = packageIterateProcedure EXPR_WORD32 EXPR_INT32 ib (RemBindW32 ib) iv bf
+    packageProcedure' (IterateW32IE iv bf) ib = packageIterateProcedure EXPR_WORD32 EXPR_INT32 ib (RemBindW32 ib) iv bf
     packageProcedure' (IterateW32L8E iv bf) ib = packageIterateProcedure EXPR_WORD32 EXPR_LIST8 ib (RemBindW32 ib) iv bf
     packageProcedure' (IterateW32FloatE iv bf) ib = packageIterateProcedure EXPR_WORD32 EXPR_FLOAT ib (RemBindW32 ib) iv bf
     packageProcedure' (IterateI8UnitE iv bf) ib = packageIterateProcedure EXPR_INT8 EXPR_UNIT ib (RemBindI8 ib) iv bf
@@ -1273,6 +1438,7 @@ packageProcedure p = do
     packageProcedure' (IterateI8I8E iv bf) ib = packageIterateProcedure EXPR_INT8 EXPR_INT8 ib (RemBindI8 ib) iv bf
     packageProcedure' (IterateI8I16E iv bf) ib = packageIterateProcedure EXPR_INT8 EXPR_INT16 ib (RemBindI8 ib) iv bf
     packageProcedure' (IterateI8I32E iv bf) ib = packageIterateProcedure EXPR_INT8 EXPR_INT32 ib (RemBindI8 ib) iv bf
+    packageProcedure' (IterateI8IE iv bf) ib = packageIterateProcedure EXPR_INT8 EXPR_INT32 ib (RemBindI8 ib) iv bf
     packageProcedure' (IterateI8L8E iv bf) ib = packageIterateProcedure EXPR_INT8 EXPR_LIST8 ib (RemBindI8 ib) iv bf
     packageProcedure' (IterateI8FloatE iv bf) ib = packageIterateProcedure EXPR_INT8 EXPR_FLOAT ib (RemBindI8 ib) iv bf
     packageProcedure' (IterateI16UnitE iv bf) ib = packageIterateProcedure EXPR_INT16 EXPR_UNIT ib (RemBindI16 ib) iv bf
@@ -1283,6 +1449,7 @@ packageProcedure p = do
     packageProcedure' (IterateI16I8E iv bf) ib = packageIterateProcedure EXPR_INT16 EXPR_INT8 ib (RemBindI16 ib) iv bf
     packageProcedure' (IterateI16I16E iv bf) ib = packageIterateProcedure EXPR_INT16 EXPR_INT16 ib (RemBindI16 ib) iv bf
     packageProcedure' (IterateI16I32E iv bf) ib = packageIterateProcedure EXPR_INT16 EXPR_INT32 ib (RemBindI16 ib) iv bf
+    packageProcedure' (IterateI16IE iv bf) ib = packageIterateProcedure EXPR_INT16 EXPR_INT32 ib (RemBindI16 ib) iv bf
     packageProcedure' (IterateI16L8E iv bf) ib = packageIterateProcedure EXPR_INT16 EXPR_LIST8 ib (RemBindI16 ib) iv bf
     packageProcedure' (IterateI16FloatE iv bf) ib = packageIterateProcedure EXPR_INT16 EXPR_FLOAT ib (RemBindI16 ib) iv bf
     packageProcedure' (IterateI32UnitE iv bf) ib = packageIterateProcedure EXPR_INT32 EXPR_UNIT ib (RemBindI32 ib) iv bf
@@ -1293,8 +1460,20 @@ packageProcedure p = do
     packageProcedure' (IterateI32I8E iv bf) ib = packageIterateProcedure EXPR_INT32 EXPR_INT8 ib (RemBindI32 ib) iv bf
     packageProcedure' (IterateI32I16E iv bf) ib = packageIterateProcedure EXPR_INT32 EXPR_INT16 ib (RemBindI32 ib) iv bf
     packageProcedure' (IterateI32I32E iv bf) ib = packageIterateProcedure EXPR_INT32 EXPR_INT32 ib (RemBindI32 ib) iv bf
+    packageProcedure' (IterateI32IE iv bf) ib = packageIterateProcedure EXPR_INT32 EXPR_INT32 ib (RemBindI32 ib) iv bf
     packageProcedure' (IterateI32L8E iv bf) ib = packageIterateProcedure EXPR_INT32 EXPR_LIST8 ib (RemBindI32 ib) iv bf
     packageProcedure' (IterateI32FloatE iv bf) ib = packageIterateProcedure EXPR_INT32 EXPR_FLOAT ib (RemBindI32 ib) iv bf
+    packageProcedure' (IterateIUnitE iv bf) ib = packageIterateProcedure EXPR_INT32 EXPR_UNIT ib (RemBindI ib) iv bf
+    packageProcedure' (IterateIBoolE iv bf) ib = packageIterateProcedure EXPR_INT32 EXPR_BOOL ib (RemBindI ib) iv bf
+    packageProcedure' (IterateIW8E iv bf) ib = packageIterateProcedure EXPR_INT32 EXPR_WORD8 ib (RemBindI ib) iv bf
+    packageProcedure' (IterateIW16E iv bf) ib = packageIterateProcedure EXPR_INT32 EXPR_WORD16 ib (RemBindI ib) iv bf
+    packageProcedure' (IterateIW32E iv bf) ib = packageIterateProcedure EXPR_INT32 EXPR_WORD32 ib (RemBindI ib) iv bf
+    packageProcedure' (IterateII8E iv bf) ib = packageIterateProcedure EXPR_INT32 EXPR_INT8 ib (RemBindI ib) iv bf
+    packageProcedure' (IterateII16E iv bf) ib = packageIterateProcedure EXPR_INT32 EXPR_INT16 ib (RemBindI ib) iv bf
+    packageProcedure' (IterateII32E iv bf) ib = packageIterateProcedure EXPR_INT32 EXPR_INT32 ib (RemBindI ib) iv bf
+    packageProcedure' (IterateIIE iv bf) ib = packageIterateProcedure EXPR_INT32 EXPR_INT32 ib (RemBindI ib) iv bf
+    packageProcedure' (IterateIL8E iv bf) ib = packageIterateProcedure EXPR_INT32 EXPR_LIST8 ib (RemBindI ib) iv bf
+    packageProcedure' (IterateIFloatE iv bf) ib = packageIterateProcedure EXPR_INT32 EXPR_FLOAT ib (RemBindI ib) iv bf
     packageProcedure' (IterateL8UnitE iv bf) ib = packageIterateProcedure EXPR_LIST8 EXPR_UNIT ib (RemBindList8 ib) iv bf
     packageProcedure' (IterateL8BoolE iv bf) ib = packageIterateProcedure EXPR_LIST8 EXPR_BOOL ib (RemBindList8 ib) iv bf
     packageProcedure' (IterateL8W8E iv bf) ib = packageIterateProcedure EXPR_LIST8 EXPR_WORD8 ib (RemBindList8 ib) iv bf
@@ -1303,6 +1482,7 @@ packageProcedure p = do
     packageProcedure' (IterateL8I8E iv bf) ib = packageIterateProcedure EXPR_LIST8 EXPR_INT8 ib (RemBindList8 ib) iv bf
     packageProcedure' (IterateL8I16E iv bf) ib = packageIterateProcedure EXPR_LIST8 EXPR_INT16 ib (RemBindList8 ib) iv bf
     packageProcedure' (IterateL8I32E iv bf) ib = packageIterateProcedure EXPR_LIST8 EXPR_INT32 ib (RemBindList8 ib) iv bf
+    packageProcedure' (IterateL8IE iv bf) ib = packageIterateProcedure EXPR_LIST8 EXPR_INT32 ib (RemBindList8 ib) iv bf
     packageProcedure' (IterateL8L8E iv bf) ib = packageIterateProcedure EXPR_LIST8 EXPR_LIST8 ib (RemBindList8 ib) iv bf
     packageProcedure' (IterateL8FloatE iv bf) ib = packageIterateProcedure EXPR_LIST8 EXPR_FLOAT ib (RemBindList8 ib) iv bf
     packageProcedure' (IterateFloatUnitE iv bf) ib = packageIterateProcedure EXPR_FLOAT EXPR_UNIT ib (RemBindFloat ib) iv bf
@@ -1313,6 +1493,7 @@ packageProcedure p = do
     packageProcedure' (IterateFloatI8E iv bf) ib = packageIterateProcedure EXPR_FLOAT EXPR_INT8 ib (RemBindFloat ib) iv bf
     packageProcedure' (IterateFloatI16E iv bf) ib = packageIterateProcedure EXPR_FLOAT EXPR_INT16 ib (RemBindFloat ib) iv bf
     packageProcedure' (IterateFloatI32E iv bf) ib = packageIterateProcedure EXPR_FLOAT EXPR_INT32 ib (RemBindFloat ib) iv bf
+    packageProcedure' (IterateFloatIE iv bf) ib = packageIterateProcedure EXPR_FLOAT EXPR_INT32 ib (RemBindFloat ib) iv bf
     packageProcedure' (IterateFloatL8E iv bf) ib = packageIterateProcedure EXPR_FLOAT EXPR_LIST8 ib (RemBindFloat ib) iv bf
     packageProcedure' (IterateFloatFloatE iv bf) ib = packageIterateProcedure EXPR_FLOAT EXPR_FLOAT ib (RemBindFloat ib) iv bf
     packageProcedure' DebugListen ib = return B.empty
@@ -1376,6 +1557,7 @@ packageRemoteBinding (NewRemoteRefW32E e) =  packageRemoteBinding' EXPR_WORD32 e
 packageRemoteBinding (NewRemoteRefI8E e) =  packageRemoteBinding' EXPR_INT8 e
 packageRemoteBinding (NewRemoteRefI16E e) =  packageRemoteBinding' EXPR_INT16 e
 packageRemoteBinding (NewRemoteRefI32E e) =  packageRemoteBinding' EXPR_INT32 e
+packageRemoteBinding (NewRemoteRefIE e) =  packageRemoteBinding' EXPR_INT32 e
 packageRemoteBinding (NewRemoteRefL8E e) =  packageRemoteBinding' EXPR_LIST8 e
 packageRemoteBinding (NewRemoteRefFloatE e) =  packageRemoteBinding' EXPR_FLOAT e
 packageRemoteBinding _ = error "packageRemoteBinding: Unsupported primitive"
@@ -1587,6 +1769,29 @@ packageExpr (IfI32 e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_INT32 EXPR_IF)
 packageExpr (TestBI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_TSTB) e1 e2
 packageExpr (SetBI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_SETB) e1 e2
 packageExpr (ClrBI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_CLRB) e1 e2
+packageExpr (LitI w) = (exprCmdVal EXPR_INT32 EXPR_LIT) ++ word32ToBytes (fromIntegral w)
+packageExpr (ShowI e) = packageSubExpr (exprCmdVal EXPR_INT32 EXPR_SHOW) e
+packageExpr (RefI n) = packageRef n (exprCmdVal EXPR_INT32 EXPR_REF)
+packageExpr (RemBindI b) = (exprCmdVal EXPR_INT32 EXPR_BIND) ++ [fromIntegral b]
+packageExpr (NegI e) = packageSubExpr (exprCmdVal EXPR_INT32 EXPR_NEG) e
+packageExpr (SignI e) = packageSubExpr (exprCmdVal EXPR_INT32 EXPR_SIGN) e
+packageExpr (AddI e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_ADD) e1 e2
+packageExpr (SubI e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_SUB) e1 e2
+packageExpr (MultI e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_MULT) e1 e2
+packageExpr (DivI e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_DIV) e1 e2
+packageExpr (RemI e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_REM) e1 e2
+packageExpr (QuotI e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_QUOT) e1 e2
+packageExpr (ModI e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_MOD) e1 e2
+packageExpr (AndI e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_AND) e1 e2
+packageExpr (OrI e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_OR) e1 e2
+packageExpr (XorI e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_XOR) e1 e2
+packageExpr (CompI e) = packageSubExpr (exprCmdVal EXPR_INT32 EXPR_COMP) e
+packageExpr (ShfLI e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_SHFL) e1 e2
+packageExpr (ShfRI e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_SHFR) e1 e2
+packageExpr (IfI e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_INT32 EXPR_IF) e1 e2 e3
+packageExpr (TestBI e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_TSTB) e1 e2
+packageExpr (SetBI e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_SETB) e1 e2
+packageExpr (ClrBI e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_CLRB) e1 e2
 packageExpr (LitList8 ws) = (exprLCmdVal EXPRL_LIT) ++ [fromIntegral $ length ws] ++ ws
 packageExpr (RefList8 n) = packageRef n (exprLCmdVal EXPRL_REF)
 packageExpr (RemBindList8 b) = (exprLCmdVal EXPRL_BIND) ++ [fromIntegral b]
@@ -1791,6 +1996,7 @@ parseQueryResult (NewRemoteRefW32E _) (NewReply r) = Just $ RemoteRefW32 $ fromI
 parseQueryResult (NewRemoteRefI8E _) (NewReply r) = Just $ RemoteRefI8 $ fromIntegral r
 parseQueryResult (NewRemoteRefI16E _) (NewReply r) = Just $ RemoteRefI16 $ fromIntegral r
 parseQueryResult (NewRemoteRefI32E _) (NewReply r) = Just $ RemoteRefI32 $ fromIntegral r
+parseQueryResult (NewRemoteRefIE _) (NewReply r) = Just $ RemoteRefI $ fromIntegral r
 parseQueryResult (NewRemoteRefL8E _) (NewReply r) = Just $ RemoteRefL8 $ fromIntegral r
 parseQueryResult (NewRemoteRefFloatE _) (NewReply r) = Just $ RemoteRefFloat$ fromIntegral r
 parseQueryResult (ReadRemoteRefBE _) (ReadRefBReply r) = Just $ lit r
@@ -1800,6 +2006,7 @@ parseQueryResult (ReadRemoteRefW32E _) (ReadRefW32Reply r) = Just $ lit r
 parseQueryResult (ReadRemoteRefI8E _) (ReadRefI8Reply r) = Just $ lit r
 parseQueryResult (ReadRemoteRefI16E _) (ReadRefI16Reply r) = Just $ lit r
 parseQueryResult (ReadRemoteRefI32E _) (ReadRefI32Reply r) = Just $ lit r
+parseQueryResult (ReadRemoteRefIE _) (ReadRefI32Reply r) = Just $ lit (fromIntegral r)
 parseQueryResult (ReadRemoteRefL8E _) (ReadRefL8Reply r) = Just $ lit r
 parseQueryResult (ReadRemoteRefFloatE _) (ReadRefFloatReply r) = Just $ lit r
 parseQueryResult (IfThenElseUnitE _ _ _) (IfThenElseUnitReply r) = Just $ lit r
@@ -1810,6 +2017,7 @@ parseQueryResult (IfThenElseWord32E _ _ _) (IfThenElseW32Reply r) = Just $ lit r
 parseQueryResult (IfThenElseInt8E _ _ _) (IfThenElseI8Reply r) = Just $ lit r
 parseQueryResult (IfThenElseInt16E _ _ _) (IfThenElseI16Reply r) = Just $ lit r
 parseQueryResult (IfThenElseInt32E _ _ _) (IfThenElseI32Reply r) = Just $ lit r
+parseQueryResult (IfThenElseIntE _ _ _) (IfThenElseI32Reply r) = Just $ lit (fromIntegral r)
 parseQueryResult (IfThenElseL8E _ _ _) (IfThenElseL8Reply r) = Just $ lit r
 parseQueryResult (IfThenElseFloatE _ _ _) (IfThenElseFloatReply r) = Just $ lit r
 parseQueryResult (IfThenElseUnitUnit _ _ _) (IfThenElseUnitReply r) = Just $ ExprRight $ lit r
@@ -1828,6 +2036,8 @@ parseQueryResult (IfThenElseUnitI16 _ _ _) (IfThenElseI16Reply r) = Just $ ExprR
 parseQueryResult (IfThenElseUnitI16 _ _ _) (IfThenElseUnitLeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseUnitI32 _ _ _) (IfThenElseI32Reply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseUnitI32 _ _ _) (IfThenElseUnitLeftReply r) = Just $ ExprLeft $ lit r
+parseQueryResult (IfThenElseUnitI _ _ _) (IfThenElseI32Reply r) = Just $ ExprRight $ lit (fromIntegral r)
+parseQueryResult (IfThenElseUnitI _ _ _) (IfThenElseUnitLeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseUnitL8 _ _ _) (IfThenElseL8Reply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseUnitL8 _ _ _) (IfThenElseUnitLeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseUnitFloat _ _ _) (IfThenElseFloatReply r) = Just $ ExprRight $ lit r
@@ -1848,6 +2058,8 @@ parseQueryResult (IfThenElseBoolI16 _ _ _) (IfThenElseI16Reply r) = Just $ ExprR
 parseQueryResult (IfThenElseBoolI16 _ _ _) (IfThenElseBoolLeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseBoolI32 _ _ _) (IfThenElseI32Reply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseBoolI32 _ _ _) (IfThenElseBoolLeftReply r) = Just $ ExprLeft $ lit r
+parseQueryResult (IfThenElseBoolI _ _ _) (IfThenElseI32Reply r) = Just $ ExprRight $ lit (fromIntegral r)
+parseQueryResult (IfThenElseBoolI _ _ _) (IfThenElseBoolLeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseBoolL8 _ _ _) (IfThenElseL8Reply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseBoolL8 _ _ _) (IfThenElseBoolLeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseBoolFloat _ _ _) (IfThenElseFloatReply r) = Just $ ExprRight $ lit r
@@ -1868,6 +2080,8 @@ parseQueryResult (IfThenElseW8I16 _ _ _) (IfThenElseI16Reply r) = Just $ ExprRig
 parseQueryResult (IfThenElseW8I16 _ _ _) (IfThenElseW8LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseW8I32 _ _ _) (IfThenElseI32Reply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseW8I32 _ _ _) (IfThenElseW8LeftReply r) = Just $ ExprLeft $ lit r
+parseQueryResult (IfThenElseW8I _ _ _) (IfThenElseI32Reply r) = Just $ ExprRight $ lit (fromIntegral r)
+parseQueryResult (IfThenElseW8I _ _ _) (IfThenElseW8LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseW8L8 _ _ _) (IfThenElseL8Reply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseW8L8 _ _ _) (IfThenElseW8LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseW8Float _ _ _) (IfThenElseFloatReply r) = Just $ ExprRight $ lit r
@@ -1888,6 +2102,8 @@ parseQueryResult (IfThenElseW16I16 _ _ _) (IfThenElseI16Reply r) = Just $ ExprRi
 parseQueryResult (IfThenElseW16I16 _ _ _) (IfThenElseW16LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseW16I32 _ _ _) (IfThenElseI32Reply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseW16I32 _ _ _) (IfThenElseW16LeftReply r) = Just $ ExprLeft $ lit r
+parseQueryResult (IfThenElseW16I _ _ _) (IfThenElseI32Reply r) = Just $ ExprRight $ lit (fromIntegral r)
+parseQueryResult (IfThenElseW16I _ _ _) (IfThenElseW16LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseW16L8 _ _ _) (IfThenElseL8Reply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseW16L8 _ _ _) (IfThenElseW16LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseW16Float _ _ _) (IfThenElseFloatReply r) = Just $ ExprRight $ lit r
@@ -1908,6 +2124,8 @@ parseQueryResult (IfThenElseW32I16 _ _ _) (IfThenElseI16Reply r) = Just $ ExprRi
 parseQueryResult (IfThenElseW32I16 _ _ _) (IfThenElseW32LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseW32I32 _ _ _) (IfThenElseI32Reply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseW32I32 _ _ _) (IfThenElseW32LeftReply r) = Just $ ExprLeft $ lit r
+parseQueryResult (IfThenElseW32I _ _ _) (IfThenElseI32Reply r) = Just $ ExprRight $ lit (fromIntegral r)
+parseQueryResult (IfThenElseW32I _ _ _) (IfThenElseW32LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseW32L8 _ _ _) (IfThenElseL8Reply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseW32L8 _ _ _) (IfThenElseW32LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseW32Float _ _ _) (IfThenElseFloatReply r) = Just $ ExprRight $ lit r
@@ -1928,6 +2146,8 @@ parseQueryResult (IfThenElseI8I16 _ _ _) (IfThenElseI16Reply r) = Just $ ExprRig
 parseQueryResult (IfThenElseI8I16 _ _ _) (IfThenElseI8LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseI8I32 _ _ _) (IfThenElseI32Reply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseI8I32 _ _ _) (IfThenElseI8LeftReply r) = Just $ ExprLeft $ lit r
+parseQueryResult (IfThenElseI8I _ _ _) (IfThenElseI32Reply r) = Just $ ExprRight $ lit (fromIntegral r)
+parseQueryResult (IfThenElseI8I _ _ _) (IfThenElseI8LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseI8L8 _ _ _) (IfThenElseL8Reply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseI8L8 _ _ _) (IfThenElseI8LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseI8Float _ _ _) (IfThenElseFloatReply r) = Just $ ExprRight $ lit r
@@ -1948,6 +2168,8 @@ parseQueryResult (IfThenElseI16I16 _ _ _) (IfThenElseI16Reply r) = Just $ ExprRi
 parseQueryResult (IfThenElseI16I16 _ _ _) (IfThenElseI16LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseI16I32 _ _ _) (IfThenElseI32Reply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseI16I32 _ _ _) (IfThenElseI16LeftReply r) = Just $ ExprLeft $ lit r
+parseQueryResult (IfThenElseI16I _ _ _) (IfThenElseI32Reply r) = Just $ ExprRight $ lit (fromIntegral r)
+parseQueryResult (IfThenElseI16I _ _ _) (IfThenElseI16LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseI16L8 _ _ _) (IfThenElseL8Reply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseI16L8 _ _ _) (IfThenElseI16LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseI16Float _ _ _) (IfThenElseFloatReply r) = Just $ ExprRight $ lit r
@@ -1968,10 +2190,34 @@ parseQueryResult (IfThenElseI32I16 _ _ _) (IfThenElseI16Reply r) = Just $ ExprRi
 parseQueryResult (IfThenElseI32I16 _ _ _) (IfThenElseI32LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseI32I32 _ _ _) (IfThenElseI32Reply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseI32I32 _ _ _) (IfThenElseI32LeftReply r) = Just $ ExprLeft $ lit r
+parseQueryResult (IfThenElseI32I _ _ _) (IfThenElseI32Reply r) = Just $ ExprRight $ lit (fromIntegral r)
+parseQueryResult (IfThenElseI32I _ _ _) (IfThenElseI32LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseI32L8 _ _ _) (IfThenElseL8Reply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseI32L8 _ _ _) (IfThenElseI32LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseI32Float _ _ _) (IfThenElseFloatReply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseI32Float _ _ _) (IfThenElseI32LeftReply r) = Just $ ExprLeft $ lit r
+parseQueryResult (IfThenElseIUnit _ _ _) (IfThenElseUnitReply r) = Just $ ExprRight $ lit r
+parseQueryResult (IfThenElseIUnit _ _ _) (IfThenElseI32LeftReply r) = Just $ ExprLeft $ lit (fromIntegral r)
+parseQueryResult (IfThenElseIBool _ _ _) (IfThenElseBoolReply r) = Just $ ExprRight $ lit r
+parseQueryResult (IfThenElseIBool _ _ _) (IfThenElseI32LeftReply r) = Just $ ExprLeft $ lit (fromIntegral r)
+parseQueryResult (IfThenElseIW8 _ _ _) (IfThenElseW8Reply r) = Just $ ExprRight $ lit r
+parseQueryResult (IfThenElseIW8 _ _ _) (IfThenElseI32LeftReply r) = Just $ ExprLeft $ lit (fromIntegral r)
+parseQueryResult (IfThenElseIW16 _ _ _) (IfThenElseW16Reply r) = Just $ ExprRight $ lit r
+parseQueryResult (IfThenElseIW16 _ _ _) (IfThenElseI32LeftReply r) = Just $ ExprLeft $ lit (fromIntegral r)
+parseQueryResult (IfThenElseIW32 _ _ _) (IfThenElseW32Reply r) = Just $ ExprRight $ lit r
+parseQueryResult (IfThenElseIW32 _ _ _) (IfThenElseI32LeftReply r) = Just $ ExprLeft $ lit (fromIntegral r)
+parseQueryResult (IfThenElseII8 _ _ _) (IfThenElseI8Reply r) = Just $ ExprRight $ lit r
+parseQueryResult (IfThenElseII8 _ _ _) (IfThenElseI32LeftReply r) = Just $ ExprLeft $ lit (fromIntegral r)
+parseQueryResult (IfThenElseII16 _ _ _) (IfThenElseI16Reply r) = Just $ ExprRight $ lit r
+parseQueryResult (IfThenElseII16 _ _ _) (IfThenElseI32LeftReply r) = Just $ ExprLeft $ lit (fromIntegral r)
+parseQueryResult (IfThenElseII32 _ _ _) (IfThenElseI32Reply r) = Just $ ExprRight $ lit r
+parseQueryResult (IfThenElseII32 _ _ _) (IfThenElseI32LeftReply r) = Just $ ExprLeft $ lit (fromIntegral r)
+parseQueryResult (IfThenElseII _ _ _) (IfThenElseI32Reply r) = Just $ ExprRight $ lit (fromIntegral r)
+parseQueryResult (IfThenElseII _ _ _) (IfThenElseI32LeftReply r) = Just $ ExprLeft $ lit (fromIntegral r)
+parseQueryResult (IfThenElseIL8 _ _ _) (IfThenElseL8Reply r) = Just $ ExprRight $ lit r
+parseQueryResult (IfThenElseIL8 _ _ _) (IfThenElseI32LeftReply r) = Just $ ExprLeft $ lit (fromIntegral r)
+parseQueryResult (IfThenElseIFloat _ _ _) (IfThenElseFloatReply r) = Just $ ExprRight $ lit r
+parseQueryResult (IfThenElseIFloat _ _ _) (IfThenElseI32LeftReply r) = Just $ ExprLeft $ lit (fromIntegral r)
 parseQueryResult (IfThenElseL8Unit _ _ _) (IfThenElseUnitReply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseL8Unit _ _ _) (IfThenElseL8LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseL8Bool _ _ _) (IfThenElseBoolReply r) = Just $ ExprRight $ lit r
@@ -1988,6 +2234,8 @@ parseQueryResult (IfThenElseL8I16 _ _ _) (IfThenElseI16Reply r) = Just $ ExprRig
 parseQueryResult (IfThenElseL8I16 _ _ _) (IfThenElseL8LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseL8I32 _ _ _) (IfThenElseI32Reply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseL8I32 _ _ _) (IfThenElseL8LeftReply r) = Just $ ExprLeft $ lit r
+parseQueryResult (IfThenElseL8I _ _ _) (IfThenElseI32Reply r) = Just $ ExprRight $ lit (fromIntegral r)
+parseQueryResult (IfThenElseL8I _ _ _) (IfThenElseL8LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseL8L8 _ _ _) (IfThenElseL8Reply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseL8L8 _ _ _) (IfThenElseL8LeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseL8Float _ _ _) (IfThenElseFloatReply r) = Just $ ExprRight $ lit r
@@ -2008,6 +2256,8 @@ parseQueryResult (IfThenElseFloatI16 _ _ _) (IfThenElseI16Reply r) = Just $ Expr
 parseQueryResult (IfThenElseFloatI16 _ _ _) (IfThenElseFloatLeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseFloatI32 _ _ _) (IfThenElseI32Reply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseFloatI32 _ _ _) (IfThenElseFloatLeftReply r) = Just $ ExprLeft $ lit r
+parseQueryResult (IfThenElseFloatI _ _ _) (IfThenElseI32Reply r) = Just $ ExprRight $ lit (fromIntegral r)
+parseQueryResult (IfThenElseFloatI _ _ _) (IfThenElseFloatLeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseFloatL8 _ _ _) (IfThenElseL8Reply r) = Just $ ExprRight $ lit r
 parseQueryResult (IfThenElseFloatL8 _ _ _) (IfThenElseFloatLeftReply r) = Just $ ExprLeft $ lit r
 parseQueryResult (IfThenElseFloatFloat _ _ _) (IfThenElseFloatReply r) = Just $ ExprRight $ lit r
@@ -2020,6 +2270,7 @@ parseQueryResult (IterateUnitW32E _ _) (IterateW32Reply r) = Just $ lit r
 parseQueryResult (IterateUnitI8E _ _) (IterateI8Reply r) = Just $ lit r
 parseQueryResult (IterateUnitI16E _ _) (IterateI16Reply r) = Just $ lit r
 parseQueryResult (IterateUnitI32E _ _) (IterateI32Reply r) = Just $ lit r
+parseQueryResult (IterateUnitIE _ _) (IterateI32Reply r) = Just $ lit (fromIntegral r)
 parseQueryResult (IterateUnitL8E _ _) (IterateL8Reply r) = Just $ lit r
 parseQueryResult (IterateUnitFloatE _ _) (IterateFloatReply r) = Just $ lit r
 parseQueryResult (IterateBoolUnitE _ _) (IterateUnitReply) = Just $ LitUnit
@@ -2030,6 +2281,7 @@ parseQueryResult (IterateBoolW32E _ _) (IterateW32Reply r) = Just $ lit r
 parseQueryResult (IterateBoolI8E _ _) (IterateI8Reply r) = Just $ lit r
 parseQueryResult (IterateBoolI16E _ _) (IterateI16Reply r) = Just $ lit r
 parseQueryResult (IterateBoolI32E _ _) (IterateI32Reply r) = Just $ lit r
+parseQueryResult (IterateBoolIE _ _) (IterateI32Reply r) = Just $ lit (fromIntegral r)
 parseQueryResult (IterateBoolL8E _ _) (IterateL8Reply r) = Just $ lit r
 parseQueryResult (IterateBoolFloatE _ _) (IterateFloatReply r) = Just $ lit r
 parseQueryResult (IterateW8UnitE _ _) (IterateUnitReply) = Just $ LitUnit
@@ -2040,6 +2292,7 @@ parseQueryResult (IterateW8W32E _ _) (IterateW32Reply r) = Just $ lit r
 parseQueryResult (IterateW8I8E _ _) (IterateI8Reply r) = Just $ lit r
 parseQueryResult (IterateW8I16E _ _) (IterateI16Reply r) = Just $ lit r
 parseQueryResult (IterateW8I32E _ _) (IterateI32Reply r) = Just $ lit r
+parseQueryResult (IterateW8IE _ _) (IterateI32Reply r) = Just $ lit (fromIntegral r)
 parseQueryResult (IterateW8L8E _ _) (IterateL8Reply r) = Just $ lit r
 parseQueryResult (IterateW8FloatE _ _) (IterateFloatReply r) = Just $ lit r
 parseQueryResult (IterateW16UnitE _ _) (IterateUnitReply) = Just $ LitUnit
@@ -2050,6 +2303,7 @@ parseQueryResult (IterateW16W32E _ _) (IterateW32Reply r) = Just $ lit r
 parseQueryResult (IterateW16I8E _ _) (IterateI8Reply r) = Just $ lit r
 parseQueryResult (IterateW16I16E _ _) (IterateI16Reply r) = Just $ lit r
 parseQueryResult (IterateW16I32E _ _) (IterateI32Reply r) = Just $ lit r
+parseQueryResult (IterateW16IE _ _) (IterateI32Reply r) = Just $ lit (fromIntegral r)
 parseQueryResult (IterateW16L8E _ _) (IterateL8Reply r) = Just $ lit r
 parseQueryResult (IterateW16FloatE _ _) (IterateFloatReply r) = Just $ lit r
 parseQueryResult (IterateW32UnitE _ _) (IterateUnitReply) = Just $ LitUnit
@@ -2060,6 +2314,7 @@ parseQueryResult (IterateW32W32E _ _) (IterateW32Reply r) = Just $ lit r
 parseQueryResult (IterateW32I8E _ _) (IterateI8Reply r) = Just $ lit r
 parseQueryResult (IterateW32I16E _ _) (IterateI16Reply r) = Just $ lit r
 parseQueryResult (IterateW32I32E _ _) (IterateI32Reply r) = Just $ lit r
+parseQueryResult (IterateW32IE _ _) (IterateI32Reply r) = Just $ lit (fromIntegral r)
 parseQueryResult (IterateW32L8E _ _) (IterateL8Reply r) = Just $ lit r
 parseQueryResult (IterateW32FloatE _ _) (IterateFloatReply r) = Just $ lit r
 parseQueryResult (IterateI8UnitE _ _) (IterateUnitReply) = Just $ LitUnit
@@ -2070,6 +2325,7 @@ parseQueryResult (IterateI8W32E _ _) (IterateW32Reply r) = Just $ lit r
 parseQueryResult (IterateI8I8E _ _) (IterateI8Reply r) = Just $ lit r
 parseQueryResult (IterateI8I16E _ _) (IterateI16Reply r) = Just $ lit r
 parseQueryResult (IterateI8I32E _ _) (IterateI32Reply r) = Just $ lit r
+parseQueryResult (IterateI8IE _ _) (IterateI32Reply r) = Just $ lit (fromIntegral r)
 parseQueryResult (IterateI8L8E _ _) (IterateL8Reply r) = Just $ lit r
 parseQueryResult (IterateI8FloatE _ _) (IterateFloatReply r) = Just $ lit r
 parseQueryResult (IterateI16UnitE _ _) (IterateUnitReply) = Just $ LitUnit
@@ -2080,6 +2336,7 @@ parseQueryResult (IterateI16W32E _ _) (IterateW32Reply r) = Just $ lit r
 parseQueryResult (IterateI16I8E _ _) (IterateI8Reply r) = Just $ lit r
 parseQueryResult (IterateI16I16E _ _) (IterateI16Reply r) = Just $ lit r
 parseQueryResult (IterateI16I32E _ _) (IterateI32Reply r) = Just $ lit r
+parseQueryResult (IterateI16IE _ _) (IterateI32Reply r) = Just $ lit (fromIntegral r)
 parseQueryResult (IterateI16L8E _ _) (IterateL8Reply r) = Just $ lit r
 parseQueryResult (IterateI16FloatE _ _) (IterateFloatReply r) = Just $ lit r
 parseQueryResult (IterateI32UnitE _ _) (IterateUnitReply) = Just $ LitUnit
@@ -2090,8 +2347,20 @@ parseQueryResult (IterateI32W32E _ _) (IterateW32Reply r) = Just $ lit r
 parseQueryResult (IterateI32I8E _ _) (IterateI8Reply r) = Just $ lit r
 parseQueryResult (IterateI32I16E _ _) (IterateI16Reply r) = Just $ lit r
 parseQueryResult (IterateI32I32E _ _) (IterateI32Reply r) = Just $ lit r
+parseQueryResult (IterateI32IE _ _) (IterateI32Reply r) = Just $ lit (fromIntegral r)
 parseQueryResult (IterateI32L8E _ _) (IterateL8Reply r) = Just $ lit r
 parseQueryResult (IterateI32FloatE _ _) (IterateFloatReply r) = Just $ lit r
+parseQueryResult (IterateIUnitE _ _) (IterateUnitReply) = Just $ LitUnit
+parseQueryResult (IterateIBoolE _ _) (IterateBoolReply r) = Just $ lit r
+parseQueryResult (IterateIW8E _ _) (IterateW8Reply r) = Just $ lit r
+parseQueryResult (IterateIW16E _ _) (IterateW16Reply r) = Just $ lit r
+parseQueryResult (IterateIW32E _ _) (IterateW32Reply r) = Just $ lit r
+parseQueryResult (IterateII8E _ _) (IterateI8Reply r) = Just $ lit r
+parseQueryResult (IterateII16E _ _) (IterateI16Reply r) = Just $ lit r
+parseQueryResult (IterateII32E _ _) (IterateI32Reply r) = Just $ lit r
+parseQueryResult (IterateIIE _ _) (IterateI32Reply r) = Just $ lit (fromIntegral r)
+parseQueryResult (IterateIL8E _ _) (IterateL8Reply r) = Just $ lit r
+parseQueryResult (IterateIFloatE _ _) (IterateFloatReply r) = Just $ lit r
 parseQueryResult (IterateL8UnitE _ _) (IterateUnitReply) = Just $ LitUnit
 parseQueryResult (IterateL8BoolE _ _) (IterateBoolReply r) = Just $ lit r
 parseQueryResult (IterateL8W8E _ _) (IterateW8Reply r) = Just $ lit r
@@ -2100,6 +2369,7 @@ parseQueryResult (IterateL8W32E _ _) (IterateW32Reply r) = Just $ lit r
 parseQueryResult (IterateL8I8E _ _) (IterateI8Reply r) = Just $ lit r
 parseQueryResult (IterateL8I16E _ _) (IterateI16Reply r) = Just $ lit r
 parseQueryResult (IterateL8I32E _ _) (IterateI32Reply r) = Just $ lit r
+parseQueryResult (IterateL8IE _ _) (IterateI32Reply r) = Just $ lit (fromIntegral r)
 parseQueryResult (IterateL8L8E _ _) (IterateL8Reply r) = Just $ lit r
 parseQueryResult (IterateL8FloatE _ _) (IterateFloatReply r) = Just $ lit r
 parseQueryResult (IterateFloatUnitE _ _) (IterateUnitReply) = Just $ LitUnit
@@ -2110,6 +2380,7 @@ parseQueryResult (IterateFloatW32E _ _) (IterateW32Reply r) = Just $ lit r
 parseQueryResult (IterateFloatI8E _ _) (IterateI8Reply r) = Just $ lit r
 parseQueryResult (IterateFloatI16E _ _) (IterateI16Reply r) = Just $ lit r
 parseQueryResult (IterateFloatI32E _ _) (IterateI32Reply r) = Just $ lit r
+parseQueryResult (IterateFloatIE _ _) (IterateI32Reply r) = Just $ lit (fromIntegral r)
 parseQueryResult (IterateFloatL8E _ _) (IterateL8Reply r) = Just $ lit r
 parseQueryResult (IterateFloatFloatE _ _) (IterateFloatReply r) = Just $ lit r
 parseQueryResult _q _r = Nothing

@@ -435,6 +435,8 @@ showCodeBlock (Arduino commands) = do
           showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseUnitI32 e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseUnitI e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseUnitL8 e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseUnitFloat e cb1 cb2) =
@@ -454,6 +456,8 @@ showCodeBlock (Arduino commands) = do
       showProcedure (IfThenElseBoolI16 e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseBoolI32 e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseBoolI e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseBoolL8 e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
@@ -475,6 +479,8 @@ showCodeBlock (Arduino commands) = do
           showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseW8I32 e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseW8I e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseW8L8 e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseW8Float e cb1 cb2) =
@@ -494,6 +500,8 @@ showCodeBlock (Arduino commands) = do
       showProcedure (IfThenElseW16I16 e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseW16I32 e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseW16I e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseW16L8 e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
@@ -515,6 +523,8 @@ showCodeBlock (Arduino commands) = do
           showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseW32I32 e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseW32I e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseW32L8 e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseW32Float e cb1 cb2) =
@@ -534,6 +544,8 @@ showCodeBlock (Arduino commands) = do
       showProcedure (IfThenElseI8I16 e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseI8I32 e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseI8I e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseI8L8 e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
@@ -555,6 +567,8 @@ showCodeBlock (Arduino commands) = do
           showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseI16I32 e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseI16I e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseI16L8 e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseI16Float e cb1 cb2) =
@@ -575,9 +589,33 @@ showCodeBlock (Arduino commands) = do
           showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseI32I32 e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseI32I e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseI32L8 e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseI32Float e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseIUnit e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseIBool e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseIW8 e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseIW16 e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseIW32 e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseII8 e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseII16 e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseII32 e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseII e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseIL8 e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseIFloat e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseL8Unit e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
@@ -594,6 +632,8 @@ showCodeBlock (Arduino commands) = do
       showProcedure (IfThenElseL8I16 e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseL8I32 e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseL8I e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseL8L8 e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
@@ -614,6 +654,8 @@ showCodeBlock (Arduino commands) = do
       showProcedure (IfThenElseFloatI16 e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseFloatI32 e cb1 cb2) =
+          showIfThenElseEitherProcedure e cb1 cb2
+      showProcedure (IfThenElseFloatI e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
       showProcedure (IfThenElseFloatL8 e cb1 cb2) =
           showIfThenElseEitherProcedure e cb1 cb2
@@ -674,6 +716,13 @@ showCodeBlock (Arduino commands) = do
           let bi = RemBindUnit i
           j <- nextBind
           let bj = RemBindI32 j
+          showIterateProcedure i bi j bj iv bf
+          return bj
+      showProcedure (IterateUnitIE iv bf) = do
+          i <- nextBind
+          let bi = RemBindUnit i
+          j <- nextBind
+          let bj = RemBindI j
           showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateUnitL8E iv bf) = do
@@ -746,6 +795,13 @@ showCodeBlock (Arduino commands) = do
           let bj = RemBindI32 j
           showIterateProcedure i bi j bj iv bf
           return bj
+      showProcedure (IterateBoolIE iv bf) = do
+          i <- nextBind
+          let bi = RemBindB i
+          j <- nextBind
+          let bj = RemBindI j
+          showIterateProcedure i bi j bj iv bf
+          return bj
       showProcedure (IterateBoolL8E iv bf) = do
           i <- nextBind
           let bi = RemBindB i
@@ -814,6 +870,13 @@ showCodeBlock (Arduino commands) = do
           let bi = RemBindW8 i
           j <- nextBind
           let bj = RemBindI32 j
+          showIterateProcedure i bi j bj iv bf
+          return bj
+      showProcedure (IterateW8IE iv bf) = do
+          i <- nextBind
+          let bi = RemBindW8 i
+          j <- nextBind
+          let bj = RemBindI j
           showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW8L8E iv bf) = do
@@ -886,6 +949,13 @@ showCodeBlock (Arduino commands) = do
           let bj = RemBindI32 j
           showIterateProcedure i bi j bj iv bf
           return bj
+      showProcedure (IterateW16IE iv bf) = do
+          i <- nextBind
+          let bi = RemBindW16 i
+          j <- nextBind
+          let bj = RemBindI j
+          showIterateProcedure i bi j bj iv bf
+          return bj
       showProcedure (IterateW16L8E iv bf) = do
           i <- nextBind
           let bi = RemBindW16 i
@@ -954,6 +1024,13 @@ showCodeBlock (Arduino commands) = do
           let bi = RemBindW32 i
           j <- nextBind
           let bj = RemBindI32 j
+          showIterateProcedure i bi j bj iv bf
+          return bj
+      showProcedure (IterateW32IE iv bf) = do
+          i <- nextBind
+          let bi = RemBindW32 i
+          j <- nextBind
+          let bj = RemBindI j
           showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW32L8E iv bf) = do
@@ -1026,6 +1103,13 @@ showCodeBlock (Arduino commands) = do
           let bj = RemBindI32 j
           showIterateProcedure i bi j bj iv bf
           return bj
+      showProcedure (IterateI8IE iv bf) = do
+          i <- nextBind
+          let bi = RemBindI8 i
+          j <- nextBind
+          let bj = RemBindI j
+          showIterateProcedure i bi j bj iv bf
+          return bj
       showProcedure (IterateI8L8E iv bf) = do
           i <- nextBind
           let bi = RemBindI8 i
@@ -1094,6 +1178,13 @@ showCodeBlock (Arduino commands) = do
           let bi = RemBindI16 i
           j <- nextBind
           let bj = RemBindI32 j
+          showIterateProcedure i bi j bj iv bf
+          return bj
+      showProcedure (IterateI16IE iv bf) = do
+          i <- nextBind
+          let bi = RemBindI16 i
+          j <- nextBind
+          let bj = RemBindI j
           showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI16L8E iv bf) = do
@@ -1166,6 +1257,13 @@ showCodeBlock (Arduino commands) = do
           let bj = RemBindI32 j
           showIterateProcedure i bi j bj iv bf
           return bj
+      showProcedure (IterateI32IE iv bf) = do
+          i <- nextBind
+          let bi = RemBindI32 i
+          j <- nextBind
+          let bj = RemBindI j
+          showIterateProcedure i bi j bj iv bf
+          return bj
       showProcedure (IterateI32L8E iv bf) = do
           i <- nextBind
           let bi = RemBindI32 i
@@ -1176,6 +1274,83 @@ showCodeBlock (Arduino commands) = do
       showProcedure (IterateI32FloatE iv bf) = do
           i <- nextBind
           let bi = RemBindI32 i
+          j <- nextBind
+          let bj = RemBindFloat j
+          showIterateProcedure i bi j bj iv bf
+          return bj
+      showProcedure (IterateIUnitE iv bf) = do
+          i <- nextBind
+          let bi = RemBindI i
+          j <- nextBind
+          let bj = RemBindUnit j
+          showIterateProcedure i bi j bj iv bf
+          return bj
+      showProcedure (IterateIBoolE iv bf) = do
+          i <- nextBind
+          let bi = RemBindI i
+          j <- nextBind
+          let bj = RemBindB j
+          showIterateProcedure i bi j bj iv bf
+          return bj
+      showProcedure (IterateIW8E iv bf) = do
+          i <- nextBind
+          let bi = RemBindI i
+          j <- nextBind
+          let bj = RemBindW8 j
+          showIterateProcedure i bi j bj iv bf
+          return bj
+      showProcedure (IterateIW16E iv bf) = do
+          i <- nextBind
+          let bi = RemBindI i
+          j <- nextBind
+          let bj = RemBindW16 j
+          showIterateProcedure i bi j bj iv bf
+          return bj
+      showProcedure (IterateIW32E iv bf) = do
+          i <- nextBind
+          let bi = RemBindI i
+          j <- nextBind
+          let bj = RemBindW32 j
+          showIterateProcedure i bi j bj iv bf
+          return bj
+      showProcedure (IterateII8E iv bf) = do
+          i <- nextBind
+          let bi = RemBindI i
+          j <- nextBind
+          let bj = RemBindI8 j
+          showIterateProcedure i bi j bj iv bf
+          return bj
+      showProcedure (IterateII16E iv bf) = do
+          i <- nextBind
+          let bi = RemBindI i
+          j <- nextBind
+          let bj = RemBindI16 j
+          showIterateProcedure i bi j bj iv bf
+          return bj
+      showProcedure (IterateII32E iv bf) = do
+          i <- nextBind
+          let bi = RemBindI i
+          j <- nextBind
+          let bj = RemBindI32 j
+          showIterateProcedure i bi j bj iv bf
+          return bj
+      showProcedure (IterateIIE iv bf) = do
+          i <- nextBind
+          let bi = RemBindI i
+          j <- nextBind
+          let bj = RemBindI j
+          showIterateProcedure i bi j bj iv bf
+          return bj
+      showProcedure (IterateIL8E iv bf) = do
+          i <- nextBind
+          let bi = RemBindI i
+          j <- nextBind
+          let bj = RemBindList8 j
+          showIterateProcedure i bi j bj iv bf
+          return bj
+      showProcedure (IterateIFloatE iv bf) = do
+          i <- nextBind
+          let bi = RemBindI i
           j <- nextBind
           let bj = RemBindFloat j
           showIterateProcedure i bi j bj iv bf
@@ -1234,6 +1409,13 @@ showCodeBlock (Arduino commands) = do
           let bi = RemBindList8 i
           j <- nextBind
           let bj = RemBindI32 j
+          showIterateProcedure i bi j bj iv bf
+          return bj
+      showProcedure (IterateL8IE iv bf) = do
+          i <- nextBind
+          let bi = RemBindList8 i
+          j <- nextBind
+          let bj = RemBindI j
           showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateL8L8E iv bf) = do
@@ -1304,6 +1486,13 @@ showCodeBlock (Arduino commands) = do
           let bi = RemBindFloat i
           j <- nextBind
           let bj = RemBindI32 j
+          showIterateProcedure i bi j bj iv bf
+          return bj
+      showProcedure (IterateFloatIE iv bf) = do
+          i <- nextBind
+          let bi = RemBindFloat i
+          j <- nextBind
+          let bj = RemBindI j
           showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateFloatL8E iv bf) = do

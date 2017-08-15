@@ -245,9 +245,10 @@ commProcXlatArg :: (Bool, CoreExpr) -> BindM CoreExpr
 commProcXlatArg (xlat, e) =
   if xlat
   then do
+    monadTyConId <- thNameToTyCon monadTyConTH
     let tyCon_m = splitTyConApp_maybe $ exprType e
     case tyCon_m of
-      Just (tyCon, [ty]) -> do
+      Just (tyCon, [ty]) | tyCon == monadTyConId -> do
         e' <- commProcExpr e
         fmapAbsExpr (mkTyConTy tyCon) ty e'
       _                  -> repExpr e

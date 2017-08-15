@@ -50,6 +50,7 @@ data CompileType =
   | Int8Type
   | Int16Type
   | Int32Type
+  | IntType
   | List8Type
   | FloatType
   deriving (Show, Eq)
@@ -63,6 +64,7 @@ compileTypeToString Word32Type = "uint32_t"
 compileTypeToString Int8Type   = "int8_t"
 compileTypeToString Int16Type  = "int16_t"
 compileTypeToString Int32Type  = "int32_t"
+compileTypeToString IntType    = "int32_t"
 compileTypeToString List8Type  = "uint8_t *"
 compileTypeToString FloatType  = "float"
 
@@ -337,6 +339,7 @@ compileCommand (WriteRemoteRefW32E (RemoteRefW32 i) e) = compileWriteRef i e
 compileCommand (WriteRemoteRefI8E (RemoteRefI8 i) e) = compileWriteRef i e
 compileCommand (WriteRemoteRefI16E (RemoteRefI16 i) e) = compileWriteRef i e
 compileCommand (WriteRemoteRefI32E (RemoteRefI32 i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefIE (RemoteRefI i) e) = compileWriteRef i e
 compileCommand (WriteRemoteRefL8E (RemoteRefL8 i) e) = compileWriteListRef i e
 compileCommand (WriteRemoteRefFloatE (RemoteRefFloat i) e) = compileWriteRef i e
 compileCommand (ModifyRemoteRefBE (RemoteRefB i) f) = compileWriteRef i f
@@ -346,6 +349,7 @@ compileCommand (ModifyRemoteRefW32E (RemoteRefW32 i) f) = compileWriteRef i f
 compileCommand (ModifyRemoteRefI8E (RemoteRefI8 i) f) = compileWriteRef i f
 compileCommand (ModifyRemoteRefI16E (RemoteRefI16 i) f) = compileWriteRef i f
 compileCommand (ModifyRemoteRefI32E (RemoteRefI32 i) f) = compileWriteRef i f
+compileCommand (ModifyRemoteRefIE (RemoteRefI i) f) = compileWriteRef i f
 compileCommand (ModifyRemoteRefL8E (RemoteRefL8 i) f) = compileWriteListRef i f
 compileCommand (ModifyRemoteRefFloatE (RemoteRefFloat i) f) = compileWriteRef i f
 
@@ -600,6 +604,9 @@ compileProcedure (NewRemoteRefI16E e) = do
 compileProcedure (NewRemoteRefI32E e) = do
     x <- compileNewRef Int32Type e
     return $ RemoteRefI32 x
+compileProcedure (NewRemoteRefIE e) = do
+    x <- compileNewRef IntType e
+    return $ RemoteRefI x
 compileProcedure (NewRemoteRefL8E e) = do
     x <- compileNewListRef e
     return $ RemoteRefL8 x
@@ -649,6 +656,8 @@ compileProcedure (IfThenElseInt16E e cb1 cb2) =
     compileIfThenElseProcedure Int16Type e cb1 cb2
 compileProcedure (IfThenElseInt32E e cb1 cb2) =
     compileIfThenElseProcedure Int32Type e cb1 cb2
+compileProcedure (IfThenElseIntE e cb1 cb2) =
+    compileIfThenElseProcedure IntType e cb1 cb2
 compileProcedure (IfThenElseL8E e cb1 cb2) =
     compileIfThenElseProcedure List8Type e cb1 cb2
 compileProcedure (IfThenElseFloatE e cb1 cb2) =
@@ -670,6 +679,8 @@ compileProcedure (IfThenElseUnitI16 e cb1 cb2) =
     compileIfThenElseEitherProcedure UnitType Int16Type e cb1 cb2
 compileProcedure (IfThenElseUnitI32 e cb1 cb2) =
     compileIfThenElseEitherProcedure UnitType Int32Type e cb1 cb2
+compileProcedure (IfThenElseUnitI e cb1 cb2) =
+    compileIfThenElseEitherProcedure UnitType IntType e cb1 cb2
 compileProcedure (IfThenElseUnitL8 e cb1 cb2) =
     compileIfThenElseEitherProcedure UnitType List8Type e cb1 cb2
 compileProcedure (IfThenElseUnitFloat e cb1 cb2) =
@@ -690,6 +701,8 @@ compileProcedure (IfThenElseBoolI16 e cb1 cb2) =
     compileIfThenElseEitherProcedure BoolType Int16Type e cb1 cb2
 compileProcedure (IfThenElseBoolI32 e cb1 cb2) =
     compileIfThenElseEitherProcedure BoolType Int32Type e cb1 cb2
+compileProcedure (IfThenElseBoolI e cb1 cb2) =
+    compileIfThenElseEitherProcedure BoolType IntType e cb1 cb2
 compileProcedure (IfThenElseBoolL8 e cb1 cb2) =
     compileIfThenElseEitherProcedure BoolType List8Type e cb1 cb2
 compileProcedure (IfThenElseBoolFloat e cb1 cb2) =
@@ -710,6 +723,8 @@ compileProcedure (IfThenElseW8I16 e cb1 cb2) =
     compileIfThenElseEitherProcedure Word8Type Int16Type e cb1 cb2
 compileProcedure (IfThenElseW8I32 e cb1 cb2) =
     compileIfThenElseEitherProcedure Word8Type Int32Type e cb1 cb2
+compileProcedure (IfThenElseW8I e cb1 cb2) =
+    compileIfThenElseEitherProcedure Word8Type IntType e cb1 cb2
 compileProcedure (IfThenElseW8L8 e cb1 cb2) =
     compileIfThenElseEitherProcedure Word8Type List8Type e cb1 cb2
 compileProcedure (IfThenElseW8Float e cb1 cb2) =
@@ -730,6 +745,8 @@ compileProcedure (IfThenElseW16I16 e cb1 cb2) =
     compileIfThenElseEitherProcedure Word16Type Int16Type e cb1 cb2
 compileProcedure (IfThenElseW16I32 e cb1 cb2) =
     compileIfThenElseEitherProcedure Word16Type Int32Type e cb1 cb2
+compileProcedure (IfThenElseW16I e cb1 cb2) =
+    compileIfThenElseEitherProcedure Word16Type IntType e cb1 cb2
 compileProcedure (IfThenElseW16L8 e cb1 cb2) =
     compileIfThenElseEitherProcedure Word16Type List8Type e cb1 cb2
 compileProcedure (IfThenElseW16Float e cb1 cb2) =
@@ -750,6 +767,8 @@ compileProcedure (IfThenElseW32I16 e cb1 cb2) =
     compileIfThenElseEitherProcedure Word32Type Int16Type e cb1 cb2
 compileProcedure (IfThenElseW32I32 e cb1 cb2) =
     compileIfThenElseEitherProcedure Word32Type Int32Type e cb1 cb2
+compileProcedure (IfThenElseW32I e cb1 cb2) =
+    compileIfThenElseEitherProcedure Word32Type IntType e cb1 cb2
 compileProcedure (IfThenElseW32L8 e cb1 cb2) =
     compileIfThenElseEitherProcedure Word32Type List8Type e cb1 cb2
 compileProcedure (IfThenElseW32Float e cb1 cb2) =
@@ -770,6 +789,8 @@ compileProcedure (IfThenElseI8I16 e cb1 cb2) =
     compileIfThenElseEitherProcedure Int8Type Int16Type e cb1 cb2
 compileProcedure (IfThenElseI8I32 e cb1 cb2) =
     compileIfThenElseEitherProcedure Int8Type Int32Type e cb1 cb2
+compileProcedure (IfThenElseI8I e cb1 cb2) =
+    compileIfThenElseEitherProcedure Int8Type IntType e cb1 cb2
 compileProcedure (IfThenElseI8L8 e cb1 cb2) =
     compileIfThenElseEitherProcedure Int8Type List8Type e cb1 cb2
 compileProcedure (IfThenElseI8Float e cb1 cb2) =
@@ -790,6 +811,8 @@ compileProcedure (IfThenElseI16I16 e cb1 cb2) =
     compileIfThenElseEitherProcedure Int16Type Int16Type e cb1 cb2
 compileProcedure (IfThenElseI16I32 e cb1 cb2) =
     compileIfThenElseEitherProcedure Int16Type Int32Type e cb1 cb2
+compileProcedure (IfThenElseI16I e cb1 cb2) =
+    compileIfThenElseEitherProcedure Int16Type IntType e cb1 cb2
 compileProcedure (IfThenElseI16L8 e cb1 cb2) =
     compileIfThenElseEitherProcedure Int16Type List8Type e cb1 cb2
 compileProcedure (IfThenElseI16Float e cb1 cb2) =
@@ -810,10 +833,34 @@ compileProcedure (IfThenElseI32I16 e cb1 cb2) =
     compileIfThenElseEitherProcedure Int32Type Int16Type e cb1 cb2
 compileProcedure (IfThenElseI32I32 e cb1 cb2) =
     compileIfThenElseEitherProcedure Int32Type Int32Type e cb1 cb2
+compileProcedure (IfThenElseI32I e cb1 cb2) =
+    compileIfThenElseEitherProcedure Int32Type IntType e cb1 cb2
 compileProcedure (IfThenElseI32L8 e cb1 cb2) =
     compileIfThenElseEitherProcedure Int32Type List8Type e cb1 cb2
 compileProcedure (IfThenElseI32Float e cb1 cb2) =
     compileIfThenElseEitherProcedure Int32Type FloatType e cb1 cb2
+compileProcedure (IfThenElseIUnit e cb1 cb2) =
+    compileIfThenElseEitherProcedure IntType UnitType e cb1 cb2
+compileProcedure (IfThenElseIBool e cb1 cb2) =
+    compileIfThenElseEitherProcedure IntType BoolType e cb1 cb2
+compileProcedure (IfThenElseIW8 e cb1 cb2) =
+    compileIfThenElseEitherProcedure IntType Word8Type e cb1 cb2
+compileProcedure (IfThenElseIW16 e cb1 cb2) =
+    compileIfThenElseEitherProcedure IntType Word16Type e cb1 cb2
+compileProcedure (IfThenElseIW32 e cb1 cb2) =
+    compileIfThenElseEitherProcedure IntType Word32Type e cb1 cb2
+compileProcedure (IfThenElseII8 e cb1 cb2) =
+    compileIfThenElseEitherProcedure IntType Int8Type e cb1 cb2
+compileProcedure (IfThenElseII16 e cb1 cb2) =
+    compileIfThenElseEitherProcedure IntType Int16Type e cb1 cb2
+compileProcedure (IfThenElseII32 e cb1 cb2) =
+    compileIfThenElseEitherProcedure IntType Int32Type e cb1 cb2
+compileProcedure (IfThenElseII e cb1 cb2) =
+    compileIfThenElseEitherProcedure IntType IntType e cb1 cb2
+compileProcedure (IfThenElseIL8 e cb1 cb2) =
+    compileIfThenElseEitherProcedure IntType List8Type e cb1 cb2
+compileProcedure (IfThenElseIFloat e cb1 cb2) =
+    compileIfThenElseEitherProcedure IntType FloatType e cb1 cb2
 compileProcedure (IfThenElseL8Unit e cb1 cb2) =
     compileIfThenElseEitherProcedure List8Type UnitType e cb1 cb2
 compileProcedure (IfThenElseL8Bool e cb1 cb2) =
@@ -830,6 +877,8 @@ compileProcedure (IfThenElseL8I16 e cb1 cb2) =
     compileIfThenElseEitherProcedure List8Type Int16Type e cb1 cb2
 compileProcedure (IfThenElseL8I32 e cb1 cb2) =
     compileIfThenElseEitherProcedure List8Type Int32Type e cb1 cb2
+compileProcedure (IfThenElseL8I e cb1 cb2) =
+    compileIfThenElseEitherProcedure List8Type IntType e cb1 cb2
 compileProcedure (IfThenElseL8L8 e cb1 cb2) =
     compileIfThenElseEitherProcedure List8Type List8Type e cb1 cb2
 compileProcedure (IfThenElseL8Float e cb1 cb2) =
@@ -850,6 +899,8 @@ compileProcedure (IfThenElseFloatI16 e cb1 cb2) =
     compileIfThenElseEitherProcedure FloatType Int16Type e cb1 cb2
 compileProcedure (IfThenElseFloatI32 e cb1 cb2) =
     compileIfThenElseEitherProcedure FloatType Int32Type e cb1 cb2
+compileProcedure (IfThenElseFloatI e cb1 cb2) =
+    compileIfThenElseEitherProcedure FloatType IntType e cb1 cb2
 compileProcedure (IfThenElseFloatL8 e cb1 cb2) =
     compileIfThenElseEitherProcedure FloatType List8Type e cb1 cb2
 compileProcedure (IfThenElseFloatFloat e cb1 cb2) =
@@ -910,6 +961,13 @@ compileProcedure (IterateUnitI32E iv bf) = do
     j <- nextBind
     let bj = RemBindI32 j
     compileIterateProcedure UnitType Int32Type i bi j bj iv bf
+    return bj
+compileProcedure (IterateUnitIE iv bf) = do
+    i <- nextBind
+    let bi = RemBindUnit i
+    j <- nextBind
+    let bj = RemBindI j
+    compileIterateProcedure UnitType IntType i bi j bj iv bf
     return bj
 compileProcedure (IterateUnitL8E iv bf) = do
     i <- nextBind
@@ -981,6 +1039,13 @@ compileProcedure (IterateBoolI32E iv bf) = do
     let bj = RemBindI32 j
     compileIterateProcedure BoolType Int32Type i bi j bj iv bf
     return bj
+compileProcedure (IterateBoolIE iv bf) = do
+    i <- nextBind
+    let bi = RemBindB i
+    j <- nextBind
+    let bj = RemBindI j
+    compileIterateProcedure BoolType IntType i bi j bj iv bf
+    return bj
 compileProcedure (IterateBoolL8E iv bf) = do
     i <- nextBind
     let bi = RemBindB i
@@ -1050,6 +1115,13 @@ compileProcedure (IterateW8I32E iv bf) = do
     j <- nextBind
     let bj = RemBindI32 j
     compileIterateProcedure Word8Type Int32Type i bi j bj iv bf
+    return bj
+compileProcedure (IterateW8IE iv bf) = do
+    i <- nextBind
+    let bi = RemBindW8 i
+    j <- nextBind
+    let bj = RemBindI j
+    compileIterateProcedure Word8Type IntType i bi j bj iv bf
     return bj
 compileProcedure (IterateW8L8E iv bf) = do
     i <- nextBind
@@ -1121,6 +1193,13 @@ compileProcedure (IterateW16I32E iv bf) = do
     let bj = RemBindI32 j
     compileIterateProcedure Word16Type Int32Type i bi j bj iv bf
     return bj
+compileProcedure (IterateW16IE iv bf) = do
+    i <- nextBind
+    let bi = RemBindW16 i
+    j <- nextBind
+    let bj = RemBindI j
+    compileIterateProcedure Word16Type IntType i bi j bj iv bf
+    return bj
 compileProcedure (IterateW16L8E iv bf) = do
     i <- nextBind
     let bi = RemBindW16 i
@@ -1190,6 +1269,13 @@ compileProcedure (IterateW32I32E iv bf) = do
     j <- nextBind
     let bj = RemBindI32 j
     compileIterateProcedure Word32Type Int32Type i bi j bj iv bf
+    return bj
+compileProcedure (IterateW32IE iv bf) = do
+    i <- nextBind
+    let bi = RemBindW32 i
+    j <- nextBind
+    let bj = RemBindI j
+    compileIterateProcedure Word32Type IntType i bi j bj iv bf
     return bj
 compileProcedure (IterateW32L8E iv bf) = do
     i <- nextBind
@@ -1261,6 +1347,13 @@ compileProcedure (IterateI8I32E iv bf) = do
     let bj = RemBindI32 j
     compileIterateProcedure Int8Type Int32Type i bi j bj iv bf
     return bj
+compileProcedure (IterateI8IE iv bf) = do
+    i <- nextBind
+    let bi = RemBindI8 i
+    j <- nextBind
+    let bj = RemBindI j
+    compileIterateProcedure Int8Type IntType i bi j bj iv bf
+    return bj
 compileProcedure (IterateI8L8E iv bf) = do
     i <- nextBind
     let bi = RemBindI8 i
@@ -1330,6 +1423,13 @@ compileProcedure (IterateI16I32E iv bf) = do
     j <- nextBind
     let bj = RemBindI32 j
     compileIterateProcedure Int16Type Int32Type i bi j bj iv bf
+    return bj
+compileProcedure (IterateI16IE iv bf) = do
+    i <- nextBind
+    let bi = RemBindI16 i
+    j <- nextBind
+    let bj = RemBindI j
+    compileIterateProcedure Int16Type IntType i bi j bj iv bf
     return bj
 compileProcedure (IterateI16L8E iv bf) = do
     i <- nextBind
@@ -1401,6 +1501,13 @@ compileProcedure (IterateI32I32E iv bf) = do
     let bj = RemBindI32 j
     compileIterateProcedure Int32Type Int32Type i bi j bj iv bf
     return bj
+compileProcedure (IterateI32IE iv bf) = do
+    i <- nextBind
+    let bi = RemBindI32 i
+    j <- nextBind
+    let bj = RemBindI j
+    compileIterateProcedure Int32Type IntType i bi j bj iv bf
+    return bj
 compileProcedure (IterateI32L8E iv bf) = do
     i <- nextBind
     let bi = RemBindI32 i
@@ -1414,6 +1521,83 @@ compileProcedure (IterateI32FloatE iv bf) = do
     j <- nextBind
     let bj = RemBindFloat j
     compileIterateProcedure Int32Type FloatType i bi j bj iv bf
+    return bj
+compileProcedure (IterateIUnitE iv bf) = do
+    i <- nextBind
+    let bi = RemBindI i
+    j <- nextBind
+    let bj = RemBindUnit j
+    compileIterateProcedure IntType UnitType i bi j bj iv bf
+    return bj
+compileProcedure (IterateIBoolE iv bf) = do
+    i <- nextBind
+    let bi = RemBindI i
+    j <- nextBind
+    let bj = RemBindB j
+    compileIterateProcedure IntType BoolType i bi j bj iv bf
+    return bj
+compileProcedure (IterateIW8E iv bf) = do
+    i <- nextBind
+    let bi = RemBindI i
+    j <- nextBind
+    let bj = RemBindW8 j
+    compileIterateProcedure IntType Word8Type i bi j bj iv bf
+    return bj
+compileProcedure (IterateIW16E iv bf) = do
+    i <- nextBind
+    let bi = RemBindI i
+    j <- nextBind
+    let bj = RemBindW16 j
+    compileIterateProcedure IntType Word16Type i bi j bj iv bf
+    return bj
+compileProcedure (IterateIW32E iv bf) = do
+    i <- nextBind
+    let bi = RemBindI i
+    j <- nextBind
+    let bj = RemBindW32 j
+    compileIterateProcedure IntType Word32Type i bi j bj iv bf
+    return bj
+compileProcedure (IterateII8E iv bf) = do
+    i <- nextBind
+    let bi = RemBindI i
+    j <- nextBind
+    let bj = RemBindI8 j
+    compileIterateProcedure IntType Int8Type i bi j bj iv bf
+    return bj
+compileProcedure (IterateII16E iv bf) = do
+    i <- nextBind
+    let bi = RemBindI i
+    j <- nextBind
+    let bj = RemBindI16 j
+    compileIterateProcedure IntType Int16Type i bi j bj iv bf
+    return bj
+compileProcedure (IterateII32E iv bf) = do
+    i <- nextBind
+    let bi = RemBindI i
+    j <- nextBind
+    let bj = RemBindI32 j
+    compileIterateProcedure IntType Int32Type i bi j bj iv bf
+    return bj
+compileProcedure (IterateIIE iv bf) = do
+    i <- nextBind
+    let bi = RemBindI i
+    j <- nextBind
+    let bj = RemBindI j
+    compileIterateProcedure IntType IntType i bi j bj iv bf
+    return bj
+compileProcedure (IterateIL8E iv bf) = do
+    i <- nextBind
+    let bi = RemBindI i
+    j <- nextBind
+    let bj = RemBindList8 j
+    compileIterateProcedure IntType List8Type i bi j bj iv bf
+    return bj
+compileProcedure (IterateIFloatE iv bf) = do
+    i <- nextBind
+    let bi = RemBindI i
+    j <- nextBind
+    let bj = RemBindFloat j
+    compileIterateProcedure IntType FloatType i bi j bj iv bf
     return bj
 compileProcedure (IterateL8UnitE iv bf) = do
     i <- nextBind
@@ -1470,6 +1654,13 @@ compileProcedure (IterateL8I32E iv bf) = do
     j <- nextBind
     let bj = RemBindI32 j
     compileIterateProcedure List8Type Int32Type i bi j bj iv bf
+    return bj
+compileProcedure (IterateL8IE iv bf) = do
+    i <- nextBind
+    let bi = RemBindList8 i
+    j <- nextBind
+    let bj = RemBindI j
+    compileIterateProcedure List8Type IntType i bi j bj iv bf
     return bj
 compileProcedure (IterateL8L8E iv bf) = do
     i <- nextBind
@@ -1540,6 +1731,13 @@ compileProcedure (IterateFloatI32E iv bf) = do
     j <- nextBind
     let bj = RemBindI32 j
     compileIterateProcedure FloatType Int32Type i bi j bj iv bf
+    return bj
+compileProcedure (IterateFloatIE iv bf) = do
+    i <- nextBind
+    let bi = RemBindFloat i
+    j <- nextBind
+    let bj = RemBindI j
+    compileIterateProcedure FloatType IntType i bi j bj iv bf
     return bj
 compileProcedure (IterateFloatL8E iv bf) = do
     i <- nextBind
@@ -1923,6 +2121,29 @@ compileExpr (IfI32 e1 e2 e3) = compileIfSubExpr e1 e2 e3
 compileExpr (TestBI32 e1 e2) = compileTwoSubExpr "testBI32" e1 e2
 compileExpr (SetBI32 e1 e2) = compileTwoSubExpr "setBI32" e1 e2
 compileExpr (ClrBI32 e1 e2) = compileTwoSubExpr "clrBI32" e1 e2
+compileExpr (LitI w) = show w
+compileExpr (ShowI e) = compileSubExpr "showInt32" e
+compileExpr (RefI n) = compileRef n
+compileExpr (RemBindI b) = compileBind b
+compileExpr (NegI e) = compileNeg e
+compileExpr (SignI e) = compileSubExpr "sign32" e
+compileExpr (AddI e1 e2) = compileAdd e1 e2
+compileExpr (SubI e1 e2) = compileSub e1 e2
+compileExpr (MultI e1 e2) = compileMult e1 e2
+compileExpr (DivI e1 e2) = compileTwoSubExpr "div32" e1 e2
+compileExpr (RemI e1 e2) = compileMod e1 e2
+compileExpr (QuotI e1 e2) = compileDiv e1 e2
+compileExpr (ModI e1 e2) = compileTwoSubExpr "mod32" e1 e2
+compileExpr (AndI e1 e2) = compileAnd e1 e2
+compileExpr (OrI e1 e2) = compileOr e1 e2
+compileExpr (XorI e1 e2) = compileXor e1 e2
+compileExpr (CompI e) = compileComp e
+compileExpr (ShfLI e1 e2) = compileShiftLeft e1 e2
+compileExpr (ShfRI e1 e2) = compileShiftRight e1 e2
+compileExpr (IfI e1 e2 e3) = compileIfSubExpr e1 e2 e3
+compileExpr (TestBI e1 e2) = compileTwoSubExpr "testBI32" e1 e2
+compileExpr (SetBI e1 e2) = compileTwoSubExpr "setBI32" e1 e2
+compileExpr (ClrBI e1 e2) = compileTwoSubExpr "clrBI32" e1 e2
 compileExpr (LitList8 ws) = "(uint8_t * ) (const byte[]) {255, " ++ (show $ length ws) ++ compListLit ws
   where
     compListLit :: [Word8] -> String

@@ -121,6 +121,8 @@ xlatList = [  XlatEntry (thNameToId 'not)
                         (thNameToId 'tailE)
             , XlatEntry (thNameToId 'null)
                         (thNameToId 'nullE)
+            , XlatEntry (thNameToId 'showB)
+                        (thNameToId 'showE)
            ]
 -- TBD add floating to above
 
