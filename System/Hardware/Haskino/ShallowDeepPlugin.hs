@@ -52,7 +52,7 @@ install _ todo = do
 --  embedded in the bind sequence.  (And maybe AbsLambdsPass too?)
   return $ [simplPass] ++ apRemoveToDo ++ condToDo ++ commProcToDo ++ returnsToDo ++
            bindArgRetAppToDo ++ repCasePushToDo ++ repPushToDo ++ absLambdaToDo ++
-           repAbsFuseToDo ++ recurToDo ++ absThenToDo ++ todo -- ++ dumpToDo
+           repAbsFuseToDo ++ recurToDo ++ absThenToDo ++ dumpToDo ++ todo -- ++ dumpToDo
 --   
 -- This pass is needed to simplify inlined applications that may be introduced
 -- by the compiler to inline single use let statements before it passes us
