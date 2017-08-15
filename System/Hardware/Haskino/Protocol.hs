@@ -1595,6 +1595,7 @@ packageExprEither _t1 _t2 (ExprRight er) = packageExpr er
 
 packageExpr :: Expr a -> [Word8]
 packageExpr (LitUnit) = [toW8 EXPR_UNIT, toW8 EXPR_LIT]
+packageExpr (RemBindUnit b) = (exprCmdVal EXPR_UNIT EXPR_BIND) ++ [fromIntegral b]
 packageExpr (LitB b) = [toW8 EXPR_BOOL, toW8 EXPR_LIT, if b then 1 else 0]
 packageExpr (ShowB e) = packageSubExpr (exprCmdVal EXPR_BOOL EXPR_SHOW) e
 packageExpr (RefB n) = packageRef n (exprCmdVal EXPR_BOOL EXPR_REF)
