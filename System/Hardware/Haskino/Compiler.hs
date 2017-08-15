@@ -1749,6 +1749,7 @@ compileRef n = refName ++ show n
 
 compileExpr :: Expr a -> String
 compileExpr LitUnit = "0"
+-- ToDo:  Add ShowUnit
 compileExpr (RemBindUnit b) = bindName ++ show b
 compileExpr (LitB b) = if b then "1" else "0"
 compileExpr (ShowB e) = compileSubExpr "showBool" e
