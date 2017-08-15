@@ -44,7 +44,6 @@ module System.Hardware.Haskino.SamplePrograms.Rewrite.LCD(
 
 import Control.Monad       (when)
 import Control.Monad.State (gets, liftIO)
--- import Data.Bits           (testBit, (.|.), (.&.), setBit, clearBit, shiftL, bit, complement)
 import Data.Char           (ord, isSpace)
 import Data.Maybe          (fromMaybe, isJust)
 import Data.Word           (Word8, Word32)
@@ -129,7 +128,7 @@ getCmdVal c cmd w = get cmd w
     get LCD_RETURNHOME _       = 0x02
     get LCD_SETDDRAMADDR w     = 0x80 B..|. w
     get LCD_CURSORSHIFT w      = 0x10 B..|. 0x08 B..|. w   -- NB. LCD_DISPLAYMOVE (0x08) hard coded here
-    get LCD_SETCGRAMADDR w     = 0x40 B..|. (w * 3)
+    get LCD_SETCGRAMADDR w     = 0x40 B..|. (w `B.shiftL` 3)
 
 -- | Initialize the LCD. Follows the data sheet <http://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf>,
 -- page 46; figure 24.
@@ -197,7 +196,7 @@ transmitDig mode c@Hitachi44780{lcdRS, lcdEN, lcdD4} val = do
   digitalWrite lcdRS mode
   digitalWrite lcdEN false
   -- Send down the first 4 bits
-  digitalPortWrite lcdD4 (val `div` 16) 0x0F
+  digitalPortWrite lcdD4 (val `B.shiftR` 4) 0x0F
   pulseEnableDig c
   -- Send down the remaining batch
   digitalPortWrite lcdD4 (val B..&. 0x0F) 0x0F
@@ -365,26 +364,26 @@ lcdScrollDisplayRight lcd = sendCmd lcd LCD_CURSORSHIFT lcdMoveRight
   where lcdMoveRight = 0x04
 
 -- | Update the display control word
-updateDisplayControl :: Bool -> Word8 -> LCD -> Arduino ()
+updateDisplayControl :: Bool -> Int -> LCD -> Arduino ()
 updateDisplayControl set w lcd = do
   let c = lcdController lcd
   let lcds = lcdState lcd
   old <- readRemoteRef (lcdDisplayControl lcds)
   if set
-  then writeRemoteRef (lcdDisplayControl lcds) (old B..|. w )
-  else writeRemoteRef (lcdDisplayControl lcds) (old B..&. w )
+  then writeRemoteRef (lcdDisplayControl lcds) (old `B.setBit` w )
+  else writeRemoteRef (lcdDisplayControl lcds) (old `B.clearBit` w )
   new <- readRemoteRef (lcdDisplayControl lcds)
   sendCmd lcd LCD_DISPLAYCONTROL new
 
 -- | Update the display mode word
-updateDisplayMode :: Bool -> Word8 -> LCD -> Arduino ()
+updateDisplayMode :: Bool -> Int -> LCD -> Arduino ()
 updateDisplayMode set w lcd = do
   let c = lcdController lcd
   let lcds = lcdState lcd
   old <- readRemoteRef (lcdDisplayMode lcds)
   if set
-  then writeRemoteRef (lcdDisplayMode lcds) (old B..|. w )
-  else writeRemoteRef (lcdDisplayMode lcds) (old B..&. w )
+  then writeRemoteRef (lcdDisplayMode lcds) (old `B.setBit` w )
+  else writeRemoteRef (lcdDisplayMode lcds) (old `B.clearBit` w )
   new <- readRemoteRef (lcdDisplayMode lcds)
   sendCmd lcd LCD_DISPLAYCONTROL new
 
@@ -396,12 +395,12 @@ data Hitachi44780Mask = LCD_BLINKON              -- ^ bit @0@ Controls whether c
                       | LCD_ENTRYLEFT            -- ^ bit @1@ Controls left/right entry mode
 
 -- | Convert the mask value to the bit no
-maskBit :: Hitachi44780Mask -> Word8
-maskBit LCD_BLINKON             = 1
-maskBit LCD_CURSORON            = 2
-maskBit LCD_DISPLAYON           = 4
-maskBit LCD_ENTRYSHIFTINCREMENT = 1
-maskBit LCD_ENTRYLEFT           = 2
+maskBit :: Hitachi44780Mask -> Int
+maskBit LCD_BLINKON             = 0
+maskBit LCD_CURSORON            = 1
+maskBit LCD_DISPLAYON           = 2
+maskBit LCD_ENTRYSHIFTINCREMENT = 0
+maskBit LCD_ENTRYLEFT           = 1
 
 --- | Do not blink the cursor
 lcdBlinkOff :: LCD -> Arduino ()
