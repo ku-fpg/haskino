@@ -110,7 +110,7 @@ lcdCounter = withArduino True "/dev/cu.usbmodem1421" $ do
     counterProg
 
 compile :: IO ()
-compile = compileProgram counterProg "lcdCounterE.ino"
+compile = compileProgram counterProg "lcdCounter.ino"
 
 main :: IO ()
 main = compile

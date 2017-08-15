@@ -187,12 +187,9 @@ pulseEnableDig c = do
 
 -- | Transmit data down to the LCD
 transmit :: Bool -> LCD -> Word8 -> Arduino ()
-transmit mode c val = transmitDig mode (lcdController c) val
-{-
-  case lcdController c of
+transmit mode c val = case lcdController c of
     Hitachi44780{}    -> transmitDig mode (lcdController c) val
     I2CHitachi44780{} -> transmitI2C mode c val
--}
 
 -- | Transmit data down to the LCD digital writes
 transmitDig :: Bool -> LCDController -> Word8 -> Arduino ()

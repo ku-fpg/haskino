@@ -1947,7 +1947,7 @@ compileRef n = refName ++ show n
 
 compileExpr :: Expr a -> String
 compileExpr LitUnit = "0"
--- ToDo:  Add ShowUnit
+compileExpr (ShowUnit _) = show ()
 compileExpr (RemBindUnit b) = bindName ++ show b
 compileExpr (LitB b) = if b then "1" else "0"
 compileExpr (ShowB e) = compileSubExpr "showBool" e
@@ -1971,6 +1971,8 @@ compileExpr (EqI16 e1 e2) = compileEqual e1 e2
 compileExpr (LessI16 e1 e2) = compileLess e1 e2
 compileExpr (EqI32 e1 e2) = compileEqual e1 e2
 compileExpr (LessI32 e1 e2) = compileLess e1 e2
+compileExpr (EqI e1 e2) = compileEqual e1 e2
+compileExpr (LessI e1 e2) = compileLess e1 e2
 compileExpr (EqL8 e1 e2) = compileTwoSubExpr "list8Equal" e1 e2
 compileExpr (LessL8 e1 e2) = compileTwoSubExpr "list8Less" e1 e2
 compileExpr (EqFloat e1 e2) = compileEqual e1 e2
@@ -2104,6 +2106,8 @@ compileExpr (LitI32 w) = show w
 compileExpr (ShowI32 e) = compileSubExpr "showInt32" e
 compileExpr (RefI32 n) = compileRef n
 compileExpr (RemBindI32 b) = compileBind b
+compileExpr (FromIntI32 e) = compileFromInt "int_32" e
+compileExpr (ToIntI32 e) = compileToInt e
 compileExpr (NegI32 e) = compileNeg e
 compileExpr (SignI32 e) = compileSubExpr "sign32" e
 compileExpr (AddI32 e1 e2) = compileAdd e1 e2
