@@ -87,26 +87,23 @@ counterProg :: Arduino ()
 counterProg = do
     lcd <- lcdRegister hitachi
     lcdBacklightOn lcd
-    cref <- newRemoteRef (0::Int32)
-    counterLoop lcd 0 cref
+    counterLoop lcd 0
 
-counterLoop :: LCD -> Word8 -> RemoteRef Int32 -> Arduino ()
-counterLoop lcd button counter = do
-    counterLoop'
+counterLoop :: LCD -> Word8 -> Arduino ()
+counterLoop lcd button = do
+    counterLoop' 0
       where
-        counterLoop' :: Arduino ()
-        counterLoop' = do
+        counterLoop' :: Int32 -> Arduino ()
+        counterLoop' count = do
           lcdClear lcd
           lcdHome lcd
-          count <- readRemoteRef counter
           lcdWrite lcd $ showB count
           key <- getKey button
           if key == keyValue KeyUp
-          then writeRemoteRef counter $ count + 1
+          then counterLoop' $ count + 1
           else if key == keyValue KeyDown
-               then writeRemoteRef counter $ count - 1
-               else return ()
-          counterLoop'
+               then counterLoop' $ count - 1
+               else counterLoop' count
 
 lcdCounter :: IO ()
 lcdCounter = withArduino True "/dev/cu.usbmodem1421" $ do
