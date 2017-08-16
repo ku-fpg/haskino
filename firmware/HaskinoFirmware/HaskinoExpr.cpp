@@ -167,8 +167,8 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
             else if (exprOp == EXPR_TSTB)
                 {
                 e8_1 = evalWord8Expr(ppExpr, context);
-                e2l = evalWord32Expr(ppExpr, context);
-                if (e2l > 7)
+                e2l = evalInt32Expr(ppExpr, context);
+                if ((e2l > 7) || (e2l < 0))
                     val = false;
                 else
                     val = (e8_1 & ((uint8_t) 1 << e2l)) != 0;
@@ -190,11 +190,11 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
             else if (exprOp == EXPR_TSTB)
                 {
                 e16_1 = evalWord16Expr(ppExpr, context);
-                e8_2 = evalWord8Expr(ppExpr, context);
-                if (e8_2 > 15)
+                e2l = evalInt32Expr(ppExpr, context);
+                if ((e2l > 15) || (e2l < 0))
                     val = false;
                 else
-                    val = (e16_1 & ((uint16_t) 1 << e8_2)) != 0;
+                    val = (e16_1 & ((uint16_t) 1 << e2l)) != 0;
                 }
             else
                 goto error;
@@ -213,11 +213,11 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
             else if (exprOp == EXPR_TSTB)
                 {
                 e32_1 = evalWord32Expr(ppExpr, context);
-                e8_2 = evalWord8Expr(ppExpr, context);
-                if (e8_2 > 31)
+                e2l = evalInt32Expr(ppExpr, context);
+                if ((e2l > 31) || (e2l < 0))
                     val = false;
                 else
-                    val = (e32_1 & ((uint32_t) 1 << e8_2)) != 0;
+                    val = (e32_1 & ((uint32_t) 1 << e2l)) != 0;
                 }
             else
                 goto error;
@@ -236,11 +236,11 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
             else if (exprOp == EXPR_TSTB)
                 {
                 ei8_1 = evalInt8Expr(ppExpr, context);
-                e8_2 = evalWord8Expr(ppExpr, context);
-                if (e8_2 > 7)
+                e2l = evalInt32Expr(ppExpr, context);
+                if ((e2l > 7) || (e2l < 0))
                     val = false;
                 else
-                    val = (ei8_1 & ((uint8_t) 1 << e8_2)) != 0;
+                    val = (ei8_1 & ((uint8_t) 1 << e2l)) != 0;
                 }
             else
                 goto error;
@@ -259,11 +259,11 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
             else if (exprOp == EXPR_TSTB)
                 {
                 ei16_1 = evalInt16Expr(ppExpr, context);
-                e8_2 = evalWord8Expr(ppExpr, context);
-                if (e8_2 > 15)
+                e2l = evalInt32Expr(ppExpr, context);
+                if ((e2l > 15) || (e2l < 0))
                     val = false;
                 else
-                    val = (ei16_1 & ((uint16_t) 1 << e8_2)) != 0;
+                    val = (ei16_1 & ((uint16_t) 1 << e2l)) != 0;
                 }
             else
                 goto error;
@@ -282,11 +282,11 @@ bool evalBoolExpr(byte **ppExpr, CONTEXT *context)
             else if (exprOp == EXPR_TSTB)
                 {
                 ei32_1 = evalInt32Expr(ppExpr, context);
-                e8_2 = evalWord8Expr(ppExpr, context);
-                if (e8_2 > 31)
+                e2l = evalInt32Expr(ppExpr, context);
+                if ((e2l > 7) || (e2l < 0))
                     val = false;
                 else
-                    val = (ei32_1 & ((uint32_t) 1 << e8_2)) != 0;
+                    val = (ei32_1 & ((uint32_t) 1 << e2l)) != 0;
                 }
             else
                 goto error;
@@ -581,7 +581,7 @@ int8_t evalInt8Expr(byte **ppExpr, CONTEXT *context)
     byte exprOp = pExpr[1];
     int8_t val = 0;
     int8_t e1,e2,e3;
-    uint8_t e8_1;
+    int32_t e2l;
     bool conditional;
     uint16_t thenSize, elseSize;
     int refNum;
@@ -701,29 +701,34 @@ int8_t evalInt8Expr(byte **ppExpr, CONTEXT *context)
         case EXPR_CLRB:
             *ppExpr += 2; // Use Type and command byte
             e1 = evalInt8Expr(ppExpr, context);
-            e8_1 = evalWord8Expr(ppExpr, context);
-            switch(exprOp)
+            e2l = evalInt32Expr(ppExpr, context);
+            if (e2l < 0)
+                val = 0;
+            else
                 {
-                case EXPR_SHFL:
-                    if (e8_1 > 8) e8_1 = 8;
-                    val = e1 << e8_1;
-                    break;
-                case EXPR_SHFR:
-                    if (e8_1 > 8) e8_1 = 8;
-                    val = e1 >> e8_1;
-                    break;
-                case EXPR_SETB:
-                    if (e8_1 > 7)
-                        val = e1;
-                    else
-                        val = bitSet(e1, e8_1);
-                    break;
-                case EXPR_CLRB:
-                    if (e8_1 > 7)
-                        val = e1;
-                    else
-                        val = bitClear(e1, e8_1);
-                    break;
+                switch(exprOp)
+                    {
+                    case EXPR_SHFL:
+                        if (e2l > 8) e2l = 8;
+                        val = e1 << e2l;
+                        break;
+                    case EXPR_SHFR:
+                        if (e2l > 8) e2l = 8;
+                        val = e1 >> e2l;
+                        break;
+                    case EXPR_SETB:
+                        if (e2l > 7)
+                            val = e1;
+                        else
+                            val = bitSet(e1, e2l);
+                        break;
+                    case EXPR_CLRB:
+                        if (e2l > 7)
+                            val = e1;
+                        else
+                            val = bitClear(e1, e2l);
+                        break;
+                    }
                 }
             break;
         case EXPR_FINT:
