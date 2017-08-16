@@ -766,7 +766,7 @@ uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context)
     byte exprOp = pExpr[1];
     uint16_t val = 0;
     uint16_t e1,e2;
-    uint8_t e8_1;
+    uint32_t e2l;
     bool conditional;
     uint16_t thenSize, elseSize;
     int refNum;
@@ -864,29 +864,34 @@ uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context)
         case EXPR_CLRB:
             *ppExpr += 2; // Use Type and command byte
             e1 = evalWord16Expr(ppExpr, context);
-            e8_1 = evalWord8Expr(ppExpr, context);
-            switch(exprOp)
+            e2l = evalWord32Expr(ppExpr, context);
+            if (e2l < 0)
+                val = 0;
+            else
                 {
-                case EXPR_SHFL:
-                    if (e8_1 > 16) e8_1 = 16;
-                    val = e1 << e8_1;
-                    break;
-                case EXPR_SHFR:
-                    if (e8_1 > 16) e8_1 = 16;
-                    val = e1 >> e8_1;
-                    break;
-                case EXPR_SETB:
-                    if (e8_1 > 15)
-                        val = e1;
-                    else
-                        val = bitSet(e1, e8_1);
-                    break;
-                case EXPR_CLRB:
-                    if (e8_1 > 15)
-                        val = e1;
-                    else
-                        val = bitClear(e1, e8_1);
-                    break;
+                switch(exprOp)
+                    {
+                    case EXPR_SHFL:
+                        if (e2l > 16) e2l = 16;
+                        val = e1 << e2l;
+                        break;
+                    case EXPR_SHFR:
+                        if (e2l > 16) e2l = 16;
+                        val = e1 >> e2l;
+                        break;
+                    case EXPR_SETB:
+                        if (e2l > 15)
+                            val = e1;
+                        else
+                            val = bitSet(e1, e2l);
+                        break;
+                    case EXPR_CLRB:
+                        if (e2l > 15)
+                            val = e1;
+                        else
+                            val = bitClear(e1, e2l);
+                        break;
+                    }
                 }
             break;
         case EXPR_FINT:

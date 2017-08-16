@@ -149,8 +149,8 @@ prop_xor c r x y = monadicIO $ do
         return v
     assert (local == litEval16 remote)
 
-prop_shiftL :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> Word8 -> Property
-prop_shiftL c r x y = monadicIO $ do
+prop_shiftL :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> NonNegative Int -> Property
+prop_shiftL c r x (NonNegative y) = monadicIO $ do
     let local = x `DB.shiftL` (fromIntegral y)
     remote <- run $ send c $ do
         writeRemoteRefE r $ (lit x) `shiftL` (lit y)
@@ -158,8 +158,8 @@ prop_shiftL c r x y = monadicIO $ do
         return v
     assert (local == litEval16 remote)
 
-prop_shiftR :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> Word8 -> Property
-prop_shiftR c r x y = monadicIO $ do
+prop_shiftR :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> NonNegative Int -> Property
+prop_shiftR c r x (NonNegative y) = monadicIO $ do
     let local = x `DB.shiftR` (fromIntegral y)
     remote <- run $ send c $ do
         writeRemoteRefE r $ (lit x) `shiftR` (lit y)
@@ -167,8 +167,8 @@ prop_shiftR c r x y = monadicIO $ do
         return v
     assert (local == litEval16 remote)
 
-prop_setBit :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> Word8 -> Property
-prop_setBit c r x y = monadicIO $ do
+prop_setBit :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> NonNegative Int -> Property
+prop_setBit c r x (NonNegative y) = monadicIO $ do
     let local = x `DB.setBit` (fromIntegral y)
     remote <- run $ send c $ do
         writeRemoteRefE r $ (lit x) `setBit` (lit y)
@@ -176,8 +176,8 @@ prop_setBit c r x y = monadicIO $ do
         return v
     assert (local == litEval16 remote)
 
-prop_clearBit :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> Word8 -> Property
-prop_clearBit c r x y = monadicIO $ do
+prop_clearBit :: ArduinoConnection -> RemoteRef Word16 -> Word16 -> NonNegative Int -> Property
+prop_clearBit c r x (NonNegative y) = monadicIO $ do
     let local = x `DB.clearBit` (fromIntegral y)
     remote <- run $ send c $ do
         writeRemoteRefE r $ (lit x) `clearBit` (lit y)
@@ -185,8 +185,8 @@ prop_clearBit c r x y = monadicIO $ do
         return v
     assert (local == litEval16 remote)
 
-prop_testBit :: ArduinoConnection -> RemoteRef Bool -> Word16 -> Word8 -> Property
-prop_testBit c r x y = monadicIO $ do
+prop_testBit :: ArduinoConnection -> RemoteRef Bool -> Word16 -> NonNegative Int -> Property
+prop_testBit c r x (NonNegative y) = monadicIO $ do
     let local = x `DB.testBit` (fromIntegral y)
     remote <- run $ send c $ do
         writeRemoteRefE r $ (lit x) `testBit` (lit y)
