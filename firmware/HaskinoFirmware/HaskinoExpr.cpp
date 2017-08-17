@@ -380,7 +380,7 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
     uint16_t thenSize, elseSize;
     uint8_t *listMem;
     bool alloc;
-    uint8_t index;
+    int32_t index;
     int refNum;
     byte bind;
     byte *bindPtr;
@@ -485,33 +485,30 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
                 case EXPR_CLRB:
                     *ppExpr += 2; // Use command byte
                     e1 = evalWord8Expr(ppExpr, context);
-                    e2l = evalWord32Expr(ppExpr, context);
-                    if (e2l < 0)
-                        val = 0;
+                    e2l = evalInt32Expr(ppExpr, context);
+                    if (exprOp == EXPR_SHFL || exprOp == EXPR_SHFR)
+                        {
+                        if (e2l < 0)
+                            val = 0;
+                        else
+                            {
+                            if (e2l > 8) e2l = 8;
+                            if (exprOp == EXPR_SHFL)
+                                val = e1 << e2l;
+                            else
+                                val = e1 >> e2l;
+                            }
+                        }
                     else
                         {
-                        switch(exprOp)
+                        if (e2l > 7)
+                            val = e1;
+                        else
                             {
-                            case EXPR_SHFL:
-                                if (e2l > 8) e2l = 8;
-                                val = e1 << e2l;
-                                break;
-                            case EXPR_SHFR:
-                                if (e2l > 8) e2l = 8;
-                                val = e1 >> e2l;
-                                break;
-                            case EXPR_SETB:
-                                if (e2l > 7)
-                                    val = e1;
-                                else
-                                    val = bitSet(e1, e2l);
-                                break;
-                            case EXPR_CLRB:
-                                if (e2l > 7)
-                                    val = e1;
-                                else
-                                    val = bitClear(e1, e2l);
-                                break;
+                            if (exprOp == EXPR_SETB)
+                                val = bitSet(e1, e2l);
+                            else
+                                val = bitClear(e1, e2l);
                             }
                         }
                     break;
@@ -542,18 +539,11 @@ uint8_t evalWord8Expr(byte **ppExpr, CONTEXT *context)
         case EXPR_LIST8:
             switch (exprOp)
                 {
-                case EXPRL_LEN:
-                    *ppExpr += 2; // Use Type and command byte
-                    listMem = evalList8Expr(ppExpr, context, &alloc);
-                    val = listMem[2];
-                    if (alloc)
-                        free(listMem);
-                    break;
                 case EXPRL_ELEM:
                     *ppExpr += 2; // Use Type and command byte
                     listMem = evalList8Expr(ppExpr, context, &alloc);
-                    index = evalWord8Expr(ppExpr, context);
-                    if (index < listMem[2])
+                    index = evalInt32Expr(ppExpr, context);
+                    if (index >= 0 && index < listMem[2])
                         val = listMem[3+index];
                     else // ToDo: handle out of bound index
                         val = 0;
@@ -689,7 +679,7 @@ int8_t evalInt8Expr(byte **ppExpr, CONTEXT *context)
                     break;
                 case EXPR_MOD:
                     e3 = e1 % e2;
-                    if ((e3!=0) && ((e3<0) != (e2<0))) 
+                    if ((e3!=0) && ((e3<0) != (e2<0)))
                         e3 += e2;
                     val = e3;
                     break;
@@ -702,32 +692,29 @@ int8_t evalInt8Expr(byte **ppExpr, CONTEXT *context)
             *ppExpr += 2; // Use Type and command byte
             e1 = evalInt8Expr(ppExpr, context);
             e2l = evalInt32Expr(ppExpr, context);
-            if (e2l < 0)
-                val = 0;
+            if (exprOp == EXPR_SHFL || exprOp == EXPR_SHFR)
+                {
+                if (e2l < 0)
+                    val = 0;
+                else
+                    {
+                    if (e2l > 8) e2l = 8;
+                    if (exprOp == EXPR_SHFL)
+                        val = e1 << e2l;
+                    else
+                        val = e1 >> e2l;
+                    }
+                }
             else
                 {
-                switch(exprOp)
+                if (e2l > 7)
+                    val = e1;
+                else
                     {
-                    case EXPR_SHFL:
-                        if (e2l > 8) e2l = 8;
-                        val = e1 << e2l;
-                        break;
-                    case EXPR_SHFR:
-                        if (e2l > 8) e2l = 8;
-                        val = e1 >> e2l;
-                        break;
-                    case EXPR_SETB:
-                        if (e2l > 7)
-                            val = e1;
-                        else
-                            val = bitSet(e1, e2l);
-                        break;
-                    case EXPR_CLRB:
-                        if (e2l > 7)
-                            val = e1;
-                        else
-                            val = bitClear(e1, e2l);
-                        break;
+                    if (exprOp == EXPR_SETB)
+                        val = bitSet(e1, e2l);
+                    else
+                        val = bitClear(e1, e2l);
                     }
                 }
             break;
@@ -865,32 +852,29 @@ uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context)
             *ppExpr += 2; // Use Type and command byte
             e1 = evalWord16Expr(ppExpr, context);
             e2l = evalInt32Expr(ppExpr, context);
-            if (e2l < 0)
-                val = 0;
+            if (exprOp == EXPR_SHFL || exprOp == EXPR_SHFR)
+                {
+                if (e2l < 0)
+                    val = 0;
+                else
+                    {
+                    if (e2l > 16) e2l = 16;
+                    if (exprOp == EXPR_SHFL)
+                        val = e1 << e2l;
+                    else
+                        val = e1 >> e2l;
+                    }
+                }
             else
                 {
-                switch(exprOp)
+                if (e2l > 15)
+                    val = e1;
+                else
                     {
-                    case EXPR_SHFL:
-                        if (e2l > 16) e2l = 16;
-                        val = e1 << e2l;
-                        break;
-                    case EXPR_SHFR:
-                        if (e2l > 16) e2l = 16;
-                        val = e1 >> e2l;
-                        break;
-                    case EXPR_SETB:
-                        if (e2l > 15)
-                            val = e1;
-                        else
-                            val = bitSet(e1, e2l);
-                        break;
-                    case EXPR_CLRB:
-                        if (e2l > 15)
-                            val = e1;
-                        else
-                            val = bitClear(e1, e2l);
-                        break;
+                    if (exprOp == EXPR_SETB)
+                        val = bitSet(e1, e2l);
+                    else
+                        val = bitClear(e1, e2l);
                     }
                 }
             break;
@@ -923,7 +907,7 @@ uint16_t evalWord16Expr(byte **ppExpr, CONTEXT *context)
         return val;
     }
 
-int16_t evalInt16Expr(byte **ppExpr, CONTEXT *context) 
+int16_t evalInt16Expr(byte **ppExpr, CONTEXT *context)
     {
     byte *pExpr = *ppExpr;
     byte exprOp = pExpr[1];
@@ -1033,7 +1017,7 @@ int16_t evalInt16Expr(byte **ppExpr, CONTEXT *context)
                     break;
                 case EXPR_MOD:
                     e3 = e1 % e2;
-                    if ((e3!=0) && ((e3<0) != (e2<0))) 
+                    if ((e3!=0) && ((e3<0) != (e2<0)))
                         e3 += e2;
                     val = e3;
                     break;
@@ -1046,32 +1030,29 @@ int16_t evalInt16Expr(byte **ppExpr, CONTEXT *context)
             *ppExpr += 2; // Use Type and command byte
             e1 = evalInt16Expr(ppExpr, context);
             e2l = evalInt32Expr(ppExpr, context);
-            if (e2l < 0)
-                val = 0;
+            if (exprOp == EXPR_SHFL || exprOp == EXPR_SHFR)
+                {
+                if (e2l < 0)
+                    val = 0;
+                else
+                    {
+                    if (e2l > 16) e2l = 16;
+                    if (exprOp == EXPR_SHFL)
+                        val = e1 << e2l;
+                    else
+                        val = e1 >> e2l;
+                    }
+                }
             else
                 {
-                switch(exprOp)
+                if (e2l > 15)
+                    val = e1;
+                else
                     {
-                    case EXPR_SHFL:
-                        if (e2l > 16) e2l = 16;
-                        val = e1 << e2l;
-                        break;
-                    case EXPR_SHFR:
-                        if (e2l > 16) e2l = 16;
-                        val = e1 >> e2l;
-                        break;
-                    case EXPR_SETB:
-                        if (e2l > 15)
-                            val = e1;
-                        else
-                            val = bitSet(e1, e2l);
-                        break;
-                    case EXPR_CLRB:
-                        if (e2l > 15)
-                            val = e1;
-                        else
-                            val = bitClear(e1, e2l);
-                        break;
+                    if (exprOp == EXPR_SETB)
+                        val = bitSet(e1, e2l);
+                    else
+                        val = bitClear(e1, e2l);
                     }
                 }
             break;
@@ -1107,6 +1088,7 @@ int16_t evalInt16Expr(byte **ppExpr, CONTEXT *context)
 uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context) 
     {
     byte *pExpr = *ppExpr;
+    byte exprType = pExpr[0] & EXPR_TYPE_MASK;
     byte exprOp = pExpr[1];
     uint32_t val = 0;
     uint32_t e1,e2;
@@ -1114,160 +1096,180 @@ uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context)
     bool conditional;
     uint16_t thenSize, elseSize;
     int refNum;
+    uint8_t *listMem;
     byte bind;
     byte *bindPtr;
+    bool alloc;
 
     context->left = false;
-    switch (exprOp)
+    if (exprType == EXPR_WORD32)
         {
-        case EXPR_BIND:
-            bind = pExpr[2];
-            if (!context->bind)
-                {
-                val = 0;
-                }
-            else
-                {
-                bindPtr = &context->bind[bind * BIND_SPACING];
-                val = evalWord32Expr(&bindPtr, context);
-                }
-            *ppExpr += 3; // Use Type, Cmd and Bind Index bytes
-            break;
-        case EXPR_LIT:
-            memcpy((byte *) &val, &pExpr[2], sizeof(uint32_t));
-            *ppExpr += 2 + sizeof(uint32_t); // Use Type, Cmd and Value bytes
-            break;
-        case EXPR_REF:
-            refNum = pExpr[2];
-            val = readRefWord32(refNum);
-            *ppExpr += 3; // Use Type, Cmd and Ref bytes
-            break;
-        case EXPR_LEFT:
-            *ppExpr += 2; // Use Type and Cmd bytes
-            val = evalWord32Expr(ppExpr, context);
-            context->left = true;
-            break;
-        case EXPR_NEG:
-        case EXPR_SIGN:
-        case EXPR_COMP:
-            *ppExpr += 2; // Use Type and command byte
-            e1 = evalWord32Expr(ppExpr, context);
-            if (exprOp == EXPR_NEG)
-                val = -e1;
-            else if (exprOp == EXPR_SIGN)
-                val = e1 == 0 ? 0 : 1;
-            else
-                val = ~e1;
-            break;
-        case EXPR_AND:
-        case EXPR_OR:
-        case EXPR_XOR:
-        case EXPR_ADD:
-        case EXPR_SUB:
-        case EXPR_MULT:
-        case EXPR_DIV:
-        case EXPR_REM:
-        case EXPR_QUOT:
-        case EXPR_MOD:
-            *ppExpr += 2; // Use Type and command byte
-            e1 = evalWord32Expr(ppExpr, context);
-            e2 = evalWord32Expr(ppExpr, context);
-            switch(exprOp)
-                {
-                case EXPR_AND:
-                    val = e1 & e2;
-                    break;
-                case EXPR_OR:
-                    val = e1 | e2;
-                    break;
-                case EXPR_XOR:
-                    val = e1 ^ e2;
-                    break;
-                case EXPR_ADD:
-                    val = e1 + e2;
-                    break;
-                case EXPR_SUB:
-                    val = e1 - e2;
-                    break;
-                case EXPR_MULT:
-                    val = e1 * e2;
-                    break;
-                case EXPR_DIV:
-                case EXPR_QUOT:
-                    val = e1 / e2;
-                    break;
-                case EXPR_REM:
-                case EXPR_MOD:
-                    val = e1 % e2;
-                    break;
-                }
-            break;
-        case EXPR_SHFR:
-        case EXPR_SHFL:
-        case EXPR_SETB:
-        case EXPR_CLRB:
-            *ppExpr += 2; // Use Type and command byte
-            e1 = evalWord32Expr(ppExpr, context);
-            e2l = evalInt32Expr(ppExpr, context);
-            if (e2l < 0)
-                val = 0;
-            else
-                {
+        switch (exprOp)
+            {
+            case EXPR_BIND:
+                bind = pExpr[2];
+                if (!context->bind)
+                    {
+                    val = 0;
+                    }
+                else
+                    {
+                    bindPtr = &context->bind[bind * BIND_SPACING];
+                    val = evalWord32Expr(&bindPtr, context);
+                    }
+                *ppExpr += 3; // Use Type, Cmd and Bind Index bytes
+                break;
+            case EXPR_LIT:
+                memcpy((byte *) &val, &pExpr[2], sizeof(uint32_t));
+                *ppExpr += 2 + sizeof(uint32_t); // Use Type, Cmd and Value bytes
+                break;
+            case EXPR_REF:
+                refNum = pExpr[2];
+                val = readRefWord32(refNum);
+                *ppExpr += 3; // Use Type, Cmd and Ref bytes
+                break;
+            case EXPR_LEFT:
+                *ppExpr += 2; // Use Type and Cmd bytes
+                val = evalWord32Expr(ppExpr, context);
+                context->left = true;
+                break;
+            case EXPR_NEG:
+            case EXPR_SIGN:
+            case EXPR_COMP:
+                *ppExpr += 2; // Use Type and command byte
+                e1 = evalWord32Expr(ppExpr, context);
+                if (exprOp == EXPR_NEG)
+                    val = -e1;
+                else if (exprOp == EXPR_SIGN)
+                    val = e1 == 0 ? 0 : 1;
+                else
+                    val = ~e1;
+                break;
+            case EXPR_AND:
+            case EXPR_OR:
+            case EXPR_XOR:
+            case EXPR_ADD:
+            case EXPR_SUB:
+            case EXPR_MULT:
+            case EXPR_DIV:
+            case EXPR_REM:
+            case EXPR_QUOT:
+            case EXPR_MOD:
+                *ppExpr += 2; // Use Type and command byte
+                e1 = evalWord32Expr(ppExpr, context);
+                e2 = evalWord32Expr(ppExpr, context);
                 switch(exprOp)
                     {
-                    case EXPR_SHFL:
-                        if (e2l > 32) e2l = 32;
-                        val = e1 << e2l;
+                    case EXPR_AND:
+                        val = e1 & e2;
                         break;
-                    case EXPR_SHFR:
-                        if (e2l > 32) e2l = 32;
-                        val = e1 >> e2l;
+                    case EXPR_OR:
+                        val = e1 | e2;
                         break;
-                    case EXPR_SETB:
-                        if (e2l > 31)
-                            val = e1;
-                        else
-                            val = bitSet(e1, e2l);
+                    case EXPR_XOR:
+                        val = e1 ^ e2;
                         break;
-                    case EXPR_CLRB:
-                        if (e2l > 31)
-                            val = e1;
-                        else
-                            val = bitClear(e1, e2l);
+                    case EXPR_ADD:
+                        val = e1 + e2;
+                        break;
+                    case EXPR_SUB:
+                        val = e1 - e2;
+                        break;
+                    case EXPR_MULT:
+                        val = e1 * e2;
+                        break;
+                    case EXPR_DIV:
+                    case EXPR_QUOT:
+                        val = e1 / e2;
+                        break;
+                    case EXPR_REM:
+                    case EXPR_MOD:
+                        val = e1 % e2;
                         break;
                     }
-                }
-            break;
-        case EXPR_FINT:
-            *ppExpr += 2; // Use Type and command byte
-            val = evalInt32Expr(ppExpr, context);
-            break;
-        case EXPR_IF:
-            memcpy((byte *) &thenSize, &pExpr[2], sizeof(uint16_t));
-            memcpy((byte *) &elseSize, &pExpr[4], sizeof(uint16_t));
-            *ppExpr += 2 + 2*sizeof(uint16_t); // Use Type, Cmd and Value bytes
-            conditional = evalBoolExpr(ppExpr, context);
-            if (conditional)
-                {
-                val = evalWord32Expr(ppExpr, context);
-                *ppExpr += elseSize;
-                }
-            else
-                {
-                *ppExpr += thenSize;
-                val = evalWord32Expr(ppExpr, context);
-                }
-            break;
-        default:
-#ifdef DEBUG
-            sendStringf("eW32E:O%d", exprOp);
-#endif
-            break;
+                break;
+            case EXPR_SHFR:
+            case EXPR_SHFL:
+            case EXPR_SETB:
+            case EXPR_CLRB:
+                *ppExpr += 2; // Use Type and command byte
+                e1 = evalWord32Expr(ppExpr, context);
+                e2l = evalInt32Expr(ppExpr, context);
+                if (exprOp == EXPR_SHFL || exprOp == EXPR_SHFR)
+                    {
+                    if (e2l < 0)
+                        val = 0;
+                    else
+                        {
+                        if (e2l > 32) e2l = 32;
+                        if (exprOp == EXPR_SHFL)
+                            val = e1 << e2l;
+                        else
+                            val = e1 >> e2l;
+                        }
+                    }
+                else
+                    {
+                    if (e2l > 31)
+                        val = e1;
+                    else
+                        {
+                        if (exprOp == EXPR_SETB)
+                            val = bitSet(e1, e2l);
+                        else
+                            val = bitClear(e1, e2l);
+                        }
+                    }
+                break;
+            case EXPR_FINT:
+                *ppExpr += 2; // Use Type and command byte
+                val = evalInt32Expr(ppExpr, context);
+                break;
+            case EXPR_IF:
+                memcpy((byte *) &thenSize, &pExpr[2], sizeof(uint16_t));
+                memcpy((byte *) &elseSize, &pExpr[4], sizeof(uint16_t));
+                *ppExpr += 2 + 2*sizeof(uint16_t); // Use Type, Cmd and Value bytes
+                conditional = evalBoolExpr(ppExpr, context);
+                if (conditional)
+                    {
+                    val = evalWord32Expr(ppExpr, context);
+                    *ppExpr += elseSize;
+                    }
+                else
+                    {
+                    *ppExpr += thenSize;
+                    val = evalWord32Expr(ppExpr, context);
+                    }
+                break;
+            default:
+    #ifdef DEBUG
+                sendStringf("eW32E:O%d", exprOp);
+    #endif
+                break;
+            }
+        }
+    else 
+        {
+        switch (exprOp)
+            {
+            case EXPRL_LEN:
+                *ppExpr += 2; // Use Type and command byte
+                listMem = evalList8Expr(ppExpr, context, &alloc);
+                val = listMem[2];
+                if (alloc)
+                    free(listMem);
+                break;
+            default:
+    #ifdef DEBUG
+                sendStringf("eW32E:O%d", exprOp);
+    #endif
+                break;
+            }
         }
         return val;
     }
 
-int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context) 
+int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context)
     {
     byte *pExpr = *ppExpr;
     byte exprType = pExpr[0] & EXPR_TYPE_MASK;
@@ -1319,7 +1321,7 @@ int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context)
             case EXPR_SIGN:
             case EXPR_COMP:
                 *ppExpr += 2; // Use Type and command byte
-                e1 = evalWord32Expr(ppExpr, context);
+                e1 = evalInt32Expr(ppExpr, context);
                 if (exprOp == EXPR_NEG)
                     val = -e1;
                 else if (exprOp == EXPR_SIGN)
@@ -1382,7 +1384,7 @@ int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context)
                         break;
                     case EXPR_MOD:
                         e3 = e1 % e2;
-                        if ((e3!=0) && ((e3<0) != (e2<0))) 
+                        if ((e3!=0) && ((e3<0) != (e2<0)))
                             e3 += e2;
                         val = e3;
                         break;
@@ -1395,35 +1397,32 @@ int32_t evalInt32Expr(byte **ppExpr, CONTEXT *context)
                 *ppExpr += 2; // Use Type and command byte
                 e1 = evalInt32Expr(ppExpr, context);
                 e2l = evalInt32Expr(ppExpr, context);
-                if (e2l < 0)
-                    val = 0;
-                else
+                if (exprOp == EXPR_SHFL || exprOp == EXPR_SHFR)
                     {
-                    switch(exprOp)
+                    if (e2l < 0)
+                        val = 0;
+                    else
                         {
-                        case EXPR_SHFL:
-                            if (e2l > 32) e2l = 32;
+                        if (e2l > 32) e2l = 32;
+                        if (exprOp == EXPR_SHFL)
                             val = e1 << e2l;
-                            break;
-                        case EXPR_SHFR:
-                            if (e2l > 32) e2l = 32;
+                        else
                             val = e1 >> e2l;
-                            break;
-                        case EXPR_SETB:
-                            if (e2l > 31)
-                                val = e1;
-                            else
-                                val = bitSet(e1, e2l);
-                            break;
-                        case EXPR_CLRB:
-                            if (e2l > 31)
-                                val = e1;
-                            else
-                                val = bitClear(e1, e2l);
-                            break;
                         }
                     }
-                break;
+                else
+                    {
+                    if (e2l > 31)
+                        val = e1;
+                    else
+                        {
+                        if (exprOp == EXPR_SETB)
+                            val = bitSet(e1, e2l);
+                        else
+                            val = bitClear(e1, e2l);
+                        }
+                    }
+                    break;
             case EXPR_TINT:
             case EXPR_FINT:
                 *ppExpr += 2; // Use Type and command byte
