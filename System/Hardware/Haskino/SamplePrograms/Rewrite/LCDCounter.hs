@@ -68,8 +68,8 @@ getKey button = do
             v <- analogRead button
             case v of
               _ | v < 30  -> return (keyValue KeyRight)
-              _ | v < 150 -> return (keyValue KeyUp)
-              _ | v < 350 -> return (keyValue KeyDown)
+              _ | v < 180 -> return (keyValue KeyUp)
+              _ | v < 360 -> return (keyValue KeyDown)
               _ | v < 535 -> return (keyValue KeyLeft)
               _ | v < 760 -> return (keyValue KeySelect)
               _           -> analogKey
