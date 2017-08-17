@@ -1779,11 +1779,11 @@ compileIfThenElseEitherProcedure t1 t2 e cb1 cb2 = do
     case r1 of
         ExprLeft a -> do
             if t1 == UnitType then return LitUnit
-            else if t1 == List8Type then compileLine $ "listAssign(&" ++ bindName ++ show (fst ibs) ++ ", " ++ compileExpr a ++ ");"
+            else if t1 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show (fst ibs) ++ ", " ++ compileExpr a ++ ");"
             else compileLineIndent $ bindName ++ show (fst ibs) ++ " = " ++ compileExpr a ++ ";"
         ExprRight b -> do
             if t2 == UnitType then return LitUnit
-            else if t2 == List8Type then compileLine $ "listAssign(&" ++ bindName ++ show (snd ibs) ++ ", " ++ compileExpr b ++ ");"
+            else if t2 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show (snd ibs) ++ ", " ++ compileExpr b ++ ");"
             else compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ compileExpr b ++ ";"
             compileLineIndent "break;"
     compileLineIndent "}"
@@ -1792,11 +1792,11 @@ compileIfThenElseEitherProcedure t1 t2 e cb1 cb2 = do
     case r2 of
         ExprLeft a -> do
             if (t1 == UnitType) then return LitUnit
-            else if t1 == List8Type then compileLine $ "listAssign(&" ++ bindName ++ show (fst ibs) ++ ", " ++ compileExpr a ++ ");"
+            else if t1 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show (fst ibs) ++ ", " ++ compileExpr a ++ ");"
             else compileLineIndent $ bindName ++ show (fst ibs) ++ " = " ++ compileExpr a ++ ";"
         ExprRight b -> do
             if (t2 == UnitType) then return LitUnit
-            else if t2 == List8Type then compileLine $ "listAssign(&" ++ bindName ++ show (snd ibs) ++ ", " ++ compileExpr b ++ ");"
+            else if t2 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show (snd ibs) ++ ", " ++ compileExpr b ++ ");"
             else compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ compileExpr b ++ ";"
             compileLineIndent "break;"
     compileLineIndent "}"
