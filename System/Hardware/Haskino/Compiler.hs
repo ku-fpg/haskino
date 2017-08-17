@@ -1778,10 +1778,12 @@ compileIfThenElseEitherProcedure t1 t2 e cb1 cb2 = do
     r1 <- compileCodeBlock cb1
     case r1 of
         ExprLeft a -> do
-            if (t1 == UnitType) then return LitUnit
+            if t1 == UnitType then return LitUnit
+            else if t1 == List8Type then compileLine $ "listAssign(&" ++ bindName ++ show (fst ibs) ++ ", " ++ compileExpr a ++ ");"
             else compileLineIndent $ bindName ++ show (fst ibs) ++ " = " ++ compileExpr a ++ ";"
         ExprRight b -> do
-            if (t2 == UnitType) then return LitUnit
+            if t2 == UnitType then return LitUnit
+            else if t2 == List8Type then compileLine $ "listAssign(&" ++ bindName ++ show (snd ibs) ++ ", " ++ compileExpr b ++ ");"
             else compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ compileExpr b ++ ";"
             compileLineIndent "break;"
     compileLineIndent "}"
@@ -1790,9 +1792,11 @@ compileIfThenElseEitherProcedure t1 t2 e cb1 cb2 = do
     case r2 of
         ExprLeft a -> do
             if (t1 == UnitType) then return LitUnit
+            else if t1 == List8Type then compileLine $ "listAssign(&" ++ bindName ++ show (fst ibs) ++ ", " ++ compileExpr a ++ ");"
             else compileLineIndent $ bindName ++ show (fst ibs) ++ " = " ++ compileExpr a ++ ";"
         ExprRight b -> do
             if (t2 == UnitType) then return LitUnit
+            else if t2 == List8Type then compileLine $ "listAssign(&" ++ bindName ++ show (snd ibs) ++ ", " ++ compileExpr b ++ ");"
             else compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ compileExpr b ++ ";"
             compileLineIndent "break;"
     compileLineIndent "}"
@@ -1806,7 +1810,10 @@ compileIterateProcedure ta tb b1 b1e b2 b2e iv bf = do
     put s {iterBinds = (b1, b2):iterBinds s}
     compileAllocBind $ compileTypeToString ta ++ " " ++ bindName ++ show b1 ++ ";"
     compileAllocBind $ compileTypeToString tb ++ " " ++ bindName ++ show b2 ++ ";"
-    compileLine $ bindName ++ show b1 ++ " = " ++ compileExpr iv ++ ";"
+
+    if ta == List8Type
+    then compileLine $ "listAssign(&" ++ bindName ++ show b1 ++ ", " ++ compileExpr iv ++ ");"
+    else compileLine $ bindName ++ show b1 ++ " = " ++ compileExpr iv ++ ";"
     compileLine $ "while (1)"
     r <- compileCodeBlock $ bf b1e
     compileLineIndent "}"
