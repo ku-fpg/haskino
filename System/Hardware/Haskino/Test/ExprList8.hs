@@ -243,14 +243,14 @@ main = do
     conn <- openArduino False "/dev/cu.usbmodem1421"
     refL <- send conn $ newRemoteRefE (lit [])
     refW8 <- send conn $ newRemoteRefE (lit 0)
-    -- refI <- send conn $ newRemoteRefE (lit 0)
+    refI <- send conn $ newRemoteRefE (lit 0)
     refB <- send conn $ newRemoteRefE (lit False)
     print "Cons Tests:"
     quickCheck (prop_cons conn refL)
     print "Apppend Tests:"
     quickCheck (prop_app conn refL)
-    -- print "Length Tests:"
-    --quickCheck (prop_len conn refI)
+    print "Length Tests:"
+    quickCheck (prop_len conn refI)
     print "Element Tests:"
     quickCheck (prop_elem conn refW8)
     print "Head Tests:"

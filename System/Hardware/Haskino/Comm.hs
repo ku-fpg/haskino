@@ -248,6 +248,7 @@ sendProcedureCmds c (NewRemoteRefW32E r) cmds = sendRemoteBindingCmds c (NewRemo
 sendProcedureCmds c (NewRemoteRefI8E r) cmds = sendRemoteBindingCmds c (NewRemoteRefI8E r) cmds
 sendProcedureCmds c (NewRemoteRefI16E r) cmds = sendRemoteBindingCmds c (NewRemoteRefI16E r) cmds
 sendProcedureCmds c (NewRemoteRefI32E r) cmds = sendRemoteBindingCmds c (NewRemoteRefI32E r) cmds
+sendProcedureCmds c (NewRemoteRefIE r) cmds = sendRemoteBindingCmds c (NewRemoteRefIE r) cmds
 sendProcedureCmds c (NewRemoteRefL8E r) cmds = sendRemoteBindingCmds c (NewRemoteRefL8E r) cmds
 sendProcedureCmds c (NewRemoteRefFloatE r) cmds = sendRemoteBindingCmds c (NewRemoteRefFloatE r) cmds
 sendProcedureCmds c (LiftIO m) cmds = do
