@@ -36,6 +36,9 @@ litEval8 (LitW8 w) = w
 litEvalB :: Expr Bool -> Bool
 litEvalB (LitB b) = b
 
+litEvalI :: Expr Int -> Int
+litEvalI (LitI i) = i
+
 stringToBytes :: String -> [Word8]
 stringToBytes s = map (\d -> fromIntegral $ ord d) s
 
@@ -69,18 +72,18 @@ prop_tail c r (NonEmpty xs) = monadicIO $ do
         return v
     assert (local == litEvalL remote)
 
-prop_len :: ArduinoConnection -> RemoteRef Word8 -> [Word8] -> Property
-prop_len c r xs = monadicIO $ do
+prop_len :: ArduinoConnection -> RemoteRef Int -> [Word8] -> Property
+prop_len c ri xs = monadicIO $ do
     let local = length xs
     remote <- run $ send c $ do
-        writeRemoteRefE r $ len (lit xs)
-        v <- readRemoteRefE r
+        writeRemoteRefE ri $ len (lit xs)
+        v <- readRemoteRefE ri
         return v
-    assert (local == (fromIntegral $ litEval8 remote))
+    assert (local == (fromIntegral $ litEvalI remote))
 
 prop_elem :: ArduinoConnection -> RemoteRef Word8 -> NonEmptyList Word8 -> Property
 prop_elem c r (NonEmpty xs) = 
-    forAll (choose (0::Word8, fromIntegral $ length xs - 1)) $ \e ->
+    forAll (choose (0::Int, fromIntegral $ length xs - 1)) $ \e ->
         monadicIO $ do
             let local = xs !! (fromIntegral e)
             remote <- run $ send c $ do
@@ -240,15 +243,16 @@ main = do
     conn <- openArduino False "/dev/cu.usbmodem1421"
     refL <- send conn $ newRemoteRefE (lit [])
     refW8 <- send conn $ newRemoteRefE (lit 0)
+    -- refI <- send conn $ newRemoteRefE (lit 0)
     refB <- send conn $ newRemoteRefE (lit False)
     print "Cons Tests:"
     quickCheck (prop_cons conn refL)
     print "Apppend Tests:"
     quickCheck (prop_app conn refL)
-    print "Length Tests:"
-    quickCheck (prop_len conn refW8)
+    -- print "Length Tests:"
+    --quickCheck (prop_len conn refI)
     print "Element Tests:"
-    quickCheck (prop_len conn refW8)
+    quickCheck (prop_elem conn refW8)
     print "Head Tests:"
     quickCheck (prop_head conn refW8)
     print "Tail Tests:"
