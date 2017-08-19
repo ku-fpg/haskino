@@ -6,15 +6,25 @@
 -- Stability   :  experimental
 --
 -- Push rep through case alternatives
+-- This pass is used to push rep_ expressions through case alternatives.
+-- This will only be used to translate case expressions that match on a
+-- type that is not in the ExprB type class of the deep expression langauge,
+-- but the result type of the case is of a ExprB type:
+-- Its transformation does the following:
+--
+-- forall (a1 :: ExprB a => a) ... (an :: ExprB a => a)
+-- rep (case c of e1 -> a1 ... cn -> an)
+--    =
+-- case c of e1 -> rep_ a1 ... cn -> rep_ an
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 module System.Hardware.Haskino.ShallowDeepPlugin.RepCasePushPass (repCasePushPass) where
 
-import CoreMonad
-import GhcPlugins
-import Data.Functor
 import Control.Monad.Reader
+import CoreMonad
+import Data.Functor
+import GhcPlugins
 import Var
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils

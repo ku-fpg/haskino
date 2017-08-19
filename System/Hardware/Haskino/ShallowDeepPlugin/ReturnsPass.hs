@@ -5,16 +5,21 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- return express transformation pass
+-- return expression transformation pass
+--  forall (x :: ExprB a => a)
+--    return x
+--      =
+--    abs <$> return (rep x)
+--
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 module System.Hardware.Haskino.ShallowDeepPlugin.ReturnsPass (returnsPass) where
 
-import CoreMonad
-import GhcPlugins
-import Data.Functor
 import Control.Monad.Reader
+import CoreMonad
+import Data.Functor
+import GhcPlugins
 import Var
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils

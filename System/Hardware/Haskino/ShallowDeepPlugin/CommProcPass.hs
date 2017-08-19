@@ -5,19 +5,28 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Conditional Transformation Pass
--- if b then t else e ==> ifThenElse[Unit]E (rep b) t e
+-- Command/Procedure Transformation Pass
+-- Performs the equivelent of the following rule:
+--
+-- forall (proc :: Arduino a) (arg1 :: ExprB a1 => a1) ... (argn :: ExprB => an).
+-- proc arg1 .. argn
+--   = 
+-- abs_ <$> (procE (rep_ arg1) ... (rep_ argn))
+--
+-- Where proc and procE are the shallow and deep versions of a command
+-- or procedure respectively.  The commands and procedures to translate are
+-- specified in the xlatList data table.
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 module System.Hardware.Haskino.ShallowDeepPlugin.CommProcPass (commProcPass) where
 
+import Control.Monad.Reader
 import CoreMonad
+import Data.Functor
+import Data.List
 import GhcPlugins
 import Type
-import Data.List
-import Data.Functor
-import Control.Monad.Reader
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 

@@ -6,12 +6,12 @@
 -- Stability   :  experimental
 --
 -- Rep Abs Fusion Pass - Performs the equivelent of the following rules:
---    forall x.
+--    forall (x :: ExprB a => a)
 --    rep_(abs_(x))
 --      =
 --    x
 --
---    forall (m :: Arduino (Expr Bool)).
+--    forall (m :: ExprB a => Arduino (Expr a)).
 --    rep_ <$> (abs_ <$> m)
 --      =
 --    m

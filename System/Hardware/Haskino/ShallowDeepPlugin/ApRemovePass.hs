@@ -5,19 +5,23 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Conditional Transformation Pass
--- if b then t else e ==> ifThenElse[Unit]E (rep b) t e
+-- Removal of ($) app calls pass
+-- This pass removes all instances of the application of the ($) function.
+-- For example,
+-- a <$> b c
+--    =
+-- a (b c)
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 module System.Hardware.Haskino.ShallowDeepPlugin.ApRemovePass (apRemovePass) where
 
+import Control.Monad.Reader
 import CoreMonad
-import GhcPlugins
-import Type
 import Data.List
 import Data.Functor
-import Control.Monad.Reader
+import GhcPlugins
+import Type
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 
@@ -63,6 +67,9 @@ apRemoveExpr e = do
               e1' <- apRemoveExpr e1
               e2' <- apRemoveExpr e2
               return $ App e1' e2'
+      -- Pattern match instances of:
+      -- <$> :$ Type t1 :$ Type t2 :$ dict :$ f :$ g
+      -- and replace with f :$ g
       case f of
           Var fv | fv == apId -> do
               case args of

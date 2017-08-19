@@ -48,8 +48,7 @@ install _ todo = do
   let absThenToDo = [CoreDoPluginPass "AbsThen" absThenPass]
   let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
   let showToDo = [CoreDoPluginPass "ShowPass" showPass]
--- ToDo: the BindChangeArgRetAppPass and RecurPass need work to handle Let's and Cases
---  embedded in the bind sequence.  (And maybe AbsLambdsPass too?)
+
   return $ [simplPass] ++ apRemoveToDo ++ condToDo ++ commProcToDo ++ returnsToDo ++
            bindArgRetAppToDo ++ repCasePushToDo ++ repPushToDo ++ absLambdaToDo ++
            repAbsFuseToDo ++ recurToDo ++ absThenToDo ++ todo -- ++ dumpToDo

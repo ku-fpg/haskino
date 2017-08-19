@@ -6,32 +6,60 @@
 -- Stability   :  experimental
 --
 -- Local bind argument and return type change pass
--- f :: a -> ... -> c -> d ==> f :: Expr a  -> ... -> Expr c -> Expr d
--- It does this by changing the type of the argument, and then replacing
--- each occurnace of (rep_ a) of the argument 'a' with just the type
--- changed argument itself.
--- It does this by inserting a rep_ <$> to the last expresion of the bind
--- chain for the local bind to change the return type.
+-- Performs the following transformations:
 --
--- Local bind call site type change pass:
--- forall (f: a -> .. b -> Arduino a).
--- f aa .. ab
---   =
--- abs_ <$> f (rep aa) .. (rep ab)
+-- forall (f :: ExprB a,b,c,d => a -> ... -> c -> d)
+--  f :: a -> ... -> c -> d 
+--    =
+--  f_deep :: Expr a  -> ... -> Expr c -> Expr d
+-- 
+-- It does this by changing the types of the argument and return
+-- of the function, and then replacing occurance of one of
+-- the arguments in the body of the function with 'rep' applied to the
+-- argument.  To change the type of the body, it applies a 'rep <$>'
+-- to the last expresion of the bind chain for the local bind.
+-- 
+-- Once this new deep function has been created with a body
+-- that is a transformed version of the shallow function's body,
+-- the shallow function body may be rewritten in terms of the 
+-- deep version:
+--
+-- f = abs_ <$> f_deep (rep_ a) ... (rep_ c)
+--
+-- (Note:  In creating the deep function, any arguments
+--  that are not of the ExprB type will be left unchanged.)
+--
+-- The next transformation is to transform any applications of the
+-- transformed functions in other binds with:
+--   forall (f: a -> .. b -> Arduino a).
+--   f aa .. ab
+--     =
+--   abs_ <$> f_deep (rep aa) .. (rep ab)
+--
+-- Note, the above transformations allow the transformation to
+-- work across multiple Haskell modules.  The shallow versions
+-- will be used by the Haskell typechecking on modules that are
+-- dependednt on the trnasformed one, while calls in the body
+-- of local functions which call functions in the external module
+-- will be transformed to use exported deep versions.
+--
+-- The data structure commProcList is used to list deep versions
+-- of the DSL commands/procedures, so that the transformation does
+-- not attempt to look for these in an external transformed module.
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 module System.Hardware.Haskino.ShallowDeepPlugin.BindChangeArgPass (bindChangeArgRetAppPass) where
 
-import CoreMonad
-import GhcPlugins
-import Avail
-import NameSet
-import Var
-import Data.Functor
-import Data.List
-import qualified Data.Map as M
-import Control.Monad.State
+import           Avail
+import           Control.Monad.State
+import           CoreMonad
+import           Data.Functor
+import           Data.List
+import qualified Data.Map             as M
+import           GhcPlugins
+import           NameSet
+import           Var
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 

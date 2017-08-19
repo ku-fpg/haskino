@@ -6,7 +6,9 @@
 -- Stability   :  experimental
 --
 -- Worker-Wrapper push through lambda pass
--- forall (f :: Arduino a) (g :: a -> Arduino (Expr b)) (k :: b -> Arduino c).
+-- forall (f :: ExprB a => Arduino a) 
+--   (g :: ExprB a,b => a -> Arduino (Expr b)) 
+--   (k :: ExprB b, c => b -> Arduino c).
 --     (f >>= (abs_ <$> g)) >>= k
 --        =
 --     (f >>= g) >>= k . abs_
@@ -16,16 +18,16 @@
 -- forall (f :: Arduino a).
 --     (\x -> F[x]).abs
 --        =
---     (\x' -> let x=abs(x') in F[x])
+--     (\x' -> let x=abs_(x') in F[x])
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 module System.Hardware.Haskino.ShallowDeepPlugin.AbsLambdaPass (absLambdaPass) where
 
-import CoreMonad
-import GhcPlugins
-import Data.Functor
 import Control.Monad.Reader
+import CoreMonad
+import Data.Functor
+import GhcPlugins
 import OccName
 import Var
 

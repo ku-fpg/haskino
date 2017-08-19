@@ -61,25 +61,25 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            notNameTH,
                                            returnNameTH) where
 
-import CoreMonad
-import GhcPlugins
-import HscTypes
-import Data.Char
-import TcRnMonad
-import TcSMonad
-import TcSimplify
-import TcEvidence
-import ErrUtils
-import DsBinds
-import DsMonad (initDsTc)
-import Control.Arrow (first, second)
-import Control.Monad
-import Data.Functor
-import Data.Word
-import Encoding (zEncodeString)
-import OccName
-import Var
+import           Control.Arrow       (first, second)
+import           Control.Monad
+import           CoreMonad
+import           Data.Char
+import           Data.Functor
+import           Data.Word
+import           DsBinds
+import           DsMonad             (initDsTc)
+import           Encoding            (zEncodeString)
+import           ErrUtils
+import           GhcPlugins
+import           HscTypes
 import qualified Language.Haskell.TH as TH
+import           OccName
+import           TcRnMonad
+import           TcSMonad
+import           TcSimplify
+import           TcEvidence
+import           Var
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Typechecker (initTcFromModGuts)
 

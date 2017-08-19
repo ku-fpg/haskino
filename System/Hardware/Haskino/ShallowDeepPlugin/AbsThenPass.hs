@@ -5,9 +5,11 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Eliminate abs after >> pass
+-- Eliminate "abs after >>"" pass
+-- Applies the equivelent of this rule, to eliminate abs expressions which
+-- will never be evaluated due to Haskell lazy evaluation.
 -- forall (f :: Arduino (Expr a)) (g :: Arduino (Expr b))
---     (abs <$> f) >> g
+--     (abs_ <$> f) >> g
 --        =
 --     f >> g
 -------------------------------------------------------------------------------
@@ -15,10 +17,10 @@
 {-# LANGUAGE TemplateHaskell #-}
 module System.Hardware.Haskino.ShallowDeepPlugin.AbsThenPass (absThenPass) where
 
-import CoreMonad
-import GhcPlugins
-import Data.Functor
 import Control.Monad.Reader
+import CoreMonad
+import Data.Functor
+import GhcPlugins
 import Var
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils

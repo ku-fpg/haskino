@@ -6,35 +6,36 @@
 -- Stability   :  experimental
 --
 -- Rep Push Pass
--- This pass is only partially completed.  It is intended to do the rep
--- pushing as do rules like:
+-- This pass is used to transform shallow expressions into the 
+-- deep expression language.  It uses rules like the following:
+-- 
 --    forall (b1 :: Bool) (b2 :: Bool).
 --    rep_ (b1 || b2)
 --      =
 --    (rep_ b1) ||* (rep_ b2)
--- However, hadling for rules for the comparison operators such as
--- (>*) proved much harder than expected due to coercions, so
--- it is at this point incomplete and will not work with such ops.
+--
+-- Each of the from and to operations (in the example above '||' and
+-- '||*' are specified in the xlatList data table.
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 module System.Hardware.Haskino.ShallowDeepPlugin.RepPushPass (repPushPass) where
 
+import Control.Monad.Reader
 import CoreMonad
-import GhcPlugins
+import Data.Bits            as DB
+import Data.Boolean
+import Data.Boolean.Numbers as BN
+import Data.Boolean.Bits    as BB
 import Data.Functor
 import Data.List
-import Control.Monad.Reader
+import GhcPlugins
 import OccName
 import Var
 
+import System.Hardware.Haskino
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 
-import Data.Bits as DB
-import Data.Boolean
-import Data.Boolean.Numbers as BN
-import Data.Boolean.Bits as BB
-import System.Hardware.Haskino
 
 data XlatEntry = XlatEntry {  fromId         :: BindM Id
                             , toId           :: BindM Id

@@ -6,17 +6,29 @@
 -- Stability   :  experimental
 --
 -- Conditional Transformation Pass
--- if b then t else e ==> ifThenElse[Unit]E (rep b) t e
+-- Performs the equivelent of the following rules:
+--
+-- forall (b :: Bool) (t :: ExprB a => Arduino a) (f :: Expr a => Arduino a)
+-- if b then t else e 
+--    =
+-- abs_ <$> ifThenElseE (rep_ b) (rep_ <$> t) (rep_ <$> e)
+--
+-- And
+--
+-- forall (b :: Bool) (t :: ExprB a => a) (f :: ExprB a => a)
+-- if b then t else e 
+--    =
+-- abs_ (ifBE (rep_ b) (rep_ t) (rep_ e))
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 module System.Hardware.Haskino.ShallowDeepPlugin.CondPass (condPass) where
 
 import CoreMonad
-import GhcPlugins
-import Data.List
-import Data.Functor
 import Control.Monad.Reader
+import Data.Functor
+import Data.List
+import GhcPlugins
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 

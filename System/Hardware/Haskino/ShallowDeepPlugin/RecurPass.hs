@@ -11,12 +11,12 @@
 {-# LANGUAGE TemplateHaskell #-}
 module System.Hardware.Haskino.ShallowDeepPlugin.RecurPass (recurPass) where
 
+import Control.Monad.State
 import CoreMonad
+import Data.Functor
+import Data.List
 import GhcPlugins
 import Var
-import Data.List
-import Data.Functor
-import Control.Monad.State
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 
