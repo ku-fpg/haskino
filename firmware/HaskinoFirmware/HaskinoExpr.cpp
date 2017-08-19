@@ -1088,7 +1088,6 @@ int16_t evalInt16Expr(byte **ppExpr, CONTEXT *context)
 uint32_t evalWord32Expr(byte **ppExpr, CONTEXT *context) 
     {
     byte *pExpr = *ppExpr;
-    byte exprType = pExpr[0] & EXPR_TYPE_MASK;
     byte exprOp = pExpr[1];
     uint32_t val = 0;
     uint32_t e1,e2;
@@ -1839,8 +1838,8 @@ int evalList8SubExpr(byte **ppExpr, CONTEXT *context, byte *listMem, byte index)
         case EXPRL_SLIC:
             *ppExpr += 2; // Use Type and command byte
             size = evalList8SubExpr(ppExpr, context, listMem, index);
-            sindex = evalWord8Expr(ppExpr, context);
-            len = evalWord8Expr(ppExpr, context);
+            sindex = evalWord32Expr(ppExpr, context);
+            len = evalWord32Expr(ppExpr, context);
             if (len == 0)
                 {
                 if (sindex < size)
