@@ -152,7 +152,6 @@ transformRecur argTy retTy e = do
     bindId <- thNameToId bindNameTH
     thenId <- thNameToId bindThenNameTH
     fmapId <- thNameToId fmapNameTH
-    apId <- thNameToId apNameTH
     returnId <- thNameToId returnNameTH
     ifThenElseEitherId <- thNameToId ifThenElseEitherNameTH
     ifThenElseId <- thNameToId ifThenElseNameTH
@@ -198,22 +197,6 @@ transformRecur argTy retTy e = do
           monadDict <- thNameTyToDict monadClassTyConTH monadTyConTy
           let returnExpr = mkCoreApps (Var returnId) [Type monadTyConTy, monadDict, Type eitherTyp, leftExpr]
           return $ mkLams bs returnExpr
-          -- ... Or in the form of (Var funcId) $ arg
-      Var fv | fv == apId -> do
-          case args of
-              [_, _, _, _, Var fv', arg] | fv' == head funcId -> do
-                -- Generate the ExprLeft expression with the function arg
-                argDict <- thNameTyToDict exprClassTyConTH argTy
-                retDict <- thNameTyToDict exprClassTyConTH retTy
-                leftId <- thNameToId leftNameTH
-                let leftExpr = mkCoreApps (Var leftId) [Type argTy, Type retTy, argDict, retDict, arg]
-                -- Generate the return expression
-                monadTyConId <- thNameToTyCon monadTyConTH
-                let monadTyConTy = mkTyConTy monadTyConId
-                monadDict <- thNameTyToDict monadClassTyConTH monadTyConTy
-                let returnExpr = mkCoreApps (Var returnId) [Type monadTyConTy, monadDict, Type eitherTyp, leftExpr]
-                return $ mkLams bs returnExpr
-              _ -> return e -- TBD non-recursive call
       -- This branch is not a recursive call
       Var fv | fv == returnId -> do
           case args of
@@ -302,7 +285,6 @@ changeVarExprAlts f t ((ac, b, a) : as) = do
 
 recurSubExpr :: CoreExpr -> BindM CoreExpr
 recurSubExpr e = do
-  apId <- thNameToId apNameTH
   df <- liftCoreM getDynFlags
   case e of
     Var v -> return e
