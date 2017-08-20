@@ -274,36 +274,49 @@ fmapRepExpr tyConTy ty e = do
 
 fmapRepBindReturn :: PassCoreM m => CoreExpr -> m CoreExpr
 fmapRepBindReturn e = do
-    let (ls, e')  = collectLets e
-    let (bs, e'') = collectBinders e'
-    let (f, args) = collectArgs e''
-    bindId <- thNameToId bindNameTH
-    thenId <- thNameToId bindThenNameTH
-    case f of
-      Var fv -> do
-        if fv == bindId || fv == thenId
-        then do
-            la' <- fmapRepBindReturn $ last args
-            let args' = init args ++ [la']
-            return $ mkLets ls $ mkLams bs (mkCoreApps f args')
-        else do
-            let (tyCon,[ty']) = splitTyConApp $ exprType e''
-            retExpr <- fmapRepExpr (mkTyConTy tyCon) ty' e''
-            return $ mkLets ls $ mkLams bs retExpr
-      -- Question: Do we need to change the type of the case, ty?
-      -- Do we need to include the other types of Core contructors?
-      -- Push through them also?
-      Case e tb ty alts -> do
-        alts' <- fmapRepBindReturnAlts alts
-        return $ Case e tb ty alts'
-      _ -> return e
+    (_, e') <- fmapRepBindReturn' e
+    return e'
+  where
+    fmapRepBindReturn' :: PassCoreM m => CoreExpr -> m (Bool, CoreExpr)
+    fmapRepBindReturn' e = do
+        let (ls, e')  = collectLets e
+        let (bs, e'') = collectBinders e'
+        let (f, args) = collectArgs e''
+        bindId <- thNameToId bindNameTH
+        thenId <- thNameToId bindThenNameTH
+        case f of
+          Var fv -> do
+            if fv == bindId || fv == thenId
+            then do
+                (b, la') <- fmapRepBindReturn' $ last args
+                if b then do
+                    let args' = init args ++ [la']
+                    return (True, mkLets ls $ mkLams bs (mkCoreApps f args'))
+                else fmapRepBindReturn'' ls bs e''                
+            else fmapRepBindReturn'' ls bs e''
+          -- Question: Do we need to change the type of the case, ty?
+          -- Do we need to include the other types of Core contructors?
+          -- Push through them also?
+          Case e tb ty alts -> do
+            alts' <- fmapRepBindReturnAlts alts
+            return (True, Case e tb ty alts')
+          _ -> return (True, e)
 
-fmapRepBindReturnAlts :: PassCoreM m => [GhcPlugins.Alt CoreBndr] -> m [GhcPlugins.Alt CoreBndr]
-fmapRepBindReturnAlts [] = return []
-fmapRepBindReturnAlts ((ac, b, a) : as) = do
-  a' <- fmapRepBindReturn a
-  as' <- fmapRepBindReturnAlts as
-  return $ (ac, b, a') : as'
+    fmapRepBindReturn'' :: PassCoreM m => [CoreBind] -> [CoreBndr] -> CoreExpr -> m (Bool, CoreExpr)
+    fmapRepBindReturn'' ls bs e = do
+        let tyCon_m = splitTyConApp_maybe $ exprType e
+        case tyCon_m of
+          Just (tyCon,[ty]) -> do
+              retExpr <- fmapRepExpr (mkTyConTy tyCon) ty e
+              return (True, mkLets ls $ mkLams bs retExpr)
+          _ -> return (False, e)
+
+    fmapRepBindReturnAlts :: PassCoreM m => [GhcPlugins.Alt CoreBndr] -> m [GhcPlugins.Alt CoreBndr]
+    fmapRepBindReturnAlts [] = return []
+    fmapRepBindReturnAlts ((ac, b, a) : as) = do
+      a' <- fmapRepBindReturn a
+      as' <- fmapRepBindReturnAlts as
+      return $ (ac, b, a') : as'
 
 collectLets :: CoreExpr -> ([CoreBind], CoreExpr)
 collectLets (Let b e) = let (bs,expr) = collectLets e in (b:bs, expr)
