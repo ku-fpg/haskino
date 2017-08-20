@@ -24,11 +24,15 @@ import System.Hardware.Haskino
 ledTask :: Word8 -> Word32 -> Arduino ()
 ledTask led delay = do
     setPinMode led OUTPUT
-    loop $ do
+    ledTask'
+  where
+    ledTask' :: Arduino ()
+    ledTask' = do
         digitalWrite led true
         delayMillis delay
         digitalWrite led false
         delayMillis delay
+        ledTask'
 
 initExample :: Arduino ()
 initExample = do
