@@ -274,10 +274,13 @@ fmapRepExpr tyConTy ty e = do
 
 fmapRepBindReturn :: PassCoreM m => CoreExpr -> m CoreExpr
 fmapRepBindReturn e = do
-    (_, e') <- fmapRepBindReturn' e
-    return e'
+    ee <- fmapRepBindReturn' e
+    case ee of
+      Right e' -> return e'
+      -- The following case should not happen.
+      Left e' -> return e'
   where
-    fmapRepBindReturn' :: PassCoreM m => CoreExpr -> m (Bool, CoreExpr)
+    fmapRepBindReturn' :: PassCoreM m => CoreExpr -> m (Either CoreExpr CoreExpr)
     fmapRepBindReturn' e = do
         let (ls, e')  = collectLets e
         let (bs, e'') = collectBinders e'
@@ -288,28 +291,32 @@ fmapRepBindReturn e = do
           Var fv -> do
             if fv == bindId || fv == thenId
             then do
-                (b, la') <- fmapRepBindReturn' $ last args
-                if b then do
+                rla <- fmapRepBindReturn' $ last args
+                case rla of
+                  -- If applicationg of rep_ at next was successful
+                  Right la' -> do 
                     let args' = init args ++ [la']
-                    return (True, mkLets ls $ mkLams bs (mkCoreApps f args'))
-                else fmapRepBindReturn'' ls bs e''                
-            else fmapRepBindReturn'' ls bs e''
-          -- Question: Do we need to change the type of the case, ty?
-          -- Do we need to include the other types of Core contructors?
-          -- Push through them also?
+                    return $ Right $ mkLets ls $ mkLams bs (mkCoreApps f args')
+                  -- Application of rep at next level was not successful
+                  -- so apply it at this level.
+                  Left _ -> fmapRepReturn ls bs e''
+            else fmapRepReturn ls bs e''
           Case e tb ty alts -> do
             alts' <- fmapRepBindReturnAlts alts
-            return (True, Case e tb ty alts')
-          _ -> return (True, e)
+            return $ Right $ Case e tb ty alts'
+          _ -> return $ Right e
 
-    fmapRepBindReturn'' :: PassCoreM m => [CoreBind] -> [CoreBndr] -> CoreExpr -> m (Bool, CoreExpr)
-    fmapRepBindReturn'' ls bs e = do
+    -- Apply rep_ <$> to the end of the bind chain if possible.
+    -- If the end is a partially applied function, then rep_ <$>
+    -- will need to be applied one level
+    fmapRepReturn :: PassCoreM m => [CoreBind] -> [CoreBndr] -> CoreExpr -> m (Either CoreExpr CoreExpr)
+    fmapRepReturn ls bs e = do
         let tyCon_m = splitTyConApp_maybe $ exprType e
         case tyCon_m of
           Just (tyCon,[ty]) -> do
               retExpr <- fmapRepExpr (mkTyConTy tyCon) ty e
-              return (True, mkLets ls $ mkLams bs retExpr)
-          _ -> return (False, e)
+              return $ Right $ mkLets ls $ mkLams bs retExpr
+          _ -> return $ Left $ e
 
     fmapRepBindReturnAlts :: PassCoreM m => [GhcPlugins.Alt CoreBndr] -> m [GhcPlugins.Alt CoreBndr]
     fmapRepBindReturnAlts [] = return []
