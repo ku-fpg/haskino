@@ -52,8 +52,8 @@ recurBind' :: [(Id, CoreExpr)] -> BindM ([CoreBind],[(Id, CoreExpr)])
 recurBind' [] = return ([],[])
 recurBind' ((b, e) : bs) = do
     let defaultRet = do
-        (nonrec, bs') <- recurBind' bs
-        return $ (nonrec, (b, e) : bs')
+          (nonrec, bs') <- recurBind' bs
+          return $ (nonrec, (b, e) : bs')
     s <- get
     put s {funcId = [b]}
     let (argTys, retTy) = splitFunTys $ exprType e
