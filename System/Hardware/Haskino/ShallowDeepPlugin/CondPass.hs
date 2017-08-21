@@ -26,8 +26,6 @@ module System.Hardware.Haskino.ShallowDeepPlugin.CondPass (condPass) where
 
 import CoreMonad
 import Control.Monad.Reader
-import Data.Functor
-import Data.List
 import GhcPlugins
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils
@@ -50,7 +48,7 @@ condPass guts = do
     bindsOnlyPass (\x -> (runReaderT (runCondM $ (mapM condBind) x) (CondEnv guts))) guts
 
 condBind :: CoreBind -> CondM CoreBind
-condBind bndr@(NonRec b e) = do
+condBind (NonRec b e) = do
   e' <- condExpr e
   return (NonRec b e')
 condBind (Rec bs) = do
@@ -75,27 +73,27 @@ condExpr e = do
       e1' <- condExpr e1
       e2' <- condExpr e2
       return $ App e1' e2'
-    Lam tb e -> do
-      e' <- condExpr e
+    Lam tb el -> do
+      e' <- condExpr el
       return $ Lam tb e'
     Let bind body -> do
       body' <- condExpr body
       bind' <- case bind of
-                  (NonRec v e) -> do
-                    e' <- condExpr e
+                  (NonRec v eb) -> do
+                    e' <- condExpr eb
                     return $ NonRec v e'
                   (Rec rbs) -> do
                     rbs' <- condExpr' rbs
                     return $ Rec rbs'
       return $ Let bind' body'
-    Case e tb ty alts -> do
+    Case ec tb ty alts -> do
       let tyCon_m = splitTyConApp_maybe ty
-      e' <- condExpr e
+      e' <- condExpr ec
       alts' <- condExprAlts alts
       let defaultReturn = return $ Case e' tb ty alts'
       monadTyCon <- thNameToTyCon monadTyConTH
       case tyCon_m of
-        Just (retTyCon, [retTy']) | retTyCon == monadTyCon -> do
+        Just (retTyCon, [_]) | retTyCon == monadTyCon -> do
             if length alts' == 2
             then case alts' of
               [(ac1, _, _), _] -> do
@@ -106,6 +104,7 @@ condExpr e = do
                     then condTransform ty e' alts'
                     else defaultReturn
                   _ -> defaultReturn
+              _ -> defaultReturn
             else defaultReturn
         _ -> do
           isExpr <- isExprClassType ty
@@ -119,12 +118,13 @@ condExpr e = do
                   then condExprTransform ty e' alts'
                   else defaultReturn
                 _ -> defaultReturn
+            _ -> defaultReturn
           else defaultReturn
-    Tick t e -> do
-      e' <- condExpr e
+    Tick t et -> do
+      e' <- condExpr et
       return $ Tick t e'
-    Cast e co -> do
-      e' <- condExpr e
+    Cast ec co -> do
+      e' <- condExpr ec
       return $ Cast e' co
 
 condExpr' :: [(Id, CoreExpr)] -> CondM [(Id, CoreExpr)]
@@ -170,6 +170,7 @@ condTransform ty e alts = do
       -- Apply fmap of abs_
       tyCon <- thNameToTyCon monadTyConTH
       fmapAbsExpr (mkTyConTy tyCon) ty' ifteExpr
+    _ -> return e
 
 condExprTransform :: Type -> CoreExpr -> [GhcPlugins.Alt CoreBndr] -> CondM CoreExpr
 condExprTransform ty e alts = do
@@ -183,3 +184,5 @@ condExprTransform ty e alts = do
       arg2 <- repExpr e2
       arg3 <- repExpr e1
       absExpr $ mkCoreApps (Var ifbId) [Type ty, ifbDict, arg1, arg2, arg3]
+    _ -> return e
+
