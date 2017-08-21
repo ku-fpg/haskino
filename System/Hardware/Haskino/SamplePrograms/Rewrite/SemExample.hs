@@ -84,6 +84,5 @@ compile :: IO ()
 compile = compileProgram initExample "semExample.ino"
 
 main :: IO ()
-main = semExample
--- main = compile
+main = compile
 
