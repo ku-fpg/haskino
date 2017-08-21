@@ -477,7 +477,7 @@ data ArduinoPrimitive :: * -> * where
      IterateFloatL8E      :: Expr Float -> (Expr Float -> Arduino (ExprEither Float [Word8])) -> ArduinoPrimitive (Expr [Word8])
      IterateFloatFloatE   :: Expr Float -> (Expr Float -> Arduino (ExprEither Float Float)) -> ArduinoPrimitive (Expr Float)
      LiftIO               :: IO a -> ArduinoPrimitive a
-     Debug                :: String -> ArduinoPrimitive ()
+     Debug                :: [Word8] -> ArduinoPrimitive ()
      DebugE               :: Expr [Word8] -> ArduinoPrimitive ()
      DebugListen          :: ArduinoPrimitive ()
      Die                  :: String -> [String] -> ArduinoPrimitive ()
@@ -884,7 +884,7 @@ queryTaskE tid = Arduino $ primitive $ QueryTaskE tid
 bootTaskE :: Expr [Word8] -> Arduino (Expr Bool)
 bootTaskE tids = Arduino $ primitive $ BootTaskE tids
 
-debug :: String -> Arduino ()
+debug :: [Word8] -> Arduino ()
 debug msg = Arduino $ primitive $ Debug msg
 
 debugE :: Expr [Word8] -> Arduino ()

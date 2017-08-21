@@ -238,7 +238,7 @@ frameCommand c cmd cmds= do
 
 sendProcedureCmds :: ArduinoConnection -> ArduinoPrimitive a -> B.ByteString -> IO a
 sendProcedureCmds c (Debug msg) cmds = do
-    message c msg
+    message c $ bytesToString msg
     sendToArduino c cmds
 sendProcedureCmds c (Die msg msgs) cmds = runDie c msg msgs
 sendProcedureCmds c (NewRemoteRefBE r) cmds = sendRemoteBindingCmds c (NewRemoteRefBE r) cmds
