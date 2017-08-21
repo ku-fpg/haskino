@@ -23,10 +23,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin.CommProcPass (commProcPass) whe
 
 import Control.Monad.Reader
 import CoreMonad
-import Data.Functor
-import Data.List
 import GhcPlugins
-import Type
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 
@@ -147,7 +144,7 @@ commProcPass guts = do
     bindsOnlyPass (\x -> (runReaderT (runCondM $ (mapM commProcBind) x) (BindEnv guts))) guts
 
 commProcBind :: CoreBind -> BindM CoreBind
-commProcBind bndr@(NonRec b e) = do
+commProcBind (NonRec b e) = do
   e' <- commProcExpr e
   return (NonRec b e')
 commProcBind (Rec bs) = do
@@ -159,17 +156,15 @@ funcInXlatList id = do
   funcInXlatList' id xlatList
     where
       funcInXlatList' :: Id -> [XlatEntry] -> BindM (Maybe XlatEntry)
-      funcInXlatList' id [] = return Nothing
-      funcInXlatList' id (xl:xls) = do
+      funcInXlatList' _ [] = return Nothing
+      funcInXlatList' id' (xl:xls) = do
           fId <- fromId xl
-          if fId == id
+          if fId == id'
           then return $ Just xl
           else funcInXlatList' id xls
 
 commProcExpr :: CoreExpr -> BindM CoreExpr
 commProcExpr e = do
-  apId <- thNameToId apNameTH
-  df <- liftCoreM getDynFlags
   case e of
     Var v -> do
       inList <- funcInXlatList v
@@ -182,7 +177,7 @@ commProcExpr e = do
     Type ty -> return $ Type ty
     Coercion co -> return $ Coercion co
     App e1 e2 -> do
-      let (f, args) = collectArgs e
+      let (f, _) = collectArgs e
       let defaultReturn = do
               e1' <- commProcExpr e1
               e2' <- commProcExpr e2
@@ -194,28 +189,28 @@ commProcExpr e = do
                   Just xe -> commProcXlat xe e
                   Nothing -> defaultReturn
           _ -> defaultReturn
-    Lam tb e -> do
-      e' <- commProcExpr e
+    Lam tb el -> do
+      e' <- commProcExpr el
       return $ Lam tb e'
     Let bind body -> do
       body' <- commProcExpr body
       bind' <- case bind of
-                  (NonRec v e) -> do
-                    e' <- commProcExpr e
+                  (NonRec v eb) -> do
+                    e' <- commProcExpr eb
                     return $ NonRec v e'
                   (Rec rbs) -> do
                     rbs' <- commProcExpr' rbs
                     return $ Rec rbs'
       return $ Let bind' body'
-    Case e tb ty alts -> do
-      e' <- commProcExpr e
+    Case ec tb ty alts -> do
+      e' <- commProcExpr ec
       alts' <- commProcExprAlts alts
       return $ Case e' tb ty alts'
-    Tick t e -> do
-      e' <- commProcExpr e
+    Tick t et -> do
+      e' <- commProcExpr et
       return $ Tick t e'
-    Cast e co -> do
-      e' <- commProcExpr e
+    Cast ec co -> do
+      e' <- commProcExpr ec
       return $ Cast e' co
 
 commProcExpr' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
@@ -234,7 +229,7 @@ commProcExprAlts ((ac, b, a) : as) = do
 
 commProcXlat :: XlatEntry -> CoreExpr -> BindM CoreExpr
 commProcXlat xe e = do
-  let (f, args) = collectArgs e
+  let (_, args) = collectArgs e
   (xlatRet, xlatArgs) <- genXlatBools (fromId xe) (toId xe)
   let zargs = zip xlatArgs args
   args' <- mapM commProcXlatArg zargs
@@ -243,7 +238,7 @@ commProcXlat xe e = do
   if xlatRet
   then do
     -- ToDo: Handle Error cases using _maybe function varients.
-    let (argTys, retTy) = splitFunTys $ exprType e
+    let (_, retTy) = splitFunTys $ exprType e
     let (tyCon, [ty]) = splitTyConApp retTy
     let e' = mkCoreApps f' args'
     fmapAbsExpr (mkTyConTy tyCon) ty e'
@@ -269,7 +264,7 @@ genXlatBools from to = do
   t <- to
   let (fromForAlls, fromFuncTy) = splitForAllTys $ idType f
   let (fromArgTys, fromRetTy) = splitFunTys fromFuncTy
-  let (toForAlls, toFuncTy) = splitForAllTys $ idType t
+  let (_, toFuncTy) = splitForAllTys $ idType t
   let (toArgTys, toRetTy) = splitFunTys toFuncTy
   -- Get the count of non-dictionary args in the new function
   let argCount  = countNonDictTypes fromArgTys
