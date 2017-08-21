@@ -667,847 +667,847 @@ showCodeBlock (Arduino commands) = do
           let bi = RemBindUnit i
           j <- nextBind
           let bj = RemBindUnit j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateUnitBoolE iv bf) = do
           i <- nextBind
           let bi = RemBindUnit i
           j <- nextBind
           let bj = RemBindB j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateUnitW8E iv bf) = do
           i <- nextBind
           let bi = RemBindUnit i
           j <- nextBind
           let bj = RemBindW8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateUnitW16E iv bf) = do
           i <- nextBind
           let bi = RemBindUnit i
           j <- nextBind
           let bj = RemBindW16 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateUnitW32E iv bf) = do
           i <- nextBind
           let bi = RemBindUnit i
           j <- nextBind
           let bj = RemBindW32 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateUnitI8E iv bf) = do
           i <- nextBind
           let bi = RemBindUnit i
           j <- nextBind
           let bj = RemBindI8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateUnitI16E iv bf) = do
           i <- nextBind
           let bi = RemBindUnit i
           j <- nextBind
           let bj = RemBindI16 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateUnitI32E iv bf) = do
           i <- nextBind
           let bi = RemBindUnit i
           j <- nextBind
           let bj = RemBindI32 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateUnitIE iv bf) = do
           i <- nextBind
           let bi = RemBindUnit i
           j <- nextBind
           let bj = RemBindI j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateUnitL8E iv bf) = do
           i <- nextBind
           let bi = RemBindUnit i
           j <- nextBind
           let bj = RemBindList8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateUnitFloatE iv bf) = do
           i <- nextBind
           let bi = RemBindUnit i
           j <- nextBind
           let bj = RemBindFloat j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateBoolUnitE iv bf) = do
           i <- nextBind
           let bi = RemBindB i
           j <- nextBind
           let bj = RemBindUnit j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateBoolBoolE iv bf) = do
           i <- nextBind
           let bi = RemBindB i
           j <- nextBind
           let bj = RemBindB j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateBoolW8E iv bf) = do
           i <- nextBind
           let bi = RemBindB i
           j <- nextBind
           let bj = RemBindW8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateBoolW16E iv bf) = do
           i <- nextBind
           let bi = RemBindB i
           j <- nextBind
           let bj = RemBindW16 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateBoolW32E iv bf) = do
           i <- nextBind
           let bi = RemBindB i
           j <- nextBind
           let bj = RemBindW32 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateBoolI8E iv bf) = do
           i <- nextBind
           let bi = RemBindB i
           j <- nextBind
           let bj = RemBindI8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateBoolI16E iv bf) = do
           i <- nextBind
           let bi = RemBindB i
           j <- nextBind
           let bj = RemBindI16 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateBoolI32E iv bf) = do
           i <- nextBind
           let bi = RemBindB i
           j <- nextBind
           let bj = RemBindI32 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateBoolIE iv bf) = do
           i <- nextBind
           let bi = RemBindB i
           j <- nextBind
           let bj = RemBindI j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateBoolL8E iv bf) = do
           i <- nextBind
           let bi = RemBindB i
           j <- nextBind
           let bj = RemBindList8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateBoolFloatE iv bf) = do
           i <- nextBind
           let bi = RemBindB i
           j <- nextBind
           let bj = RemBindFloat j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW8UnitE iv bf) = do
           i <- nextBind
           let bi = RemBindW8 i
           j <- nextBind
           let bj = RemBindUnit j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW8BoolE iv bf) = do
           i <- nextBind
           let bi = RemBindW8 i
           j <- nextBind
           let bj = RemBindB j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW8W8E iv bf) = do
           i <- nextBind
           let bi = RemBindW8 i
           j <- nextBind
           let bj = RemBindW8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW8W16E iv bf) = do
           i <- nextBind
           let bi = RemBindW8 i
           j <- nextBind
           let bj = RemBindW16 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW8W32E iv bf) = do
           i <- nextBind
           let bi = RemBindW8 i
           j <- nextBind
           let bj = RemBindW32 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW8I8E iv bf) = do
           i <- nextBind
           let bi = RemBindW8 i
           j <- nextBind
           let bj = RemBindI8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW8I16E iv bf) = do
           i <- nextBind
           let bi = RemBindW8 i
           j <- nextBind
           let bj = RemBindI16 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW8I32E iv bf) = do
           i <- nextBind
           let bi = RemBindW8 i
           j <- nextBind
           let bj = RemBindI32 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW8IE iv bf) = do
           i <- nextBind
           let bi = RemBindW8 i
           j <- nextBind
           let bj = RemBindI j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW8L8E iv bf) = do
           i <- nextBind
           let bi = RemBindW8 i
           j <- nextBind
           let bj = RemBindList8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW8FloatE iv bf) = do
           i <- nextBind
           let bi = RemBindW8 i
           j <- nextBind
           let bj = RemBindFloat j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW16UnitE iv bf) = do
           i <- nextBind
           let bi = RemBindW16 i
           j <- nextBind
           let bj = RemBindUnit j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW16BoolE iv bf) = do
           i <- nextBind
           let bi = RemBindW16 i
           j <- nextBind
           let bj = RemBindB j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW16W8E iv bf) = do
           i <- nextBind
           let bi = RemBindW16 i
           j <- nextBind
           let bj = RemBindW8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW16W16E iv bf) = do
           i <- nextBind
           let bi = RemBindW16 i
           j <- nextBind
           let bj = RemBindW16 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW16W32E iv bf) = do
           i <- nextBind
           let bi = RemBindW16 i
           j <- nextBind
           let bj = RemBindW32 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW16I8E iv bf) = do
           i <- nextBind
           let bi = RemBindW16 i
           j <- nextBind
           let bj = RemBindI8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW16I16E iv bf) = do
           i <- nextBind
           let bi = RemBindW16 i
           j <- nextBind
           let bj = RemBindI16 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW16I32E iv bf) = do
           i <- nextBind
           let bi = RemBindW16 i
           j <- nextBind
           let bj = RemBindI32 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW16IE iv bf) = do
           i <- nextBind
           let bi = RemBindW16 i
           j <- nextBind
           let bj = RemBindI j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW16L8E iv bf) = do
           i <- nextBind
           let bi = RemBindW16 i
           j <- nextBind
           let bj = RemBindList8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW16FloatE iv bf) = do
           i <- nextBind
           let bi = RemBindW16 i
           j <- nextBind
           let bj = RemBindFloat j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW32UnitE iv bf) = do
           i <- nextBind
           let bi = RemBindW32 i
           j <- nextBind
           let bj = RemBindUnit j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW32BoolE iv bf) = do
           i <- nextBind
           let bi = RemBindW32 i
           j <- nextBind
           let bj = RemBindB j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW32W8E iv bf) = do
           i <- nextBind
           let bi = RemBindW32 i
           j <- nextBind
           let bj = RemBindW8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW32W16E iv bf) = do
           i <- nextBind
           let bi = RemBindW32 i
           j <- nextBind
           let bj = RemBindW16 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW32W32E iv bf) = do
           i <- nextBind
           let bi = RemBindW32 i
           j <- nextBind
           let bj = RemBindW32 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW32I8E iv bf) = do
           i <- nextBind
           let bi = RemBindW32 i
           j <- nextBind
           let bj = RemBindI8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW32I16E iv bf) = do
           i <- nextBind
           let bi = RemBindW32 i
           j <- nextBind
           let bj = RemBindI16 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW32I32E iv bf) = do
           i <- nextBind
           let bi = RemBindW32 i
           j <- nextBind
           let bj = RemBindI32 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW32IE iv bf) = do
           i <- nextBind
           let bi = RemBindW32 i
           j <- nextBind
           let bj = RemBindI j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW32L8E iv bf) = do
           i <- nextBind
           let bi = RemBindW32 i
           j <- nextBind
           let bj = RemBindList8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateW32FloatE iv bf) = do
           i <- nextBind
           let bi = RemBindW32 i
           j <- nextBind
           let bj = RemBindFloat j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI8UnitE iv bf) = do
           i <- nextBind
           let bi = RemBindI8 i
           j <- nextBind
           let bj = RemBindUnit j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI8BoolE iv bf) = do
           i <- nextBind
           let bi = RemBindI8 i
           j <- nextBind
           let bj = RemBindB j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI8W8E iv bf) = do
           i <- nextBind
           let bi = RemBindI8 i
           j <- nextBind
           let bj = RemBindW8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI8W16E iv bf) = do
           i <- nextBind
           let bi = RemBindI8 i
           j <- nextBind
           let bj = RemBindW16 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI8W32E iv bf) = do
           i <- nextBind
           let bi = RemBindI8 i
           j <- nextBind
           let bj = RemBindW32 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI8I8E iv bf) = do
           i <- nextBind
           let bi = RemBindI8 i
           j <- nextBind
           let bj = RemBindI8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI8I16E iv bf) = do
           i <- nextBind
           let bi = RemBindI8 i
           j <- nextBind
           let bj = RemBindI16 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI8I32E iv bf) = do
           i <- nextBind
           let bi = RemBindI8 i
           j <- nextBind
           let bj = RemBindI32 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI8IE iv bf) = do
           i <- nextBind
           let bi = RemBindI8 i
           j <- nextBind
           let bj = RemBindI j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI8L8E iv bf) = do
           i <- nextBind
           let bi = RemBindI8 i
           j <- nextBind
           let bj = RemBindList8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI8FloatE iv bf) = do
           i <- nextBind
           let bi = RemBindI8 i
           j <- nextBind
           let bj = RemBindFloat j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI16UnitE iv bf) = do
           i <- nextBind
           let bi = RemBindI16 i
           j <- nextBind
           let bj = RemBindUnit j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI16BoolE iv bf) = do
           i <- nextBind
           let bi = RemBindI16 i
           j <- nextBind
           let bj = RemBindB j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI16W8E iv bf) = do
           i <- nextBind
           let bi = RemBindI16 i
           j <- nextBind
           let bj = RemBindW8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI16W16E iv bf) = do
           i <- nextBind
           let bi = RemBindI16 i
           j <- nextBind
           let bj = RemBindW16 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI16W32E iv bf) = do
           i <- nextBind
           let bi = RemBindI16 i
           j <- nextBind
           let bj = RemBindW32 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI16I8E iv bf) = do
           i <- nextBind
           let bi = RemBindI16 i
           j <- nextBind
           let bj = RemBindI8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI16I16E iv bf) = do
           i <- nextBind
           let bi = RemBindI16 i
           j <- nextBind
           let bj = RemBindI16 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI16I32E iv bf) = do
           i <- nextBind
           let bi = RemBindI16 i
           j <- nextBind
           let bj = RemBindI32 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI16IE iv bf) = do
           i <- nextBind
           let bi = RemBindI16 i
           j <- nextBind
           let bj = RemBindI j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI16L8E iv bf) = do
           i <- nextBind
           let bi = RemBindI16 i
           j <- nextBind
           let bj = RemBindList8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI16FloatE iv bf) = do
           i <- nextBind
           let bi = RemBindI16 i
           j <- nextBind
           let bj = RemBindFloat j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI32UnitE iv bf) = do
           i <- nextBind
           let bi = RemBindI32 i
           j <- nextBind
           let bj = RemBindUnit j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI32BoolE iv bf) = do
           i <- nextBind
           let bi = RemBindI32 i
           j <- nextBind
           let bj = RemBindB j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI32W8E iv bf) = do
           i <- nextBind
           let bi = RemBindI32 i
           j <- nextBind
           let bj = RemBindW8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI32W16E iv bf) = do
           i <- nextBind
           let bi = RemBindI32 i
           j <- nextBind
           let bj = RemBindW16 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI32W32E iv bf) = do
           i <- nextBind
           let bi = RemBindI32 i
           j <- nextBind
           let bj = RemBindW32 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI32I8E iv bf) = do
           i <- nextBind
           let bi = RemBindI32 i
           j <- nextBind
           let bj = RemBindI8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI32I16E iv bf) = do
           i <- nextBind
           let bi = RemBindI32 i
           j <- nextBind
           let bj = RemBindI16 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI32I32E iv bf) = do
           i <- nextBind
           let bi = RemBindI32 i
           j <- nextBind
           let bj = RemBindI32 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI32IE iv bf) = do
           i <- nextBind
           let bi = RemBindI32 i
           j <- nextBind
           let bj = RemBindI j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI32L8E iv bf) = do
           i <- nextBind
           let bi = RemBindI32 i
           j <- nextBind
           let bj = RemBindList8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateI32FloatE iv bf) = do
           i <- nextBind
           let bi = RemBindI32 i
           j <- nextBind
           let bj = RemBindFloat j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateIUnitE iv bf) = do
           i <- nextBind
           let bi = RemBindI i
           j <- nextBind
           let bj = RemBindUnit j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateIBoolE iv bf) = do
           i <- nextBind
           let bi = RemBindI i
           j <- nextBind
           let bj = RemBindB j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateIW8E iv bf) = do
           i <- nextBind
           let bi = RemBindI i
           j <- nextBind
           let bj = RemBindW8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateIW16E iv bf) = do
           i <- nextBind
           let bi = RemBindI i
           j <- nextBind
           let bj = RemBindW16 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateIW32E iv bf) = do
           i <- nextBind
           let bi = RemBindI i
           j <- nextBind
           let bj = RemBindW32 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateII8E iv bf) = do
           i <- nextBind
           let bi = RemBindI i
           j <- nextBind
           let bj = RemBindI8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateII16E iv bf) = do
           i <- nextBind
           let bi = RemBindI i
           j <- nextBind
           let bj = RemBindI16 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateII32E iv bf) = do
           i <- nextBind
           let bi = RemBindI i
           j <- nextBind
           let bj = RemBindI32 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateIIE iv bf) = do
           i <- nextBind
           let bi = RemBindI i
           j <- nextBind
           let bj = RemBindI j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateIL8E iv bf) = do
           i <- nextBind
           let bi = RemBindI i
           j <- nextBind
           let bj = RemBindList8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateIFloatE iv bf) = do
           i <- nextBind
           let bi = RemBindI i
           j <- nextBind
           let bj = RemBindFloat j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateL8UnitE iv bf) = do
           i <- nextBind
           let bi = RemBindList8 i
           j <- nextBind
           let bj = RemBindUnit j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateL8BoolE iv bf) = do
           i <- nextBind
           let bi = RemBindList8 i
           j <- nextBind
           let bj = RemBindB j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateL8W8E iv bf) = do
           i <- nextBind
           let bi = RemBindList8 i
           j <- nextBind
           let bj = RemBindW8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateL8W16E iv bf) = do
           i <- nextBind
           let bi = RemBindList8 i
           j <- nextBind
           let bj = RemBindW16 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateL8W32E iv bf) = do
           i <- nextBind
           let bi = RemBindList8 i
           j <- nextBind
           let bj = RemBindW32 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateL8I8E iv bf) = do
           i <- nextBind
           let bi = RemBindList8 i
           j <- nextBind
           let bj = RemBindI8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateL8I16E iv bf) = do
           i <- nextBind
           let bi = RemBindList8 i
           j <- nextBind
           let bj = RemBindI16 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateL8I32E iv bf) = do
           i <- nextBind
           let bi = RemBindList8 i
           j <- nextBind
           let bj = RemBindI32 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateL8IE iv bf) = do
           i <- nextBind
           let bi = RemBindList8 i
           j <- nextBind
           let bj = RemBindI j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateL8L8E iv bf) = do
           i <- nextBind
           let bi = RemBindList8 i
           j <- nextBind
           let bj = RemBindList8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateL8FloatE iv bf) = do
           i <- nextBind
           let bi = RemBindList8 i
           j <- nextBind
           let bj = RemBindFloat j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateFloatUnitE iv bf) = do
           i <- nextBind
           let bi = RemBindFloat i
           j <- nextBind
           let bj = RemBindUnit j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateFloatBoolE iv bf) = do
           i <- nextBind
           let bi = RemBindFloat i
           j <- nextBind
           let bj = RemBindB j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateFloatW8E iv bf) = do
           i <- nextBind
           let bi = RemBindFloat i
           j <- nextBind
           let bj = RemBindW8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateFloatW16E iv bf) = do
           i <- nextBind
           let bi = RemBindFloat i
           j <- nextBind
           let bj = RemBindW16 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateFloatW32E iv bf) = do
           i <- nextBind
           let bi = RemBindFloat i
           j <- nextBind
           let bj = RemBindW32 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateFloatI8E iv bf) = do
           i <- nextBind
           let bi = RemBindFloat i
           j <- nextBind
           let bj = RemBindI8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateFloatI16E iv bf) = do
           i <- nextBind
           let bi = RemBindFloat i
           j <- nextBind
           let bj = RemBindI16 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateFloatI32E iv bf) = do
           i <- nextBind
           let bi = RemBindFloat i
           j <- nextBind
           let bj = RemBindI32 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateFloatIE iv bf) = do
           i <- nextBind
           let bi = RemBindFloat i
           j <- nextBind
           let bj = RemBindI j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateFloatL8E iv bf) = do
           i <- nextBind
           let bi = RemBindFloat i
           j <- nextBind
           let bj = RemBindList8 j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (IterateFloatFloatE iv bf) = do
           i <- nextBind
           let bi = RemBindFloat i
           j <- nextBind
           let bj = RemBindFloat j
-          showIterateProcedure i bi j bj iv bf
+          _ <- showIterateProcedure i bi j bj iv bf
           return bj
       showProcedure (DebugE ws) = showShallow1Procedure "DebugE" ws ()
       showProcedure (Debug s) = showShallow1Procedure "Debug" s ()

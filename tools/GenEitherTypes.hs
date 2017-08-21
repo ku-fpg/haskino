@@ -71,7 +71,7 @@ genShowIter ((tyn1,ty1), (tyn2, ty2)) =
     "          let bi = RemBind" ++ ty1 ++ " i\n" ++
     "          j <- nextBind\n" ++
     "          let bj = RemBind" ++ ty2 ++ " j\n" ++
-    "          showIterateProcedure i bi j bj iv bf\n" ++
+    "          _ <- showIterateProcedure i bi j bj iv bf\n" ++
     "          return bj\n"
 
 genCompIf :: ((String, String) , (String, String)) -> String
