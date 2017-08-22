@@ -13,7 +13,6 @@ module System.Hardware.Haskino.Utils where
 
 import           Data.Bits              (shiftL, shiftR, (.&.), (.|.))
 import qualified Data.ByteString        as B 
-import           Data.ByteString.Base16 (encode)
 import           Data.Char              (isAlphaNum, isAscii, isSpace, chr, ord)
 import           Data.IORef             (newIORef, readIORef, writeIORef)
 import           Data.List              (intercalate)

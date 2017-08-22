@@ -19,11 +19,9 @@ import           Control.Remote.Monad
 import           Control.Remote.Monad.Types       as T
 import           Data.Boolean
 import           Data.Char
-import           Data.Int                         (Int8, Int16, Int32)
 import           Data.Word                        (Word32, Word8)
 import           System.Hardware.Haskino.Data
 import           System.Hardware.Haskino.Expr
-import           System.Hardware.Haskino.Utils
 
 data CompileState = CompileState {level :: Int
                      , intTask          :: Bool
@@ -96,7 +94,7 @@ contextTaskStackSize :: Int
 contextTaskStackSize = 36
 
 taskStackSize :: Int -> Int
-taskStackSize binds = binds * 4 + defaultTaskStackSize + contextTaskStackSize;
+taskStackSize bs = bs * 4 + defaultTaskStackSize + contextTaskStackSize;
 
 nextBind :: State CompileState Int
 nextBind = do
@@ -150,21 +148,21 @@ compileTask t name int = do
     s <- get
     put s {level = 0, intTask = int, ib = 0, cmds = "",
            binds = "", cmdList = [], bindList = []}
-    compileLine $ "void " ++ name ++ "()"
-    compileForward $ "void " ++ name ++ "();"
-    compileCodeBlock t
-    if not int
-    then compileLineIndent "taskComplete();"
-    else return LitUnit
-    compileLineIndent "}"
-    s <- get
+    _ <- compileLine $ "void " ++ name ++ "()"
+    _ <- compileForward $ "void " ++ name ++ "();"
+    _ <- compileCodeBlock t
+    _ <- if not int
+         then compileLineIndent "taskComplete();"
+         else return LitUnit
+    _ <- compileLineIndent "}"
+    s' <- get
     let defineStr = (map toUpper name) ++ stackSizeStr
-    compileForward $ "#define " ++ defineStr ++ " " ++
-                     (show $ taskStackSize $ ib s)
-    compileForward $ "byte " ++ name ++ tcbStr ++ "[sizeof(TCB) + " ++
+    _ <- compileForward $ "#define " ++ defineStr ++ " " ++
+                     (show $ taskStackSize $ ib s')
+    _ <- compileForward $ "byte " ++ name ++ tcbStr ++ "[sizeof(TCB) + " ++
                      defineStr ++ "];"
-    s <- get
-    put s {tasksDone = cmds s : tasksDone s}
+    s'' <- get
+    put s' {tasksDone = cmds s'' : tasksDone s''}
     return ()
 
 compileLine :: String -> State CompileState (Expr ())
@@ -199,55 +197,55 @@ compileForward s = do
 
 compileError :: String -> String -> State CompileState (Expr ())
 compileError s1 s2 = do
-    compileLine s1
+    _ <- compileLine s1
     st <- get
     put st { errors = s2 : (errors st)}
     return LitUnit
 
 compileShallowPrimitiveError :: String -> State CompileState (Expr ())
 compileShallowPrimitiveError s = do
-    compileError ("/* " ++ errmsg ++ " */") errmsg
+    _ <- compileError ("/* " ++ errmsg ++ " */") errmsg
     return LitUnit
   where
     errmsg = "ERROR - " ++ s ++ " is a Shallow procedure, use Deep version instead."
 
 compileUnsupportedError :: String -> State CompileState (Expr ())
 compileUnsupportedError s = do
-    compileError ("/* " ++ errmsg ++ " */") errmsg
+    _ <- compileError ("/* " ++ errmsg ++ " */") errmsg
     return LitUnit
   where
     errmsg = "ERROR - " ++ s ++ " not suppported by compiler."
 
 compileNoExprCommand :: String -> State CompileState (Expr ())
 compileNoExprCommand s = do
-    compileLine (s ++ "();")
+    _ <- compileLine (s ++ "();")
     return LitUnit
 
 compile1ExprCommand :: String -> Expr a -> State CompileState (Expr ())
 compile1ExprCommand s e = do
-    compileLine (s ++ "(" ++ compileExpr e ++ ");")
+    _ <- compileLine (s ++ "(" ++ compileExpr e ++ ");")
     return LitUnit
 
 compile2ExprCommand :: String -> Expr a -> Expr b -> State CompileState (Expr ())
 compile2ExprCommand s e1 e2 = do
-    compileLine (s ++ "(" ++ compileExpr e1 ++ "," ++ compileExpr e2 ++ ");")
+    _ <- compileLine (s ++ "(" ++ compileExpr e1 ++ "," ++ compileExpr e2 ++ ");")
     return LitUnit
 
 compile3ExprCommand :: String -> Expr a -> Expr b -> Expr c -> State CompileState (Expr ())
 compile3ExprCommand s e1 e2 e3 = do
-    compileLine (s ++ "(" ++ compileExpr e1 ++ "," ++
+    _ <- compileLine (s ++ "(" ++ compileExpr e1 ++ "," ++
                                       compileExpr e2 ++ "," ++
                                       compileExpr e3 ++ ");")
     return LitUnit
 
 compileWriteRef :: Int -> Expr a -> State CompileState (Expr ())
-compileWriteRef ix e = do
-  compileLine $ refName ++ show ix ++ " = " ++ compileExpr e ++ ";"
+compileWriteRef i e = do
+  _ <- compileLine $ refName ++ show i ++ " = " ++ compileExpr e ++ ";"
   return LitUnit
 
 compileWriteListRef :: Int -> Expr a -> State CompileState (Expr ())
-compileWriteListRef ix e = do
-  compileLine $ "listAssign(&" ++ refName ++ show ix ++ ", " ++ compileExpr e ++ ");"
+compileWriteListRef i e = do
+  _ <- compileLine $ "listAssign(&" ++ refName ++ show i ++ ", " ++ compileExpr e ++ ");"
   return LitUnit
 
 compilePrimitive :: forall a . ArduinoPrimitive a -> State CompileState a
@@ -276,16 +274,16 @@ compileCommand (ServoWriteE sv w) =
 compileCommand (ServoWriteMicrosE sv w) =
     compile2ExprCommand "servoWriteMicros" sv w
 compileCommand (DeleteTask tid) = do
-    compileShallowPrimitiveError $ "deleteTask " ++ show tid
+    _ <- compileShallowPrimitiveError $ "deleteTask " ++ show tid
     return ()
 compileCommand (DeleteTaskE tid) =
     compile1ExprCommand "deleteTask" tid
-compileCommand (CreateTask tid m) = do
-    compileShallowPrimitiveError $ "createTask " ++ show tid
+compileCommand (CreateTask tid _) = do
+    _ <- compileShallowPrimitiveError $ "createTask " ++ show tid
     return ()
 compileCommand (CreateTaskE (LitW8 tid) m) = do
     let taskName = "task" ++ show tid
-    compileLine $ "createTask(" ++ show tid ++ ", " ++
+    _ <- compileLine $ "createTask(" ++ show tid ++ ", " ++
                   taskName ++ tcbStr ++ ", " ++
                   (map toUpper taskName) ++ stackSizeStr ++ ", " ++
                   taskName ++ ");"
@@ -293,17 +291,17 @@ compileCommand (CreateTaskE (LitW8 tid) m) = do
     put s {tasksToDo = (m, taskName, False) : (tasksToDo s)}
     return LitUnit
 compileCommand (ScheduleTask tid m) = do
-    compileShallowPrimitiveError $ "scheduleTask " ++ show tid ++ " " ++ show m
+    _ <- compileShallowPrimitiveError $ "scheduleTask " ++ show tid ++ " " ++ show m
     return ()
 compileCommand (ScheduleTaskE tid tt) =
     compile2ExprCommand "scheduleTask" tid tt
 compileCommand ScheduleReset = do
-    compileShallowPrimitiveError $ "scheduleReset"
+    _ <- compileShallowPrimitiveError $ "scheduleReset"
     return ()
 compileCommand ScheduleResetE =
     compileNoExprCommand "scheduleReset"
-compileCommand (AttachInt p t m) = do
-    compileShallowPrimitiveError $ "sttachInt " ++ show p ++ " " ++ show t
+compileCommand (AttachInt p t _) = do
+    _ <- compileShallowPrimitiveError $ "sttachInt " ++ show p ++ " " ++ show t
     return ()
 compileCommand (AttachIntE p t m) = do
     let taskName = "task" ++ compileExpr t
@@ -316,22 +314,22 @@ compileCommand (AttachIntE p t m) = do
   where
     addIntTask :: [(Arduino (Expr ()), String, Bool)] -> String -> [(Arduino (Expr ()), String, Bool)]
     addIntTask [] _ = []
-    addIntTask (t:ts) tn = matchTask t tn : addIntTask ts tn
+    addIntTask (t':ts) tn = matchTask t' tn : addIntTask ts tn
 
     matchTask :: (Arduino (Expr ()), String, Bool) -> String -> (Arduino (Expr ()), String, Bool)
-    matchTask (m, tn1, i) tn2 = if tn1 == tn2
-                                then (m, tn1, True)
-                                else (m, tn1, i)
+    matchTask (m', tn1, i) tn2 = if tn1 == tn2
+                                then (m', tn1, True)
+                                else (m', tn1, i)
 compileCommand (DetachIntE p) =
     compile1ExprCommand "detachInterrupt" p
 compileCommand InterruptsE =
     compileNoExprCommand "interrupts"
 compileCommand NoInterruptsE =
     compileNoExprCommand "noInterrupts"
-compileCommand (GiveSemE id) =
-    compile1ExprCommand "giveSem" id
-compileCommand (TakeSemE id) =
-    compile1ExprCommand "takeSem" id
+compileCommand (GiveSemE i) =
+    compile1ExprCommand "giveSem" i
+compileCommand (TakeSemE i) =
+    compile1ExprCommand "takeSem" i
 compileCommand (WriteRemoteRefBE (RemoteRefB i) e) = compileWriteRef i e
 compileCommand (WriteRemoteRefW8E (RemoteRefW8 i) e) = compileWriteRef i e
 compileCommand (WriteRemoteRefW16E (RemoteRefW16 i) e) = compileWriteRef i e
@@ -352,14 +350,15 @@ compileCommand (ModifyRemoteRefI32E (RemoteRefI32 i) f) = compileWriteRef i f
 compileCommand (ModifyRemoteRefIE (RemoteRefI i) f) = compileWriteRef i f
 compileCommand (ModifyRemoteRefL8E (RemoteRefL8 i) f) = compileWriteListRef i f
 compileCommand (ModifyRemoteRefFloatE (RemoteRefFloat i) f) = compileWriteRef i f
+compileCommand _ = error "compileCommand - Unknown command, it may actually be a procedure"
 
 compileSimpleProcedure :: CompileType -> String -> State CompileState Int
 compileSimpleProcedure t p = do
     s <- get
     let b = ib s
     put s {ib = b + 1}
-    compileLine $ bindName ++ show b ++ " = " ++ p ++ ";"
-    compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
+    _ <- compileLine $ bindName ++ show b ++ " = " ++ p ++ ";"
+    _ <- compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
     return b
 
 compileSimpleListProcedure :: String -> State CompileState Int
@@ -367,8 +366,8 @@ compileSimpleListProcedure p = do
     s <- get
     let b = ib s
     put s {ib = b + 1}
-    compileLine $ "listAssign(&" ++ bindName ++ show b ++ ", " ++ p ++ ");"
-    compileAllocBind $ compileTypeToString List8Type ++ " " ++
+    _ <- compileLine $ "listAssign(&" ++ bindName ++ show b ++ ", " ++ p ++ ");"
+    _ <- compileAllocBind $ compileTypeToString List8Type ++ " " ++
                        bindName ++ show b ++ " = NULL;"
     return b
 
@@ -419,8 +418,8 @@ compileNewRef t e = do
     s <- get
     let x = ix s
     put s {ix = x + 1}
-    compileAllocRef $ compileTypeToString t ++ " " ++ refName ++ show x ++ ";"
-    compileLine $ refName ++ show x ++ " = " ++ compileExpr e ++ ";"
+    _ <- compileAllocRef $ compileTypeToString t ++ " " ++ refName ++ show x ++ ";"
+    _ <- compileLine $ refName ++ show x ++ " = " ++ compileExpr e ++ ";"
     return  x
 
 compileNewListRef :: Expr a -> State CompileState Int
@@ -428,102 +427,102 @@ compileNewListRef e = do
     s <- get
     let x = ix s
     put s {ix = x + 1}
-    compileAllocRef $ compileTypeToString List8Type ++
+    _ <- compileAllocRef $ compileTypeToString List8Type ++
                       " " ++ refName ++ show x ++ " = NULL;"
-    compileLine $ "listAssign(&" ++ refName ++ show x ++
+    _ <- compileLine $ "listAssign(&" ++ refName ++ show x ++
                   ", " ++ compileExpr e ++ ");"
     return  x
 
 compileReadRef :: CompileType -> Int -> State CompileState Int
-compileReadRef t ix = do
+compileReadRef t ix' = do
     s <- get
     let b = ib s
     put s {ib = b + 1}
-    compileLine $ bindName ++ show b ++ " = " ++ refName ++ show ix ++ ";"
-    compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
+    _ <- compileLine $ bindName ++ show b ++ " = " ++ refName ++ show ix' ++ ";"
+    _ <- compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
     return b
 
 compileReadListRef :: Int -> State CompileState Int
-compileReadListRef ix = do
+compileReadListRef ix' = do
     s <- get
     let b = ib s
     put s {ib = b + 1}
-    compileLine $ "listAssign(&" ++ bindName ++ show b ++ ", " ++
-                  refName ++ show ix ++ ");"
-    compileAllocBind $ compileTypeToString List8Type ++ " " ++
+    _ <- compileLine $ "listAssign(&" ++ bindName ++ show b ++ ", " ++
+                  refName ++ show ix' ++ ");"
+    _ <- compileAllocBind $ compileTypeToString List8Type ++ " " ++
                        bindName ++ show b ++ " = NULL;"
     return b
 
 compileProcedure :: ArduinoPrimitive a -> State CompileState a
 compileProcedure QueryFirmware = do
-    compileShallowPrimitiveError "queryFirmware"
+    _ <- compileShallowPrimitiveError "queryFirmware"
     return 0
 compileProcedure QueryFirmwareE = do
     b <- compileNoExprProcedure Word16Type "queryFirmware"
     return $ remBind b
 compileProcedure QueryProcessor = do
-    compileShallowPrimitiveError "queryProcessor"
+    _ <- compileShallowPrimitiveError "queryProcessor"
     return ATMEGA8
 compileProcedure QueryProcessorE = do
     b <- compileNoExprProcedure Word8Type "queryProcessor"
     return $ remBind b
 compileProcedure Millis = do
-    compileShallowPrimitiveError "millis"
+    _ <- compileShallowPrimitiveError "millis"
     return (0::Word32)
 compileProcedure MillisE = do
     b <- compileNoExprProcedure Word32Type "millis"
     return $ remBind b
 compileProcedure Micros = do
-    compileShallowPrimitiveError "micros"
+    _ <- compileShallowPrimitiveError "micros"
     return 0
 compileProcedure MicrosE = do
     b <- compileNoExprProcedure Word32Type "micros"
     return $ remBind b
 compileProcedure (DelayMillis ms) = do
-    compileShallowPrimitiveError $ "delayMillis " ++ show ms
+    _ <- compileShallowPrimitiveError $ "delayMillis " ++ show ms
     return ()
 compileProcedure (DelayMillisE ms) = do
-    compile1ExprCommand "delayMilliseconds" ms
+    _ <- compile1ExprCommand "delayMilliseconds" ms
     return LitUnit
 compileProcedure (DelayMicros ms) = do
-    compileShallowPrimitiveError $ "delayMicros " ++ show ms
+    _ <- compileShallowPrimitiveError $ "delayMicros " ++ show ms
     return ()
 compileProcedure (DelayMicrosE ms) = do
-    compile1ExprCommand "delayMicroseconds" ms
+    _ <- compile1ExprCommand "delayMicroseconds" ms
     return LitUnit
 compileProcedure (DigitalRead ms) = do
-    compileShallowPrimitiveError $ "digitalRead " ++ show ms
+    _ <- compileShallowPrimitiveError $ "digitalRead " ++ show ms
     return False
 compileProcedure (DigitalReadE p) = do
     b <- compile1ExprProcedure BoolType "digitalRead" p
     return $ remBind b
 compileProcedure (DigitalPortRead p m) = do
-    compileShallowPrimitiveError $ "digitalPortRead " ++ show p ++ " " ++ show m
+    _ <- compileShallowPrimitiveError $ "digitalPortRead " ++ show p ++ " " ++ show m
     return 0
 compileProcedure (DigitalPortReadE p m) = do
     b <- compile2ExprProcedure Word8Type "digitalPortRead" p m
     return $ remBind b
 compileProcedure (AnalogRead p) = do
-    compileShallowPrimitiveError $ "analogRead " ++ show p
+    _ <- compileShallowPrimitiveError $ "analogRead " ++ show p
     return 0
 compileProcedure (AnalogReadE p) = do
     b <- compile1ExprProcedure Word16Type "analogRead" p
     return $ remBind b
 compileProcedure (I2CRead p n) = do
-    compileShallowPrimitiveError $ "i2cRead " ++ show p ++ " " ++ show n
+    _ <- compileShallowPrimitiveError $ "i2cRead " ++ show p ++ " " ++ show n
     return []
 compileProcedure (I2CReadE p n) = do
     b <- compile2ExprListProcedure "i2cRead" p n
     return $ remBind b
 compileProcedure (Stepper2Pin s p1 p2) = do
-    compileShallowPrimitiveError $ "i2cRead " ++ show s ++ " " ++
+    _ <- compileShallowPrimitiveError $ "i2cRead " ++ show s ++ " " ++
                                    show p1 ++ " " ++ show p2
     return 0
 compileProcedure (Stepper2PinE s p1 p2) = do
     b <- compile3ExprProcedure Word8Type "stepper2Pin" s p1 p2
     return $ remBind b
 compileProcedure (Stepper4Pin s p1 p2 p3 p4) = do
-    compileShallowPrimitiveError $ "i2cRead " ++ show s ++ " " ++
+    _ <- compileShallowPrimitiveError $ "i2cRead " ++ show s ++ " " ++
                                    show p1 ++ " " ++ show p2 ++
                                    show p3 ++ " " ++ show p4
     return 0
@@ -531,57 +530,57 @@ compileProcedure (Stepper4PinE s p1 p2 p3 p4) = do
     b <- compile5ExprProcedure Word8Type "stepper4Pin" s p1 p2 p3 p4
     return $ remBind b
 compileProcedure (StepperStepE st s) = do
-    compile2ExprCommand "stepperStep" st s
+    _ <- compile2ExprCommand "stepperStep" st s
     return ()
 compileProcedure (ServoAttach p) = do
-    compileShallowPrimitiveError $ "servoAttach " ++ show p
+    _ <- compileShallowPrimitiveError $ "servoAttach " ++ show p
     return 0
 compileProcedure (ServoAttachE p) = do
     b <- compile1ExprProcedure Word8Type "servoAttach" p
     return $ remBind b
-compileProcedure (ServoAttachMinMax p min max) = do
-    compileShallowPrimitiveError $ "servoAttachMinMax " ++
-                                  show min ++ " " ++ show max
+compileProcedure (ServoAttachMinMax p mi ma) = do
+    _ <- compileShallowPrimitiveError $ "servoAttachMinMax " ++
+                           show p ++ " " ++ show mi ++ " " ++ show ma
     return 0
-compileProcedure (ServoAttachMinMaxE p min max) = do
-    b <- compile3ExprProcedure Word8Type "servoAttachMinMax" p min max
+compileProcedure (ServoAttachMinMaxE p mi ma) = do
+    b <- compile3ExprProcedure Word8Type "servoAttachMinMax" p mi ma
     return $ remBind b
 compileProcedure (ServoRead sv) = do
-    compileShallowPrimitiveError $ "servoRead " ++ show sv
+    _ <- compileShallowPrimitiveError $ "servoRead " ++ show sv
     return 0
 compileProcedure (ServoReadE sv) = do
     b <- compile1ExprProcedure Word16Type "servoRead" sv
     return $ remBind b
 compileProcedure (ServoReadMicros sv) = do
-    compileShallowPrimitiveError $ "servoReadMicros" ++ show sv
+    _ <- compileShallowPrimitiveError $ "servoReadMicros" ++ show sv
     return 0
 compileProcedure (ServoReadMicrosE sv) = do
     b <- compile1ExprProcedure Word16Type "servoReadMicros" sv
     return $ remBind b
 compileProcedure QueryAllTasks = do
-    compileUnsupportedError "queryAllTasks"
+    _ <- compileUnsupportedError "queryAllTasks"
     return []
 compileProcedure QueryAllTasksE = do
-    compileUnsupportedError "queryAllTasksE"
+    _ <- compileUnsupportedError "queryAllTasksE"
     return (litStringE "")
 compileProcedure (QueryTaskE _) = do
-    compileUnsupportedError "queryTaskE"
+    _ <- compileUnsupportedError "queryTaskE"
     return Nothing
 compileProcedure (QueryTask _) = do
-    compileUnsupportedError "queryTask"
+    _ <- compileUnsupportedError "queryTask"
     return Nothing
 compileProcedure (BootTaskE _) = do
-    compileUnsupportedError "bootTaskE"
+    _ <- compileUnsupportedError "bootTaskE"
     return true
-compileProcedure (Debug s) = do
+compileProcedure (Debug _) = do
     return ()
 compileProcedure (DebugE s) = do
-    compileLine ("debug((uint8_t *)" ++ compileExpr s ++ ");")
+    _ <- compileLine ("debug((uint8_t *)" ++ compileExpr s ++ ");")
     return ()
 compileProcedure DebugListen = do
     return ()
 compileProcedure (Die _ _) = do
-    compileUnsupportedError "die"
+    _ <- compileUnsupportedError "die"
     return ()
 compileProcedure (NewRemoteRefBE e) = do
     x <- compileNewRef BoolType e
@@ -911,848 +910,849 @@ compileProcedure (IterateUnitUnitE iv bf) = do
     let bi = RemBindUnit i
     j <- nextBind
     let bj = RemBindUnit j
-    compileIterateProcedure UnitType UnitType i bi j bj iv bf
+    _ <- compileIterateProcedure UnitType UnitType i bi j bj iv bf
     return bj
 compileProcedure (IterateUnitBoolE iv bf) = do
     i <- nextBind
     let bi = RemBindUnit i
     j <- nextBind
     let bj = RemBindB j
-    compileIterateProcedure UnitType BoolType i bi j bj iv bf
+    _ <- compileIterateProcedure UnitType BoolType i bi j bj iv bf
     return bj
 compileProcedure (IterateUnitW8E iv bf) = do
     i <- nextBind
     let bi = RemBindUnit i
     j <- nextBind
     let bj = RemBindW8 j
-    compileIterateProcedure UnitType Word8Type i bi j bj iv bf
+    _ <- compileIterateProcedure UnitType Word8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateUnitW16E iv bf) = do
     i <- nextBind
     let bi = RemBindUnit i
     j <- nextBind
     let bj = RemBindW16 j
-    compileIterateProcedure UnitType Word16Type i bi j bj iv bf
+    _ <- compileIterateProcedure UnitType Word16Type i bi j bj iv bf
     return bj
 compileProcedure (IterateUnitW32E iv bf) = do
     i <- nextBind
     let bi = RemBindUnit i
     j <- nextBind
     let bj = RemBindW32 j
-    compileIterateProcedure UnitType Word32Type i bi j bj iv bf
+    _ <- compileIterateProcedure UnitType Word32Type i bi j bj iv bf
     return bj
 compileProcedure (IterateUnitI8E iv bf) = do
     i <- nextBind
     let bi = RemBindUnit i
     j <- nextBind
     let bj = RemBindI8 j
-    compileIterateProcedure UnitType Int8Type i bi j bj iv bf
+    _ <- compileIterateProcedure UnitType Int8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateUnitI16E iv bf) = do
     i <- nextBind
     let bi = RemBindUnit i
     j <- nextBind
     let bj = RemBindI16 j
-    compileIterateProcedure UnitType Int16Type i bi j bj iv bf
+    _ <- compileIterateProcedure UnitType Int16Type i bi j bj iv bf
     return bj
 compileProcedure (IterateUnitI32E iv bf) = do
     i <- nextBind
     let bi = RemBindUnit i
     j <- nextBind
     let bj = RemBindI32 j
-    compileIterateProcedure UnitType Int32Type i bi j bj iv bf
+    _ <- compileIterateProcedure UnitType Int32Type i bi j bj iv bf
     return bj
 compileProcedure (IterateUnitIE iv bf) = do
     i <- nextBind
     let bi = RemBindUnit i
     j <- nextBind
     let bj = RemBindI j
-    compileIterateProcedure UnitType IntType i bi j bj iv bf
+    _ <- compileIterateProcedure UnitType IntType i bi j bj iv bf
     return bj
 compileProcedure (IterateUnitL8E iv bf) = do
     i <- nextBind
     let bi = RemBindUnit i
     j <- nextBind
     let bj = RemBindList8 j
-    compileIterateProcedure UnitType List8Type i bi j bj iv bf
+    _ <- compileIterateProcedure UnitType List8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateUnitFloatE iv bf) = do
     i <- nextBind
     let bi = RemBindUnit i
     j <- nextBind
     let bj = RemBindFloat j
-    compileIterateProcedure UnitType FloatType i bi j bj iv bf
+    _ <- compileIterateProcedure UnitType FloatType i bi j bj iv bf
     return bj
 compileProcedure (IterateBoolUnitE iv bf) = do
     i <- nextBind
     let bi = RemBindB i
     j <- nextBind
     let bj = RemBindUnit j
-    compileIterateProcedure BoolType UnitType i bi j bj iv bf
+    _ <- compileIterateProcedure BoolType UnitType i bi j bj iv bf
     return bj
 compileProcedure (IterateBoolBoolE iv bf) = do
     i <- nextBind
     let bi = RemBindB i
     j <- nextBind
     let bj = RemBindB j
-    compileIterateProcedure BoolType BoolType i bi j bj iv bf
+    _ <- compileIterateProcedure BoolType BoolType i bi j bj iv bf
     return bj
 compileProcedure (IterateBoolW8E iv bf) = do
     i <- nextBind
     let bi = RemBindB i
     j <- nextBind
     let bj = RemBindW8 j
-    compileIterateProcedure BoolType Word8Type i bi j bj iv bf
+    _ <- compileIterateProcedure BoolType Word8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateBoolW16E iv bf) = do
     i <- nextBind
     let bi = RemBindB i
     j <- nextBind
     let bj = RemBindW16 j
-    compileIterateProcedure BoolType Word16Type i bi j bj iv bf
+    _ <- compileIterateProcedure BoolType Word16Type i bi j bj iv bf
     return bj
 compileProcedure (IterateBoolW32E iv bf) = do
     i <- nextBind
     let bi = RemBindB i
     j <- nextBind
     let bj = RemBindW32 j
-    compileIterateProcedure BoolType Word32Type i bi j bj iv bf
+    _ <- compileIterateProcedure BoolType Word32Type i bi j bj iv bf
     return bj
 compileProcedure (IterateBoolI8E iv bf) = do
     i <- nextBind
     let bi = RemBindB i
     j <- nextBind
     let bj = RemBindI8 j
-    compileIterateProcedure BoolType Int8Type i bi j bj iv bf
+    _ <- compileIterateProcedure BoolType Int8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateBoolI16E iv bf) = do
     i <- nextBind
     let bi = RemBindB i
     j <- nextBind
     let bj = RemBindI16 j
-    compileIterateProcedure BoolType Int16Type i bi j bj iv bf
+    _ <- compileIterateProcedure BoolType Int16Type i bi j bj iv bf
     return bj
 compileProcedure (IterateBoolI32E iv bf) = do
     i <- nextBind
     let bi = RemBindB i
     j <- nextBind
     let bj = RemBindI32 j
-    compileIterateProcedure BoolType Int32Type i bi j bj iv bf
+    _ <- compileIterateProcedure BoolType Int32Type i bi j bj iv bf
     return bj
 compileProcedure (IterateBoolIE iv bf) = do
     i <- nextBind
     let bi = RemBindB i
     j <- nextBind
     let bj = RemBindI j
-    compileIterateProcedure BoolType IntType i bi j bj iv bf
+    _ <- compileIterateProcedure BoolType IntType i bi j bj iv bf
     return bj
 compileProcedure (IterateBoolL8E iv bf) = do
     i <- nextBind
     let bi = RemBindB i
     j <- nextBind
     let bj = RemBindList8 j
-    compileIterateProcedure BoolType List8Type i bi j bj iv bf
+    _ <- compileIterateProcedure BoolType List8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateBoolFloatE iv bf) = do
     i <- nextBind
     let bi = RemBindB i
     j <- nextBind
     let bj = RemBindFloat j
-    compileIterateProcedure BoolType FloatType i bi j bj iv bf
+    _ <- compileIterateProcedure BoolType FloatType i bi j bj iv bf
     return bj
 compileProcedure (IterateW8UnitE iv bf) = do
     i <- nextBind
     let bi = RemBindW8 i
     j <- nextBind
     let bj = RemBindUnit j
-    compileIterateProcedure Word8Type UnitType i bi j bj iv bf
+    _ <- compileIterateProcedure Word8Type UnitType i bi j bj iv bf
     return bj
 compileProcedure (IterateW8BoolE iv bf) = do
     i <- nextBind
     let bi = RemBindW8 i
     j <- nextBind
     let bj = RemBindB j
-    compileIterateProcedure Word8Type BoolType i bi j bj iv bf
+    _ <- compileIterateProcedure Word8Type BoolType i bi j bj iv bf
     return bj
 compileProcedure (IterateW8W8E iv bf) = do
     i <- nextBind
     let bi = RemBindW8 i
     j <- nextBind
     let bj = RemBindW8 j
-    compileIterateProcedure Word8Type Word8Type i bi j bj iv bf
+    _ <- compileIterateProcedure Word8Type Word8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateW8W16E iv bf) = do
     i <- nextBind
     let bi = RemBindW8 i
     j <- nextBind
     let bj = RemBindW16 j
-    compileIterateProcedure Word8Type Word16Type i bi j bj iv bf
+    _ <- compileIterateProcedure Word8Type Word16Type i bi j bj iv bf
     return bj
 compileProcedure (IterateW8W32E iv bf) = do
     i <- nextBind
     let bi = RemBindW8 i
     j <- nextBind
     let bj = RemBindW32 j
-    compileIterateProcedure Word8Type Word32Type i bi j bj iv bf
+    _ <- compileIterateProcedure Word8Type Word32Type i bi j bj iv bf
     return bj
 compileProcedure (IterateW8I8E iv bf) = do
     i <- nextBind
     let bi = RemBindW8 i
     j <- nextBind
     let bj = RemBindI8 j
-    compileIterateProcedure Word8Type Int8Type i bi j bj iv bf
+    _ <- compileIterateProcedure Word8Type Int8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateW8I16E iv bf) = do
     i <- nextBind
     let bi = RemBindW8 i
     j <- nextBind
     let bj = RemBindI16 j
-    compileIterateProcedure Word8Type Int16Type i bi j bj iv bf
+    _ <- compileIterateProcedure Word8Type Int16Type i bi j bj iv bf
     return bj
 compileProcedure (IterateW8I32E iv bf) = do
     i <- nextBind
     let bi = RemBindW8 i
     j <- nextBind
     let bj = RemBindI32 j
-    compileIterateProcedure Word8Type Int32Type i bi j bj iv bf
+    _ <- compileIterateProcedure Word8Type Int32Type i bi j bj iv bf
     return bj
 compileProcedure (IterateW8IE iv bf) = do
     i <- nextBind
     let bi = RemBindW8 i
     j <- nextBind
     let bj = RemBindI j
-    compileIterateProcedure Word8Type IntType i bi j bj iv bf
+    _ <- compileIterateProcedure Word8Type IntType i bi j bj iv bf
     return bj
 compileProcedure (IterateW8L8E iv bf) = do
     i <- nextBind
     let bi = RemBindW8 i
     j <- nextBind
     let bj = RemBindList8 j
-    compileIterateProcedure Word8Type List8Type i bi j bj iv bf
+    _ <- compileIterateProcedure Word8Type List8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateW8FloatE iv bf) = do
     i <- nextBind
     let bi = RemBindW8 i
     j <- nextBind
     let bj = RemBindFloat j
-    compileIterateProcedure Word8Type FloatType i bi j bj iv bf
+    _ <- compileIterateProcedure Word8Type FloatType i bi j bj iv bf
     return bj
 compileProcedure (IterateW16UnitE iv bf) = do
     i <- nextBind
     let bi = RemBindW16 i
     j <- nextBind
     let bj = RemBindUnit j
-    compileIterateProcedure Word16Type UnitType i bi j bj iv bf
+    _ <- compileIterateProcedure Word16Type UnitType i bi j bj iv bf
     return bj
 compileProcedure (IterateW16BoolE iv bf) = do
     i <- nextBind
     let bi = RemBindW16 i
     j <- nextBind
     let bj = RemBindB j
-    compileIterateProcedure Word16Type BoolType i bi j bj iv bf
+    _ <- compileIterateProcedure Word16Type BoolType i bi j bj iv bf
     return bj
 compileProcedure (IterateW16W8E iv bf) = do
     i <- nextBind
     let bi = RemBindW16 i
     j <- nextBind
     let bj = RemBindW8 j
-    compileIterateProcedure Word16Type Word8Type i bi j bj iv bf
+    _ <- compileIterateProcedure Word16Type Word8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateW16W16E iv bf) = do
     i <- nextBind
     let bi = RemBindW16 i
     j <- nextBind
     let bj = RemBindW16 j
-    compileIterateProcedure Word16Type Word16Type i bi j bj iv bf
+    _ <- compileIterateProcedure Word16Type Word16Type i bi j bj iv bf
     return bj
 compileProcedure (IterateW16W32E iv bf) = do
     i <- nextBind
     let bi = RemBindW16 i
     j <- nextBind
     let bj = RemBindW32 j
-    compileIterateProcedure Word16Type Word32Type i bi j bj iv bf
+    _ <- compileIterateProcedure Word16Type Word32Type i bi j bj iv bf
     return bj
 compileProcedure (IterateW16I8E iv bf) = do
     i <- nextBind
     let bi = RemBindW16 i
     j <- nextBind
     let bj = RemBindI8 j
-    compileIterateProcedure Word16Type Int8Type i bi j bj iv bf
+    _ <- compileIterateProcedure Word16Type Int8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateW16I16E iv bf) = do
     i <- nextBind
     let bi = RemBindW16 i
     j <- nextBind
     let bj = RemBindI16 j
-    compileIterateProcedure Word16Type Int16Type i bi j bj iv bf
+    _ <- compileIterateProcedure Word16Type Int16Type i bi j bj iv bf
     return bj
 compileProcedure (IterateW16I32E iv bf) = do
     i <- nextBind
     let bi = RemBindW16 i
     j <- nextBind
     let bj = RemBindI32 j
-    compileIterateProcedure Word16Type Int32Type i bi j bj iv bf
+    _ <- compileIterateProcedure Word16Type Int32Type i bi j bj iv bf
     return bj
 compileProcedure (IterateW16IE iv bf) = do
     i <- nextBind
     let bi = RemBindW16 i
     j <- nextBind
     let bj = RemBindI j
-    compileIterateProcedure Word16Type IntType i bi j bj iv bf
+    _ <- compileIterateProcedure Word16Type IntType i bi j bj iv bf
     return bj
 compileProcedure (IterateW16L8E iv bf) = do
     i <- nextBind
     let bi = RemBindW16 i
     j <- nextBind
     let bj = RemBindList8 j
-    compileIterateProcedure Word16Type List8Type i bi j bj iv bf
+    _ <- compileIterateProcedure Word16Type List8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateW16FloatE iv bf) = do
     i <- nextBind
     let bi = RemBindW16 i
     j <- nextBind
     let bj = RemBindFloat j
-    compileIterateProcedure Word16Type FloatType i bi j bj iv bf
+    _ <- compileIterateProcedure Word16Type FloatType i bi j bj iv bf
     return bj
 compileProcedure (IterateW32UnitE iv bf) = do
     i <- nextBind
     let bi = RemBindW32 i
     j <- nextBind
     let bj = RemBindUnit j
-    compileIterateProcedure Word32Type UnitType i bi j bj iv bf
+    _ <- compileIterateProcedure Word32Type UnitType i bi j bj iv bf
     return bj
 compileProcedure (IterateW32BoolE iv bf) = do
     i <- nextBind
     let bi = RemBindW32 i
     j <- nextBind
     let bj = RemBindB j
-    compileIterateProcedure Word32Type BoolType i bi j bj iv bf
+    _ <- compileIterateProcedure Word32Type BoolType i bi j bj iv bf
     return bj
 compileProcedure (IterateW32W8E iv bf) = do
     i <- nextBind
     let bi = RemBindW32 i
     j <- nextBind
     let bj = RemBindW8 j
-    compileIterateProcedure Word32Type Word8Type i bi j bj iv bf
+    _ <- compileIterateProcedure Word32Type Word8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateW32W16E iv bf) = do
     i <- nextBind
     let bi = RemBindW32 i
     j <- nextBind
     let bj = RemBindW16 j
-    compileIterateProcedure Word32Type Word16Type i bi j bj iv bf
+    _ <- compileIterateProcedure Word32Type Word16Type i bi j bj iv bf
     return bj
 compileProcedure (IterateW32W32E iv bf) = do
     i <- nextBind
     let bi = RemBindW32 i
     j <- nextBind
     let bj = RemBindW32 j
-    compileIterateProcedure Word32Type Word32Type i bi j bj iv bf
+    _ <- compileIterateProcedure Word32Type Word32Type i bi j bj iv bf
     return bj
 compileProcedure (IterateW32I8E iv bf) = do
     i <- nextBind
     let bi = RemBindW32 i
     j <- nextBind
     let bj = RemBindI8 j
-    compileIterateProcedure Word32Type Int8Type i bi j bj iv bf
+    _ <- compileIterateProcedure Word32Type Int8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateW32I16E iv bf) = do
     i <- nextBind
     let bi = RemBindW32 i
     j <- nextBind
     let bj = RemBindI16 j
-    compileIterateProcedure Word32Type Int16Type i bi j bj iv bf
+    _ <- compileIterateProcedure Word32Type Int16Type i bi j bj iv bf
     return bj
 compileProcedure (IterateW32I32E iv bf) = do
     i <- nextBind
     let bi = RemBindW32 i
     j <- nextBind
     let bj = RemBindI32 j
-    compileIterateProcedure Word32Type Int32Type i bi j bj iv bf
+    _ <- compileIterateProcedure Word32Type Int32Type i bi j bj iv bf
     return bj
 compileProcedure (IterateW32IE iv bf) = do
     i <- nextBind
     let bi = RemBindW32 i
     j <- nextBind
     let bj = RemBindI j
-    compileIterateProcedure Word32Type IntType i bi j bj iv bf
+    _ <- compileIterateProcedure Word32Type IntType i bi j bj iv bf
     return bj
 compileProcedure (IterateW32L8E iv bf) = do
     i <- nextBind
     let bi = RemBindW32 i
     j <- nextBind
     let bj = RemBindList8 j
-    compileIterateProcedure Word32Type List8Type i bi j bj iv bf
+    _ <- compileIterateProcedure Word32Type List8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateW32FloatE iv bf) = do
     i <- nextBind
     let bi = RemBindW32 i
     j <- nextBind
     let bj = RemBindFloat j
-    compileIterateProcedure Word32Type FloatType i bi j bj iv bf
+    _ <- compileIterateProcedure Word32Type FloatType i bi j bj iv bf
     return bj
 compileProcedure (IterateI8UnitE iv bf) = do
     i <- nextBind
     let bi = RemBindI8 i
     j <- nextBind
     let bj = RemBindUnit j
-    compileIterateProcedure Int8Type UnitType i bi j bj iv bf
+    _ <- compileIterateProcedure Int8Type UnitType i bi j bj iv bf
     return bj
 compileProcedure (IterateI8BoolE iv bf) = do
     i <- nextBind
     let bi = RemBindI8 i
     j <- nextBind
     let bj = RemBindB j
-    compileIterateProcedure Int8Type BoolType i bi j bj iv bf
+    _ <- compileIterateProcedure Int8Type BoolType i bi j bj iv bf
     return bj
 compileProcedure (IterateI8W8E iv bf) = do
     i <- nextBind
     let bi = RemBindI8 i
     j <- nextBind
     let bj = RemBindW8 j
-    compileIterateProcedure Int8Type Word8Type i bi j bj iv bf
+    _ <- compileIterateProcedure Int8Type Word8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateI8W16E iv bf) = do
     i <- nextBind
     let bi = RemBindI8 i
     j <- nextBind
     let bj = RemBindW16 j
-    compileIterateProcedure Int8Type Word16Type i bi j bj iv bf
+    _ <- compileIterateProcedure Int8Type Word16Type i bi j bj iv bf
     return bj
 compileProcedure (IterateI8W32E iv bf) = do
     i <- nextBind
     let bi = RemBindI8 i
     j <- nextBind
     let bj = RemBindW32 j
-    compileIterateProcedure Int8Type Word32Type i bi j bj iv bf
+    _ <- compileIterateProcedure Int8Type Word32Type i bi j bj iv bf
     return bj
 compileProcedure (IterateI8I8E iv bf) = do
     i <- nextBind
     let bi = RemBindI8 i
     j <- nextBind
     let bj = RemBindI8 j
-    compileIterateProcedure Int8Type Int8Type i bi j bj iv bf
+    _ <- compileIterateProcedure Int8Type Int8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateI8I16E iv bf) = do
     i <- nextBind
     let bi = RemBindI8 i
     j <- nextBind
     let bj = RemBindI16 j
-    compileIterateProcedure Int8Type Int16Type i bi j bj iv bf
+    _ <- compileIterateProcedure Int8Type Int16Type i bi j bj iv bf
     return bj
 compileProcedure (IterateI8I32E iv bf) = do
     i <- nextBind
     let bi = RemBindI8 i
     j <- nextBind
     let bj = RemBindI32 j
-    compileIterateProcedure Int8Type Int32Type i bi j bj iv bf
+    _ <- compileIterateProcedure Int8Type Int32Type i bi j bj iv bf
     return bj
 compileProcedure (IterateI8IE iv bf) = do
     i <- nextBind
     let bi = RemBindI8 i
     j <- nextBind
     let bj = RemBindI j
-    compileIterateProcedure Int8Type IntType i bi j bj iv bf
+    _ <- compileIterateProcedure Int8Type IntType i bi j bj iv bf
     return bj
 compileProcedure (IterateI8L8E iv bf) = do
     i <- nextBind
     let bi = RemBindI8 i
     j <- nextBind
     let bj = RemBindList8 j
-    compileIterateProcedure Int8Type List8Type i bi j bj iv bf
+    _ <- compileIterateProcedure Int8Type List8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateI8FloatE iv bf) = do
     i <- nextBind
     let bi = RemBindI8 i
     j <- nextBind
     let bj = RemBindFloat j
-    compileIterateProcedure Int8Type FloatType i bi j bj iv bf
+    _ <- compileIterateProcedure Int8Type FloatType i bi j bj iv bf
     return bj
 compileProcedure (IterateI16UnitE iv bf) = do
     i <- nextBind
     let bi = RemBindI16 i
     j <- nextBind
     let bj = RemBindUnit j
-    compileIterateProcedure Int16Type UnitType i bi j bj iv bf
+    _ <- compileIterateProcedure Int16Type UnitType i bi j bj iv bf
     return bj
 compileProcedure (IterateI16BoolE iv bf) = do
     i <- nextBind
     let bi = RemBindI16 i
     j <- nextBind
     let bj = RemBindB j
-    compileIterateProcedure Int16Type BoolType i bi j bj iv bf
+    _ <- compileIterateProcedure Int16Type BoolType i bi j bj iv bf
     return bj
 compileProcedure (IterateI16W8E iv bf) = do
     i <- nextBind
     let bi = RemBindI16 i
     j <- nextBind
     let bj = RemBindW8 j
-    compileIterateProcedure Int16Type Word8Type i bi j bj iv bf
+    _ <- compileIterateProcedure Int16Type Word8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateI16W16E iv bf) = do
     i <- nextBind
     let bi = RemBindI16 i
     j <- nextBind
     let bj = RemBindW16 j
-    compileIterateProcedure Int16Type Word16Type i bi j bj iv bf
+    _ <- compileIterateProcedure Int16Type Word16Type i bi j bj iv bf
     return bj
 compileProcedure (IterateI16W32E iv bf) = do
     i <- nextBind
     let bi = RemBindI16 i
     j <- nextBind
     let bj = RemBindW32 j
-    compileIterateProcedure Int16Type Word32Type i bi j bj iv bf
+    _ <- compileIterateProcedure Int16Type Word32Type i bi j bj iv bf
     return bj
 compileProcedure (IterateI16I8E iv bf) = do
     i <- nextBind
     let bi = RemBindI16 i
     j <- nextBind
     let bj = RemBindI8 j
-    compileIterateProcedure Int16Type Int8Type i bi j bj iv bf
+    _ <- compileIterateProcedure Int16Type Int8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateI16I16E iv bf) = do
     i <- nextBind
     let bi = RemBindI16 i
     j <- nextBind
     let bj = RemBindI16 j
-    compileIterateProcedure Int16Type Int16Type i bi j bj iv bf
+    _ <- compileIterateProcedure Int16Type Int16Type i bi j bj iv bf
     return bj
 compileProcedure (IterateI16I32E iv bf) = do
     i <- nextBind
     let bi = RemBindI16 i
     j <- nextBind
     let bj = RemBindI32 j
-    compileIterateProcedure Int16Type Int32Type i bi j bj iv bf
+    _ <- compileIterateProcedure Int16Type Int32Type i bi j bj iv bf
     return bj
 compileProcedure (IterateI16IE iv bf) = do
     i <- nextBind
     let bi = RemBindI16 i
     j <- nextBind
     let bj = RemBindI j
-    compileIterateProcedure Int16Type IntType i bi j bj iv bf
+    _ <- compileIterateProcedure Int16Type IntType i bi j bj iv bf
     return bj
 compileProcedure (IterateI16L8E iv bf) = do
     i <- nextBind
     let bi = RemBindI16 i
     j <- nextBind
     let bj = RemBindList8 j
-    compileIterateProcedure Int16Type List8Type i bi j bj iv bf
+    _ <- compileIterateProcedure Int16Type List8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateI16FloatE iv bf) = do
     i <- nextBind
     let bi = RemBindI16 i
     j <- nextBind
     let bj = RemBindFloat j
-    compileIterateProcedure Int16Type FloatType i bi j bj iv bf
+    _ <- compileIterateProcedure Int16Type FloatType i bi j bj iv bf
     return bj
 compileProcedure (IterateI32UnitE iv bf) = do
     i <- nextBind
     let bi = RemBindI32 i
     j <- nextBind
     let bj = RemBindUnit j
-    compileIterateProcedure Int32Type UnitType i bi j bj iv bf
+    _ <- compileIterateProcedure Int32Type UnitType i bi j bj iv bf
     return bj
 compileProcedure (IterateI32BoolE iv bf) = do
     i <- nextBind
     let bi = RemBindI32 i
     j <- nextBind
     let bj = RemBindB j
-    compileIterateProcedure Int32Type BoolType i bi j bj iv bf
+    _ <- compileIterateProcedure Int32Type BoolType i bi j bj iv bf
     return bj
 compileProcedure (IterateI32W8E iv bf) = do
     i <- nextBind
     let bi = RemBindI32 i
     j <- nextBind
     let bj = RemBindW8 j
-    compileIterateProcedure Int32Type Word8Type i bi j bj iv bf
+    _ <- compileIterateProcedure Int32Type Word8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateI32W16E iv bf) = do
     i <- nextBind
     let bi = RemBindI32 i
     j <- nextBind
     let bj = RemBindW16 j
-    compileIterateProcedure Int32Type Word16Type i bi j bj iv bf
+    _ <- compileIterateProcedure Int32Type Word16Type i bi j bj iv bf
     return bj
 compileProcedure (IterateI32W32E iv bf) = do
     i <- nextBind
     let bi = RemBindI32 i
     j <- nextBind
     let bj = RemBindW32 j
-    compileIterateProcedure Int32Type Word32Type i bi j bj iv bf
+    _ <- compileIterateProcedure Int32Type Word32Type i bi j bj iv bf
     return bj
 compileProcedure (IterateI32I8E iv bf) = do
     i <- nextBind
     let bi = RemBindI32 i
     j <- nextBind
     let bj = RemBindI8 j
-    compileIterateProcedure Int32Type Int8Type i bi j bj iv bf
+    _ <- compileIterateProcedure Int32Type Int8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateI32I16E iv bf) = do
     i <- nextBind
     let bi = RemBindI32 i
     j <- nextBind
     let bj = RemBindI16 j
-    compileIterateProcedure Int32Type Int16Type i bi j bj iv bf
+    _ <- compileIterateProcedure Int32Type Int16Type i bi j bj iv bf
     return bj
 compileProcedure (IterateI32I32E iv bf) = do
     i <- nextBind
     let bi = RemBindI32 i
     j <- nextBind
     let bj = RemBindI32 j
-    compileIterateProcedure Int32Type Int32Type i bi j bj iv bf
+    _ <- compileIterateProcedure Int32Type Int32Type i bi j bj iv bf
     return bj
 compileProcedure (IterateI32IE iv bf) = do
     i <- nextBind
     let bi = RemBindI32 i
     j <- nextBind
     let bj = RemBindI j
-    compileIterateProcedure Int32Type IntType i bi j bj iv bf
+    _ <- compileIterateProcedure Int32Type IntType i bi j bj iv bf
     return bj
 compileProcedure (IterateI32L8E iv bf) = do
     i <- nextBind
     let bi = RemBindI32 i
     j <- nextBind
     let bj = RemBindList8 j
-    compileIterateProcedure Int32Type List8Type i bi j bj iv bf
+    _ <- compileIterateProcedure Int32Type List8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateI32FloatE iv bf) = do
     i <- nextBind
     let bi = RemBindI32 i
     j <- nextBind
     let bj = RemBindFloat j
-    compileIterateProcedure Int32Type FloatType i bi j bj iv bf
+    _ <- compileIterateProcedure Int32Type FloatType i bi j bj iv bf
     return bj
 compileProcedure (IterateIUnitE iv bf) = do
     i <- nextBind
     let bi = RemBindI i
     j <- nextBind
     let bj = RemBindUnit j
-    compileIterateProcedure IntType UnitType i bi j bj iv bf
+    _ <- compileIterateProcedure IntType UnitType i bi j bj iv bf
     return bj
 compileProcedure (IterateIBoolE iv bf) = do
     i <- nextBind
     let bi = RemBindI i
     j <- nextBind
     let bj = RemBindB j
-    compileIterateProcedure IntType BoolType i bi j bj iv bf
+    _ <- compileIterateProcedure IntType BoolType i bi j bj iv bf
     return bj
 compileProcedure (IterateIW8E iv bf) = do
     i <- nextBind
     let bi = RemBindI i
     j <- nextBind
     let bj = RemBindW8 j
-    compileIterateProcedure IntType Word8Type i bi j bj iv bf
+    _ <- compileIterateProcedure IntType Word8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateIW16E iv bf) = do
     i <- nextBind
     let bi = RemBindI i
     j <- nextBind
     let bj = RemBindW16 j
-    compileIterateProcedure IntType Word16Type i bi j bj iv bf
+    _ <- compileIterateProcedure IntType Word16Type i bi j bj iv bf
     return bj
 compileProcedure (IterateIW32E iv bf) = do
     i <- nextBind
     let bi = RemBindI i
     j <- nextBind
     let bj = RemBindW32 j
-    compileIterateProcedure IntType Word32Type i bi j bj iv bf
+    _ <- compileIterateProcedure IntType Word32Type i bi j bj iv bf
     return bj
 compileProcedure (IterateII8E iv bf) = do
     i <- nextBind
     let bi = RemBindI i
     j <- nextBind
     let bj = RemBindI8 j
-    compileIterateProcedure IntType Int8Type i bi j bj iv bf
+    _ <- compileIterateProcedure IntType Int8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateII16E iv bf) = do
     i <- nextBind
     let bi = RemBindI i
     j <- nextBind
     let bj = RemBindI16 j
-    compileIterateProcedure IntType Int16Type i bi j bj iv bf
+    _ <- compileIterateProcedure IntType Int16Type i bi j bj iv bf
     return bj
 compileProcedure (IterateII32E iv bf) = do
     i <- nextBind
     let bi = RemBindI i
     j <- nextBind
     let bj = RemBindI32 j
-    compileIterateProcedure IntType Int32Type i bi j bj iv bf
+    _ <- compileIterateProcedure IntType Int32Type i bi j bj iv bf
     return bj
 compileProcedure (IterateIIE iv bf) = do
     i <- nextBind
     let bi = RemBindI i
     j <- nextBind
     let bj = RemBindI j
-    compileIterateProcedure IntType IntType i bi j bj iv bf
+    _ <- compileIterateProcedure IntType IntType i bi j bj iv bf
     return bj
 compileProcedure (IterateIL8E iv bf) = do
     i <- nextBind
     let bi = RemBindI i
     j <- nextBind
     let bj = RemBindList8 j
-    compileIterateProcedure IntType List8Type i bi j bj iv bf
+    _ <- compileIterateProcedure IntType List8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateIFloatE iv bf) = do
     i <- nextBind
     let bi = RemBindI i
     j <- nextBind
     let bj = RemBindFloat j
-    compileIterateProcedure IntType FloatType i bi j bj iv bf
+    _ <- compileIterateProcedure IntType FloatType i bi j bj iv bf
     return bj
 compileProcedure (IterateL8UnitE iv bf) = do
     i <- nextBind
     let bi = RemBindList8 i
     j <- nextBind
     let bj = RemBindUnit j
-    compileIterateProcedure List8Type UnitType i bi j bj iv bf
+    _ <- compileIterateProcedure List8Type UnitType i bi j bj iv bf
     return bj
 compileProcedure (IterateL8BoolE iv bf) = do
     i <- nextBind
     let bi = RemBindList8 i
     j <- nextBind
     let bj = RemBindB j
-    compileIterateProcedure List8Type BoolType i bi j bj iv bf
+    _ <- compileIterateProcedure List8Type BoolType i bi j bj iv bf
     return bj
 compileProcedure (IterateL8W8E iv bf) = do
     i <- nextBind
     let bi = RemBindList8 i
     j <- nextBind
     let bj = RemBindW8 j
-    compileIterateProcedure List8Type Word8Type i bi j bj iv bf
+    _ <- compileIterateProcedure List8Type Word8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateL8W16E iv bf) = do
     i <- nextBind
     let bi = RemBindList8 i
     j <- nextBind
     let bj = RemBindW16 j
-    compileIterateProcedure List8Type Word16Type i bi j bj iv bf
+    _ <- compileIterateProcedure List8Type Word16Type i bi j bj iv bf
     return bj
 compileProcedure (IterateL8W32E iv bf) = do
     i <- nextBind
     let bi = RemBindList8 i
     j <- nextBind
     let bj = RemBindW32 j
-    compileIterateProcedure List8Type Word32Type i bi j bj iv bf
+    _ <- compileIterateProcedure List8Type Word32Type i bi j bj iv bf
     return bj
 compileProcedure (IterateL8I8E iv bf) = do
     i <- nextBind
     let bi = RemBindList8 i
     j <- nextBind
     let bj = RemBindI8 j
-    compileIterateProcedure List8Type Int8Type i bi j bj iv bf
+    _ <- compileIterateProcedure List8Type Int8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateL8I16E iv bf) = do
     i <- nextBind
     let bi = RemBindList8 i
     j <- nextBind
     let bj = RemBindI16 j
-    compileIterateProcedure List8Type Int16Type i bi j bj iv bf
+    _ <- compileIterateProcedure List8Type Int16Type i bi j bj iv bf
     return bj
 compileProcedure (IterateL8I32E iv bf) = do
     i <- nextBind
     let bi = RemBindList8 i
     j <- nextBind
     let bj = RemBindI32 j
-    compileIterateProcedure List8Type Int32Type i bi j bj iv bf
+    _ <- compileIterateProcedure List8Type Int32Type i bi j bj iv bf
     return bj
 compileProcedure (IterateL8IE iv bf) = do
     i <- nextBind
     let bi = RemBindList8 i
     j <- nextBind
     let bj = RemBindI j
-    compileIterateProcedure List8Type IntType i bi j bj iv bf
+    _ <- compileIterateProcedure List8Type IntType i bi j bj iv bf
     return bj
 compileProcedure (IterateL8L8E iv bf) = do
     i <- nextBind
     let bi = RemBindList8 i
     j <- nextBind
     let bj = RemBindList8 j
-    compileIterateProcedure List8Type List8Type i bi j bj iv bf
+    _ <- compileIterateProcedure List8Type List8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateL8FloatE iv bf) = do
     i <- nextBind
     let bi = RemBindList8 i
     j <- nextBind
     let bj = RemBindFloat j
-    compileIterateProcedure List8Type FloatType i bi j bj iv bf
+    _ <- compileIterateProcedure List8Type FloatType i bi j bj iv bf
     return bj
 compileProcedure (IterateFloatUnitE iv bf) = do
     i <- nextBind
     let bi = RemBindFloat i
     j <- nextBind
     let bj = RemBindUnit j
-    compileIterateProcedure FloatType UnitType i bi j bj iv bf
+    _ <- compileIterateProcedure FloatType UnitType i bi j bj iv bf
     return bj
 compileProcedure (IterateFloatBoolE iv bf) = do
     i <- nextBind
     let bi = RemBindFloat i
     j <- nextBind
     let bj = RemBindB j
-    compileIterateProcedure FloatType BoolType i bi j bj iv bf
+    _ <- compileIterateProcedure FloatType BoolType i bi j bj iv bf
     return bj
 compileProcedure (IterateFloatW8E iv bf) = do
     i <- nextBind
     let bi = RemBindFloat i
     j <- nextBind
     let bj = RemBindW8 j
-    compileIterateProcedure FloatType Word8Type i bi j bj iv bf
+    _ <- compileIterateProcedure FloatType Word8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateFloatW16E iv bf) = do
     i <- nextBind
     let bi = RemBindFloat i
     j <- nextBind
     let bj = RemBindW16 j
-    compileIterateProcedure FloatType Word16Type i bi j bj iv bf
+    _ <- compileIterateProcedure FloatType Word16Type i bi j bj iv bf
     return bj
 compileProcedure (IterateFloatW32E iv bf) = do
     i <- nextBind
     let bi = RemBindFloat i
     j <- nextBind
     let bj = RemBindW32 j
-    compileIterateProcedure FloatType Word32Type i bi j bj iv bf
+    _ <- compileIterateProcedure FloatType Word32Type i bi j bj iv bf
     return bj
 compileProcedure (IterateFloatI8E iv bf) = do
     i <- nextBind
     let bi = RemBindFloat i
     j <- nextBind
     let bj = RemBindI8 j
-    compileIterateProcedure FloatType Int8Type i bi j bj iv bf
+    _ <- compileIterateProcedure FloatType Int8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateFloatI16E iv bf) = do
     i <- nextBind
     let bi = RemBindFloat i
     j <- nextBind
     let bj = RemBindI16 j
-    compileIterateProcedure FloatType Int16Type i bi j bj iv bf
+    _ <- compileIterateProcedure FloatType Int16Type i bi j bj iv bf
     return bj
 compileProcedure (IterateFloatI32E iv bf) = do
     i <- nextBind
     let bi = RemBindFloat i
     j <- nextBind
     let bj = RemBindI32 j
-    compileIterateProcedure FloatType Int32Type i bi j bj iv bf
+    _ <- compileIterateProcedure FloatType Int32Type i bi j bj iv bf
     return bj
 compileProcedure (IterateFloatIE iv bf) = do
     i <- nextBind
     let bi = RemBindFloat i
     j <- nextBind
     let bj = RemBindI j
-    compileIterateProcedure FloatType IntType i bi j bj iv bf
+    _ <- compileIterateProcedure FloatType IntType i bi j bj iv bf
     return bj
 compileProcedure (IterateFloatL8E iv bf) = do
     i <- nextBind
     let bi = RemBindFloat i
     j <- nextBind
     let bj = RemBindList8 j
-    compileIterateProcedure FloatType List8Type i bi j bj iv bf
+    _ <- compileIterateProcedure FloatType List8Type i bi j bj iv bf
     return bj
 compileProcedure (IterateFloatFloatE iv bf) = do
     i <- nextBind
     let bi = RemBindFloat i
     j <- nextBind
     let bj = RemBindFloat j
-    compileIterateProcedure FloatType FloatType i bi j bj iv bf
+    _ <- compileIterateProcedure FloatType FloatType i bi j bj iv bf
     return bj
+compileProcedure _ = error "compileProcedure - Unknown procedure, it may actually be a command"
 
 compileIfThenElseProcedure :: ExprB a => CompileType -> Expr Bool -> Arduino (Expr a) -> Arduino (Expr a) -> State CompileState (Expr a)
 compileIfThenElseProcedure t e cb1 cb2 = do

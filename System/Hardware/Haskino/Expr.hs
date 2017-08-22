@@ -16,7 +16,6 @@
 {-# LANGUAGE ConstrainedClassMethods #-}
 module System.Hardware.Haskino.Expr where
 
-import qualified Data.Bits as DB
 import       Data.Int (Int8, Int16, Int32)
 import       Data.Word (Word8, Word16, Word32)
 import       Data.Boolean as B

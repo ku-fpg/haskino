@@ -23,27 +23,14 @@
 
 module System.Hardware.Haskino.Data where
 
-import           Control.Applicative
-import           Control.Concurrent           (Chan, MVar, ThreadId,
-                                               withMVar, modifyMVar,
-                                               modifyMVar_, putMVar,
-                                               takeMVar, readMVar,
-                                               newEmptyMVar)
-import           Control.Monad                (ap, liftM2, forever)
+import           Control.Concurrent           (Chan, MVar, ThreadId)
 import           Control.Monad.Trans
 import           Control.Remote.Monad
-import           Data.Bits                    ((.|.), (.&.), setBit)
 import           Data.Int                     (Int8, Int16, Int32)
-import           Data.List                    (intercalate)
-import qualified Data.Map                     as M
-import           Data.Maybe                   (listToMaybe)
-import           Data.Monoid
-import qualified Data.Set                     as S
 import           Data.Word                    (Word8, Word16, Word32)
 import           System.Hardware.Serialport   (SerialPort)
 
 import           System.Hardware.Haskino.Expr
-import           System.Hardware.Haskino.Utils
 
 -----------------------------------------------------------------------------
 
@@ -666,16 +653,16 @@ scheduleResetE :: Arduino (Expr ())
 scheduleResetE = Arduino $ primitive ScheduleResetE
 
 giveSem :: Word8 -> Arduino ()
-giveSem id = Arduino $ primitive $ GiveSem id
+giveSem i = Arduino $ primitive $ GiveSem i
 
 giveSemE :: Expr Word8 -> Arduino (Expr ())
-giveSemE id = Arduino $ primitive $ GiveSemE id
+giveSemE i = Arduino $ primitive $ GiveSemE i
 
 takeSem :: Word8 -> Arduino ()
-takeSem id = Arduino $ primitive $ TakeSem id
+takeSem i = Arduino $ primitive $ TakeSem i
 
 takeSemE :: Expr Word8 -> Arduino (Expr ())
-takeSemE id = Arduino $ primitive $ TakeSemE id
+takeSemE i = Arduino $ primitive $ TakeSemE i
 
 class ExprB a => RemoteReference a where
     newRemoteRef     :: a -> Arduino (RemoteRef a)
@@ -852,10 +839,10 @@ servoAttachE :: PinE -> Arduino (Expr Word8)
 servoAttachE p = Arduino $ primitive $ ServoAttachE p
 
 servoAttachMinMax :: Pin -> Int16 -> Int16 -> Arduino Word8
-servoAttachMinMax p min max = Arduino $ primitive $ ServoAttachMinMax p min max
+servoAttachMinMax p mi ma = Arduino $ primitive $ ServoAttachMinMax p mi ma
 
 servoAttachMinMaxE :: PinE -> Expr Int16 -> Expr Int16 -> Arduino (Expr Word8)
-servoAttachMinMaxE p min max = Arduino $ primitive $ ServoAttachMinMaxE p min max
+servoAttachMinMaxE p mi ma = Arduino $ primitive $ ServoAttachMinMaxE p mi ma
 
 servoRead :: Word8 -> Arduino Int16
 servoRead s = Arduino $ primitive $ ServoRead s
@@ -1446,7 +1433,7 @@ forInE :: Expr [Word8] -> (Expr Word8 -> Arduino (Expr ())) -> Arduino (Expr ())
 forInE ws bf = iterateE 0 ibf
   where
     ibf i = do
-        bf (ws !!* i)
+        _ <- bf (ws !!* i)
         ifThenElseEither (i `lessE` (len ws)) (return $ ExprLeft (i+1)) (return $ ExprRight LitUnit)
 
 -- | A response, as returned from the Arduino
@@ -1623,6 +1610,7 @@ firmwareCmdVal REF_CMD_NEW              = 0xC0
 firmwareCmdVal REF_CMD_READ             = 0xC1
 firmwareCmdVal REF_CMD_WRITE            = 0xC2
 firmwareCmdVal EXPR_CMD_RET             = 0xD0
+firmwareCmdVal _                        = 0x00
 
 -- | Compute the numeric value of a command
 firmwareValCmd :: Word8 -> FirmwareCmd

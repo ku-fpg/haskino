@@ -86,7 +86,7 @@ genCompIter ((tyn1, ty1, cty1), (tyn2, ty2, cty2)) =
     "    let bi = RemBind" ++ ty1 ++ " i\n" ++
     "    j <- nextBind\n" ++
     "    let bj = RemBind" ++ ty2 ++ " j\n" ++
-    "    compileIterateProcedure " ++ cty1 ++ "Type " ++ cty2 ++ "Type i bi j bj iv bf\n" ++
+    "    _ <- compileIterateProcedure " ++ cty1 ++ "Type " ++ cty2 ++ "Type i bi j bj iv bf\n" ++
     "    return bj\n"
 
 genPackIf :: ((String, String) , (String, String)) -> String

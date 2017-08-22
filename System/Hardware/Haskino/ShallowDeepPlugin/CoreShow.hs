@@ -15,31 +15,22 @@
 --
 module System.Hardware.Haskino.ShallowDeepPlugin.CoreShow where
 
--- import Control.Monad.IO.Class
-import Data.IORef
-import System.IO.Unsafe (unsafePerformIO)
-
 import Class
 import CoAxiom
 import CostCentre
+import Data.IORef
+import Data.List        (intersperse)
 import Demand
 import ForeignCall
 import GhcPlugins
-import IdInfo
-import PrimOp
-import TyCoRep
-
 import Prelude
-import Type
-
-import GhcPlugins
-
-import Data.IORef (writeIORef)
-import Data.List (intersperse)
-
+import PrimOp
+import System.IO.Unsafe (unsafePerformIO)
 -- For pretty-printing
 import Text.Show.Pretty (ppDoc)
 import Text.PrettyPrint
+import TyCoRep
+
 --------------------------------------------------------------------------------
 showPass :: ModGuts -> CoreM ModGuts
 showPass guts@ModGuts{ mg_binds = binds } = do
@@ -55,9 +46,6 @@ dynFlags_ref = unsafePerformIO (newIORef undefined)
 {-# NOINLINE dynFlags #-}
 dynFlags :: DynFlags
 dynFlags = unsafePerformIO (readIORef dynFlags_ref)
-
--- initDynFlags :: (HasDynFlags m, MonadIO m) => m ()
--- initDynFlags = getDynFlags >>= liftIO .writeIORef dynFlags
 
 showOutputable :: Outputable a => a -> String
 showOutputable = showSDoc dynFlags . ppr
