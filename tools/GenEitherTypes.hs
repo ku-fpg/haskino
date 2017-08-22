@@ -103,11 +103,11 @@ genPackIter ((tyn1,_), (tyn2, ty2)) =
 
 genPackageIf :: ((String, String) , (String, String)) -> String
 genPackageIf ((tyn1,ty1), (tyn2,ty2)) =
-    "    packageProcedure' (IfThenElse" ++ tyn1 ++ tyn2 ++ " e cb1 cb2) ib = packageIfThenElseEitherProcedure EXPR_" ++ ty1 ++ " EXPR_" ++ ty2 ++ " ib e cb1 cb2\n"
+    "    packageProcedure' (IfThenElse" ++ tyn1 ++ tyn2 ++ " e cb1 cb2) ib' = packageIfThenElseEitherProcedure EXPR_" ++ ty1 ++ " EXPR_" ++ ty2 ++ " ib' e cb1 cb2\n"
 
 genPackageIter :: ((String, String, String) , (String, String, String)) -> String
 genPackageIter ((tyn1, ty1, cty1), (tyn2, _, cty2)) =
-    "    packageProcedure' (Iterate" ++ tyn1 ++ tyn2 ++ "E iv bf) ib = packageIterateProcedure EXPR_" ++ cty1 ++ " EXPR_" ++ cty2 ++ " ib (RemBind" ++ ty1  ++ " ib) iv bf\n"
+    "    packageProcedure' (Iterate" ++ tyn1 ++ tyn2 ++ "E iv bf) ib' = packageIterateProcedure EXPR_" ++ cty1 ++ " EXPR_" ++ cty2 ++ " ib' (RemBind" ++ ty1  ++ " ib') iv bf\n"
 
 genParseIf :: (String, String) -> String
 genParseIf (tyn1, tyn2) =
