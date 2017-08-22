@@ -67,11 +67,9 @@ module System.Hardware.Haskino (
  )
  where
 
-import            Data.Boolean
 import            System.Hardware.Haskino.Comm
 import            System.Hardware.Haskino.Compiler
 import            System.Hardware.Haskino.Data
 import            System.Hardware.Haskino.Decode
 import            System.Hardware.Haskino.Expr
 import            System.Hardware.Haskino.Show
-import            System.Hardware.Haskino.Utils

@@ -43,10 +43,10 @@ deframe bs = map unescape (deframe' bs [])
     deframe' Empty xs = xs
     deframe' bs'   xs = deframe' (tailFrame bs') (xs ++ [headFrame bs'])
 
-    headFrame :: B.ByteString -> B.ByteString  
+    headFrame :: B.ByteString -> B.ByteString
     headFrame bs' = B.init $ B.takeWhile notFrameChar bs'
 
-    tailFrame :: B.ByteString -> B.ByteString  
+    tailFrame :: B.ByteString -> B.ByteString
     tailFrame bs' = B.tail $ B.dropWhile notFrameChar bs'
 
     unescape :: B.ByteString -> B.ByteString
@@ -64,7 +64,7 @@ condenseAddToTasks :: [B.ByteString] -> [B.ByteString]
 condenseAddToTasks cs = scanForAdd cs Nothing B.empty
   where
     scanForAdd :: [B.ByteString] -> Maybe Word8 -> B.ByteString -> [B.ByteString]
-    scanForAdd bss tid bs = 
+    scanForAdd bss tid bs =
       case tid of
         Nothing -> case bss of
                      []       -> []
@@ -83,8 +83,8 @@ condenseAddToTasks cs = scanForAdd cs Nothing B.empty
 
     buildCondensed :: Word8 -> B.ByteString -> B.ByteString
     buildCondensed t bs = B.cons (firmwareCmdVal SCHED_CMD_ADD_TO_TASK)
-                            (B.pack ((packageExpr (LitW8 $ fromIntegral t)) ++ 
-                                     (packageExpr (LitW16 (fromIntegral (B.length bs)))) ++ 
+                            (B.pack ((packageExpr (LitW8 $ fromIntegral t)) ++
+                                     (packageExpr (LitW16 (fromIntegral (B.length bs)))) ++
                                      (B.unpack bs)))
 
     getCmd :: B.ByteString -> FirmwareCmd
@@ -151,7 +151,7 @@ decodeCmdArgs SRVO_CMD_READ _ xs = decodeExprProc 1 xs
 decodeCmdArgs SRVO_CMD_READ_MICROS _ xs = decodeExprProc 1 xs
 decodeCmdArgs SCHED_CMD_CREATE_TASK _ xs = decodeExprCmd 3 xs
 decodeCmdArgs SCHED_CMD_DELETE_TASK _ xs = decodeExprCmd 1 xs
-decodeCmdArgs SCHED_CMD_ADD_TO_TASK _ xs = (dec ++ "\n" ++ dec', B.empty) 
+decodeCmdArgs SCHED_CMD_ADD_TO_TASK _ xs = (dec ++ "\n" ++ dec', B.empty)
   where
     (dec, xs') = decodeExprCmd 2 xs
     dec' = decodeCodeBlock xs' "AddToTask"
@@ -174,7 +174,7 @@ decodeExprCmd :: Int -> B.ByteString -> (String, B.ByteString)
 decodeExprCmd cnt bs = decodeExprCmd' cnt "" bs
   where
     decodeExprCmd' :: Int -> String -> B.ByteString -> (String, B.ByteString)
-    decodeExprCmd' cnt dec bs = 
+    decodeExprCmd' cnt dec bs =
         if (cnt == 0)
         then ("", bs)
         else (dec' ++ dec'', bs'')
@@ -198,7 +198,7 @@ decodeRefCmd cnt bs =
     (dec, bs') = decodeExprCmd cnt (B.tail bs)
 
 decodeRefProc :: Int -> B.ByteString -> (String, B.ByteString)
-decodeRefProc cnt bs = 
+decodeRefProc cnt bs =
   case bs of
     Empty          -> decodeErr bs
     (_x :< Empty)  -> decodeErr bs
@@ -207,7 +207,7 @@ decodeRefProc cnt bs =
     (dec, bs') = decodeExprCmd cnt (B.tail $ B.tail bs)
 
 decodeRefNew :: Int -> B.ByteString -> (String, B.ByteString)
-decodeRefNew cnt bs = 
+decodeRefNew cnt bs =
   case bs of
     Empty                -> decodeErr bs
     (_x :< Empty)        -> decodeErr bs
@@ -220,18 +220,18 @@ decodeErr :: B.ByteString -> (String, B.ByteString)
 decodeErr bs = ("Decode Error, remaining=" ++ show (encode bs), B.empty)
 
 decodeCodeBlock :: B.ByteString -> String -> String
-decodeCodeBlock bs desc = 
-  "*** Start of " ++ desc ++ " body (Size: " ++ (show $ B.length bs) ++ " bytes) :\n" ++ 
-  (decodeCmds $ decodeCodeBlock' bs []) ++ 
+decodeCodeBlock bs desc =
+  "*** Start of " ++ desc ++ " body (Size: " ++ (show $ B.length bs) ++ " bytes) :\n" ++
+  (decodeCmds $ decodeCodeBlock' bs []) ++
   "*** End of " ++ desc ++ " body\n"
     where
       decodeCodeBlock' :: B.ByteString -> [B.ByteString] -> [B.ByteString]
-      decodeCodeBlock' bs cmds = 
+      decodeCodeBlock' bs cmds =
         case bs of
           Empty                  -> cmds
           (x :< xs) | x < 0xFF   -> decodeCodeBlock' (B.drop (fromIntegral x) xs) (cmds ++ [B.take (fromIntegral x) xs])
           (0xFF :< x :< y :< xs) -> decodeCodeBlock' (B.drop (fromIntegral len) xs) (cmds ++ [B.take (fromIntegral len) xs])
-                                    where 
+                                    where
                                       len :: Word16
                                       len = ((fromIntegral y) `shiftL` 8) .|. (fromIntegral x)
           _                      -> cmds
@@ -246,7 +246,7 @@ decodeExpr (ty :< op :< bs) = (" (" ++ opStr ++ ")", bs')
     (opStr, bs') = decodeTypeOp (toEnum $ fromIntegral etype) (fromIntegral op) bs
 
 decodeTypeOp :: ExprType -> Int -> B.ByteString -> (String, B.ByteString)
-decodeTypeOp etype op bs = 
+decodeTypeOp etype op bs =
   case etype of
     EXPR_LIST8 -> (show etype ++ "-" ++ show elop ++ delop, bs'')
     EXPR_FLOAT -> (show etype ++ "-" ++ show efop ++ defop, bs''')
@@ -260,9 +260,9 @@ decodeTypeOp etype op bs =
     (defop, bs''') = decodeFloatOp efop bs
 
 decodeOp :: ExprType -> ExprOp -> B.ByteString -> (String, B.ByteString)
-decodeOp etype eop bs = 
+decodeOp etype eop bs =
   case eop of
-    EXPR_LIT   -> decodeLit etype bs 
+    EXPR_LIT   -> decodeLit etype bs
     EXPR_REF   -> decodeRefBind bs
     EXPR_BIND  -> decodeRefBind bs
     EXPR_EQ    -> decodeExprOps 2 "" bs
@@ -280,11 +280,11 @@ decodeOp etype eop bs =
     EXPR_OR    -> decodeExprOps 2 "" bs
     EXPR_TINT  -> decodeExprOps 1 "" bs
     EXPR_XOR   -> decodeExprOps 2 "" bs
-    EXPR_REM   -> decodeExprOps 2 "" bs 
-    EXPR_COMP  -> decodeExprOps 2 "" bs 
-    EXPR_SHFL  -> decodeExprOps 2 "" bs 
-    EXPR_SHFR  -> decodeExprOps 2 "" bs 
-    EXPR_TSTB  -> decodeExprOps 2 "" bs 
+    EXPR_REM   -> decodeExprOps 2 "" bs
+    EXPR_COMP  -> decodeExprOps 2 "" bs
+    EXPR_SHFL  -> decodeExprOps 2 "" bs
+    EXPR_SHFR  -> decodeExprOps 2 "" bs
+    EXPR_TSTB  -> decodeExprOps 2 "" bs
     EXPR_SETB  -> decodeExprOps 2 "" bs
     EXPR_CLRB  -> decodeExprOps 2 "" bs
     EXPR_QUOT  -> decodeExprOps 2 "" bs
@@ -293,7 +293,7 @@ decodeOp etype eop bs =
     EXPR_LEFT  -> decodeExprOps 1 "" bs
 
 decodeRefBind :: B.ByteString -> (String, B.ByteString)
-decodeRefBind bs = 
+decodeRefBind bs =
   case bs of
     Empty    -> decodeErr bs
     (x :< xs) -> (show x, xs)
@@ -314,7 +314,7 @@ decodeLit etype bs =
                      (x :< y :< xs) -> (" " ++ (show $ bytesToWord16 (x,y)), xs)
     EXPR_WORD32 -> case bs of
                      Empty               -> decodeErr bs
-                     (x :< xs) 
+                     (x :< xs)
                       | B.length xs < 3  -> decodeErr bs
                      (x :< y :< z :< a :< xs) -> (" " ++ (show $ bytesToWord32 (x,y,z,a)), xs)
     EXPR_INT8   -> case bs of
@@ -326,17 +326,17 @@ decodeLit etype bs =
                      (x :< y :< xs) -> (" " ++ show ((fromIntegral $ bytesToWord16 (x,y))::Int16), xs)
     EXPR_INT32 -> case bs of
                      Empty               -> decodeErr bs
-                     (x :< xs) 
+                     (x :< xs)
                       | B.length xs < 3  -> decodeErr bs
                      (x :< y :< z :< a :< xs) -> (" " ++ show ((fromIntegral $ bytesToWord32 (x,y,z,a))::Int32), xs)
 
 decodeExprOps :: Int -> String -> B.ByteString -> (String, B.ByteString)
-decodeExprOps cnt dec bs = 
+decodeExprOps cnt dec bs =
     if (cnt == 0)
     then ("", bs)
     else (dec' ++ dec'', bs'')
   where
-    (dec', bs') = decodeExpr bs 
+    (dec', bs') = decodeExpr bs
     (dec'', bs'') = decodeExprOps (cnt-1) dec' bs'
 
 decodeListOp :: ExprListOp -> B.ByteString -> (String, B.ByteString)
@@ -362,18 +362,18 @@ decodeListOp elop bs =
   where
     decodeListLit :: Int -> B.ByteString -> (String, B.ByteString)
     decodeListLit cnt bs = (show $ B.unpack $ B.take cnt bs, B.drop cnt bs)
- 
+
     decodeListPack :: Int -> B.ByteString -> (String, B.ByteString)
     decodeListPack cnt bs = ("[" ++ dec ++ "]", bs')
       where
         (dec, bs') = decodeExprOps cnt "" bs
 
 decodeFloatOp :: ExprFloatOp -> B.ByteString -> (String, B.ByteString)
-decodeFloatOp efop bs = 
+decodeFloatOp efop bs =
   case efop of
-    EXPRF_LIT   -> case bs of  
+    EXPRF_LIT   -> case bs of
                      Empty               -> decodeErr bs
-                     (x :< xs) 
+                     (_ :< xs)
                       | B.length xs < 3  -> decodeErr bs
                      (x :< y :< z :< a :< xs) -> (" " ++ show (bytesToFloat (x,y,z,a)), xs)
     EXPRF_REF   -> decodeRefBind bs

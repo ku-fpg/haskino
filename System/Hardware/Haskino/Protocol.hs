@@ -23,12 +23,10 @@ import           Control.Monad.State
 import           Control.Remote.Applicative.Types as T
 import           Control.Remote.Monad
 import           Control.Remote.Monad.Types       as T
-import           Data.Bits                        (xor,shiftR,(.&.))
+import           Data.Bits                        (xor)
 import qualified Data.ByteString                  as B
-import           Data.Int                         (Int8, Int16, Int32)
-import qualified Data.Map                         as M
-import           Data.Word                        (Word8, Word16, Word32)
-
+import           Data.Int                         (Int16)
+import           Data.Word                        (Word8)
 import           System.Hardware.Haskino.Data
 import           System.Hardware.Haskino.Expr
 import           System.Hardware.Haskino.Utils
@@ -44,9 +42,9 @@ minServo = 544
 maxServo :: Int16
 maxServo = 2400
 
-data CommandState = CommandState {ix        :: Int  
+data CommandState = CommandState {ix        :: Int
                                 , ib        :: Int
-                                , block     :: B.ByteString    
+                                , block     :: B.ByteString
                                 , blocks    :: [B.ByteString]
                                 , pureLast  :: Bool
                                 , pureLasts :: [Bool]
@@ -69,7 +67,7 @@ buildCommand cmd bs = B.pack $ firmwareCmdVal cmd : bs
 
 packageUnsupported :: String -> State CommandState B.ByteString
 packageUnsupported s = do
-  error $ "Error: Cannot package Shallow Task command, use deep version:" ++ s
+  _ <- error $ "Error: Cannot package Shallow Task command, use deep version:" ++ s
   return B.empty
 
 -- | Package a request as a sequence of bytes to be sent to the board
@@ -112,7 +110,7 @@ packageCommand (ScheduleTaskE tid tt) =
 packageCommand ScheduleReset = packageUnsupported $ "scheduleReset"
 packageCommand ScheduleResetE =
     addCommand SCHED_CMD_RESET []
-packageCommand (AttachInt p t m) = packageUnsupported $ "attachInt " ++ show p ++ " " ++ show t
+packageCommand (AttachInt p t _) = packageUnsupported $ "attachInt " ++ show p ++ " " ++ show t
 packageCommand (AttachIntE p t m) =
     addCommand SCHED_CMD_ATTACH_INT (packageExpr p ++ packageExpr t ++ packageExpr m)
 packageCommand (DetachInt p) = packageUnsupported $ "detachInt " ++ show p
@@ -124,13 +122,13 @@ packageCommand (InterruptsE) =
 packageCommand NoInterrupts = packageUnsupported $ "noInterrupts"
 packageCommand (NoInterruptsE) =
     addCommand SCHED_CMD_NOINTERRUPTS []
-packageCommand (GiveSem id) = packageUnsupported $ "giveSem " ++ show id
-packageCommand (GiveSemE id) =
-    addCommand SCHED_CMD_GIVE_SEM (packageExpr id)
-packageCommand (TakeSem id) = packageUnsupported $ "takeSem " ++ show id
-packageCommand (TakeSemE id) =
-    addCommand SCHED_CMD_TAKE_SEM (packageExpr id)
-packageCommand (CreateTask tid m) = packageUnsupported $ "createTask " ++ show tid
+packageCommand (GiveSem i) = packageUnsupported $ "giveSem " ++ show i
+packageCommand (GiveSemE i) =
+    addCommand SCHED_CMD_GIVE_SEM (packageExpr i)
+packageCommand (TakeSem i) = packageUnsupported $ "takeSem " ++ show i
+packageCommand (TakeSemE i) =
+    addCommand SCHED_CMD_TAKE_SEM (packageExpr i)
+packageCommand (CreateTask tid _) = packageUnsupported $ "createTask " ++ show tid
 packageCommand (CreateTaskE tid m) = do
     (_, td, _) <- packageCodeBlock m
     s <- get
@@ -177,9 +175,9 @@ addWriteRefCommand t i e =
 
 packageCodeBlock :: Arduino a -> State CommandState (a, B.ByteString, Bool)
 packageCodeBlock (Arduino commands) = do
-    startNewBlock 
+    startNewBlock
     ret <- packMonad commands
-    s' <- get 
+    s' <- get
     str <- endCurrentBlock
     return (ret, str, pureLast s')
   where
@@ -287,9 +285,9 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (ServoAttachE p) = do
           i <- packDeepProcedure (ServoAttachE p)
           return $ RemBindW8 i
-      packProcedure (ServoAttachMinMax p min max) = packShallowProcedure (ServoAttachMinMax p min max) 0
-      packProcedure (ServoAttachMinMaxE p min max) = do
-          i <- packDeepProcedure (ServoAttachMinMaxE p min max)
+      packProcedure (ServoAttachMinMax p mi ma) = packShallowProcedure (ServoAttachMinMax p mi ma) 0
+      packProcedure (ServoAttachMinMaxE p mi ma) = do
+          i <- packDeepProcedure (ServoAttachMinMaxE p mi ma)
           return $ RemBindW8 i
       packProcedure (ServoRead sv) = packShallowProcedure (ServoRead sv) 0
       packProcedure (ServoReadE sv) = do
@@ -1130,7 +1128,7 @@ packageCodeBlock (Arduino commands) = do
           i <- packIterateProcedure (IterateFloatFloatE iv bf)
           return $ RemBindFloat i
       packProcedure (DebugE tids) = packShallowProcedure (DebugE tids) ()
-      -- For sending as part of a Scheduler task, debug and die make no sense.  
+      -- For sending as part of a Scheduler task, debug and die make no sense.
       -- Instead of signalling an error, at this point they are just ignored.
       packProcedure (Debug _) = return ()
       packProcedure DebugListen = return ()
@@ -1139,7 +1137,7 @@ packageCodeBlock (Arduino commands) = do
 
       packAppl :: RemoteApplicative ArduinoPrimitive a -> State CommandState a
       packAppl (T.Primitive p) = do
-          s <- get 
+          s <- get
           put s{pureLast = False}
           case knownResult p of
             Just a -> do
@@ -1153,7 +1151,7 @@ packageCodeBlock (Arduino commands) = do
           g <- packAppl a2
           return $ f g
       packAppl (T.Pure a)  = do
-          s <- get 
+          s <- get
           put s{pureLast = True}
           return a
       packAppl (T.Alt _ _) = error "packAppl: \"Alt\" is not supported"
@@ -1200,7 +1198,7 @@ packageProcedure p = do
     packageProcedure' MicrosE ib'          = addCommand BS_CMD_REQUEST_MICROS [fromIntegral ib']
     packageProcedure' Millis ib'           = addCommand BS_CMD_REQUEST_MILLIS [fromIntegral ib']
     packageProcedure' MillisE ib'          = addCommand BS_CMD_REQUEST_MILLIS [fromIntegral ib']
-    packageProcedure' (DigitalRead p) ib'  = addCommand DIG_CMD_READ_PIN ((fromIntegral ib') : (packageExpr $ lit p))
+    packageProcedure' (DigitalRead p') ib'  = addCommand DIG_CMD_READ_PIN ((fromIntegral ib') : (packageExpr $ lit p'))
     packageProcedure' (DigitalReadE pe) ib' = addCommand DIG_CMD_READ_PIN ((fromIntegral ib') : (packageExpr pe))
     packageProcedure' (DigitalPortRead p' m) ib'  = addCommand DIG_CMD_READ_PORT ((fromIntegral ib') : ((packageExpr $ lit p') ++ (packageExpr $ lit m)))
     packageProcedure' (DigitalPortReadE pe me) ib' = addCommand DIG_CMD_READ_PORT ((fromIntegral ib') : ((packageExpr pe) ++ (packageExpr me)))
@@ -1497,6 +1495,7 @@ packageProcedure p = do
     packageProcedure' (IterateFloatL8E iv bf) ib' = packageIterateProcedure EXPR_FLOAT EXPR_LIST8 ib' (RemBindFloat ib') iv bf
     packageProcedure' (IterateFloatFloatE iv bf) ib' = packageIterateProcedure EXPR_FLOAT EXPR_FLOAT ib' (RemBindFloat ib') iv bf
     packageProcedure' DebugListen _ = return B.empty
+    packageProcedure' _ _ = error "packageProcedure': unsupported Procedure (it may have been a command)"
 
 packageReadRefProcedure :: ExprType -> Int -> Int -> State CommandState B.ByteString
 packageReadRefProcedure t ib' i =
@@ -1515,7 +1514,7 @@ packageIfThenElseProcedure rt b e cb1 cb2 = do
     return $ B.append i (B.append pc1' pc2')
 
 packageIfThenElseEitherProcedure :: (ExprB a, ExprB b) => ExprType -> ExprType -> Int -> Expr Bool -> Arduino (ExprEither a b) -> Arduino (ExprEither a b) -> State CommandState B.ByteString
-packageIfThenElseEitherProcedure rt1 rt2 b e cb1 cb2 = do
+packageIfThenElseEitherProcedure rt1 rt2 _ e cb1 cb2 = do
     s <- get
     let ibs = head $ iterBinds s
     (r1, pc1, _) <- packageCodeBlock cb1
@@ -1528,18 +1527,18 @@ packageIfThenElseEitherProcedure rt1 rt2 b e cb1 cb2 = do
     i <- addCommand BC_CMD_IF_THEN_ELSE ([fromIntegral $ fromEnum rt1, fromIntegral $ fromEnum rt2, fromIntegral ibs] ++ thenSize ++ (packageExpr e))
     return $ B.append i (B.append pc1' pc2')
 
-packageIterateProcedure :: (ExprB a, ExprB b) => ExprType -> ExprType -> Int -> Expr a -> 
+packageIterateProcedure :: (ExprB a, ExprB b) => ExprType -> ExprType -> Int -> Expr a ->
                            Expr a -> (Expr a -> Arduino(ExprEither a b)) ->
                            State CommandState B.ByteString
-packageIterateProcedure ta tb ib be iv bf = do
+packageIterateProcedure ta tb ib' be iv bf = do
     s <- get
-    put s {iterBinds = ib : iterBinds s}
+    put s {iterBinds = ib' : iterBinds s}
     (r, pc, pureWasLast) <- packageCodeBlock $ bf be
-    let rc = buildCommand EXPR_CMD_RET $ (fromIntegral ib) : packageExprEither ta tb r
+    let rc = buildCommand EXPR_CMD_RET $ (fromIntegral ib') : packageExprEither ta tb r
     let pc'  = if pureWasLast then B.append pc $ lenPackage rc else pc
-    w <- addCommand BC_CMD_ITERATE ([fromIntegral $ fromEnum ta, fromIntegral $ fromEnum tb, fromIntegral ib, fromIntegral $ length ive] ++ ive)
-    s <- get
-    put s {iterBinds = tail $ iterBinds s}
+    w <- addCommand BC_CMD_ITERATE ([fromIntegral $ fromEnum ta, fromIntegral $ fromEnum tb, fromIntegral ib', fromIntegral $ length ive] ++ ive)
+    s' <- get
+    put s' {iterBinds = tail $ iterBinds s'}
     return $ B.append w pc'
   where
     ive = packageExpr iv
@@ -1595,6 +1594,7 @@ packageExprEither _t1 _t2 (ExprRight er) = packageExpr er
 
 packageExpr :: Expr a -> [Word8]
 packageExpr (LitUnit) = [toW8 EXPR_UNIT, toW8 EXPR_LIT]
+packageExpr (ShowUnit e) = packageSubExpr (exprCmdVal EXPR_UNIT EXPR_SHOW) e
 packageExpr (RemBindUnit b) = (exprCmdVal EXPR_UNIT EXPR_BIND) ++ [fromIntegral b]
 packageExpr (LitB b) = [toW8 EXPR_BOOL, toW8 EXPR_LIT, if b then 1 else 0]
 packageExpr (ShowB e) = packageSubExpr (exprCmdVal EXPR_BOOL EXPR_SHOW) e
@@ -1618,6 +1618,8 @@ packageExpr (EqI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_EQ) e1
 packageExpr (LessI16 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT16 EXPR_LESS) e1 e2
 packageExpr (EqI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_EQ) e1 e2
 packageExpr (LessI32 e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_LESS) e1 e2
+packageExpr (EqI e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_EQ) e1 e2
+packageExpr (LessI e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_INT32 EXPR_LESS) e1 e2
 packageExpr (EqL8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_EQ) e1 e2
 packageExpr (LessL8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_LESS) e1 e2
 packageExpr (EqFloat e1 e2) = packageTwoSubExpr (exprFCmdVal EXPRF_EQ) e1 e2
@@ -1869,7 +1871,7 @@ unpackageResponse (cmdWord:args)
                                       -> IfThenElseFloatReply $ bytesToFloat (b1, b2, b3, b4)
       {-- The IfThenElse Left replies are only used inside of Iterates
        -- so they will never be received by the host, but are here for
-       -- test purposes 
+       -- test purposes
       (BC_RESP_IF_THEN_ELSE , [t,l,b]) | t == (toW8 EXPR_BOOL  + 0x80) && l == toW8 EXPR_LIT
                                       -> IfThenElseBoolLeftReply (if b == 0 then False else True)
       (BC_RESP_IF_THEN_ELSE , [t,l,b]) | t == (toW8 EXPR_WORD8 + 0x80) && l == toW8 EXPR_LIT
@@ -1930,7 +1932,7 @@ unpackageResponse (cmdWord:args)
       (SCHED_RESP_QUERY, ts) | length ts == 0 ->
           QueryTaskReply Nothing
       (SCHED_RESP_QUERY, ts) | length ts >= 9 ->
-          let ts0:ts1:tl0:tl1:tp0:tp1:tt0:tt1:tt2:tt3:rest = ts
+          let ts0:ts1:tl0:tl1:tp0:tp1:tt0:tt1:tt2:tt3:_ = ts
           in QueryTaskReply (Just (bytesToWord16 (ts0,ts1),
                                    bytesToWord16 (tl0,tl1),
                                    bytesToWord16 (tp0,tp1),

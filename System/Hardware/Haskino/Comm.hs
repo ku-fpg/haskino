@@ -17,31 +17,22 @@
 module System.Hardware.Haskino.Comm where
 
 import           Control.Concurrent                (Chan, MVar, ThreadId,
-                                                    newChan, newMVar,
-                                                    newEmptyMVar, putMVar,
-                                                    takeMVar, writeChan,
-                                                    readChan, forkIO,
-                                                    modifyMVar_, tryTakeMVar,
-                                                    killThread, threadDelay,
-                                                    withMVar)
+                                                    newChan, newEmptyMVar,
+                                                    putMVar, takeMVar,
+                                                    writeChan, readChan,
+                                                    forkIO, tryTakeMVar,
+                                                    killThread, threadDelay)
 import           Control.Exception                 (tryJust, AsyncException(UserInterrupt))
 import           Control.Monad                     (when, forever)
 import           Control.Monad.State               (runState)
 import           Control.Monad.State               (liftIO)
-import           Control.Natural                   (wrapNT,unwrapNT, (#))
+import           Control.Natural                   (wrapNT,unwrapNT)
 import           Control.Remote.Monad
 import           Control.Remote.Packet.Weak        as WP
 import           Control.Remote.Packet.Applicative as AP
-import           Data.Bits                         (testBit, (.&.), xor, shiftR)
+import           Data.Bits                         ((.&.), xor, shiftR)
 import qualified Data.ByteString                   as B
-import           Data.ByteString.Base16            (encode)
 import           Data.List                         (intercalate)
-import qualified Data.Map                          as M (empty, mapWithKey,
-                                                         insert, assocs,
-                                                         lookup, member)
-import           Data.Maybe                        (listToMaybe)
-import qualified Data.Set                          as S (empty)
-import           Data.Word                         (Word8)
 import           System.Hardware.Haskino.Data
 import           System.Hardware.Haskino.Decode
 import           System.Hardware.Haskino.Expr
@@ -78,7 +69,7 @@ openArduino verbose fp = do
       listenerTid <- newEmptyMVar
       portTry <- tryIOError (S.openSerial fp S.defaultSerialSettings{S.commSpeed = S.CS115200})
       case portTry of
-        Left e ->
+        Left _ ->
           error $ "\n*** Haskino:ERROR: Missing Port\n*** Make sure your Arduino is connected to " ++ fp
         Right port -> do
           dc <- newChan
@@ -109,11 +100,11 @@ openArduino verbose fp = do
           -- Step 2: Send query-firmware, and wait until we get a response
           ver <- send initState queryFirmware
           let maj = ver `shiftR` 8
-              min = ver .&. 0xFF
-              id = "Firmware v" ++ show maj ++ "." ++ show min
-              versionState = initState {firmwareID = id}
-          if maj == 0 && min >= 6 then return () else error $ "\n*** Haskino:ERROR: Firmware version 0.6 or greater required"
-          putStrLn id
+              min' = ver .&. 0xFF
+              id' = "Firmware v" ++ show maj ++ "." ++ show min'
+              versionState = initState {firmwareID = id'}
+          if maj == 0 && min' >= 6 then return () else error $ "\n*** Haskino:ERROR: Firmware version 0.6 or greater required"
+          putStrLn id'
           -- Step 3: Send a processor type request
           p <- send versionState queryProcessor
           -- Update the connection state with the processor
@@ -212,16 +203,16 @@ runAP c pkt =
                   AP.Pure a      -> pure a
                   AP.Zip f g h   -> f <$> runAP c g <*> runAP c h
   where
-    batchCommands :: forall a . ArduinoConnection -> ApplicativePacket ArduinoPrimitive a -> B.ByteString -> IO B.ByteString
-    batchCommands c pkt cmds =
-          case pkt of
+    batchCommands :: forall a' . ArduinoConnection -> ApplicativePacket ArduinoPrimitive a' -> B.ByteString -> IO B.ByteString
+    batchCommands c' pkt' cmds =
+          case pkt' of
               AP.Primitive p -> case knownResult p of
-                                  Just _ -> frameCommand c p cmds
+                                  Just _ -> frameCommand c' p cmds
                                   Nothing -> return cmds
-              AP.Pure a      -> return cmds
-              AP.Zip f g h   -> do
-                  gcmds <- batchCommands c g cmds
-                  hcmds <- batchCommands c h gcmds
+              AP.Pure _      -> return cmds
+              AP.Zip _ g h   -> do
+                  gcmds <- batchCommands c' g cmds
+                  hcmds <- batchCommands c' h gcmds
                   return hcmds
 
 frameCommand :: ArduinoConnection -> ArduinoPrimitive a -> B.ByteString -> IO B.ByteString
@@ -240,7 +231,7 @@ sendProcedureCmds :: ArduinoConnection -> ArduinoPrimitive a -> B.ByteString -> 
 sendProcedureCmds c (Debug msg) cmds = do
     message c $ bytesToString msg
     sendToArduino c cmds
-sendProcedureCmds c (Die msg msgs) cmds = runDie c msg msgs
+sendProcedureCmds c (Die msg msgs) _ = runDie c msg msgs
 sendProcedureCmds c (NewRemoteRefBE r) cmds = sendRemoteBindingCmds c (NewRemoteRefBE r) cmds
 sendProcedureCmds c (NewRemoteRefW8E r) cmds  = sendRemoteBindingCmds c (NewRemoteRefW8E r) cmds
 sendProcedureCmds c (NewRemoteRefW16E r) cmds = sendRemoteBindingCmds c (NewRemoteRefW16E r) cmds
@@ -341,6 +332,7 @@ setupListener serial dbg chan = do
                          case B.length bs of
                             0 -> getByte
                             1 -> return $ B.head bs
+                            _ -> error "getByte - Invalid number of bytes"
             collectFrame sofar = do b <- getByte
                                     case b of
                                       0x7E -> return $ reverse sofar
@@ -355,7 +347,7 @@ setupListener serial dbg chan = do
                            fs | not (checkFrame fs) -> return $ InvalidChecksumFrame fs
                            fs -> case getFirmwareReply $ head fs of
                                     Left  unknown  -> return $ Unimplemented (Just (show unknown)) []
-                                    Right c        -> return $ unpackageResponse $ init fs
+                                    Right _        -> return $ unpackageResponse $ init fs
                 case resp of
                   EmptyFrame             -> dbg $ "Ignoring empty received frame"
                   InvalidChecksumFrame{} -> dbg $ "Ignoring received frame with invalid checksum" ++ show resp
@@ -363,6 +355,6 @@ setupListener serial dbg chan = do
                   StringMessage{}        -> dbg $ "Received " ++ show resp
                   _                      -> do dbg $ "Received " ++ show resp
                                                writeChan chan resp
-        S.recv serial maxFirmwareSize -- Clear serial port of any unneeded characters
+        _ <- S.recv serial maxFirmwareSize -- Clear serial port of any unneeded characters
         tid <- liftIO $ forkIO $ forever listener
         return tid
