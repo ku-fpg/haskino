@@ -1759,47 +1759,47 @@ compileIfThenElseProcedure t e cb1 cb2 = do
     s <- get
     let b = ib s
     put s {ib = b + 1}
-    compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
-    compileLine $ "if (" ++ compileExpr e ++ ")"
+    _ <- compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
+    _ <- compileLine $ "if (" ++ compileExpr e ++ ")"
     r1 <- compileCodeBlock cb1
-    compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r1 ++ ";"
-    compileLineIndent "}"
-    compileLine "else"
+    _ <- compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r1 ++ ";"
+    _ <- compileLineIndent "}"
+    _ <- compileLine "else"
     r2 <- compileCodeBlock cb2
-    compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r2 ++ ";"
-    compileLineIndent "}"
+    _ <- compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r2 ++ ";"
+    _ <- compileLineIndent "}"
     return $ remBind b
 
 compileIfThenElseEitherProcedure :: (ExprB a, ExprB b) => CompileType -> CompileType -> Expr Bool -> Arduino (ExprEither a b) -> Arduino (ExprEither a b) -> State CompileState (ExprEither a b)
 compileIfThenElseEitherProcedure t1 t2 e cb1 cb2 = do
     s <- get
     let ibs = head $ iterBinds s
-    compileLine $ "if (" ++ compileExpr e ++ ")"
+    _ <- compileLine $ "if (" ++ compileExpr e ++ ")"
     r1 <- compileCodeBlock cb1
-    case r1 of
-        ExprLeft a -> do
-            if t1 == UnitType then return LitUnit
-            else if t1 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show (fst ibs) ++ ", " ++ compileExpr a ++ ");"
-            else compileLineIndent $ bindName ++ show (fst ibs) ++ " = " ++ compileExpr a ++ ";"
-        ExprRight b -> do
-            if t2 == UnitType then return LitUnit
-            else if t2 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show (snd ibs) ++ ", " ++ compileExpr b ++ ");"
-            else compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ compileExpr b ++ ";"
-            compileLineIndent "break;"
-    compileLineIndent "}"
-    compileLine "else"
+    _ <- case r1 of
+            ExprLeft a -> do
+                if t1 == UnitType then return LitUnit
+                else if t1 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show (fst ibs) ++ ", " ++ compileExpr a ++ ");"
+                else compileLineIndent $ bindName ++ show (fst ibs) ++ " = " ++ compileExpr a ++ ";"
+            ExprRight b -> do
+                _ <- if t2 == UnitType then return LitUnit
+                     else if t2 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show (snd ibs) ++ ", " ++ compileExpr b ++ ");"
+                     else compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ compileExpr b ++ ";"
+                compileLineIndent "break;"
+    _ <- compileLineIndent "}"
+    _ <- compileLine "else"
     r2 <- compileCodeBlock cb2
-    case r2 of
-        ExprLeft a -> do
-            if (t1 == UnitType) then return LitUnit
-            else if t1 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show (fst ibs) ++ ", " ++ compileExpr a ++ ");"
-            else compileLineIndent $ bindName ++ show (fst ibs) ++ " = " ++ compileExpr a ++ ";"
-        ExprRight b -> do
-            if (t2 == UnitType) then return LitUnit
-            else if t2 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show (snd ibs) ++ ", " ++ compileExpr b ++ ");"
-            else compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ compileExpr b ++ ";"
-            compileLineIndent "break;"
-    compileLineIndent "}"
+    _ <- case r2 of
+            ExprLeft a -> do
+                if (t1 == UnitType) then return LitUnit
+                else if t1 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show (fst ibs) ++ ", " ++ compileExpr a ++ ");"
+                else compileLineIndent $ bindName ++ show (fst ibs) ++ " = " ++ compileExpr a ++ ";"
+            ExprRight b -> do
+                _ <- if (t2 == UnitType) then return LitUnit
+                     else if t2 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show (snd ibs) ++ ", " ++ compileExpr b ++ ");"
+                     else compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ compileExpr b ++ ";"
+                compileLineIndent "break;"
+    _ <- compileLineIndent "}"
     return $ r2
 
 compileIterateProcedure :: (ExprB a, ExprB b) => CompileType -> CompileType ->
@@ -1808,17 +1808,17 @@ compileIterateProcedure :: (ExprB a, ExprB b) => CompileType -> CompileType ->
 compileIterateProcedure ta tb b1 b1e b2 b2e iv bf = do
     s <- get
     put s {iterBinds = (b1, b2):iterBinds s}
-    compileAllocBind $ compileTypeToString ta ++ " " ++ bindName ++ show b1 ++ ";"
-    compileAllocBind $ compileTypeToString tb ++ " " ++ bindName ++ show b2 ++ ";"
+    _ <- compileAllocBind $ compileTypeToString ta ++ " " ++ bindName ++ show b1 ++ ";"
+    _ <- compileAllocBind $ compileTypeToString tb ++ " " ++ bindName ++ show b2 ++ ";"
 
-    if ta == List8Type
-    then compileLine $ "listAssign(&" ++ bindName ++ show b1 ++ ", " ++ compileExpr iv ++ ");"
-    else compileLine $ bindName ++ show b1 ++ " = " ++ compileExpr iv ++ ";"
-    compileLine $ "while (1)"
-    r <- compileCodeBlock $ bf b1e
-    compileLineIndent "}"
-    s <- get
-    put s {iterBinds = tail $ iterBinds s}
+    _ <- if ta == List8Type
+         then compileLine $ "listAssign(&" ++ bindName ++ show b1 ++ ", " ++ compileExpr iv ++ ");"
+         else compileLine $ bindName ++ show b1 ++ " = " ++ compileExpr iv ++ ";"
+    _ <- compileLine $ "while (1)"
+    _ <- compileCodeBlock $ bf b1e
+    _ <- compileLineIndent "}"
+    s' <- get
+    put s' {iterBinds = tail $ iterBinds s'}
     return b2e
 
 compileCodeBlock :: Arduino a -> State CompileState a
@@ -1830,13 +1830,13 @@ compileCodeBlock (Arduino commands) = do
            cmds = "",
            level = level s + 1 }
     r <- compileMonad commands
-    s <- get
-    put s {bindList = tail $ bindList s,
-           cmdList = tail $ cmdList s,
-           binds = head $ bindList s,
-           cmds = (head $ cmdList s) ++ (indent $ level s) ++ "{\n" ++
-                  body (binds s) (cmds s),
-           level = level s - 1 }
+    s' <- get
+    put s' {bindList = tail $ bindList s',
+           cmdList = tail $ cmdList s',
+           binds = head $ bindList s',
+           cmds = (head $ cmdList s') ++ (indent $ level s') ++ "{\n" ++
+                  body (binds s') (cmds s'),
+           level = level s' - 1 }
     return r
   where
       body :: String -> String -> String
@@ -2038,8 +2038,8 @@ compileExpr (LitW32 w) = show w
 compileExpr (ShowW32 e) = compileSubExpr "showWord32" e
 compileExpr (RefW32 n) = compileRef n
 compileExpr (RemBindW32 b) = compileBind b
-compileExpr (FromIntW32 e) = ""
-compileExpr (ToIntW32 e) = ""
+compileExpr (FromIntW32 _) = ""
+compileExpr (ToIntW32 _) = ""
 compileExpr (NegW32 e) = compileNeg e
 compileExpr (SignW32 e) = compileSign e
 compileExpr (AddW32 e1 e2) = compileAdd e1 e2
@@ -2161,7 +2161,7 @@ compileExpr (LitList8 ws) = "(uint8_t * ) (const byte[]) {255, " ++ (show $ leng
   where
     compListLit :: [Word8] -> String
     compListLit [] = "}"
-    compListLit (w : ws) = "," ++ show w ++ compListLit ws
+    compListLit (w : ws') = "," ++ show w ++ compListLit ws'
 compileExpr (RefList8 n) = compileRef n
 compileExpr (RemBindList8 b) = compileBind b
 compileExpr (IfL8 e1 e2 e3) = compileIfSubExpr e1 e2 e3
