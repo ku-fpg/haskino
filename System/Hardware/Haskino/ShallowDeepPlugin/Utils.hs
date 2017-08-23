@@ -64,7 +64,6 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            returnNameTH) where
 
 import           Control.Arrow       (second)
-import           Control.Monad
 import           Data.Char
 import           Data.Functor
 import           DsBinds
@@ -331,7 +330,7 @@ fmapRepBindReturn e = do
                 rla <- fmapRepBindReturn' $ last args
                 case rla of
                   -- If applicationg of rep_ at next was successful
-                  Right la' -> do 
+                  Right la' -> do
                     let args' = init args ++ [la']
                     return $ Right $ mkLets ls $ mkLams bs (mkCoreApps f args')
                   -- Application of rep at next level was not successful

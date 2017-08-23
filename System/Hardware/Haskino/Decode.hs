@@ -169,6 +169,7 @@ decodeCmdArgs SCHED_CMD_QUERY _ xs = decodeExprProc 1 xs
 decodeCmdArgs SCHED_CMD_RESET _ xs =  decodeExprCmd 0 xs
 decodeCmdArgs SCHED_CMD_BOOT_TASK _ xs = decodeExprCmd 1 xs
 decodeCmdArgs SCHED_CMD_GIVE_SEM _ xs = decodeExprCmd 1 xs
+decodeCmdArgs SCHED_CMD_TAKE_SEM _ xs = decodeExprCmd 1 xs
 decodeCmdArgs SCHED_CMD_INTERRUPTS _ xs = decodeExprCmd 0 xs
 decodeCmdArgs SCHED_CMD_NOINTERRUPTS _ xs = decodeExprCmd 0 xs
 decodeCmdArgs REF_CMD_NEW _ xs = decodeRefNew 1 xs
@@ -327,7 +328,7 @@ decodeLit etype bs =
                      (x :< xs) -> (" " ++ show ((fromIntegral x)::Int8), xs)
                      _         -> decodeErr bs
     EXPR_INT16  -> case bs of
-                     (x :< Empty)   -> decodeErr bs
+                     (_ :< Empty)   -> decodeErr bs
                      (x :< y :< xs) -> (" " ++ show ((fromIntegral $ bytesToWord16 (x,y))::Int16), xs)
                      _         -> decodeErr bs
     EXPR_INT32  -> case bs of
@@ -343,7 +344,8 @@ decodeLit etype bs =
     EXPR_LIST8  -> case bs of
                      (x :< Empty) | x == 0        -> decodeErr bs
                      (x :< xs) | x /= (fromIntegral $ B.length xs) -> decodeErr bs
-                     (l :< xs)                    -> (" " ++ show (B.unpack $ B.take (fromIntegral l) xs), B.drop (fromIntegral l) xs) 
+                     (l :< xs)                    -> (" " ++ show (B.unpack $ B.take (fromIntegral l) xs), B.drop (fromIntegral l) xs)
+                     _                            -> decodeErr bs
 
 decodeExprOps :: Int -> String -> B.ByteString -> (String, B.ByteString)
 decodeExprOps cnt _ bs =
@@ -358,8 +360,8 @@ decodeListOp :: ExprListOp -> B.ByteString -> (String, B.ByteString)
 decodeListOp elop bs =
   case elop of
     EXPRL_LIT  -> case bs of
-                    Empty     -> decodeErr bs
                     (x :< xs) -> decodeListLit (fromIntegral x) xs
+                    _         -> decodeErr bs
     EXPRL_REF  -> decodeRefBind bs
     EXPRL_BIND -> decodeRefBind bs
     EXPRL_EQ   -> decodeExprOps 2 "" bs
@@ -372,9 +374,9 @@ decodeListOp elop bs =
     EXPRL_SLIC -> decodeExprOps 3 "" bs
     EXPRL_LEFT -> decodeExprOps 1 "" bs
     EXPRL_PACK -> case bs of
-                    Empty        -> decodeErr bs
                     (_ :< Empty) -> ("[]", B.tail bs)
                     (x :< xs)    -> decodeListPack (fromIntegral x) xs
+                    _            -> decodeErr bs
   where
     decodeListLit :: Int -> B.ByteString -> (String, B.ByteString)
     decodeListLit cnt bsl = (show $ B.unpack $ B.take cnt bsl, B.drop cnt bsl)
@@ -388,10 +390,10 @@ decodeFloatOp :: ExprFloatOp -> B.ByteString -> (String, B.ByteString)
 decodeFloatOp efop bs =
   case efop of
     EXPRF_LIT   -> case bs of
-                     Empty               -> decodeErr bs
                      (_ :< xs)
                       | B.length xs < 3  -> decodeErr bs
                      (x :< y :< z :< a :< xs) -> (" " ++ show (bytesToFloat (x,y,z,a)), xs)
+                     _                   -> decodeErr bs
     EXPRF_REF   -> decodeRefBind bs
     EXPRF_BIND  -> decodeRefBind bs
     EXPRF_EQ    -> decodeExprOps 2 "" bs

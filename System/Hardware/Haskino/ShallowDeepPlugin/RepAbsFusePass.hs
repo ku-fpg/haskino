@@ -22,16 +22,9 @@ module System.Hardware.Haskino.ShallowDeepPlugin.RepAbsFusePass (repAbsFusePass)
 
 import CoreMonad
 import GhcPlugins
-import Data.Functor
-import Data.List
 import Control.Monad.Reader
-import OccName
-import Var
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils
-
-import Data.Boolean
-import System.Hardware.Haskino
 
 data BindEnv
     = BindEnv
@@ -51,12 +44,12 @@ repAbsFusePass guts =
     bindsOnlyPass (\x -> (runReaderT (runBindM $ (mapM changeFuse) x) (BindEnv guts))) guts
 
 changeFuse :: CoreBind -> BindM CoreBind
-changeFuse bndr@(NonRec b e) = do
+changeFuse (NonRec b e) = do
   let (bs, e') = collectBinders e
   e'' <- changeFuseExpr e'
   let e''' = mkLams bs e''
   return (NonRec b e''')
-changeFuse bndr@(Rec bs) = do
+changeFuse (Rec bs) = do
   bs' <- changeFuse' bs
   return $ Rec bs'
 
@@ -71,7 +64,6 @@ changeFuse' ((b, e) : bs) = do
 
 changeFuseExpr :: CoreExpr -> BindM CoreExpr
 changeFuseExpr e = do
-  df <- liftCoreM getDynFlags
   repId <- thNameToId repNameTH
   absId <- thNameToId absNameTH
   fmapId <- thNameToId fmapNameTH
@@ -92,28 +84,28 @@ changeFuseExpr e = do
         e1' <- changeFuseExpr e1
         e2' <- changeFuseExpr e2
         return $ App e1' e2'
-    Lam tb e -> do
-      e' <- changeFuseExpr e
+    Lam tb el -> do
+      e' <- changeFuseExpr el
       return $ Lam tb e'
     Let bind body -> do
       body' <- changeFuseExpr body
       bind' <- case bind of
-                  (NonRec v e) -> do
-                    e' <- changeFuseExpr e
+                  (NonRec v el) -> do
+                    e' <- changeFuseExpr el
                     return $ NonRec v e'
                   (Rec rbs) -> do
                     rbs' <- changeFuseExpr' rbs
                     return $ Rec rbs'
       return $ Let bind' body'
-    Case e tb ty alts -> do
-      e' <- changeFuseExpr e
+    Case ec tb ty alts -> do
+      e' <- changeFuseExpr ec
       alts' <- changeFuseExprAlts alts
       return $ Case e' tb ty alts'
-    Tick t e -> do
-      e' <- changeFuseExpr e
+    Tick t et -> do
+      e' <- changeFuseExpr et
       return $ Tick t e'
-    Cast e co -> do
-      e' <- changeFuseExpr e
+    Cast ec co -> do
+      e' <- changeFuseExpr ec
       return $ Cast e' co
 
 changeFuseExpr' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]

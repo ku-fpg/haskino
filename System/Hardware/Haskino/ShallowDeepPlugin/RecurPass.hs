@@ -13,10 +13,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin.RecurPass (recurPass) where
 
 import Control.Monad.State
 import CoreMonad
-import Data.Functor
-import Data.List
 import GhcPlugins
-import Var
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 
@@ -41,7 +38,7 @@ recurPass guts = do
     return (guts { mg_binds = concat bindsL' })
 
 recurBind :: CoreBind -> BindM [CoreBind]
-recurBind bndr@(NonRec b e) = do
+recurBind (NonRec b e) = do
     e' <- recurSubExpr e
     return [NonRec b e']
 recurBind (Rec bs) = do
@@ -59,7 +56,7 @@ recurBind' ((b, e) : bs) = do
     let (argTys, retTy) = splitFunTys $ exprType e
     let retTyCon_m = splitTyConApp_maybe retTy
     monadTyCon <- thNameToTyCon monadTyConTH
-    listTyCon <- thNameToTyCon listTyConTH
+    listTyCon' <- thNameToTyCon listTyConTH
     case retTyCon_m of
       Just (retTyCon, retTyArgs) -> do
         if length argTys == 1 && retTyCon == monadTyCon && length retTyArgs == 1
@@ -67,15 +64,15 @@ recurBind' ((b, e) : bs) = do
           let argTyCon_m = splitTyConApp_maybe $ head argTys
           case argTyCon_m of
             Just (argTyCon, argTyArgs) -> do
-                let argTyArg = if argTyCon == listTyCon
+                let argTyArg = if argTyCon == listTyCon'
                                then head argTys
                                else head argTyArgs
                 let retTyArg = case splitTyConApp_maybe $ head retTyArgs of
                                   Just (rTyCon, [])      -> mkTyConTy rTyCon
-                                  Just (rTyCon, rTyArgs) -> head rTyArgs
+                                  Just (_, rTyArgs)      -> head rTyArgs
                                   Nothing                -> head retTyArgs
-                s <- get
-                put s {funcId = [b]}
+                s' <- get
+                put s' {funcId = [b]}
 
                 let (lbs, e') = collectBinders e
                 e'' <- recurSubExpr e'
@@ -103,11 +100,11 @@ recurBind' ((b, e) : bs) = do
         then do
             let retTyArg = case splitTyConApp_maybe $ head retTyArgs of
                               Just (rTyCon, [])      -> mkTyConTy rTyCon
-                              Just (rTyCon, rTyArgs) -> head rTyArgs
+                              Just (_, rTyArgs)      -> head rTyArgs
                               Nothing                -> head retTyArgs
 
-            unitTyCon <- thNameToTyCon unitTyConTH
-            let unitTyConTy = mkTyConTy unitTyCon
+            unitTyCon' <- thNameToTyCon unitTyConTH
+            let unitTyConTy = mkTyConTy unitTyCon'
             -- Generate "Expr retTy"
             exprTyConApp <- thNameTyToTyConApp exprTyConTH unitTyConTy
             let newBTy = mkFunTy exprTyConApp retTy
@@ -145,13 +142,11 @@ recurBind' ((b, e) : bs) = do
 
 transformRecur :: Type -> Type -> CoreExpr -> BindM CoreExpr
 transformRecur argTy retTy e = do
-    funcId <- gets funcId
-    df <- liftCoreM getDynFlags
+    funcId' <- gets funcId
     let (bs, e') = collectBinders e
     let (f, args) = collectArgs e'
     bindId <- thNameToId bindNameTH
     thenId <- thNameToId bindThenNameTH
-    fmapId <- thNameToId fmapNameTH
     returnId <- thNameToId returnNameTH
     ifThenElseEitherId <- thNameToId ifThenElseEitherNameTH
     ifThenElseId <- thNameToId ifThenElseNameTH
@@ -162,7 +157,7 @@ transformRecur argTy retTy e = do
       -- there is another level.
       Var fv | fv == bindId || fv == thenId -> do
           case args of
-            [Type monadTy, dict, Type arg1Ty, Type arg2Ty, e1, e2] -> do
+            [Type monadTy, dict, Type arg1Ty, Type _, e1, e2] -> do
                e2' <- transformRecur argTy retTy e2
                let e'' = mkCoreApps (Var fv) [Type monadTy, dict, Type arg1Ty, Type eitherTyp, e1, e2']
                return $ (mkLams bs e'')
@@ -179,8 +174,7 @@ transformRecur argTy retTy e = do
             _ -> return e
       -- We are at the bottom of the bind chain.....
       -- Check for recursive call.
-      -- Either in the form of (Var funcId) arg ...
-      Var fv | fv == head funcId -> do
+      Var fv | fv == head funcId' -> do
           -- Find the argument for the Left call
           unitValueId <- thNameToId unitValueTH
           let leftArg = if length args == 0
@@ -200,7 +194,7 @@ transformRecur argTy retTy e = do
       -- This branch is not a recursive call
       Var fv | fv == returnId -> do
           case args of
-            [Type mTy, dict, Type ty, retE] -> do
+            [Type _, _, Type _, retE] -> do
                 -- Generate the ExprRight expression with the function arg
                 argDict <- thNameTyToDict exprClassTyConTH argTy
                 retDict <- thNameTyToDict exprClassTyConTH retTy
@@ -233,7 +227,6 @@ transformRecur argTy retTy e = do
 
 changeVarExpr :: CoreBndr -> CoreBndr -> CoreExpr -> BindM CoreExpr
 changeVarExpr f t e = do
-  df <- liftCoreM getDynFlags
   case e of
     -- Replace any occurances of the variable "f" with "t"
     Var v | v == f -> return $ Var t
@@ -245,28 +238,28 @@ changeVarExpr f t e = do
       e1' <- changeVarExpr f t e1
       e2' <- changeVarExpr f t e2
       return $ App e1' e2'
-    Lam tb e -> do
-      e' <- changeVarExpr f t e
+    Lam tb el -> do
+      e' <- changeVarExpr f t el
       return $ Lam tb e'
     Let bind body -> do
       body' <- changeVarExpr f t body
       bind' <- case bind of
-                  (NonRec v e) -> do
-                    e' <- changeVarExpr f t e
+                  (NonRec v el) -> do
+                    e' <- changeVarExpr f t el
                     return $ NonRec v e'
                   (Rec rbs) -> do
                     rbs' <- changeVarExpr' f t rbs
                     return $ Rec rbs'
       return $ Let bind' body'
-    Case e tb ty alts -> do
-      e' <- changeVarExpr f t e
+    Case ec tb ty alts -> do
+      e' <- changeVarExpr f t ec
       alts' <- changeVarExprAlts f t alts
       return $ Case e' tb ty alts'
-    Tick ti e -> do
-      e' <- changeVarExpr f t e
+    Tick ti et -> do
+      e' <- changeVarExpr f t et
       return $ Tick ti e'
-    Cast e co -> do
-      e' <- changeVarExpr f t e
+    Cast ec co -> do
+      e' <- changeVarExpr f t ec
       return $ Cast e' co
 
 changeVarExpr' :: CoreBndr -> CoreBndr -> [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
@@ -285,9 +278,8 @@ changeVarExprAlts f t ((ac, b, a) : as) = do
 
 recurSubExpr :: CoreExpr -> BindM CoreExpr
 recurSubExpr e = do
-  df <- liftCoreM getDynFlags
   case e of
-    Var v -> return e
+    Var _ -> return e
     Lit l -> return $ Lit l
     Type ty -> return $ Type ty
     Coercion co -> return $ Coercion co
@@ -295,13 +287,13 @@ recurSubExpr e = do
       e1' <- recurSubExpr e1
       e2' <- recurSubExpr e2
       return $ App e1' e2'
-    Lam tb e -> do
-      e' <- recurSubExpr e
+    Lam tb el -> do
+      e' <- recurSubExpr el
       return $ Lam tb e'
     Let bind body -> do
       case bind of
-        (NonRec v e) -> do
-          e' <- recurSubExpr e
+        (NonRec v el) -> do
+          e' <- recurSubExpr el
           body' <- recurSubExpr body
           return $ Let (NonRec v e') body'
         (Rec rbs) -> do
@@ -313,15 +305,15 @@ recurSubExpr e = do
                     [] -> nonRec
                     _  -> (Rec rbs'') : nonRec
           return $ mkCoreLets ls body'
-    Case e tb ty alts -> do
-      e' <- recurSubExpr e
+    Case ec tb ty alts -> do
+      e' <- recurSubExpr ec
       alts' <- recurSubExprAlts alts
       return $ Case e' tb ty alts'
-    Tick t e -> do
-      e' <- recurSubExpr e
+    Tick t et -> do
+      e' <- recurSubExpr et
       return $ Tick t e'
-    Cast e co -> do
-      e' <- recurSubExpr e
+    Cast ec co -> do
+      e' <- recurSubExpr ec
       return $ Cast e' co
 
 recurSubExpr' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]

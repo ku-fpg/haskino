@@ -162,7 +162,7 @@ compileTask t name int = do
     _ <- compileForward $ "byte " ++ name ++ tcbStr ++ "[sizeof(TCB) + " ++
                      defineStr ++ "];"
     s'' <- get
-    put s' {tasksDone = cmds s'' : tasksDone s''}
+    put s'' {tasksDone = cmds s'' : tasksDone s''}
     return ()
 
 compileLine :: String -> State CompileState (Expr ())
@@ -2206,4 +2206,4 @@ compileExpr (TanhFloat e) = compileSubExpr "tanh" e
 compileExpr (PowerFloat e1 e2) = compileTwoSubExpr "pow" e1 e2
 compileExpr (IsNaNFloat e) = compileSubExpr "isnan" e
 compileExpr (IsInfFloat e) = compileSubExpr "isinf" e
-
+compileExpr _              = error "compileExpr: Unsupported expression"

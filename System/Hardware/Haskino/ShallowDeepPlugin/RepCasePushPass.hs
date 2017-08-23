@@ -23,9 +23,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin.RepCasePushPass (repCasePushPas
 
 import Control.Monad.Reader
 import CoreMonad
-import Data.Functor
 import GhcPlugins
-import Var
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 
@@ -47,12 +45,12 @@ repCasePushPass guts =
     bindsOnlyPass (\x -> (runReaderT (runBindM $ (mapM repCasePush) x) (BindEnv guts))) guts
 
 repCasePush :: CoreBind -> BindM CoreBind
-repCasePush bndr@(NonRec b e) = do
+repCasePush (NonRec b e) = do
   let (bs, e') = collectBinders e
   e'' <- repCasePushExpr e'
   let e''' = mkLams bs e''
   return (NonRec b e''')
-repCasePush bndr@(Rec bs) = do
+repCasePush (Rec bs) = do
   bs' <- repCasePush' bs
   return $ Rec bs'
 
@@ -67,7 +65,6 @@ repCasePush' ((b, e) : bs) = do
 
 repCasePushExpr :: CoreExpr -> BindM CoreExpr
 repCasePushExpr e = do
-  df <- liftCoreM getDynFlags
   case e of
     Var v -> return $ Var v
     Lit l -> return $ Lit l
@@ -88,28 +85,28 @@ repCasePushExpr e = do
       e1' <- repCasePushExpr e1
       e2' <- repCasePushExpr e2
       return $ App e1' e2'
-    Lam tb e -> do
-      e' <- repCasePushExpr e
+    Lam tb el -> do
+      e' <- repCasePushExpr el
       return $ Lam tb e'
     Let bind body -> do
       body' <- repCasePushExpr body
       bind' <- case bind of
-                  (NonRec v e) -> do
-                    e' <- repCasePushExpr e
+                  (NonRec v el) -> do
+                    e' <- repCasePushExpr el
                     return $ NonRec v e'
                   (Rec rbs) -> do
                     rbs' <- repCasePushExpr' rbs
                     return $ Rec rbs'
       return $ Let bind' body'
-    Case e tb ty alts -> do
-      e' <- repCasePushExpr e
+    Case ec tb ty alts -> do
+      e' <- repCasePushExpr ec
       alts' <- repCasePushExprAlts alts
       return $ Case e' tb ty alts'
-    Tick t e -> do
-      e' <- repCasePushExpr e
+    Tick t et -> do
+      e' <- repCasePushExpr et
       return $ Tick t e'
-    Cast e co -> do
-      e' <- repCasePushExpr e
+    Cast ec co -> do
+      e' <- repCasePushExpr ec
       return $ Cast e' co
 
 repCasePushAlt :: Type -> GhcPlugins.Alt CoreBndr -> BindM (GhcPlugins.Alt CoreBndr)

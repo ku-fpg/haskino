@@ -18,10 +18,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin.ApRemovePass (apRemovePass) whe
 
 import Control.Monad.Reader
 import CoreMonad
-import Data.List
-import Data.Functor
 import GhcPlugins
-import Type
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 

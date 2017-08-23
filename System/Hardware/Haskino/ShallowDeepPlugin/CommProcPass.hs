@@ -10,7 +10,7 @@
 --
 -- forall (proc :: Arduino a) (arg1 :: ExprB a1 => a1) ... (argn :: ExprB => an).
 -- proc arg1 .. argn
---   = 
+--   =
 -- abs_ <$> (procE (rep_ arg1) ... (rep_ argn))
 --
 -- Where proc and procE are the shallow and deep versions of a command
@@ -152,8 +152,8 @@ commProcBind (Rec bs) = do
   return $ Rec bs'
 
 funcInXlatList :: Id -> BindM (Maybe XlatEntry)
-funcInXlatList id = do
-  funcInXlatList' id xlatList
+funcInXlatList idf = do
+  funcInXlatList' idf xlatList
     where
       funcInXlatList' :: Id -> [XlatEntry] -> BindM (Maybe XlatEntry)
       funcInXlatList' _ [] = return Nothing
@@ -161,7 +161,7 @@ funcInXlatList id = do
           fId <- fromId xl
           if fId == id'
           then return $ Just xl
-          else funcInXlatList' id xls
+          else funcInXlatList' id' xls
 
 commProcExpr :: CoreExpr -> BindM CoreExpr
 commProcExpr e = do

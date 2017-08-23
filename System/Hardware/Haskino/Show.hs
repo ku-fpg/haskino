@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  System.Hardware.Haskino.Protocol
@@ -12,10 +13,7 @@
 
 module System.Hardware.Haskino.Show where
 
-import           Data.Bits                        (shiftR, xor)
-import           Data.Int                         (Int8, Int16, Int32)
 import           Data.List
-import           Data.Word                        (Word8, Word16, Word32)
 import           Control.Remote.Applicative.Types as T
 import           Control.Monad.State
 import           Control.Remote.Monad
@@ -23,7 +21,8 @@ import           Control.Remote.Monad.Types       as T
 
 import           System.Hardware.Haskino.Data
 import           System.Hardware.Haskino.Expr
-import           System.Hardware.Haskino.Utils
+
+-- newtype ArduinoS a = ArduionS (Arduino a)
 
 instance Show (Arduino a) where
   show = showArduino
@@ -68,8 +67,8 @@ showCommand (AttachIntE p t m) = showCommand3 "AttachIntE" p t m
 showCommand (DetachIntE p) = showCommand1 "DetachIntE " p
 showCommand (InterruptsE) = showCommand0 "Interrupts"
 showCommand (NoInterruptsE) = showCommand0 "NoInterrupts"
-showCommand (GiveSemE id) = showCommand1 "GiveSemE"  id
-showCommand (TakeSemE id) = showCommand1 "TakeSemE" id
+showCommand (GiveSemE i) = showCommand1 "GiveSemE"  i
+showCommand (TakeSemE i) = showCommand1 "TakeSemE" i
 showCommand (CreateTaskE tid m) = do
     (_, ts) <- showCodeBlock m
     return $ "CreateTaskE " ++ show tid ++ "\n" ++ ts
@@ -112,6 +111,7 @@ showCommand (ModifyRemoteRefFloatE (RemoteRefFloat i) f) =
 showCommand (Loop cb) = do
     (_, c) <- showCodeBlock cb
     return $ "Loop\n" ++ c
+showCommand _ = error "showProcedure: unsupported Command (it may have been a Procedure)"
 
 showCommandAndArgs :: [String] -> State ShowState String
 showCommandAndArgs ss = do
@@ -170,9 +170,9 @@ showCodeBlock (Arduino commands) = do
           let as = tail ss
           s <- get
           addToBlock $ "RemBind " ++ show (ib s) ++ " <- " ++ p ++ " (" ++ intercalate "} (" as ++ ")"
-          s <- get
-          put s {ib = (ib s) + 1}
-          return $ ib s
+          s' <- get
+          put s' {ib = (ib s') + 1}
+          return $ ib s'
 
       showShallow0Procedure :: String -> b -> State ShowState b
       showShallow0Procedure p r = showShallowProcedure [p] r
@@ -220,46 +220,45 @@ showCodeBlock (Arduino commands) = do
           let cs1' = cs1 ++ replicate (indent s + 2) ' ' ++ "return " ++ show r1 ++ "\n"
           (r2, cs2) <- showCodeBlock cb2
           let cs2' = cs2 ++ replicate (indent s + 2) ' ' ++ "return " ++ show r2 ++ "\n"
-          s <- get
-          addToBlock $ "RemBind " ++ show (ib s) ++ " <- " ++ "If " ++ show b ++ " Then\n" ++ cs1' ++ replicate (indent s) ' ' ++ "Else\n" ++ cs2'
-          return $ ib s
+          s' <- get
+          addToBlock $ "RemBind " ++ show (ib s') ++ " <- " ++ "If " ++ show b ++ " Then\n" ++ cs1' ++ replicate (indent s') ' ' ++ "Else\n" ++ cs2'
+          return $ ib s'
 
       showIfThenElseEitherProcedure :: (Show a, Show b, ExprB a, ExprB b) => Expr Bool -> Arduino (ExprEither a b) -> Arduino (ExprEither a b) -> State ShowState (ExprEither a b)
       showIfThenElseEitherProcedure b cb1 cb2 = do
           s <- get
-          let ibs = head $ iterBinds s
+          let _ibs = head $ iterBinds s
           (r1, cs1) <- showCodeBlock cb1
           let cs1' = case r1 of
                         ExprLeft a ->
                             cs1 ++ replicate (indent s + 2) ' ' ++ "return ExprLeft (" ++ show a ++ ")\n"
-                        ExprRight b ->
-                            cs1 ++ replicate (indent s + 2) ' ' ++ "return ExprRight (" ++ show b ++ ")\n"
+                        ExprRight b' ->
+                            cs1 ++ replicate (indent s + 2) ' ' ++ "return ExprRight (" ++ show b' ++ ")\n"
           (r2, cs2) <- showCodeBlock cb2
           let cs2' = case r2 of
                         ExprLeft a ->
                             cs2 ++ replicate (indent s + 2) ' ' ++ "return ExprLeft (" ++ show a ++ ")\n"
-                        ExprRight b ->
-                            cs2 ++ replicate (indent s + 2) ' ' ++ "return ExprRight (" ++ show b ++ ")\n"
+                        ExprRight b' ->
+                            cs2 ++ replicate (indent s + 2) ' ' ++ "return ExprRight (" ++ show b' ++ ")\n"
           addToBlock $ "If " ++ show b ++ " Then\n" ++ cs1' ++ replicate (indent s) ' ' ++ "Else\n" ++ cs2'
-          (r2, cs2) <- showCodeBlock cb2
           return r2
 
       showIterateProcedure :: (Show a, Show b, ExprB a, ExprB b) => Int -> Expr a -> Int -> Expr b -> Expr a ->
                               (Expr a -> Arduino(ExprEither a b)) -> State ShowState Int
-      showIterateProcedure b1 b1e b2 b2e iv bf = do
+      showIterateProcedure b1 b1e b2 _b2e iv bf = do
           s <- get
           put s {iterBinds = (b1, b2):iterBinds s}
           (r, cs) <- showCodeBlock (bf b1e)
           let cs' = cs ++ replicate (indent s + 2) ' ' ++ "return " ++ show r ++ "\n"
-          addToBlock $ "RemBind " ++ show b2 ++ " <- " ++ "Iterate (" ++ show iv ++ ")\n" ++ cs
-          s <- get
-          put s {iterBinds = tail $ iterBinds s}
+          addToBlock $ "RemBind " ++ show b2 ++ " <- " ++ "Iterate (" ++ show iv ++ ")\n" ++ cs'
+          s' <- get
+          put s' {iterBinds = tail $ iterBinds s'}
           return b2
 
-      showNewRef :: String -> Expr a -> b -> State ShowState b
+      showNewRef :: Show a => String -> Expr a -> b -> State ShowState b
       showNewRef p e r = do
           s <- get
-          addToBlock $ "bind" ++ show (ib s) ++ " <- " ++ p ++ show (ix s)
+          addToBlock $ "bind" ++ show (ib s) ++ " <- " ++ p ++ show (ix s) ++ " " ++ show e
           put s {ib = (ib s) + 1, ix = (ix s) + 1}
           return r
 
@@ -313,9 +312,9 @@ showCodeBlock (Arduino commands) = do
       showProcedure (ServoAttachE p) = do
           i <- showDeep1Procedure "ServoAttachE" p
           return $ RemBindW8 i
-      showProcedure (ServoAttachMinMax p min max) = showShallow3Procedure "ServoAttachMinMax" p min max 0
-      showProcedure (ServoAttachMinMaxE p min max) = do
-          i <- showDeep3Procedure "ServoAttachMinMaxE" p min max
+      showProcedure (ServoAttachMinMax p mi ma) = showShallow3Procedure "ServoAttachMinMax" p mi ma 0
+      showProcedure (ServoAttachMinMaxE p mi ma) = do
+          i <- showDeep3Procedure "ServoAttachMinMaxE" p mi ma
           return $ RemBindW8 i
       showProcedure (ServoRead sv) = showShallow1Procedure "ServoRead" sv 0
       showProcedure (ServoReadE sv) = do
@@ -329,41 +328,41 @@ showCodeBlock (Arduino commands) = do
       showProcedure QueryAllTasksE = do
           i <- showDeep0Procedure "QueryAllTasksE"
           return $ RemBindList8 i
-      showProcedure (QueryTask t) = showShallow0Procedure "QueryTask" Nothing
-      showProcedure (QueryTaskE t) = showShallow0Procedure "QueryTaskE" Nothing
+      showProcedure (QueryTask _) = showShallow0Procedure "QueryTask" Nothing
+      showProcedure (QueryTaskE _) = showShallow0Procedure "QueryTaskE" Nothing
       showProcedure (BootTaskE tids) = do
           i <- showDeep1Procedure "BootTaskE" tids
           return $ RemBindB i
       showProcedure (ReadRemoteRefBE (RemoteRefB i)) = do
-          i <- showDeep1Procedure "ReadRemoteRefBE" (RefB i)
-          return $ RemBindB i
+          i' <- showDeep1Procedure "ReadRemoteRefBE" (RefB i)
+          return $ RemBindB i'
       showProcedure (ReadRemoteRefW8E (RemoteRefW8 i)) = do
-          i <- showDeep1Procedure "ReadRemoteRefW8E" (RefW8 i)
-          return $ RemBindW8 i
+          i' <- showDeep1Procedure "ReadRemoteRefW8E" (RefW8 i)
+          return $ RemBindW8 i'
       showProcedure (ReadRemoteRefW16E (RemoteRefW16 i)) = do
-          i <- showDeep1Procedure "ReadRemoteRefW16E" (RefW16 i)
-          return $ RemBindW16 i
+          i' <- showDeep1Procedure "ReadRemoteRefW16E" (RefW16 i)
+          return $ RemBindW16 i'
       showProcedure (ReadRemoteRefW32E (RemoteRefW32 i)) = do
-          i <- showDeep1Procedure "ReadRemoteRefW32E" (RefW32 i)
-          return $ RemBindW32 i
+          i' <- showDeep1Procedure "ReadRemoteRefW32E" (RefW32 i)
+          return $ RemBindW32 i'
       showProcedure (ReadRemoteRefI8E (RemoteRefI8 i)) = do
-          i <- showDeep1Procedure "ReadRemoteRefI8E" (RefI8 i)
-          return $ RemBindI8 i
+          i' <- showDeep1Procedure "ReadRemoteRefI8E" (RefI8 i)
+          return $ RemBindI8 i'
       showProcedure (ReadRemoteRefI16E (RemoteRefI16 i)) = do
-          i <- showDeep1Procedure "ReadRemoteRefI16E" (RefI16 i)
-          return $ RemBindI16 i
+          i' <- showDeep1Procedure "ReadRemoteRefI16E" (RefI16 i)
+          return $ RemBindI16 i'
       showProcedure (ReadRemoteRefI32E (RemoteRefI32 i)) = do
-          i <- showDeep1Procedure "ReadRemoteRefI32E" (RefI32 i)
-          return $ RemBindI32 i
+          i' <- showDeep1Procedure "ReadRemoteRefI32E" (RefI32 i)
+          return $ RemBindI32 i'
       showProcedure (ReadRemoteRefL8E (RemoteRefL8 i)) = do
-          i <- showDeep1Procedure "ReadRemoteRefL8E" (RefList8 i)
-          return $ RemBindList8 i
+          i' <- showDeep1Procedure "ReadRemoteRefL8E" (RefList8 i)
+          return $ RemBindList8 i'
       showProcedure (ReadRemoteRefFloatE (RemoteRefFloat i)) = do
-          i <- showDeep1Procedure "ReadRemoteRefFloatE" (RefFloat i)
-          return $ RemBindFloat i
+          i' <- showDeep1Procedure "ReadRemoteRefFloatE" (RefFloat i)
+          return $ RemBindFloat i'
       showProcedure (NewRemoteRefBE e) = do
           s <- get
-          showNewRef "NewRemoteRefBE" e (RemoteRefB  (ix s))
+          showNewRef "NewRemoteRefBE" e (RemoteRefB (ix s))
       showProcedure (NewRemoteRefW8E e) = do
           s <- get
           showNewRef "NewRemoteRefW8E" e (RemoteRefW8 (ix s))
@@ -1513,7 +1512,7 @@ showCodeBlock (Arduino commands) = do
       showProcedure (Debug s) = showShallow1Procedure "Debug" s ()
       showProcedure DebugListen = showShallow0Procedure "DebugListen" ()
       showProcedure (Die msg msgs) = showShallow2Procedure "Die" msg msgs ()
-      -- showProcedure (LiftIO _) = showShallow0Procedure "LiftIO m" ()
+      showProcedure _ = error "showProcedure: unsupported Procedure (it may have been a command)"
 
       showAppl :: RemoteApplicative ArduinoPrimitive a -> State ShowState a
       showAppl (T.Primitive p) = case knownResult p of
@@ -1528,6 +1527,8 @@ showCodeBlock (Arduino commands) = do
           return $ f g
       showAppl (T.Pure a) = do
           return a
+      showAppl (T.Alt _ _) = error "showAppl: \"Alt\" is not supported"
+      showAppl  T.Empty    = error "showAppl: \"Empty\" is not supported"
 
       showMonad :: RemoteMonad ArduinoPrimitive a -> State ShowState a
       showMonad (T.Appl app) = showAppl app
@@ -1538,3 +1539,7 @@ showCodeBlock (Arduino commands) = do
           f <- showMonad m1
           g <- showMonad m2
           return $ f g
+      showMonad (T.Alt' _ _)  = error "showMonad: \"Alt\" is not supported"
+      showMonad T.Empty'      = error "showMonad: \"Alt\" is not supported"
+      showMonad (T.Catch _ _) = error "showMonad: \"Catch\" is not supported"
+      showMonad (T.Throw  _)  = error "showMonad: \"Throw\" is not supported"

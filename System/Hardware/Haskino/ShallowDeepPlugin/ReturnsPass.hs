@@ -18,9 +18,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin.ReturnsPass (returnsPass) where
 
 import Control.Monad.Reader
 import CoreMonad
-import Data.Functor
 import GhcPlugins
-import Var
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 
@@ -42,12 +40,12 @@ returnsPass guts =
     bindsOnlyPass (\x -> (runReaderT (runBindM $ (mapM changeBind) x) (BindEnv guts))) guts
 
 changeBind :: CoreBind -> BindM CoreBind
-changeBind bndr@(NonRec b e) = do
+changeBind (NonRec b e) = do
   let (bs, e') = collectBinders e
   e'' <- changeRetExpr e'
   let e''' = mkLams bs e''
   return (NonRec b e''')
-changeBind bndr@(Rec bs) = do
+changeBind (Rec bs) = do
   bs' <- changeBind' bs
   return $ Rec bs'
 
@@ -62,7 +60,6 @@ changeBind' ((b, e) : bs) = do
 
 changeRetExpr :: CoreExpr -> BindM CoreExpr
 changeRetExpr e = do
-  df <- liftCoreM getDynFlags
   returnId <- thNameToId returnNameTH
   monadTyCon <- thNameToTyCon monadTyConTH
   let monadTy = mkTyConTy monadTyCon
@@ -90,28 +87,28 @@ changeRetExpr e = do
               else defaultReturn
             _ -> defaultReturn
         _ -> defaultReturn
-    Lam tb e -> do
-      e' <- changeRetExpr e
+    Lam tb el -> do
+      e' <- changeRetExpr el
       return $ Lam tb e'
     Let bind body -> do
       body' <- changeRetExpr body
       bind' <- case bind of
-                  (NonRec v e) -> do
-                    e' <- changeRetExpr e
+                  (NonRec v el) -> do
+                    e' <- changeRetExpr el
                     return $ NonRec v e'
                   (Rec rbs) -> do
                     rbs' <- changeRetExpr' rbs
                     return $ Rec rbs'
       return $ Let bind' body'
-    Case e tb ty alts -> do
-      e' <- changeRetExpr e
+    Case ec tb ty alts -> do
+      e' <- changeRetExpr ec
       alts' <- changeRetExprAlts alts
       return $ Case e' tb ty alts'
-    Tick t e -> do
-      e' <- changeRetExpr e
+    Tick t et -> do
+      e' <- changeRetExpr et
       return $ Tick t e'
-    Cast e co -> do
-      e' <- changeRetExpr e
+    Cast ec co -> do
+      e' <- changeRetExpr ec
       return $ Cast e' co
 
 changeRetExpr' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]

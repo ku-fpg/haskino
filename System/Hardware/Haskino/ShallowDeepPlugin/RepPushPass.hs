@@ -6,9 +6,9 @@
 -- Stability   :  experimental
 --
 -- Rep Push Pass
--- This pass is used to transform shallow expressions into the 
+-- This pass is used to transform shallow expressions into the
 -- deep expression language.  It uses rules like the following:
--- 
+--
 --    forall (b1 :: Bool) (b2 :: Bool).
 --    rep_ (b1 || b2)
 --      =
@@ -27,11 +27,8 @@ import Data.Bits            as DB
 import Data.Boolean
 import Data.Boolean.Numbers as BN
 import Data.Boolean.Bits    as BB
-import Data.Functor
 import Data.List
 import GhcPlugins
-import OccName
-import Var
 
 import System.Hardware.Haskino
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils
@@ -98,7 +95,7 @@ xlatList = [  XlatEntry (thNameToId 'not)
                         (thNameToId 'BB.clearBit)
             , XlatEntry (thNameToId 'DB.testBit)
                         (thNameToId 'BB.testBit)
-            , XlatEntry (thNameToId 'DB.bitSize)
+            , XlatEntry (thNameToId 'DB.finiteBitSize)
                         (thNameToId 'BB.bitSize)
             , XlatEntry (thNameToId 'DB.isSigned)
                         (thNameToId 'BB.isSigned)
@@ -145,12 +142,12 @@ repPushPass guts = do
     bindsOnlyPass (\x -> (runReaderT (runBindM $ (mapM changeRep) x) (BindEnv guts))) guts
 
 changeRep :: CoreBind -> BindM CoreBind
-changeRep bndr@(NonRec b e) = do
+changeRep (NonRec b e) = do
   let (bs, e') = collectBinders e
   e'' <- changeRepExpr e'
   let e''' = mkLams bs e''
   return (NonRec b e''')
-changeRep bndr@(Rec bs) = do
+changeRep (Rec bs) = do
   bs' <- changeRep' bs
   return $ Rec bs'
 
@@ -165,7 +162,6 @@ changeRep' ((b, e) : bs) = do
 
 changeRepExpr :: CoreExpr -> BindM CoreExpr
 changeRepExpr e = do
-  df <- liftCoreM getDynFlags
   repId <- thNameToId repNameTH
   case e of
     Var v -> return $ Var v
@@ -181,7 +177,7 @@ changeRepExpr e = do
       case b of
         Var v | v == repId -> do
           case args of
-            [ty, d, e'] -> do
+            [_ty, _dict, e'] -> do
               let (b', args') = collectArgs e'
               case b' of
                 Var v' -> do
@@ -192,28 +188,28 @@ changeRepExpr e = do
                 _ -> defaultReturn
             _ -> defaultReturn
         _ -> defaultReturn
-    Lam tb e -> do
-      e' <- changeRepExpr e
+    Lam tb el -> do
+      e' <- changeRepExpr el
       return $ Lam tb e'
     Let bind body -> do
       body' <- changeRepExpr body
       bind' <- case bind of
-                  (NonRec v e) -> do
-                    e' <- changeRepExpr e
+                  (NonRec v el) -> do
+                    e' <- changeRepExpr el
                     return $ NonRec v e'
                   (Rec rbs) -> do
                     rbs' <- changeRepExpr' rbs
                     return $ Rec rbs'
       return $ Let bind' body'
-    Case e tb ty alts -> do
-      e' <- changeRepExpr e
+    Case ec tb ty alts -> do
+      e' <- changeRepExpr ec
       alts' <- changeRepExprAlts alts
       return $ Case e' tb ty alts'
-    Tick t e -> do
-      e' <- changeRepExpr e
+    Tick t et -> do
+      e' <- changeRepExpr et
       return $ Tick t e'
-    Cast e co -> do
-      e' <- changeRepExpr e
+    Cast ec co -> do
+      e' <- changeRepExpr ec
       return $ Cast e' co
 
 changeRepExpr' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
@@ -231,16 +227,16 @@ changeRepExprAlts ((ac, b, a) : as) = do
   return $ (ac, b, a') : bs'
 
 funcInXlatList :: Id -> BindM (Maybe XlatEntry)
-funcInXlatList id = do
-  funcInXlatList' id xlatList
+funcInXlatList idf = do
+  funcInXlatList' idf xlatList
     where
       funcInXlatList' :: Id -> [XlatEntry] -> BindM (Maybe XlatEntry)
-      funcInXlatList' id [] = return Nothing
-      funcInXlatList' id (xl:xls) = do
+      funcInXlatList' _ [] = return Nothing
+      funcInXlatList' idf' (xl:xls) = do
           fId <- fromId xl
-          if fId == id
+          if fId == idf'
           then return $ Just xl
-          else funcInXlatList' id xls
+          else funcInXlatList' idf' xls
 
 pushRep :: XlatEntry -> [CoreExpr] -> BindM CoreExpr
 pushRep xe args = do
@@ -248,8 +244,8 @@ pushRep xe args = do
     ti <- toId xe
     -- Break down the arguments from the old function
     -- into foralls, args, and return types.
-    let (fromForAlls, fromFuncTy) = splitForAllTys $ idType fi
-    let (fromArgTys, fromRetTy) = splitFunTys fromFuncTy
+    let (_fromForAlls, fromFuncTy) = splitForAllTys $ idType fi
+    let (_fromArgTys, fromRetTy) = splitFunTys fromFuncTy
     let (toForAlls, toFuncTy) = splitForAllTys $ idType ti
     let (toArgTys, toRetTy) = splitFunTys toFuncTy
     -- Get the count of non-dictionary args in the new function
@@ -285,13 +281,11 @@ genDictArgs (dty:dtys) tys frty trty args = do
                      -- If it does, we are dealing with a function
                      -- of type Class a => Expr a -> ... -> retType
                      -- so the dictionary type is of a not Expr a
-                     Just (tyCon, tys') -> return dictTy
+                     Just (_tyCon, _tys') -> return dictTy
                      -- If there is no TyCon, then we have a
                      -- function of type Class a => a -> ... -> retType
                      -- so the dictionary type needs to be Expr a.
-                     Nothing -> do
-                         exprTyCon <- thNameToTyCon exprTyConTH
-                         thNameTyToTyConApp exprTyConTH dictTy
+                     Nothing -> thNameTyToTyConApp exprTyConTH dictTy
         dict <- buildDictionaryTyConT (tyConAppTyCon tyConTy) dictTy'
         dicts <- genDictArgs dtys tys frty trty args
         return $ dict:dicts
@@ -302,13 +296,11 @@ genDictArgs (dty:dtys) tys frty trty args = do
                      -- If it does, we are dealing with a function
                      -- of type Class a => Expr a -> ... -> retType
                      -- so the dictionary type is of a not Expr a
-                     Just (tyCon, tys') -> return trty
+                     Just (_tyCon, _tys') -> return trty
                      -- If there is no TyCon, then we have a
                      -- function of type Class a => a -> ... -> retType
                      -- so the dictionary type needs to be Expr a.
-                     Nothing -> do
-                         exprTyCon <- thNameToTyCon exprTyConTH
-                         thNameTyToTyConApp exprTyConTH trty
+                     Nothing -> thNameTyToTyConApp exprTyConTH trty
         dict <- buildDictionaryTyConT (tyConAppTyCon tyConTy) dictTy'
         dicts <- genDictArgs dtys tys frty trty args
         return $ dict:dicts
@@ -331,5 +323,5 @@ typeIn t ty =
     if t `eqType` ty
     then True
     else
-      let (tyCon, tys') = splitTyConApp ty in
+      let (_, tys') = splitTyConApp ty in
       t `eqType` last tys'

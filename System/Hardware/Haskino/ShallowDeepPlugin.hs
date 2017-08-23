@@ -24,7 +24,7 @@ import System.Hardware.Haskino.ShallowDeepPlugin.RepAbsFusePass
 import System.Hardware.Haskino.ShallowDeepPlugin.RepCasePushPass
 import System.Hardware.Haskino.ShallowDeepPlugin.RepPushPass
 import System.Hardware.Haskino.ShallowDeepPlugin.ReturnsPass
-import System.Hardware.Haskino.ShallowDeepPlugin.CoreShow
+-- import System.Hardware.Haskino.ShallowDeepPlugin.CoreShow
 
 plugin :: Plugin
 plugin = defaultPlugin {
@@ -46,13 +46,16 @@ install _ todo = do
   let repPushToDo = [CoreDoPluginPass "RepPush" repPushPass]
   let repAbsFuseToDo = [CoreDoPluginPass "RepAbsFuse" repAbsFusePass]
   let absThenToDo = [CoreDoPluginPass "AbsThen" absThenPass]
-  let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
-  let showToDo = [CoreDoPluginPass "ShowPass" showPass]
+  -- The following passes are used for debugging.  dumpToDo dumps standard Core
+  --   and showToDo dumps very detailed data on the Core.  To use them in the
+  --   pass sequence they need to be uncommented.
+  -- let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
+  -- let showToDo = [CoreDoPluginPass "ShowPass" showPass]
 
   return $ [simplPass] ++ apRemoveToDo ++ condToDo ++ commProcToDo ++ returnsToDo ++
            bindArgRetAppToDo ++ repCasePushToDo ++ repPushToDo ++ absLambdaToDo ++
            repAbsFuseToDo ++ recurToDo ++ absThenToDo ++ todo -- ++ dumpToDo
---   
+--
 -- This pass is needed to simplify inlined applications that may be introduced
 -- by the compiler to inline single use let statements before it passes us
 -- the Core.
@@ -65,9 +68,9 @@ simplPass = CoreDoSimplify 1 SimplMode {
             sm_case_case = False,
             sm_eta_expand = False
             }
-
+{-
 dumpPass :: ModGuts -> CoreM ModGuts
 dumpPass guts = do
   putMsg $ ppr (mg_binds guts)
   return guts
-
+-}
