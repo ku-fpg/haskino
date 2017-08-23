@@ -25,8 +25,6 @@ import Type
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 
-import qualified System.Hardware.Haskino
-
 data BindEnv
     = BindEnv
       { pluginModGuts :: ModGuts
@@ -45,7 +43,7 @@ apRemovePass guts = do
     bindsOnlyPass (\x -> (runReaderT (runCondM $ (mapM apRemoveBind) x) (BindEnv guts))) guts
 
 apRemoveBind :: CoreBind -> BindM CoreBind
-apRemoveBind bndr@(NonRec b e) = do
+apRemoveBind (NonRec b e) = do
   e' <- apRemoveExpr e
   return (NonRec b e')
 apRemoveBind (Rec bs) = do
@@ -55,9 +53,8 @@ apRemoveBind (Rec bs) = do
 apRemoveExpr :: CoreExpr -> BindM CoreExpr
 apRemoveExpr e = do
   apId <- thNameToId apNameTH
-  df <- liftCoreM getDynFlags
   case e of
-    Var v -> return e
+    Var _ -> return e
     Lit l -> return $ Lit l
     Type ty -> return $ Type ty
     Coercion co -> return $ Coercion co
@@ -76,28 +73,28 @@ apRemoveExpr e = do
                   [_, _, _, f', arg] -> return $ mkCoreApps f' [arg]
                   _ -> defaultReturn
           _ -> defaultReturn
-    Lam tb e -> do
-      e' <- apRemoveExpr e
+    Lam tb el -> do
+      e' <- apRemoveExpr el
       return $ Lam tb e'
     Let bind body -> do
       body' <- apRemoveExpr body
       bind' <- case bind of
-                  (NonRec v e) -> do
-                    e' <- apRemoveExpr e
+                  (NonRec v el) -> do
+                    e' <- apRemoveExpr el
                     return $ NonRec v e'
                   (Rec rbs) -> do
                     rbs' <- apRemoveExpr' rbs
                     return $ Rec rbs'
       return $ Let bind' body'
-    Case e tb ty alts -> do
-      e' <- apRemoveExpr e
+    Case ec tb ty alts -> do
+      e' <- apRemoveExpr ec
       alts' <- apRemoveExprAlts alts
       return $ Case e' tb ty alts'
-    Tick t e -> do
-      e' <- apRemoveExpr e
+    Tick t et -> do
+      e' <- apRemoveExpr et
       return $ Tick t e'
-    Cast e co -> do
-      e' <- apRemoveExpr e
+    Cast ec co -> do
+      e' <- apRemoveExpr ec
       return $ Cast e' co
 
 apRemoveExpr' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]

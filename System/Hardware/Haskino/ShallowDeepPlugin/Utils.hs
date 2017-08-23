@@ -10,6 +10,8 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ExplicitForAll #-}
+
 module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            buildDictionaryT,
                                            buildDictionaryTyConT,
@@ -61,18 +63,15 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            notNameTH,
                                            returnNameTH) where
 
-import           Control.Arrow       (first, second)
+import           Control.Arrow       (second)
 import           Control.Monad
-import           CoreMonad
 import           Data.Char
 import           Data.Functor
-import           Data.Word
 import           DsBinds
 import           DsMonad             (initDsTc)
 import           Encoding            (zEncodeString)
 import           ErrUtils
 import           GhcPlugins
-import           HscTypes
 import qualified Language.Haskell.TH as TH
 import           OccName
 import           TcRnMonad
@@ -89,29 +88,53 @@ import System.Hardware.Haskino.ShallowDeepPlugin.Typechecker (initTcFromModGuts)
 -- and names of the conditionals in the DSL.
 import qualified System.Hardware.Haskino
 
+eitherTyConTH :: TH.Name
 eitherTyConTH          = ''System.Hardware.Haskino.ExprEither
+exprClassTyConTH :: TH.Name
 exprClassTyConTH       = ''System.Hardware.Haskino.ExprB
+exprTyConTH :: TH.Name
 exprTyConTH            = ''System.Hardware.Haskino.Expr
+monadCondTyConTH :: TH.Name
 monadCondTyConTH       = ''System.Hardware.Haskino.ArduinoConditional
+monadTyConTH :: TH.Name
 monadTyConTH           = ''System.Hardware.Haskino.Arduino
+monadIterateTyConTH :: TH.Name
 monadIterateTyConTH    = ''System.Hardware.Haskino.ArduinoIterate
+absNameTH :: TH.Name
 absNameTH              = 'System.Hardware.Haskino.abs_
+repNameTH :: TH.Name
 repNameTH              = 'System.Hardware.Haskino.rep_
+ifThenElseNameTH :: TH.Name
 ifThenElseNameTH       = 'System.Hardware.Haskino.ifThenElseE
+ifThenElseEitherNameTH :: TH.Name
 ifThenElseEitherNameTH = 'System.Hardware.Haskino.ifThenElseEither
+ifBNameTH :: TH.Name
 ifBNameTH              = 'System.Hardware.Haskino.ifBE
+iterateETH :: TH.Name
 iterateETH             = 'System.Hardware.Haskino.iterateE
+leftNameTH :: TH.Name
 leftNameTH             = 'System.Hardware.Haskino.ExprLeft
+rightNameTH :: TH.Name
 rightNameTH            = 'System.Hardware.Haskino.ExprRight
+litUnitNameTH :: TH.Name
 litUnitNameTH          = 'System.Hardware.Haskino.LitUnit
+litBNameTH :: TH.Name
 litBNameTH             = 'System.Hardware.Haskino.LitB
+litW8NameTH :: TH.Name
 litW8NameTH            = 'System.Hardware.Haskino.LitW8
+litW16NameTH :: TH.Name
 litW16NameTH           = 'System.Hardware.Haskino.LitW16
+litW32NameTH :: TH.Name
 litW32NameTH           = 'System.Hardware.Haskino.LitW32
+litI8NameTH :: TH.Name
 litI8NameTH            = 'System.Hardware.Haskino.LitI8
+litI16NameTH :: TH.Name
 litI16NameTH           = 'System.Hardware.Haskino.LitI16
+litI32NameTH :: TH.Name
 litI32NameTH           = 'System.Hardware.Haskino.LitI32
+litL8NameTH :: TH.Name
 litL8NameTH            = 'System.Hardware.Haskino.LitList8
+litFloatNameTH :: TH.Name
 litFloatNameTH         = 'System.Hardware.Haskino.LitFloat
 
 exprClassNames :: [TH.Name]
@@ -129,23 +152,37 @@ isExprClassType ty = do
 
 -- The following lines contain definitions of Template Haskell namde
 -- for standard Haskell functions.
+functTyConTH :: TH.Name
 functTyConTH         = ''Data.Functor.Functor
+monadClassTyConTH :: TH.Name
 monadClassTyConTH    = ''Prelude.Monad
+unitTyConTH :: TH.Name
 unitTyConTH          = ''()
+unitValueTH :: TH.Name
 unitValueTH          = '()
+listTyConTH :: TH.Name
 listTyConTH          = ''[]
+bindNameTH :: TH.Name
 bindNameTH           = '(>>=)
+bindThenNameTH :: TH.Name
 bindThenNameTH       = '(>>)
+falseNameTH :: TH.Name
 falseNameTH          = 'Prelude.False
+fmapNameTH :: TH.Name
 fmapNameTH           = '(<$>)
+apNameTH :: TH.Name
 apNameTH             = '($)
+returnNameTH :: TH.Name
 returnNameTH         = 'Prelude.return
+notNameTH :: TH.Name
 notNameTH            = 'not
+andNameTH :: TH.Name
 andNameTH            = '(&&)
 
 -- An infix pattern synonym for `App` to make applications with multiple
 -- arguments easier to manipulate:
 infixl 0 :$
+pattern (:$) :: forall t. Expr t -> Arg t -> Expr t
 pattern f :$ x = App f x
 
 class (Monad m, MonadIO m) => PassCoreM m where
@@ -167,22 +204,22 @@ thNameToId n = do
 stringToId_maybe :: PassCoreM m => String -> m (Maybe Id)
 stringToId_maybe str = do
   let lookId x = do
-        id <- liftCoreM $ lookupId $ gre_name x
-        return $ Just id
+        id' <- liftCoreM $ lookupId $ gre_name x
+        return $ Just id'
   guts <- getModGuts
   let gres = lookupGlobalRdrEnv (mg_rdr_env guts) (mkVarOcc str)
   case gres of
     []   -> return Nothing
     [x]  -> lookId x
-    x:xs -> lookId x -- Need to fix this, if there are multiples, need to
+    x:_  -> lookId x -- Need to fix this, if there are multiples, need to
                      -- find one we are looking for.
 
 stringToId :: PassCoreM m => String -> m Id
 stringToId str = do
   id_m <- stringToId_maybe str
   case id_m of
-    (Just id) -> return id
-    _         -> error $ "Error unable to Lookup ID " ++ str ++ "."
+    (Just id') -> return id'
+    _          -> error $ "Error unable to Lookup ID " ++ str ++ "."
 
 thNameToTyCon :: PassCoreM m => TH.Name -> m TyCon
 thNameToTyCon n = do
@@ -208,8 +245,8 @@ thNameTyToTyConApp n ty = do
 
 thNameToReturnBaseType :: PassCoreM m => TH.Name -> m Type
 thNameToReturnBaseType th = do
-    id <- thNameToId th
-    let (_, retTy) = splitFunTys $ varType id
+    id' <- thNameToId th
+    let (_, retTy) = splitFunTys $ varType id'
     let (_, [baseTy]) = splitTyConApp retTy
     return baseTy
 
@@ -217,9 +254,9 @@ varString :: Id -> String
 varString = occNameString . nameOccName . Var.varName
 
 buildId :: PassCoreM m => String -> Type -> m Id
-buildId varName typ = do
+buildId varName' typ = do
   dunique <- liftCoreM getUniqueM
-  let name = mkInternalName dunique (mkOccName OccName.varName varName) noSrcSpan
+  let name = mkInternalName dunique (mkOccName OccName.varName varName') noSrcSpan
   return $ mkLocalVar VanillaId name typ vanillaIdInfo
 
 modId :: PassCoreM m => Id -> String -> m Id
@@ -227,8 +264,8 @@ modId v s = do
   dunique <- liftCoreM getUniqueM
   guts <- getModGuts
   let newString = (varString v) ++ s
-  let newName = mkOccName OccName.varName newString
-  let name = mkExternalName dunique (mg_module guts) newName noSrcSpan
+  let newName' = mkOccName OccName.varName newString
+  let name = mkExternalName dunique (mg_module guts) newName' noSrcSpan
   let v' = setIdUnique (setVarName v name) dunique
   return v'
 
@@ -281,8 +318,8 @@ fmapRepBindReturn e = do
       Left e' -> return e'
   where
     fmapRepBindReturn' :: PassCoreM m => CoreExpr -> m (Either CoreExpr CoreExpr)
-    fmapRepBindReturn' e = do
-        let (ls, e')  = collectLets e
+    fmapRepBindReturn' e1 = do
+        let (ls, e')  = collectLets e1
         let (bs, e'') = collectBinders e'
         let (f, args) = collectArgs e''
         bindId <- thNameToId bindNameTH
@@ -301,22 +338,22 @@ fmapRepBindReturn e = do
                   -- so apply it at this level.
                   Left _ -> fmapRepReturn ls bs e''
             else fmapRepReturn ls bs e''
-          Case e tb ty alts -> do
+          Case ec tb ty alts -> do
             alts' <- fmapRepBindReturnAlts alts
-            return $ Right $ Case e tb ty alts'
-          _ -> return $ Right e
+            return $ Right $ Case ec tb ty alts'
+          _ -> return $ Right e1
 
     -- Apply rep_ <$> to the end of the bind chain if possible.
     -- If the end is a partially applied function, then rep_ <$>
     -- will need to be applied one level
     fmapRepReturn :: PassCoreM m => [CoreBind] -> [CoreBndr] -> CoreExpr -> m (Either CoreExpr CoreExpr)
-    fmapRepReturn ls bs e = do
-        let tyCon_m = splitTyConApp_maybe $ exprType e
+    fmapRepReturn ls bs e' = do
+        let tyCon_m = splitTyConApp_maybe $ exprType e'
         case tyCon_m of
           Just (tyCon,[ty]) -> do
-              retExpr <- fmapRepExpr (mkTyConTy tyCon) ty e
+              retExpr <- fmapRepExpr (mkTyConTy tyCon) ty e'
               return $ Right $ mkLets ls $ mkLams bs retExpr
-          _ -> return $ Left $ e
+          _ -> return $ Left $ e'
 
     fmapRepBindReturnAlts :: PassCoreM m => [GhcPlugins.Alt CoreBndr] -> m [GhcPlugins.Alt CoreBndr]
     fmapRepBindReturnAlts [] = return []

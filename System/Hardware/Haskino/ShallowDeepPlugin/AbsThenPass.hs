@@ -19,9 +19,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin.AbsThenPass (absThenPass) where
 
 import Control.Monad.Reader
 import CoreMonad
-import Data.Functor
 import GhcPlugins
-import Var
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils
 
@@ -43,12 +41,12 @@ absThenPass guts =
     bindsOnlyPass (\x -> (runReaderT (runBindM $ (mapM absThen) x) (BindEnv guts))) guts
 
 absThen :: CoreBind -> BindM CoreBind
-absThen bndr@(NonRec b e) = do
+absThen (NonRec b e) = do
   let (bs, e') = collectBinders e
   e'' <- absThenExpr e'
   let e''' = mkLams bs e''
   return (NonRec b e''')
-absThen bndr@(Rec bs) = do
+absThen (Rec bs) = do
   bs' <- absThen' bs
   return $ Rec bs'
 
@@ -63,7 +61,6 @@ absThen' ((b, e) : bs) = do
 
 absThenExpr :: CoreExpr -> BindM CoreExpr
 absThenExpr e = do
-  df <- liftCoreM getDynFlags
   thenId <- thNameToId bindThenNameTH
   fmapId <- thNameToId fmapNameTH
   absId  <- thNameToId absNameTH
@@ -76,8 +73,8 @@ absThenExpr e = do
     -- forall (f :: Arduino (Expr a)) (g :: Arduino (Expr b))
     --     (abs <$> f) >> g
     (Var thenV) :$ (Type m1Ty) :$ dict1 :$ (Type arg1Ty) :$ (Type arg2Ty) :$ 
-      ((Var fmapV) :$ (Type m2Ty) :$ (Type arg3Ty) :$ (Type arg4Ty) :$ dict2 :$ 
-        ((Var abs_V ) :$ (Type arg5Ty)) :$ e1) :$ e2 | thenV == thenId && fmapV == fmapId && abs_V == absId -> do
+      ((Var fmapV) :$ (Type _) :$ (Type _) :$ (Type _) :$ _ :$ 
+        ((Var abs_V ) :$ (Type _)) :$ e1) :$ e2 | thenV == thenId && fmapV == fmapId && abs_V == absId -> do
       e1' <- absThenExpr e1
       e2' <- absThenExpr e2
       return ((Var thenV) :$ (Type m1Ty) :$ dict1 :$ (Type arg1Ty) :$ (Type arg2Ty) :$ e1' :$ e2')
@@ -85,28 +82,28 @@ absThenExpr e = do
       e1' <- absThenExpr e1
       e2' <- absThenExpr e2
       return $ App e1' e2'
-    Lam tb e -> do
-      e' <- absThenExpr e
+    Lam tb el -> do
+      e' <- absThenExpr el
       return $ Lam tb e'
     Let bind body -> do
       body' <- absThenExpr body
       bind' <- case bind of
-                  (NonRec v e) -> do
-                    e' <- absThenExpr e
+                  (NonRec v el) -> do
+                    e' <- absThenExpr el
                     return $ NonRec v e'
                   (Rec rbs) -> do
                     rbs' <- absThenExpr' rbs
                     return $ Rec rbs'
       return $ Let bind' body'
-    Case e tb ty alts -> do
-      e' <- absThenExpr e
+    Case ec tb ty alts -> do
+      e' <- absThenExpr ec
       alts' <- absThenExprAlts alts
       return $ Case e' tb ty alts'
-    Tick t e -> do
-      e' <- absThenExpr e
+    Tick t et -> do
+      e' <- absThenExpr et
       return $ Tick t e'
-    Cast e co -> do
-      e' <- absThenExpr e
+    Cast ec co -> do
+      e' <- absThenExpr ec
       return $ Cast e' co
 
 absThenExpr' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
