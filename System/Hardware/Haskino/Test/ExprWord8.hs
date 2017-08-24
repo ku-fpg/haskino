@@ -453,8 +453,8 @@ main = do
     print "Bind Tests:"
     quickCheck (prop_bind conn refW8)
     print "IfThenElse Tests:"
-{-
     quickCheck (prop_ifthenelse conn)
+{-
     print "IfThenElseEitherW8 Tests:"
     quickCheck (prop_ifthenelseeitherw8 conn)
     print "IfThenElseEitherBool Tests:"
