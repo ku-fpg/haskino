@@ -1759,14 +1759,20 @@ compileIfThenElseProcedure t e cb1 cb2 = do
     s <- get
     let b = ib s
     put s {ib = b + 1}
-    _ <- compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
+    _ <- if t == UnitType
+         then return LitUnit
+         else compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
     _ <- compileLine $ "if (" ++ compileExpr e ++ ")"
     r1 <- compileCodeBlock cb1
-    _ <- compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r1 ++ ";"
+    _ <- if t == UnitType 
+         then return LitUnit
+         else compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r1 ++ ";"
     _ <- compileLineIndent "}"
     _ <- compileLine "else"
     r2 <- compileCodeBlock cb2
-    _ <- compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r2 ++ ";"
+    _ <- if t == UnitType 
+         then return LitUnit
+         else compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r2 ++ ";"
     _ <- compileLineIndent "}"
     return $ remBind b
 
@@ -1808,12 +1814,18 @@ compileIterateProcedure :: (ExprB a, ExprB b) => CompileType -> CompileType ->
 compileIterateProcedure ta tb b1 b1e b2 b2e iv bf = do
     s <- get
     put s {iterBinds = (b1, b2):iterBinds s}
-    _ <- compileAllocBind $ compileTypeToString ta ++ " " ++ bindName ++ show b1 ++ ";"
-    _ <- compileAllocBind $ compileTypeToString tb ++ " " ++ bindName ++ show b2 ++ ";"
+    _ <- if ta == UnitType
+         then return LitUnit
+         else compileAllocBind $ compileTypeToString ta ++ " " ++ bindName ++ show b1 ++ ";"
+    _ <- if tb == UnitType 
+         then return LitUnit
+         else compileAllocBind $ compileTypeToString tb ++ " " ++ bindName ++ show b2 ++ ";"
 
     _ <- if ta == List8Type
          then compileLine $ "listAssign(&" ++ bindName ++ show b1 ++ ", " ++ compileExpr iv ++ ");"
-         else compileLine $ bindName ++ show b1 ++ " = " ++ compileExpr iv ++ ";"
+         else if ta == UnitType 
+              then return LitUnit
+              else compileLine $ bindName ++ show b1 ++ " = " ++ compileExpr iv ++ ";"
     _ <- compileLine $ "while (1)"
     _ <- compileCodeBlock $ bf b1e
     _ <- compileLineIndent "}"
