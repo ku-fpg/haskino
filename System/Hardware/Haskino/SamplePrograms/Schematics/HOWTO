@@ -1,7 +1,0 @@
-- First use fritzing to create the FILE.fzz file for the schematics
-- Export from fritzing as a PNG file: FILE.png
-- Open the FILE.png in Preview:
-       - Crop it on the sides
-       - Clean-up etc. (Fritzing tends to put some junk, patch it with white cut/paste)
-       - Tools->Adjust Size: To width 600 pixels (height auto-adjusted). Size should be ~75K
-- Save it!
