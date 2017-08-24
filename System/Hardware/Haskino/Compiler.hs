@@ -1820,7 +1820,6 @@ compileIterateProcedure ta tb b1 b1e b2 b2e iv bf = do
     _ <- if tb == UnitType 
          then return LitUnit
          else compileAllocBind $ compileTypeToString tb ++ " " ++ bindName ++ show b2 ++ ";"
-
     _ <- if ta == List8Type
          then compileLine $ "listAssign(&" ++ bindName ++ show b1 ++ ", " ++ compileExpr iv ++ ");"
          else if ta == UnitType 
