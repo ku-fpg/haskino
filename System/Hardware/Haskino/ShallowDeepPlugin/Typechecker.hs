@@ -11,47 +11,36 @@
 -- Note: the contents of this module should eventually be folded into GHC proper.
 -------------------------------------------------------------------------------
 
-module System.Hardware.Haskino.ShallowDeepPlugin.Typechecker
-    (
-      initTcFromModGuts
-    , mk_type_env
-    , tcLookupGlobal
-    ) where
+module System.Hardware.Haskino.ShallowDeepPlugin.Typechecker(initTcFromModGuts) where
 
-import Annotations (emptyAnnEnv)
-import HsSyn
-import RdrName
-import TcRnMonad
-import CoreSyn
-import ErrUtils
-import VarEnv
-import Name
-import NameEnv
-import NameSet
-import SrcLoc
-import HscTypes
-import Outputable
-import Data.IORef ( newIORef, readIORef )
-
-import TcEnv ( tcLookupGlobal )
-import DynFlags ( getSigOf )
+import           Annotations (emptyAnnEnv)
+import           Bag
+import           CoreSyn
+import           Data.IORef  ( newIORef, readIORef )
+import qualified Data.Map    as Map
+import qualified Data.Set    as Set
+import           DynFlags    ( getSigOf )
+import           ErrUtils
+import           FastString
+import           HscTypes
+import           HsSyn
 #if __GLASGOW_HASKELL__ > 710
-import Module   ( moduleName )
+import           Module      ( moduleName )
 #else
-import Module   ( mkModuleSet, moduleName )
+import           Module      ( mkModuleSet, moduleName )
 #endif
-import TcType   ( topTcLevel )
+import           Name
+import           NameEnv
+import           NameSet
+import           Outputable
+import           Prelude hiding (mod)
+import           SrcLoc
+import           RdrName
+import           TcRnMonad
+import           TcType      ( topTcLevel )
+import           VarEnv
+import           VarSet (emptyVarSet)
 
-import FastString
-import Bag
-
-#if __GLASGOW_HASKELL__ <= 710 
-import qualified Data.Set as Set
-#endif
-import qualified Data.Map as Map
-
-import Prelude hiding (mod)
-import VarSet (emptyVarSet)
 
 -- Note: the contents of this module should eventually be folded into GHC proper.
 
@@ -76,6 +65,7 @@ initTcFromModGuts hsc_env guts hsc_src keep_rn_syntax do_this
 #endif
         th_var       <- newIORef False ;
         th_splice_var<- newIORef False ;
+        th_locs_var  <- newIORef Set.empty ;
 #if __GLASGOW_HASKELL__ > 710 
         infer_var    <- newIORef (True, emptyBag) ;
 #else
@@ -143,6 +133,7 @@ initTcFromModGuts hsc_env guts hsc_src keep_rn_syntax do_this
                 tcg_fam_insts      = [],
                 tcg_rules          = [],
                 tcg_th_used        = th_var,
+                tcg_th_top_level_locs = th_locs_var,
                 tcg_imports        = emptyImportAvails,
                 tcg_dus            = emptyDUs,
                 tcg_ev_binds       = emptyBag,
