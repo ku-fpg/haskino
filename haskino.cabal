@@ -1,4 +1,4 @@
-Name:          Haskino
+Name:          haskino
 Version:       0.6
 Category:      Hardware
 Synopsis:      Control your Arduino board from Haskell using Deep Embedding
@@ -34,30 +34,23 @@ Library
                     , natural-transformation >= 0.4 && < 0.5
                     , Boolean
                     , cereal
+                    , remote-monad >= 0.5 && < 0.6
                     , template-haskell
                     , transformers
                     , ghc >= 8.0.2
                     , exceptions  >= 0.8 && < 0.9
                     , pretty
                     , pretty-show
-  Exposed-modules   : Control.Remote.Packet.Alternative
-                    , Control.Remote.Packet.Applicative
-                    , Control.Remote.Packet.Query
-                    , Control.Remote.Packet.Strong
-                    , Control.Remote.Packet.Weak
-                    , Control.Remote.Packet
-                    , Control.Remote.Applicative
-                    , Control.Remote.Applicative.Types
-                    , Control.Remote.Monad
-                    , Control.Remote.Monad.Types
-                    , Control.Remote.Util
-                    , Data.Boolean.Bits
+  Exposed-modules   : Data.Boolean.Bits
                     , System.Hardware.Haskino
                     , System.Hardware.Haskino.ShallowDeepPlugin
-  Other-modules     : System.Hardware.Haskino.Comm
+  Other-modules     : System.Hardware.Haskino.Compiler
+                    , System.Hardware.Haskino.Comm
                     , System.Hardware.Haskino.Data
+                    , System.Hardware.Haskino.Decode
                     , System.Hardware.Haskino.Expr
                     , System.Hardware.Haskino.Protocol
+                    , System.Hardware.Haskino.Show
                     , System.Hardware.Haskino.Utils
                     , System.Hardware.Haskino.ShallowDeepPlugin.AbsLambdaPass
                     , System.Hardware.Haskino.ShallowDeepPlugin.AbsThenPass
@@ -71,5 +64,5 @@ Library
                     , System.Hardware.Haskino.ShallowDeepPlugin.RepCasePushPass
                     , System.Hardware.Haskino.ShallowDeepPlugin.RepPushPass
                     , System.Hardware.Haskino.ShallowDeepPlugin.ReturnsPass
-                    , System.Hardware.Haskino.ShallowDeepPlugin.Utils
                     , System.Hardware.Haskino.ShallowDeepPlugin.Typechecker
+                    , System.Hardware.Haskino.ShallowDeepPlugin.Utils

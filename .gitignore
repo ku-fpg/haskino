@@ -38,6 +38,7 @@
 .cabal-sandbox
 cabal.sandbox.config
 .stack.work/
+.stack-work/
 dist
 
 # Arduino Makefile
