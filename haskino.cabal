@@ -1,11 +1,11 @@
-Name:          Haskino
-Version:       0.5
+Name:          haskino
+Version:       0.6
 Category:      Hardware
 Synopsis:      Control your Arduino board from Haskell using Deep Embedding
 Description:   Haskino allows Haskell programs to control Arduino boards
                (<http://www.arduino.cc>) and peripherals
                For details, see: <http://kufpg.github.com/Haskino>.
-Copyright:     University of Kansas, 2015
+Copyright:     University of Kansas, 2015-2017
 License:       BSD3
 License-file:  LICENSE
 Stability:     Experimental
@@ -15,7 +15,7 @@ Bug-reports:   http://github.com/kufpg/Haskino/issues
 Maintainer:    Mark Grebe
 Build-Type:    Simple
 Cabal-Version: >= 1.14
-Extra-Source-Files: README.md, LICENSE
+Extra-Source-Files: README.md, Changelog.md, LICENSE
 
 source-repository head
     type:       git
@@ -31,19 +31,38 @@ Library
                     , containers
                     , time
                     , base16-bytestring
-                    , natural-transformation
+                    , natural-transformation >= 0.4 && < 0.5
                     , Boolean
                     , cereal
+                    , remote-monad >= 0.5 && < 0.6
+                    , template-haskell
                     , transformers
-  Exposed-modules   : System.Hardware.Haskino
-                    , System.Hardware.Haskino.Parts.Eeprom
-                    , System.Hardware.Haskino.Parts.LCD
-                    , System.Hardware.Haskino.Parts.LCDE
-                    , System.Hardware.Haskino.Parts.Piezo
-                    , System.Hardware.Haskino.Parts.SevenSegmentCodes
-                    , System.Hardware.Haskino.Parts.ShiftRegisters
-  Other-modules     : System.Hardware.Haskino.Comm
+                    , ghc >= 8.0.2
+                    , exceptions  >= 0.8 && < 0.9
+                    , pretty
+                    , pretty-show
+  Exposed-modules   : Data.Boolean.Bits
+                    , System.Hardware.Haskino
+                    , System.Hardware.Haskino.ShallowDeepPlugin
+  Other-modules     : System.Hardware.Haskino.Compiler
+                    , System.Hardware.Haskino.Comm
                     , System.Hardware.Haskino.Data
+                    , System.Hardware.Haskino.Decode
                     , System.Hardware.Haskino.Expr
                     , System.Hardware.Haskino.Protocol
+                    , System.Hardware.Haskino.Show
                     , System.Hardware.Haskino.Utils
+                    , System.Hardware.Haskino.ShallowDeepPlugin.AbsLambdaPass
+                    , System.Hardware.Haskino.ShallowDeepPlugin.AbsThenPass
+                    , System.Hardware.Haskino.ShallowDeepPlugin.ApRemovePass
+                    , System.Hardware.Haskino.ShallowDeepPlugin.BindChangeArgPass
+                    , System.Hardware.Haskino.ShallowDeepPlugin.CommProcPass
+                    , System.Hardware.Haskino.ShallowDeepPlugin.CondPass
+                    , System.Hardware.Haskino.ShallowDeepPlugin.CoreShow
+                    , System.Hardware.Haskino.ShallowDeepPlugin.RecurPass
+                    , System.Hardware.Haskino.ShallowDeepPlugin.RepAbsFusePass
+                    , System.Hardware.Haskino.ShallowDeepPlugin.RepCasePushPass
+                    , System.Hardware.Haskino.ShallowDeepPlugin.RepPushPass
+                    , System.Hardware.Haskino.ShallowDeepPlugin.ReturnsPass
+                    , System.Hardware.Haskino.ShallowDeepPlugin.Typechecker
+                    , System.Hardware.Haskino.ShallowDeepPlugin.Utils

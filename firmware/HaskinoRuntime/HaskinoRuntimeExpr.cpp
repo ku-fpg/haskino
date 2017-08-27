@@ -258,6 +258,53 @@ uint8_t *list8Apnd(uint8_t *l1, uint8_t *l2)
     return newList;
     }
 
+uint8_t *list8Slice(uint8_t *l, uint8_t sindex, uint8_t len)
+    {
+    uint8_t *newList;
+    uint8_t size = l[1];
+
+    if (len == 0)
+        {
+        if (sindex < size)
+            {
+            size = size - sindex;
+            }
+        else
+            {
+            size = 0;
+            }
+        }
+    else
+        {
+        if (sindex < size)
+            {
+            if (sindex + len < size)
+                {
+                size = len;
+                }
+            else
+                {
+                size = size - sindex;
+                }
+            }
+        else
+            {
+            size = 0;
+            }
+        }
+
+    newList = listAlloc(size);
+
+    if (newList)
+        {
+        newList[1] = size;
+        memcpy(&newList[2], &l[2+sindex], size);
+        }
+
+    listFree(l);
+    return newList;
+    }
+
 // Bit functions
 
 bool testBW8(uint8_t w, uint8_t b)

@@ -1,3 +1,15 @@
+# Version 0.6
+
+Version 0.6 is a major upgrade to the Haskino framework.  It introduces a 
+GHC compiler plugin which allows Haskino programs to be written in the
+Shallow DSL style and automatically be converted to the Deep DSL for
+compilation.
+
+Details of the this are presented in our paper:
+
+M. Grebe, D. Young,  and A. Gill, “Rewriting a shallow DSL using a GHC compiler extension,”
+in *Proceedings of the 2017 International Conference on Generative Programming: Concepts and Experiences*, inpress
+
 # Version 0.5
 
 This version changes the while function in the remote reference typeclass has been changed to include a intialization of the loop remote reference.  It's type has changed from:

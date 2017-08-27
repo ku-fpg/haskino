@@ -37,11 +37,12 @@ static bool handleReadPin(int size, const byte *msg, CONTEXT *context)
     byte *expr = (byte *) &msg[2];
     byte pinNo = evalWord8Expr(&expr, context);
     uint16_t analogValue;
-    byte analogReply[3];
+    byte analogReply[4];
 
-    analogReply[0] = EXPR(EXPR_WORD16, EXPR_LIT);
+    analogReply[0] = EXPR_WORD16;
+    analogReply[1] = EXPR_LIT;
     analogValue = analogRead(pinNo);
-    memcpy(&analogReply[1], &analogValue, sizeof(analogValue));
+    memcpy(&analogReply[2], &analogValue, sizeof(analogValue));
 
     sendReply(sizeof(analogReply), ALG_RESP_READ_PIN, 
               (byte *) &analogReply, context, bind);

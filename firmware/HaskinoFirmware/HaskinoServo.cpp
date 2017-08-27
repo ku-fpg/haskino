@@ -52,12 +52,13 @@ static bool handleAttach(int size, const byte *msg, CONTEXT *context)
     byte pin = evalWord8Expr(&expr, context);
     int min = evalInt16Expr(&expr, context);
     int max = evalInt16Expr(&expr, context);
-    byte servoReply[2];
+    byte servoReply[3];
 
     newServo = new Servo();
     newServo->attach(pin, min, max);
-    servoReply[0] = EXPR(EXPR_BOOL, EXPR_LIT);
-    servoReply[1] = nextServo;
+    servoReply[0] = EXPR_BOOL;
+    servoReply[1] = EXPR_LIT;
+    servoReply[2] = nextServo;
 
     servos[nextServo++] = newServo;
     sendReply(sizeof(servoReply), SRVO_RESP_ATTACH, 
@@ -100,11 +101,12 @@ static bool handleRead(int size, const byte *msg, CONTEXT *context)
     byte *expr = (byte *) &msg[2];
     byte servoId = evalWord8Expr(&expr, context);
     uint16_t degValue;
-    byte readReply[3];
+    byte readReply[4];
 
-    readReply[0] = EXPR(EXPR_WORD16, EXPR_LIT);
+    readReply[0] = EXPR_WORD16;
+    readReply[1] = EXPR_LIT;
     degValue = servos[servoId]->read();
-    memcpy(&readReply[1], &degValue, sizeof(degValue));
+    memcpy(&readReply[2], &degValue, sizeof(degValue));
 
     sendReply(sizeof(readReply), SRVO_RESP_READ, 
               (byte *) &readReply, context, bind);
@@ -117,11 +119,12 @@ static bool handleReadMicros(int size, const byte *msg, CONTEXT *context)
     byte *expr = (byte *) &msg[2];
     byte servoId = evalWord8Expr(&expr, context);
     uint16_t degValue;
-    byte readReply[3];
+    byte readReply[4];
 
-    readReply[0] = EXPR(EXPR_WORD16, EXPR_LIT);
+    readReply[0] = EXPR_WORD16;
+    readReply[1] = EXPR_LIT;
     degValue = servos[servoId]->readMicroseconds();
-    memcpy(&readReply[1], &degValue, sizeof(degValue));
+    memcpy(&readReply[2], &degValue, sizeof(degValue));
 
     sendReply(sizeof(readReply), SRVO_RESP_READ_MICROS, 
               (byte *) &readReply, context, bind);

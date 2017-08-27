@@ -44,10 +44,11 @@ static bool handle2Pin(int size, const byte *msg, CONTEXT *context)
     uint16_t steps = evalWord16Expr(&expr, context);
     byte pin1No = evalWord8Expr(&expr, context);
     byte pin2No = evalWord8Expr(&expr, context);
-    byte stepperReply[2];
+    byte stepperReply[3];
 
     newStepper = new Stepper(steps, pin1No, pin2No);
-    stepperReply[0] = EXPR(EXPR_BOOL, EXPR_LIT);
+    stepperReply[0] = EXPR_BOOL;
+    stepperReply[1] = EXPR_LIT;
     stepperReply[1] = nextStepper;
 
     steppers[nextStepper++] = newStepper;
@@ -66,10 +67,11 @@ static bool handle4Pin(int size, const byte *msg, CONTEXT *context)
     byte pin2No = evalWord8Expr(&expr, context);
     byte pin3No = evalWord8Expr(&expr, context);
     byte pin4No = evalWord8Expr(&expr, context);
-    byte stepperReply[2];
+    byte stepperReply[3];
 
     newStepper = new Stepper(steps, pin1No, pin2No, pin3No, pin4No);
-    stepperReply[0] = EXPR(EXPR_BOOL, EXPR_LIT);
+    stepperReply[0] = EXPR_BOOL;
+    stepperReply[1] = EXPR_LIT;
     stepperReply[1] = nextStepper;
 
     steppers[nextStepper++] = newStepper;

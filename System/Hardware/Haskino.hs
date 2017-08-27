@@ -7,7 +7,7 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Haskino allows Haskell programs to control Arduino boards 
+-- Haskino allows Haskell programs to control Arduino boards
 -- (<http://www.arduino.cc>) and peripherals
 --
 -- For details, see: <http://kufpg.github.com/Haskino>.
@@ -15,26 +15,29 @@
 module System.Hardware.Haskino (
   -- * Communication functions
   openArduino, closeArduino, withArduino, send, ArduinoConnection
-  , withArduinoWeak , withArduinoStrong, withArduinoApp
-  , sendWeak, sendStrong, sendApp
+  , withArduinoWeak, withArduinoApp
+  , sendWeak, sendApp
   -- * Deep embeddings
-  , Arduino(..) , ArduinoCommand(..), ArduinoProcedure(..), Processor(..)
+  , Arduino(..) , ArduinoPrimitive(..), Processor(..)
   -- * Programming the Arduino
   -- ** Pins
   , Pin, PinMode(..), IntMode(..), setPinMode, setPinModeE
   -- ** Gereral utils
-  , systemReset, queryFirmware
+  , systemReset, queryFirmware, queryProcessor, queryFirmwareE, queryProcessorE
   -- ** Digital IO
-  , digitalWrite, digitalRead, digitalWriteE, digitalReadE  
+  , digitalWrite, digitalPortWrite, digitalRead, digitalPortRead
+  , digitalWriteE, digitalPortWriteE, digitalReadE, digitalPortReadE
   -- ** Analog IO
   , analogWrite, analogRead, analogWriteE, analogReadE
+  -- ** Speaker
+  , tone, noTone, toneE, noToneE
   -- ** I2C
-  , SlaveAddress, i2cRead, i2cWrite, i2cConfig
+  , SlaveAddress, i2cRead, i2cWrite, i2cConfig, i2cReadE, i2cWriteE
   -- ** Servo
   , servoDetach, servoDetachE, servoWrite, servoWriteE, servoWriteMicros
-  , servoWriteMicrosE, servoAttach, servoAttachE, servoAttachMixMax
-  , servoAttachMixMaxE, servoRead, servoReadE, servoReadMicros, servoReadMicrosE
-  -- ** Time 
+  , servoWriteMicrosE, servoAttach, servoAttachE, servoAttachMinMax
+  , servoAttachMinMaxE, servoRead, servoReadE, servoReadMicros, servoReadMicrosE
+  -- ** Time
   , millis, micros, millisE, microsE, delayMillis, delayMicros,delayMillisE, delayMicrosE
   -- ** Scheduler
   , TaskLength, TaskID, TimeMillis, TimeMicros, TaskPos, queryAllTasks, queryTask
@@ -47,24 +50,26 @@ module System.Hardware.Haskino (
   --, StepDevice, StepType(..), NumSteps, StepSpeed, StepAccel, StepPerRev
   --, StepDelay(..), StepDir(..), stepperConfig, stepperStep
   , stepper2Pin, stepper2PinE, stepper4Pin, stepper4PinE, stepperSetSpeed
-  , stepperSetSpeedE, stepperStep ,stepperStepE 
+  , stepperSetSpeedE, stepperStep ,stepperStepE
   -- ** Control structures
-  , loop, while, ifThenElse, loopE, forInE
+  , loop, loopE, ArduinoConditional(..), forInE, whileE, repeatUntilE
   -- ** Expressions
-  , Expr(..), RemoteRef, lit, newRemoteRef, readRemoteRef, writeRemoteRef
-  , modifyRemoteRef, (++*), (*:), (!!*), len, pack, litString, showE, showFFloatE
+  , Expr(..), RemoteRef, lit, newRemoteRef, newRemoteRefE, readRemoteRef, readRemoteRefE
+  , writeRemoteRef, writeRemoteRefE, modifyRemoteRef, modifyRemoteRefE, (++*), (*:), (!!*)
+  , len, pack, litString, litStringE, showB, showE, showFFloatE, ExprB, abs_, rep_, lessE
+  , lesseqE, greatE, greateqE, eqE, neqE, headE, tailE, nullE, ifBE
   -- ** Debugging
   , debug, debugE, debugListen, die, deframe
   -- ** Compiler
-  , compileProgram
+  , compileProgram, compileProgramE
+  -- ** Recursion
+  , ArduinoIterate(..), ExprEither(..)
  )
  where
 
-import System.Hardware.Haskino.Data
-import System.Hardware.Haskino.Comm
-import System.Hardware.Haskino.Expr
-import System.Hardware.Haskino.Utils
-import System.Hardware.Haskino.Decode
-import System.Hardware.Haskino.Compiler
-import System.Hardware.Haskino.Show
-import Data.Boolean
+import            System.Hardware.Haskino.Comm
+import            System.Hardware.Haskino.Compiler
+import            System.Hardware.Haskino.Data
+import            System.Hardware.Haskino.Decode
+import            System.Hardware.Haskino.Expr
+import            System.Hardware.Haskino.Show()

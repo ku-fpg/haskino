@@ -3,16 +3,6 @@
 
 #include "HaskinoScheduler.h"
 
-#define REF_BOOL   0x00
-#define REF_WORD8  0x01
-#define REF_WORD16 0x02
-#define REF_WORD32 0x03
-#define REF_INT8   0x04
-#define REF_INT16  0x05
-#define REF_INT32  0x06
-#define REF_LIST8  0x07
-#define REF_FLOAT  0x08
-
 bool parseRefMessage(int size, const byte *msg, CONTEXT *context);
 bool readRefBool(int refIndex);
 uint8_t readRefWord8(int refIndex);

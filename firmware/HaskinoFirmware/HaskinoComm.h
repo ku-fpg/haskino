@@ -14,6 +14,8 @@ void endReplyFrame();
 void sendReplyByte(byte replyByte);
 void sendReply(int count, byte replyType, const byte *reply, 
                CONTEXT *context, byte bind);
+void sendTypeReply(int type, const byte *src, byte *replyBuff, 
+                   byte replyType, CONTEXT *context, byte bind);
 void sendStringf(const char *fmt, ...);
 bool parseMessage(int size, const byte *msg, CONTEXT *context);
 

@@ -11,18 +11,16 @@
 -------------------------------------------------------------------------------
 module System.Hardware.Haskino.Utils where
 
-import Data.Bits          ((.|.), shiftL, (.&.), shiftR)
-import Data.Char          (isAlphaNum, isAscii, isSpace, chr, ord)
-import Data.IORef         (newIORef, readIORef, writeIORef)
-import Data.List          (intercalate)
-import Data.Word          (Word8, Word16, Word32)
-import Data.Serialize     (runPut, runGet)
-import Data.Serialize.IEEE754 (putFloat32le, getFloat32le)
-import Data.Time          (getCurrentTime, utctDayTime)
-import Numeric            (showHex, showIntAtBase)
-
-import qualified Data.ByteString            as B 
-import Data.ByteString.Base16 (encode)
+import           Data.Bits              (shiftL, shiftR, (.&.), (.|.))
+import qualified Data.ByteString        as B 
+import           Data.Char              (isAlphaNum, isAscii, isSpace, chr, ord)
+import           Data.IORef             (newIORef, readIORef, writeIORef)
+import           Data.List              (intercalate)
+import           Data.Word              (Word8, Word16, Word32)
+import           Data.Serialize         (runPut, runGet)
+import           Data.Serialize.IEEE754 (putFloat32le, getFloat32le)
+import           Data.Time              (getCurrentTime, utctDayTime)
+import           Numeric                (showHex, showIntAtBase)
 
 -- | A simple printer that can keep track of sequence numbers. Used for debugging purposes.
 mkDebugPrinter :: Bool -> IO (String -> IO ())
@@ -99,3 +97,9 @@ bytesToFloat (a,b,c,d) = case e of
 
 stringToBytes :: String -> [Word8]
 stringToBytes s = map (\d -> fromIntegral $ ord d) s
+
+bytesToString :: [Word8] -> String
+bytesToString = map (chr . fromEnum)
+
+toW8 :: Enum a => a -> Word8
+toW8 = fromIntegral . fromEnum
