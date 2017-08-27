@@ -283,6 +283,7 @@ sendToArduino conn cmds = do
          -- (message conn $ "Sending: " ++ show (encode cmds))
          (message conn $ "Sending: \n" ++ (decodeFrame cmds))
     sent <- liftIO $ S.send (port conn) cmds
+    liftIO $ S.flush
     when (sent /= lp)
          (message conn $ "Send failed. Tried: " ++ show lp ++ "bytes, reported: " ++ show sent)
   where
