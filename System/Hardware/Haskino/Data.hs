@@ -523,6 +523,7 @@ instance KnownResult ArduinoPrimitive where
   knownResult (ModifyRemoteRefIE {}    ) = Just LitUnit
   knownResult (ModifyRemoteRefL8E {}   ) = Just LitUnit
   knownResult (ModifyRemoteRefFloatE {} ) = Just LitUnit
+  knownResult (Loop {} )                 = Just ()
   knownResult _                          = Nothing
 
 systemReset :: Arduino ()
