@@ -254,7 +254,7 @@ commProcXlatArg (xlat, e) =
     case tyCon_m of
       Just (tyCon, [ty]) | tyCon == monadTyConId -> do
         e' <- commProcExpr e
-        fmapAbsExpr (mkTyConTy tyCon) ty e'
+        fmapRepBindReturn e'
       _                  -> repExpr e
   else return e
 
