@@ -252,7 +252,7 @@ commProcXlatArg (xlat, e) =
     monadTyConId <- thNameToTyCon monadTyConTH
     let tyCon_m = splitTyConApp_maybe $ exprType e
     case tyCon_m of
-      Just (tyCon, [ty]) | tyCon == monadTyConId -> do
+      Just (tyCon, [_ty]) | tyCon == monadTyConId -> do
         e' <- commProcExpr e
         fmapRepBindReturn e'
       _                  -> repExpr e
