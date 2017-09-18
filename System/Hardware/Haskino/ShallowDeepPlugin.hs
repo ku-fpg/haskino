@@ -49,12 +49,12 @@ install _ todo = do
   -- The following passes are used for debugging.  dumpToDo dumps standard Core
   --   and showToDo dumps very detailed data on the Core.  To use them in the
   --   pass sequence they need to be uncommented.
-  -- let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
+  let dumpToDo = [CoreDoPluginPass "DumpPass" dumpPass]
   -- let showToDo = [CoreDoPluginPass "ShowPass" showPass]
 
   return $ [simplPass] ++ apRemoveToDo ++ condToDo ++ commProcToDo ++ returnsToDo ++
            bindArgRetAppToDo ++ repCasePushToDo ++ repPushToDo ++ absLambdaToDo ++
-           repAbsFuseToDo ++ recurToDo ++ absThenToDo ++ todo -- ++ dumpToDo
+           repAbsFuseToDo ++ recurToDo ++ absThenToDo ++ dumpToDo ++ todo -- ++ dumpToDo
 --
 -- This pass is needed to simplify inlined applications that may be introduced
 -- by the compiler to inline single use let statements before it passes us
@@ -68,9 +68,9 @@ simplPass = CoreDoSimplify 1 SimplMode {
             sm_case_case = False,
             sm_eta_expand = False
             }
-{-
+
 dumpPass :: ModGuts -> CoreM ModGuts
 dumpPass guts = do
   putMsg $ ppr (mg_binds guts)
   return guts
--}
+
