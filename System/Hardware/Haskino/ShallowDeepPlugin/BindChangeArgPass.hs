@@ -404,10 +404,16 @@ bindChangeArgRetAppPass guts = do
     keyExported ns sId _ = (varName sId) `elem` ns
 
 changeArgBind :: CoreBind -> BindM [CoreBind]
-changeArgBind (NonRec b e) = do
-  ides <- changeSubBind b e
-  let bs = map (\ide -> NonRec (fst ide) (snd ide)) ides
-  return bs
+changeArgBind bndr@(NonRec b e) = do
+  -- Only do top level binds, as some Core binds appear in mg_binds, but are
+  -- not top level. This could cause translation of elements of a non-ExprB
+  -- data type instantiation, which is not what we want.
+  if isBindTopLevel b
+  then do
+    ides <- changeSubBind b e
+    let bs = map (\ide -> NonRec (fst ide) (snd ide)) ides
+    return bs
+  else return [bndr]
 changeArgBind (Rec bs) = do
   (nrbs', rbs') <- changeArgBind' bs
   return $ nrbs' ++ [Rec rbs']
@@ -475,7 +481,7 @@ changeSubBind b e = do
           put s'{shallowDeepMap = M.insert b b' (shallowDeepMap s')}
 
           return [(b, mkLams bs absE), (b', mkLams bs' e''')]
-      -- We are looking for return types of Arduino a
+      -- We are looking for return types of ExprB a => a
       _ | isRetTyExprClass -> do
           -- Calculate which args we should translate, only
           -- ones of our languages expression types
@@ -681,8 +687,10 @@ changeAppExpr e = do
                     -- Calculate which args we should translate, only
                     -- ones of our languages expression types
                     xlats <- mapM isExprClassType argTys
-                    args'' <- mapM repShallowArg $ zip args' xlats
-                    let e' = mkCoreApps (Var vb') args''
+                    -- Recursively translate inside of args.
+                    args'' <- mapM changeAppExpr args'
+                    args''' <- mapM repShallowArg $ zip args'' xlats
+                    let e' = mkCoreApps (Var vb') args'''
                     isExpr <- isExprClassType retTy'
                     absE <- if isExpr
                             then fmapAbsExpr (mkTyConTy retTyCon) retTy' e'
@@ -697,8 +705,10 @@ changeAppExpr e = do
                     -- Calculate which args we should translate, only
                     -- ones of our languages expression types
                     xlats <- mapM isExprClassType argTys
-                    args'' <- mapM repShallowArg $ zip args' xlats
-                    let e' = mkCoreApps (Var vb') args''
+                    -- Recursively translate inside of args.
+                    args'' <- mapM changeAppExpr args'
+                    args''' <- mapM repShallowArg $ zip args'' xlats
+                    let e' = mkCoreApps (Var vb') args'''
                     absExpr e'
                   Nothing -> defaultRet
             _ -> defaultRet

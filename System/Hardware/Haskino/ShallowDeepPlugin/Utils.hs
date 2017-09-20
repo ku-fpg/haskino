@@ -21,7 +21,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            fmapRepBindReturn,
                                            fmapRepExpr,
                                            isExprClassType,
-                                           isPrim,
+                                           isBindTopLevel,
                                            modId,
                                            repExpr,
                                            stringToId,
@@ -150,6 +150,12 @@ isExprClassType ty = do
     exprClassTypes :: PassCoreM m => m [Type]
     exprClassTypes = mapM thNameToReturnBaseType exprClassNames
 
+isBindTopLevel :: Var -> Bool
+isBindTopLevel b =
+    case unfoldingInfo (idInfo b) of
+        cu@CoreUnfolding{ } -> uf_is_top cu
+        _                   -> False
+
 -- The following lines contain definitions of Template Haskell namde
 -- for standard Haskell functions.
 functTyConTH :: TH.Name
@@ -180,14 +186,6 @@ notNameTH :: TH.Name
 notNameTH            = 'not
 andNameTH :: TH.Name
 andNameTH            = '(&&)
-
-prims :: [TH.Name]
-prims = [falseNameTH, trueNameTH]
-
-isPrim :: PassCoreM m => Id -> m Bool
-isPrim i = do
-  ids <- mapM thNameToId prims
-  return $ i `elem` ids
 
 -- An infix pattern synonym for `App` to make applications with multiple
 -- arguments easier to manipulate:
