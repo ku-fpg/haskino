@@ -404,10 +404,16 @@ bindChangeArgRetAppPass guts = do
     keyExported ns sId _ = (varName sId) `elem` ns
 
 changeArgBind :: CoreBind -> BindM [CoreBind]
-changeArgBind (NonRec b e) = do
-  ides <- changeSubBind b e
-  let bs = map (\ide -> NonRec (fst ide) (snd ide)) ides
-  return bs
+changeArgBind bndr@(NonRec b e) = do
+  -- Only do top level binds, as some Core binds appear in mg_binds, but are
+  -- not top level. This could cause translation of elements of a non-ExprB
+  -- data type instantiation, which is not what we want.
+  if isBindTopLevel b
+  then do
+    ides <- changeSubBind b e
+    let bs = map (\ide -> NonRec (fst ide) (snd ide)) ides
+    return bs
+  else return [bndr]
 changeArgBind (Rec bs) = do
   (nrbs', rbs') <- changeArgBind' bs
   return $ nrbs' ++ [Rec rbs']
@@ -429,6 +435,7 @@ changeSubBind b e = do
   let (argTys, retTy) = splitFunTys $ varType b
   let (bs, e') = collectBinders e
   let tyCon_m = splitTyConApp_maybe retTy
+  isRetTyExprClass <- isExprClassType retTy
   monadTyConId <- thNameToTyCon monadTyConTH
   case tyCon_m of
       -- We are looking for return types of Arduino a
@@ -468,6 +475,46 @@ changeSubBind b e = do
           absE <- if isExpr
                   then fmapAbsExpr (mkTyConTy retTyCon) retTy' shallowE
                   else return shallowE
+
+          -- Put id pair into state
+          s' <- get
+          put s'{shallowDeepMap = M.insert b b' (shallowDeepMap s')}
+
+          return [(b, mkLams bs absE), (b', mkLams bs' e''')]
+      -- We are looking for return types of ExprB a => a
+      _ | isRetTyExprClass -> do
+          -- Calculate which args we should translate, only
+          -- ones of our languages expression types
+          xlats <- mapM isExprClassType argTys
+          -- Change the binds and arg types to Expr a
+          zipBsArgTys <- mapM changeArg (zip3 bs argTys xlats)
+          let (bs', argTys') = unzip zipBsArgTys
+
+          -- Put arg names to translate in body into state
+          let (bs'', _) = unzip $ filter snd $ zip bs' xlats
+          s <- get
+          put s{args = bs''}
+
+          -- Change any apps of the changed args in the body
+          e'' <- changeArgAppsExpr e'
+
+          -- Generate args for new shallow body
+          deepArgs <- mapM repShallowArg $ zip (map Var bs) xlats
+
+          -- Change return type
+          exprTyCon <- thNameToTyCon exprTyConTH
+          let exprTyConApp = mkTyConApp exprTyCon [retTy]
+
+          -- Change the return
+          e''' <- repExpr e''
+
+          -- Create a new top level bind type with the deep tyep
+          bDeep <- modId b deepSuffix
+          let b' = setVarType bDeep $ mkFunTys argTys' exprTyConApp
+
+          -- Apply the abs <$> to the new shallow body
+          let shallowE = mkCoreApps (Var b') deepArgs
+          absE <- absExpr shallowE
 
           -- Put id pair into state
           s' <- get
@@ -553,6 +600,8 @@ changeArgAppsExprAlts ((ac, b, a) : as) = do
 changeAppBind :: CoreBind -> BindM CoreBind
 changeAppBind (NonRec b e) = do
   let (bs, e') = collectBinders e
+  s <- get
+  put s{args = bs}
   e'' <- changeAppExpr e'
   let e''' = mkLams bs e''
   return (NonRec b e''')
@@ -564,21 +613,23 @@ changeAppBind' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
 changeAppBind' [] = return []
 changeAppBind' ((b, e) : bs) = do
   let (lbs, e') = collectBinders e
+  s <- get
+  put s{args = lbs}
   e'' <- changeAppExpr e'
   let e''' = mkLams lbs e''
   bs' <- changeAppBind' bs
   return $ (b, e''') : bs'
 
-findDeepId :: Id -> BindM Id
+findDeepId :: Id -> BindM (Maybe Id)
 findDeepId v = do
   s <- get
   let sdMap = shallowDeepMap s
   let sdMaps = shallowDeepMaps s
   if v `M.member` sdMap
-    then return $ sdMap M.! v
+    then return $ Just $ sdMap M.! v
     else case findDeepId' v sdMaps of
-      Nothing -> stringToId $ (varString v) ++ deepSuffix
-      Just v' -> return v'
+      Nothing -> stringToId_maybe $ (varString v) ++ deepSuffix
+      Just v' -> return $ Just v'
   where
     findDeepId' :: Id -> [M.Map Id Id] -> Maybe Id
     findDeepId' _ []      = Nothing
@@ -593,6 +644,7 @@ changeAppExpr e = do
       let tyCon_m = splitTyConApp_maybe $ varType v
       let defaultRet = return $ Var v
       let vs = varString v
+      isRetTyExprClass <- isExprClassType $ varType v
       if isSuffixOf deepSuffix vs || vs `elem` comProcList
       then defaultRet
       else case tyCon_m of
@@ -601,8 +653,15 @@ changeAppExpr e = do
               case exprtyCon_m of
                   Just (_exprTy, [_exprTy']) -> defaultRet
                   _ -> do
-                      v' <- findDeepId v
-                      fmapAbsExpr (mkTyConTy retTyCon) retTy' (Var v')
+                      v_m <- findDeepId v
+                      case v_m of
+                        Just v' -> fmapAbsExpr (mkTyConTy retTyCon) retTy' (Var v')
+                        Nothing -> defaultRet
+          _ | isRetTyExprClass -> do
+              v_m <- findDeepId v
+              case v_m of
+                Just v' -> absExpr (Var v')
+                Nothing -> defaultRet
           _ -> defaultRet
     Lit l -> return $ Lit l
     Type ty -> return $ Type ty
@@ -617,21 +676,41 @@ changeAppExpr e = do
             return $ App e1' e2'
       let (Var vb) = b
       let vbs = varString vb
+      isRetTyExprClass <- isExprClassType retTy
       if isSuffixOf deepSuffix vbs || vbs `elem` comProcList
       then defaultRet
       else case tyCon_m of
             Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
-                vb' <- findDeepId vb
-                -- Calculate which args we should translate, only
-                -- ones of our languages expression types
-                xlats <- mapM isExprClassType argTys
-                args'' <- mapM repShallowArg $ zip args' xlats
-                let e' = mkCoreApps (Var vb') args''
-                isExpr <- isExprClassType retTy'
-                absE <- if isExpr
-                        then fmapAbsExpr (mkTyConTy retTyCon) retTy' e'
-                        else return e'
-                return $ absE
+                vb_m <- findDeepId vb
+                case vb_m of
+                  Just vb' -> do
+                    -- Calculate which args we should translate, only
+                    -- ones of our languages expression types
+                    xlats <- mapM isExprClassType argTys
+                    -- Recursively translate inside of args.
+                    args'' <- mapM changeAppExpr args'
+                    args''' <- mapM repShallowArg $ zip args'' xlats
+                    let e' = mkCoreApps (Var vb') args'''
+                    isExpr <- isExprClassType retTy'
+                    absE <- if isExpr
+                            then fmapAbsExpr (mkTyConTy retTyCon) retTy' e'
+                            else return e'
+                    return $ absE
+                  -- TBD Print warning?
+                  Nothing -> defaultRet
+            _ | isRetTyExprClass -> do
+                vb_m <- findDeepId vb
+                case vb_m of
+                  Just vb' -> do
+                    -- Calculate which args we should translate, only
+                    -- ones of our languages expression types
+                    xlats <- mapM isExprClassType argTys
+                    -- Recursively translate inside of args.
+                    args'' <- mapM changeAppExpr args'
+                    args''' <- mapM repShallowArg $ zip args'' xlats
+                    let e' = mkCoreApps (Var vb') args'''
+                    absExpr e'
+                  Nothing -> defaultRet
             _ -> defaultRet
     Lam tb el -> do
       e' <- changeAppExpr el

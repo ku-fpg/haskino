@@ -272,7 +272,12 @@ genDictArgs (dty:dtys) tys frty trty args = do
       Just idx -> do
         -- Find the index of the from function arg which matches the
         -- type required by the dictionary
-        let dictTy = exprType $ args !! idx
+        let fromArgTy = exprType $ args !! idx
+        -- Get the base type only of the from type, removing any
+        -- Expr if it already exists.
+        let dictTy = case splitTyConApp_maybe fromArgTy of
+                       Just (_, [ty']) -> ty'
+                       _               -> fromArgTy
         -- Get the type of the to function arg at the same index
         let toArgTy = tys !! idx
         -- Determine if it has a type constructor
