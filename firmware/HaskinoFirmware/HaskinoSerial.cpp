@@ -11,11 +11,11 @@ static bool handleEnd(int size, const byte *msg, CONTEXT *context);
 static bool handleWrite(int size, const byte *msg, CONTEXT *context);
 static bool handleWriteList(int size, const byte *msg, CONTEXT *context);
 static bool handleRead(int size, const byte *msg, CONTEXT *context);
-static bool handleReadist(int size, const byte *msg, CONTEXT *context);
+static bool handleReadList(int size, const byte *msg, CONTEXT *context);
 
 bool parseSerialMessage(int size, const byte *msg, CONTEXT *context)
     {
-    switch (msg[0] ) 
+    switch (msg[0] )
         {
         case SER_CMD_BEGIN:
             return handleBegin(size, msg, context);
@@ -33,7 +33,7 @@ bool parseSerialMessage(int size, const byte *msg, CONTEXT *context)
             return handleRead(size, msg, context);
             break;
         case SER_CMD_READ_LIST:
-            return handleReadist(size, msg, context);
+            return handleReadList(size, msg, context);
             break;
         }
     return false;
@@ -79,28 +79,49 @@ static bool handleEnd(int size, const byte *msg, CONTEXT *context)
     return false;
     }
 
+static bool handleRead(int size, const byte *msg, CONTEXT *context)
+    {
+    byte bind = msg[1];
+    byte *expr = (byte *) &msg[2];
+    byte port = evalWord8Expr(&expr, context);
+    HardwareSerial *dev = getDev(port);
+    byte readReply[6];
+    int32_t data;
+
+    if (dev)
+        {
+        data = dev->read();
+        }
+    else
+        {
+        data = -1;
+        }
+
+    readReply[0] = EXPR_INT32;
+    readReply[1] = EXPR_LIT;
+    memcpy(&readReply[2], &data, sizeof(data));
+
+    sendReply(sizeof(readReply), SER_RESP_READ, readReply, context, bind);
+
+    return false;
+    }
+
 static bool handleReadList(int size, const byte *msg, CONTEXT *context)
     {
     byte bind = msg[1];
     byte *expr = (byte *) &msg[2];
     byte port = evalWord8Expr(&expr, context);
+    HardwareSerial *dev = getDev(port);
     byte *localMem, *local;
     int byteAvail;
 
-    Wire.requestFrom((int) slaveAddress, (int) byteCount);
-    byteAvail = Wire.available();
-
-    if (byteCount < byteAvail) 
+    if (dev)
         {
-#ifdef DEBUG
-        sendStringf("I2C: M");
-#endif
-        } 
-    else if (byteCount > byteAvail) 
+        byteAvail = dev->available();
+        }
+    else
         {
-#ifdef DEBUG
-        sendStringf("I2C: F");
-#endif
+        byteAvail = 0;
         }
 
     localMem = (byte *) malloc(byteAvail+3);
@@ -111,18 +132,18 @@ static bool handleReadList(int size, const byte *msg, CONTEXT *context)
     localMem[2] = byteAvail;
 
     for (int i = 0; i < byteAvail; i++)
-        { 
-        *local++ = Wire.read();
+        {
+        *local++ = dev->read();
         }
 
     if (context && context->bind)
         {
         putBindListPtr(context, bind, localMem);
         }
-    else 
+    else
         {
         sendReply(byteAvail+3, I2C_RESP_READ, localMem, context, bind);
-        free(localMem);    
+        free(localMem);
         }
     return false;
     }
@@ -130,7 +151,23 @@ static bool handleReadList(int size, const byte *msg, CONTEXT *context)
 static bool handleWrite(int size, const byte *msg, CONTEXT *context)
     {
     byte *expr = (byte *) &msg[1];
-    byte slaveAddress = evalWord8Expr(&expr, context);
+    byte port = evalWord8Expr(&expr, context);
+    HardwareSerial *dev = getDev(port);
+    byte data = evalWord8Expr(&expr, context);
+
+    if (dev)
+        {
+        dev->write(data);
+        }
+
+    return false;
+    }
+
+static bool handleWriteList(int size, const byte *msg, CONTEXT *context)
+    {
+    byte *expr = (byte *) &msg[1];
+    byte port = evalWord8Expr(&expr, context);
+    HardwareSerial *dev = getDev(port);
     bool alloc;
     byte *list = evalList8Expr(&expr, context, &alloc);
     byte listSize = list[1];
@@ -140,12 +177,9 @@ static bool handleWrite(int size, const byte *msg, CONTEXT *context)
     if (byteCount > listSize)
         byteCount = listSize;
 
-    if (byteCount > 0)
+    if (dev && byteCount > 0)
         {
-        Wire.beginTransmission(slaveAddress);
-        Wire.write(data, byteCount);
-        Wire.endTransmission();
-        delayMicroseconds(70);
+        dev->write(data, byteCount);
         }
 
     if (alloc)

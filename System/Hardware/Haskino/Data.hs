@@ -1675,11 +1675,12 @@ firmwareCmdVal REF_CMD_NEW              = 0xC0
 firmwareCmdVal REF_CMD_READ             = 0xC1
 firmwareCmdVal REF_CMD_WRITE            = 0xC2
 firmwareCmdVal SER_CMD_BEGIN            = 0xE0
-firmwareCmdVal SER_CMD_AVAIL            = 0xE1
-firmwareCmdVal SER_CMD_READ             = 0xE2
-firmwareCmdVal SER_CMD_READ_LIST        = 0xE3
-firmwareCmdVal SER_CMD_WRITE            = 0xE4
-firmwareCmdVal SER_CMD_WRITE_LIST       = 0xE5
+firmwareCmdVal SER_CMD_END              = 0xE1
+firmwareCmdVal SER_CMD_AVAIL            = 0xE2
+firmwareCmdVal SER_CMD_READ             = 0xE3
+firmwareCmdVal SER_CMD_READ_LIST        = 0xE4
+firmwareCmdVal SER_CMD_WRITE            = 0xE5
+firmwareCmdVal SER_CMD_WRITE_LIST       = 0xE6
 firmwareCmdVal _                        = 0x00
 
 -- | Compute the numeric value of a command
@@ -1735,11 +1736,12 @@ firmwareValCmd 0xC1 = REF_CMD_READ
 firmwareValCmd 0xC2 = REF_CMD_WRITE
 firmwareValCmd 0xD0 = EXPR_CMD_RET
 firmwareValCmd 0xE0 = SER_CMD_BEGIN
-firmwareValCmd 0xE1 = SER_CMD_AVAIL
-firmwareValCmd 0xE2 = SER_CMD_READ
-firmwareValCmd 0xE3 = SER_CMD_READ_LIST
-firmwareValCmd 0xE4 = SER_CMD_WRITE
-firmwareValCmd 0xE5 = SER_CMD_WRITE_LIST
+firmwareValCmd 0xE1 = SER_CMD_END
+firmwareValCmd 0xE2 = SER_CMD_AVAIL
+firmwareValCmd 0xE3 = SER_CMD_READ
+firmwareValCmd 0xE4 = SER_CMD_READ_LIST
+firmwareValCmd 0xE5 = SER_CMD_WRITE
+firmwareValCmd 0xE6 = SER_CMD_WRITE_LIST
 firmwareValCmd _    = UNKNOWN_COMMAND
 
 -- | Firmware replies, see:
