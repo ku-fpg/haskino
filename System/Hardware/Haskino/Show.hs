@@ -56,6 +56,10 @@ showCommand (ToneE p f Nothing) = showCommand (ToneE p f (Just 0))
 showCommand (NoToneE p) = showCommand1 "NoToneE" p
 showCommand (I2CWriteE sa w8s) = showCommand2 "I2CWrite" sa w8s
 showCommand I2CConfigE = showCommand0 "I2CConfig"
+showCommand (SerialBeginE p r) = showCommand2 "SerialBeginE" p r
+showCommand (SerialEndE p) = showCommand1 "SerialEndE" p
+showCommand (SerialWriteE p w) = showCommand2 "SerialWriteE" p w
+showCommand (SerialWriteListE p w8s) = showCommand2 "SerialWriteListE" p w8s
 showCommand (StepperSetSpeedE st sp) = showCommand2 "StepperSetSpeedE" st sp
 showCommand (ServoDetachE sv) = showCommand1 "ServoDetachE" sv
 showCommand (ServoWriteE sv w) = showCommand2 "ServoWriteE " sv w
@@ -298,6 +302,18 @@ showCodeBlock (Arduino commands) = do
       showProcedure (I2CRead p n) = showShallow2Procedure "I2CRead" p n []
       showProcedure (I2CReadE p n) = do
           i <- showDeep2Procedure "I2CReadE" p n
+          return $ RemBindList8 i
+      showProcedure (SerialAvailable p) = showShallow1Procedure "SerialAvailable" p 0
+      showProcedure (SerialAvailableE p) = do
+          i <- showDeep1Procedure "SerialAvailableE" p
+          return $ RemBindW32 i
+      showProcedure (SerialRead p) = showShallow1Procedure "SerialRead" p 0
+      showProcedure (SerialReadE p) = do
+          i <- showDeep1Procedure "SerialReadE" p
+          return $ RemBindI32 i
+      showProcedure (SerialReadList p) = showShallow1Procedure "SerialReadList" p []
+      showProcedure (SerialReadListE p) = do
+          i <- showDeep1Procedure "SerialReadListE" p
           return $ RemBindList8 i
       showProcedure (Stepper2Pin s p1 p2) = showShallow3Procedure "Stepper2Pin" s p1 p2 0
       showProcedure (Stepper2PinE s p1 p2) = do

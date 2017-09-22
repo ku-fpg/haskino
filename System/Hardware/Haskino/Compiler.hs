@@ -265,6 +265,10 @@ compileCommand (ToneE p f Nothing) = compile3ExprCommand "tone" p f (lit (0::Wor
 compileCommand (NoToneE p) = compile1ExprCommand "noTone" p
 compileCommand (I2CWriteE sa w8s) = compile2ExprCommand "i2cWrite" sa w8s
 compileCommand I2CConfigE = compileNoExprCommand "i2cConfig"
+compileCommand (SerialBeginE p r) = compile2ExprCommand "serialBegin" p r
+compileCommand (SerialEndE p) = compile1ExprCommand "serialEnd" p
+compileCommand (SerialWriteE p w) = compile2ExprCommand "serialWrite" p w
+compileCommand (SerialWriteListE p w8s) = compile2ExprCommand "serialWriteList" p w8s
 compileCommand (StepperSetSpeedE st sp) =
     compile2ExprCommand "stepperSetSpeed" st sp
 compileCommand (ServoDetachE sv) =
@@ -386,6 +390,12 @@ compile2ExprProcedure :: CompileType -> String ->
 compile2ExprProcedure t p e1 e2 = do
     b <- compileSimpleProcedure t (p ++ "(" ++ compileExpr e1 ++ "," ++
                                                compileExpr e2 ++ ")")
+    return b
+
+compile1ExprListProcedure :: String ->
+                             Expr a -> State CompileState Int
+compile1ExprListProcedure p e1 = do
+    b <- compileSimpleListProcedure (p ++ "(" ++ compileExpr e1 ++ ")")
     return b
 
 compile2ExprListProcedure :: String ->
@@ -513,6 +523,24 @@ compileProcedure (I2CRead p n) = do
     return []
 compileProcedure (I2CReadE p n) = do
     b <- compile2ExprListProcedure "i2cRead" p n
+    return $ remBind b
+compileProcedure (SerialAvailable p) = do
+    _ <- compileShallowPrimitiveError $ "serialAvailable " ++ show p
+    return 0
+compileProcedure (SerialAvailableE p) = do
+    b <- compile1ExprProcedure Word32Type "serialAvailable" p
+    return $ remBind b
+compileProcedure (SerialRead p) = do
+    _ <- compileShallowPrimitiveError $ "serialRead " ++ show p
+    return 0
+compileProcedure (SerialReadE p) = do
+    b <- compile1ExprProcedure Int32Type "serialRead" p
+    return $ remBind b
+compileProcedure (SerialReadList p) = do
+    _ <- compileShallowPrimitiveError $ "serialReadList " ++ show p
+    return []
+compileProcedure (SerialReadListE p) = do
+    b <- compile1ExprListProcedure "serialReadList" p
     return $ remBind b
 compileProcedure (Stepper2Pin s p1 p2) = do
     _ <- compileShallowPrimitiveError $ "i2cRead " ++ show s ++ " " ++

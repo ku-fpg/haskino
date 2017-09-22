@@ -93,6 +93,14 @@ packageCommand (I2CWriteE sa w8s) =
     addCommand I2C_CMD_WRITE (packageExpr sa ++ packageExpr w8s)
 packageCommand I2CConfigE =
     addCommand I2C_CMD_CONFIG []
+packageCommand (SerialBeginE p r) =
+    addCommand SER_CMD_BEGIN (packageExpr p ++ packageExpr r)
+packageCommand (SerialEndE p) =
+    addCommand SER_CMD_END (packageExpr p)
+packageCommand (SerialWriteE p w) =
+    addCommand SER_CMD_WRITE (packageExpr p ++ packageExpr w)
+packageCommand (SerialWriteE p ws) =
+    addCommand SER_CMD_WRITE_LIST (packageExpr p ++ packageExpr ws)
 packageCommand (StepperSetSpeedE st sp) =
     addCommand STEP_CMD_SET_SPEED (packageExpr st ++ packageExpr sp)
 packageCommand (ServoDetachE sv) =
@@ -271,6 +279,18 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (I2CRead p n) = packShallowProcedure (I2CRead p n) []
       packProcedure (I2CReadE p n) = do
           i <- packDeepProcedure (I2CReadE p n)
+          return $ RemBindList8 i
+      packProcedure (SerialAvailable p) = packShallowProcedure (SerialAvailable p) 0
+      packProcedure (SerialAvailableE p) = do
+          i <- packDeepProcedure (SerialAvailableE p)
+          return $ RemBindW32 i
+      packProcedure (SerialRead p) = packShallowProcedure (SerialRead p) 0
+      packProcedure (SerialReadE p) = do
+          i <- packDeepProcedure (SerialReadE p)
+          return $ RemBindI32 i
+      packProcedure (SerialReadList p) = packShallowProcedure (SerialReadList p) []
+      packProcedure (SerialReadListE p) = do
+          i <- packDeepProcedure (SerialReadListE p)
           return $ RemBindList8 i
       packProcedure (Stepper2Pin s p1 p2) = packShallowProcedure (Stepper2Pin s p1 p2) 0
       packProcedure (Stepper2PinE s p1 p2) = do
@@ -1206,6 +1226,12 @@ packageProcedure p = do
     packageProcedure' (AnalogReadE pe) ib' = addCommand ALG_CMD_READ_PIN ((fromIntegral ib') : (packageExpr pe))
     packageProcedure' (I2CRead sa cnt) ib' = addCommand I2C_CMD_READ ((fromIntegral ib') : ((packageExpr $ lit sa) ++ (packageExpr $ lit cnt)))
     packageProcedure' (I2CReadE sae cnte) ib' = addCommand I2C_CMD_READ ((fromIntegral ib') : ((packageExpr sae) ++ (packageExpr cnte)))
+    packageProcedure' (SerialAvailable p) ib' = addCommand SER_CMD_AVAIL ((fromIntegral ib') : (packageExpr $ lit p))
+    packageProcedure' (SerialAvailableE pe) ib' = addCommand SER_CMD_AVAIL ((fromIntegral ib') : (packageExpr pe))
+    packageProcedure' (SerialRead p) ib' = addCommand SER_CMD_READ ((fromIntegral ib') : (packageExpr $ lit p))
+    packageProcedure' (SerialReadE pe) ib' = addCommand SER_CMD_READ ((fromIntegral ib') : (packageExpr pe))
+    packageProcedure' (SerialReadList p) ib' = addCommand SER_CMD_READ_LIST ((fromIntegral ib') : (packageExpr $ lit p))
+    packageProcedure' (SerialReadListE pe) ib' = addCommand SER_CMD_READ_LIST ((fromIntegral ib') : (packageExpr pe))
     packageProcedure' (Stepper2Pin s p1 p2) ib' = addCommand STEP_CMD_2PIN ((fromIntegral ib') : ((packageExpr $ lit s) ++ (packageExpr $ lit p1) ++ (packageExpr $ lit p2)))
     packageProcedure' (Stepper2PinE s p1 p2) ib' = addCommand STEP_CMD_2PIN ((fromIntegral ib') : ((packageExpr s) ++ (packageExpr p1) ++ (packageExpr p2)))
     packageProcedure' (Stepper4Pin s p1 p2 p3 p4) ib' = addCommand STEP_CMD_4PIN ((fromIntegral ib') : ((packageExpr $ lit s) ++ (packageExpr $ lit p1) ++ (packageExpr $ lit p2) ++ (packageExpr $ lit p3) ++ (packageExpr $ lit p4)))
@@ -1921,6 +1947,9 @@ unpackageResponse (cmdWord:args)
       (DIG_RESP_READ_PORT, [_t,_l,b])        -> DigitalPortReply b
       (ALG_RESP_READ_PIN, [_t,_l,bl,bh])     -> AnalogReply (bytesToWord16 (bl,bh))
       (I2C_RESP_READ, _:_:_:xs)              -> I2CReply xs
+      (SER_RESP_AVAIL, [w0,w1,w2,w3])        -> SerialAvailableReply (bytesToWord32 (w0,w1,w2,w3))
+      (SER_RESP_READ, [i0,i1,i2,i3])         -> SerialReadReply (bytesToInt32 (i0,i1,i2,i3))
+      (SER_RESP_READ_LIST, _:_:_:xs)         -> SerialReadListReply xs
       (STEP_RESP_2PIN, [_t,_l,st])           -> Stepper2PinReply st
       (STEP_RESP_4PIN, [_t,_l,st])           -> Stepper4PinReply st
       (STEP_RESP_STEP, [])                   -> StepperStepReply
@@ -1984,6 +2013,12 @@ parseQueryResult (AnalogRead _) (AnalogReply a) = Just a
 parseQueryResult (AnalogReadE _) (AnalogReply a) = Just (lit a)
 parseQueryResult (I2CRead _ _) (I2CReply ds) = Just ds
 parseQueryResult (I2CReadE _ _) (I2CReply ds) = Just (lit ds)
+parseQueryResult (SerialAvailable _) (SerialAvailableReply c) = Just c
+parseQueryResult (SerialAvailableE _) (SerialAvailableReply c) = Just (lit c)
+parseQueryResult (SerialRead _) (SerialReadReply w) = Just w
+parseQueryResult (SerialReadE _) (SerialReadReply w) = Just (lit w)
+parseQueryResult (SerialReadList _) (SerialReadListReply ws) = Just ws
+parseQueryResult (SerialReadListE _) (SerialReadListReply ws) = Just (lit ws)
 parseQueryResult (Stepper2Pin _ _ _) (Stepper2PinReply st) = Just st
 parseQueryResult (Stepper2PinE _ _ _) (Stepper2PinReply st) = Just (lit st)
 parseQueryResult (Stepper4Pin _ _ _ _ _) (Stepper4PinReply st) = Just st

@@ -18,6 +18,8 @@
 
 #define LITERAL_USE_COUNT   255
 
+byte emptyList[] = {LITERAL_USE_COUNT,0};
+
 // Show routines
 
 byte *showBool(bool b)
@@ -176,7 +178,7 @@ bool list8Less(byte *l1, byte *l2)
         val = true;
     else if (i == l2len)
         val = false;
-    else 
+    else
         val = l1[2+i] < l2[2+i];
 
     listFree(l1);
@@ -192,7 +194,7 @@ bool list8Equal(byte *l1, byte *l2)
 
     if (l1len != l2len)
         val = false;
-    else 
+    else
         {
         val = true;
         for (int i=0;i<l1len;i++)
@@ -526,7 +528,7 @@ int8_t mod8(int8_t a, int8_t b)
     int8_t c;
 
     c = a % b;
-    if ((c!=0) && ((c<0) != (b<0))) 
+    if ((c!=0) && ((c<0) != (b<0)))
         c += b;
     return c;
     }
@@ -547,7 +549,7 @@ int16_t mod16(int16_t a, int16_t b)
     int16_t c;
 
     c = a % b;
-    if ((c!=0) && ((c<0) != (b<0))) 
+    if ((c!=0) && ((c<0) != (b<0)))
         c += b;
     return c;
     }
@@ -568,7 +570,7 @@ int32_t mod32(int32_t a, int32_t b)
     int32_t c;
 
     c = a % b;
-    if ((c!=0) && ((c<0) != (b<0))) 
+    if ((c!=0) && ((c<0) != (b<0)))
         c += b;
     return c;
     }
@@ -577,7 +579,7 @@ int32_t mod32(int32_t a, int32_t b)
 
 float frac(float f)
     {
-    float g; 
+    float g;
     return modf(f, (double *) &g);
     }
 
