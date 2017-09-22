@@ -32,7 +32,7 @@ module System.Hardware.Haskino (
   -- ** Speaker
   , tone, noTone, toneE, noToneE
   -- ** I2C
-  , SlaveAddress, i2cRead, i2cWrite, i2cConfig, i2cReadE, i2cWriteE
+  , SlaveAddress, i2cRead, i2cWrite, i2cConfig, i2cReadE, i2cWriteE, i2cConfigE
   -- ** Servo
   , servoDetach, servoDetachE, servoWrite, servoWriteE, servoWriteMicros
   , servoWriteMicrosE, servoAttach, servoAttachE, servoAttachMinMax
