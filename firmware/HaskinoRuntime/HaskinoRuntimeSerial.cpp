@@ -39,7 +39,7 @@ uint32_t serialAvailable(uint8_t p)
     if (!dev)
         return 0;
 
-    dev->available();
+    return dev->available();
     }
 
 void serialBegin(uint8_t p, uint32_t r)
