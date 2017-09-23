@@ -12,8 +12,9 @@
 module System.Hardware.Haskino.Utils where
 
 import           Data.Bits              (shiftL, shiftR, (.&.), (.|.))
-import qualified Data.ByteString        as B 
+import qualified Data.ByteString        as B
 import           Data.Char              (isAlphaNum, isAscii, isSpace, chr, ord)
+import           Data.Int               (Int32)
 import           Data.IORef             (newIORef, readIORef, writeIORef)
 import           Data.List              (intercalate)
 import           Data.Word              (Word8, Word16, Word32)
@@ -58,17 +59,23 @@ getString s = map (chr . fromIntegral) s
 -- | Convert a word to it's bytes, as would be required by Arduino comms
 -- | Note: Little endian format, which is Arduino native
 word32ToBytes :: Word32 -> [Word8]
-word32ToBytes i = map fromIntegral [ i .&. 0xFF, (i `shiftR` 8) .&. 0xFF, 
-                                    (i `shiftR` 16) .&. 0xFF, 
+word32ToBytes i = map fromIntegral [ i .&. 0xFF, (i `shiftR` 8) .&. 0xFF,
+                                    (i `shiftR` 16) .&. 0xFF,
                                     (i `shiftR`  24) .&. 0xFF]
 
 -- | Inverse conversion for word32ToBytes
 -- | Note: Little endian format, which is Arduino native
 bytesToWord32 :: (Word8, Word8, Word8, Word8) -> Word32
-bytesToWord32 (a, b, c, d) = fromIntegral d `shiftL` 24 .|. 
-                             fromIntegral c `shiftL` 16 .|. 
-                             fromIntegral b `shiftL`  8 .|. 
+bytesToWord32 (a, b, c, d) = fromIntegral d `shiftL` 24 .|.
+                             fromIntegral c `shiftL` 16 .|.
+                             fromIntegral b `shiftL`  8 .|.
                              fromIntegral a
+
+bytesToInt32 :: (Word8, Word8, Word8, Word8) -> Int32
+bytesToInt32 (a, b, c, d) = fromIntegral d `shiftL` 24 .|.
+                            fromIntegral c `shiftL` 16 .|.
+                            fromIntegral b `shiftL`  8 .|.
+                            fromIntegral a
 
 -- | Convert a word to it's bytes, as would be required by Arduino comms
 -- | Note: Little endian format, which is Arduino native
@@ -78,7 +85,7 @@ word16ToBytes i = map fromIntegral [ i .&. 0xFF, (i `shiftR`  8) .&. 0xFF ]
 -- | Inverse conversion for word16ToBytes
 -- | Note: Little endian format, which is Arduino native
 bytesToWord16 :: (Word8, Word8) -> Word16
-bytesToWord16 (a, b) = fromIntegral a .|. fromIntegral b `shiftL` 8 
+bytesToWord16 (a, b) = fromIntegral a .|. fromIntegral b `shiftL` 8
 
 -- | Convert a float to it's bytes, as would be required by Arduino comms
 -- | Note: Little endian format, which is Arduino native

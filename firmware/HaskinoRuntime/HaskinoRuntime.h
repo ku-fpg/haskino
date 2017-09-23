@@ -19,6 +19,7 @@
 #include "HaskinoRuntimeDigital.h"
 #include "HaskinoRuntimeI2C.h"
 #include "HaskinoRuntimeStepper.h"
+#include "HaskinoRuntimeSerial.h"
 #include "HaskinoRuntimeServo.h"
 #include "HaskinoRuntimeScheduler.h"
 #include "HaskinoRuntimeDebug.h"

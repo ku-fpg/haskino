@@ -20,6 +20,7 @@
 #undef  INCLUDE_STEP_CMDS
 #undef  INCLUDE_SPI_CMDS
 #define INCLUDE_SCHED_CMDS
+#define INCLUDE_SERIAL_CMDS
 
 //#define DEBUG
 #endif /* HaskinoConfigH */

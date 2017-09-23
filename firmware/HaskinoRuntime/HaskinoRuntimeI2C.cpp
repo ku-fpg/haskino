@@ -26,7 +26,7 @@ void i2cWrite(uint8_t sa, uint8_t *w8s)
         }
     listFree(w8s);
     }
-    
+
 uint8_t *i2cRead(uint8_t sa, uint8_t byteCount)
     {
     byte *localMem, *local;
@@ -37,20 +37,20 @@ uint8_t *i2cRead(uint8_t sa, uint8_t byteCount)
 
     localMem = listAlloc(byteAvail);
     if (localMem == NULL)
-        return NULL;
+        return emptyList;
 
     local = &localMem[2];
 
     localMem[1] = byteAvail;
 
     for (int i = 0; i < byteAvail; i++)
-        { 
+        {
         *local++ = Wire.read();
         }
 
     return localMem;
     }
-    
+
 void i2cConfig()
     {
     Wire.begin();

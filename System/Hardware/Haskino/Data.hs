@@ -94,15 +94,19 @@ type VarSize = Word8
 
 data ArduinoPrimitive :: * -> * where
      -- Commands
-     SystemResetE         ::                                     ArduinoPrimitive (Expr ())
-     SetPinModeE          :: PinE -> Expr Word8               -> ArduinoPrimitive (Expr ())
-     DigitalPortWriteE    :: PinE -> Expr Word8 -> Expr Word8 -> ArduinoPrimitive (Expr ())
-     DigitalWriteE        :: PinE -> Expr Bool                -> ArduinoPrimitive (Expr ())
-     AnalogWriteE         :: PinE -> Expr Word16              -> ArduinoPrimitive (Expr ())
+     SystemResetE         ::                                      ArduinoPrimitive (Expr ())
+     SetPinModeE          :: PinE -> Expr Word8                -> ArduinoPrimitive (Expr ())
+     DigitalPortWriteE    :: PinE -> Expr Word8 -> Expr Word8  -> ArduinoPrimitive (Expr ())
+     DigitalWriteE        :: PinE -> Expr Bool                 -> ArduinoPrimitive (Expr ())
+     AnalogWriteE         :: PinE -> Expr Word16               -> ArduinoPrimitive (Expr ())
      ToneE                :: PinE -> Expr Word16 -> Maybe (Expr Word32) -> ArduinoPrimitive (Expr ())
      NoToneE              :: PinE                              -> ArduinoPrimitive (Expr ())
      I2CWriteE            :: SlaveAddressE -> Expr [Word8]     -> ArduinoPrimitive (Expr ())
      I2CConfigE           ::                                      ArduinoPrimitive (Expr ())
+     SerialBeginE         :: Expr Word8 -> Expr Word32         -> ArduinoPrimitive (Expr ())
+     SerialEndE           :: Expr Word8                        -> ArduinoPrimitive (Expr ())
+     SerialWriteE         :: Expr Word8 -> Expr Word8          -> ArduinoPrimitive (Expr ())
+     SerialWriteListE     :: Expr Word8 -> Expr [Word8]        -> ArduinoPrimitive (Expr ())
      StepperSetSpeedE     :: Expr Word8 -> Expr Int32          -> ArduinoPrimitive (Expr ())
      ServoDetachE         :: Expr Word8                        -> ArduinoPrimitive (Expr ())
      ServoWriteE          :: Expr Word8 -> Expr Int16          -> ArduinoPrimitive (Expr ())
@@ -170,6 +174,12 @@ data ArduinoPrimitive :: * -> * where
      AnalogReadE          :: PinE -> ArduinoPrimitive (Expr Word16)
      I2CRead              :: SlaveAddress -> Word8 -> ArduinoPrimitive [Word8]
      I2CReadE             :: SlaveAddressE -> Expr Word8 -> ArduinoPrimitive (Expr [Word8])
+     SerialAvailable      :: Word8 -> ArduinoPrimitive Word32
+     SerialAvailableE     :: Expr Word8 -> ArduinoPrimitive (Expr Word32)
+     SerialRead           :: Word8 -> ArduinoPrimitive Int32
+     SerialReadE          :: Expr Word8 -> ArduinoPrimitive (Expr Int32)
+     SerialReadList       :: Word8 -> ArduinoPrimitive [Word8]
+     SerialReadListE      :: Expr Word8 -> ArduinoPrimitive (Expr [Word8])
      Stepper2Pin          :: Word16 -> Pin -> Pin -> ArduinoPrimitive Word8
      Stepper2PinE         :: Expr Word16 -> PinE -> PinE -> ArduinoPrimitive (Expr Word8)
      Stepper4Pin          :: Word16 -> Pin -> Pin -> Pin -> Pin -> ArduinoPrimitive Word8
@@ -478,8 +488,10 @@ instance KnownResult ArduinoPrimitive where
   knownResult (AnalogWriteE {}         ) = Just LitUnit
   knownResult (ToneE {}                ) = Just LitUnit
   knownResult (NoToneE {}              ) = Just LitUnit
-  knownResult (I2CWriteE {}            ) = Just LitUnit
-  knownResult (I2CConfigE {}           ) = Just LitUnit
+  knownResult (SerialBeginE {}         ) = Just LitUnit
+  knownResult (SerialEndE {}           ) = Just LitUnit
+  knownResult (SerialWriteE {}         ) = Just LitUnit
+  knownResult (SerialWriteListE {}     ) = Just LitUnit
   knownResult (StepperSetSpeedE {}     ) = Just LitUnit
   knownResult (ServoDetachE {}         ) = Just LitUnit
   knownResult (ServoWriteE {}          ) = Just LitUnit
@@ -580,6 +592,30 @@ i2cConfig = evalExprUnit <$> (Arduino $ primitive $ I2CConfigE)
 
 i2cConfigE :: Arduino (Expr ())
 i2cConfigE =  Arduino $ primitive $ I2CConfigE
+
+serialBegin :: Word8 -> Word32 -> Arduino ()
+serialBegin p r = evalExprUnit <$> (Arduino $ primitive $ SerialBeginE (lit p) (lit r))
+
+serialBeginE :: Expr Word8 -> Expr Word32 -> Arduino (Expr ())
+serialBeginE p r = Arduino $ primitive $ SerialBeginE p r
+
+serialEnd :: Word8 -> Arduino ()
+serialEnd p = evalExprUnit <$> (Arduino $ primitive $ SerialEndE (lit p))
+
+serialEndE :: Expr Word8 -> Arduino (Expr ())
+serialEndE p = Arduino $ primitive $ SerialEndE p
+
+serialWrite :: Word8 -> Word8 -> Arduino ()
+serialWrite p w = evalExprUnit <$> (Arduino $ primitive $ SerialWriteE (lit p) (lit w))
+
+serialWriteE :: Expr Word8 -> Expr Word8 -> Arduino (Expr ())
+serialWriteE p w = Arduino $ primitive $ SerialWriteE p w
+
+serialWriteList :: Word8 -> [Word8] -> Arduino ()
+serialWriteList p l = evalExprUnit <$> (Arduino $ primitive $ SerialWriteListE (lit p) (lit l))
+
+serialWriteListE :: Expr Word8 -> Expr [Word8] -> Arduino (Expr ())
+serialWriteListE p l = Arduino $ primitive $ SerialWriteListE p l
 
 stepperSetSpeed :: Word8 -> Int32 -> Arduino ()
 stepperSetSpeed st sp = evalExprUnit <$> (Arduino $ primitive $ StepperSetSpeedE (lit st) (lit sp))
@@ -814,6 +850,24 @@ i2cRead sa cnt = Arduino $ primitive $ I2CRead sa cnt
 
 i2cReadE :: SlaveAddressE -> Expr Word8 -> Arduino (Expr [Word8])
 i2cReadE sa cnt = Arduino $ primitive $ I2CReadE sa cnt
+
+serialAvailable :: Word8 -> Arduino Word32
+serialAvailable p = Arduino $ primitive $ SerialAvailable p
+
+serialAvailableE :: Expr Word8 -> Arduino (Expr Word32)
+serialAvailableE p = Arduino $ primitive $ SerialAvailableE p
+
+serialRead :: Word8 -> Arduino Int32
+serialRead p = Arduino $ primitive $ SerialRead p
+
+serialReadE :: Expr Word8 -> Arduino (Expr Int32)
+serialReadE p = Arduino $ primitive $ SerialReadE p
+
+serialReadList :: Word8 -> Arduino [Word8]
+serialReadList p = Arduino $ primitive $ SerialReadList p
+
+serialReadListE :: Expr Word8 -> Arduino (Expr [Word8])
+serialReadListE p = Arduino $ primitive $ SerialReadListE p
 
 stepper2Pin :: Word16 -> Pin -> Pin -> Arduino Word8
 stepper2Pin s p1 p2 = Arduino $ primitive $ Stepper2Pin s p1 p2
@@ -1448,6 +1502,9 @@ data Response = DelayResp
               | AnalogReply Word16                   -- ^ Status of an analog pin
               | StringMessage  String                -- ^ String message from Firmware
               | I2CReply [Word8]                     -- ^ Response to a I2C Read
+              | SerialAvailableReply Word32
+              | SerialReadReply Int32
+              | SerialReadListReply [Word8]
               | Stepper2PinReply Word8
               | Stepper4PinReply Word8
               | StepperStepReply
@@ -1528,6 +1585,13 @@ data FirmwareCmd = BC_CMD_SYSTEM_RESET
                  | I2C_CMD_CONFIG
                  | I2C_CMD_READ
                  | I2C_CMD_WRITE
+                 | SER_CMD_BEGIN
+                 | SER_CMD_END
+                 | SER_CMD_AVAIL
+                 | SER_CMD_READ
+                 | SER_CMD_READ_LIST
+                 | SER_CMD_WRITE
+                 | SER_CMD_WRITE_LIST
                  | STEP_CMD_2PIN
                  | STEP_CMD_4PIN
                  | STEP_CMD_SET_SPEED
@@ -1610,7 +1674,13 @@ firmwareCmdVal SCHED_CMD_NOINTERRUPTS   = 0xAD
 firmwareCmdVal REF_CMD_NEW              = 0xC0
 firmwareCmdVal REF_CMD_READ             = 0xC1
 firmwareCmdVal REF_CMD_WRITE            = 0xC2
-firmwareCmdVal EXPR_CMD_RET             = 0xD0
+firmwareCmdVal SER_CMD_BEGIN            = 0xE0
+firmwareCmdVal SER_CMD_END              = 0xE1
+firmwareCmdVal SER_CMD_AVAIL            = 0xE2
+firmwareCmdVal SER_CMD_READ             = 0xE3
+firmwareCmdVal SER_CMD_READ_LIST        = 0xE4
+firmwareCmdVal SER_CMD_WRITE            = 0xE5
+firmwareCmdVal SER_CMD_WRITE_LIST       = 0xE6
 firmwareCmdVal _                        = 0x00
 
 -- | Compute the numeric value of a command
@@ -1665,6 +1735,13 @@ firmwareValCmd 0xC0 = REF_CMD_NEW
 firmwareValCmd 0xC1 = REF_CMD_READ
 firmwareValCmd 0xC2 = REF_CMD_WRITE
 firmwareValCmd 0xD0 = EXPR_CMD_RET
+firmwareValCmd 0xE0 = SER_CMD_BEGIN
+firmwareValCmd 0xE1 = SER_CMD_END
+firmwareValCmd 0xE2 = SER_CMD_AVAIL
+firmwareValCmd 0xE3 = SER_CMD_READ
+firmwareValCmd 0xE4 = SER_CMD_READ_LIST
+firmwareValCmd 0xE5 = SER_CMD_WRITE
+firmwareValCmd 0xE6 = SER_CMD_WRITE_LIST
 firmwareValCmd _    = UNKNOWN_COMMAND
 
 -- | Firmware replies, see:
@@ -1682,6 +1759,9 @@ data FirmwareReply =  BC_RESP_DELAY
                    |  DIG_RESP_READ_PORT
                    |  ALG_RESP_READ_PIN
                    |  I2C_RESP_READ
+                   |  SER_RESP_AVAIL
+                   |  SER_RESP_READ
+                   |  SER_RESP_READ_LIST
                    |  STEP_RESP_2PIN
                    |  STEP_RESP_4PIN
                    |  STEP_RESP_STEP
@@ -1722,6 +1802,9 @@ getFirmwareReply 0xB2 = Right SCHED_RESP_BOOT
 getFirmwareReply 0xC8 = Right REF_RESP_NEW
 getFirmwareReply 0xC9 = Right REF_RESP_READ
 getFirmwareReply 0xD8 = Right EXPR_RESP_RET
+getFirmwareReply 0xE8 = Right SER_RESP_AVAIL
+getFirmwareReply 0xE9 = Right SER_RESP_READ
+getFirmwareReply 0xEA = Right SER_RESP_READ_LIST
 getFirmwareReply n    = Left n
 
 data Processor = ATMEGA8

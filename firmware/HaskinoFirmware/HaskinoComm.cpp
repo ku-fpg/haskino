@@ -14,6 +14,7 @@
 #include "HaskinoOneWire.h"
 #include "HaskinoRefs.h"
 #include "HaskinoScheduler.h"
+#include "HaskinoSerial.h"
 #include "HaskinoServo.h"
 #include "HaskinoStepper.h"
 
@@ -71,6 +72,11 @@ bool parseMessage(int size, const byte *msg, CONTEXT *context)
 #ifdef INCLUDE_SCHED_CMDS
         case SCHED_CMD_TYPE:
             return parseSchedulerMessage(size, msg, context);
+            break;
+#endif
+#ifdef INCLUDE_SERIAL_CMDS
+        case SER_CMD_TYPE:
+            return parseSerialMessage(size, msg, context);
             break;
 #endif
         case REF_CMD_TYPE:

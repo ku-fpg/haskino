@@ -140,8 +140,24 @@
 
 #define EXPR_CMD_RET            (EXPR_CMD_TYPE | 0x0)
 
-// Reference  response
+// Expression response
 #define EXPR_RESP_RET           (EXPR_CMD_TYPE | 0x8)
+
+// Serial commands
+#define SER_CMD_TYPE            0xE0
+
+#define SER_CMD_BEGIN           (SER_CMD_TYPE | 0x0)
+#define SER_CMD_END             (SER_CMD_TYPE | 0x1)
+#define SER_CMD_AVAIL           (SER_CMD_TYPE | 0x2)
+#define SER_CMD_READ            (SER_CMD_TYPE | 0x3)
+#define SER_CMD_READ_LIST       (SER_CMD_TYPE | 0x4)
+#define SER_CMD_WRITE           (SER_CMD_TYPE | 0x5)
+#define SER_CMD_WRITE_LIST      (SER_CMD_TYPE | 0x6)
+
+// Serial responses
+#define SER_RESP_AVAIL          (SER_CMD_TYPE | 0x8)
+#define SER_RESP_READ           (SER_CMD_TYPE | 0x9)
+#define SER_RESP_READ_LIST      (SER_CMD_TYPE | 0xA)
 
 #endif /* HaskinoCommandsH */
 
