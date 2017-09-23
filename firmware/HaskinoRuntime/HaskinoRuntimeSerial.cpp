@@ -32,6 +32,16 @@ static HardwareSerial *getDev(uint8_t p)
         }
     }
 
+uint32_t serialAvailable(uint8_t p)
+    {
+    HardwareSerial *dev = getDev(p);
+
+    if (!dev)
+        return 0;
+
+    dev->available();
+    }
+
 void serialBegin(uint8_t p, uint32_t r)
     {
     HardwareSerial *dev = getDev(p);
