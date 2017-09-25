@@ -174,8 +174,8 @@ data ArduinoPrimitive :: * -> * where
      AnalogReadE          :: PinE -> ArduinoPrimitive (Expr Word16)
      I2CRead              :: SlaveAddress -> Word8 -> ArduinoPrimitive [Word8]
      I2CReadE             :: SlaveAddressE -> Expr Word8 -> ArduinoPrimitive (Expr [Word8])
-     SerialAvailable      :: Word8 -> ArduinoPrimitive Word32
-     SerialAvailableE     :: Expr Word8 -> ArduinoPrimitive (Expr Word32)
+     SerialAvailable      :: Word8 -> ArduinoPrimitive Word8
+     SerialAvailableE     :: Expr Word8 -> ArduinoPrimitive (Expr Word8)
      SerialRead           :: Word8 -> ArduinoPrimitive Int32
      SerialReadE          :: Expr Word8 -> ArduinoPrimitive (Expr Int32)
      SerialReadList       :: Word8 -> ArduinoPrimitive [Word8]
@@ -851,10 +851,10 @@ i2cRead sa cnt = Arduino $ primitive $ I2CRead sa cnt
 i2cReadE :: SlaveAddressE -> Expr Word8 -> Arduino (Expr [Word8])
 i2cReadE sa cnt = Arduino $ primitive $ I2CReadE sa cnt
 
-serialAvailable :: Word8 -> Arduino Word32
+serialAvailable :: Word8 -> Arduino Word8
 serialAvailable p = Arduino $ primitive $ SerialAvailable p
 
-serialAvailableE :: Expr Word8 -> Arduino (Expr Word32)
+serialAvailableE :: Expr Word8 -> Arduino (Expr Word8)
 serialAvailableE p = Arduino $ primitive $ SerialAvailableE p
 
 serialRead :: Word8 -> Arduino Int32
@@ -1502,7 +1502,7 @@ data Response = DelayResp
               | AnalogReply Word16                   -- ^ Status of an analog pin
               | StringMessage  String                -- ^ String message from Firmware
               | I2CReply [Word8]                     -- ^ Response to a I2C Read
-              | SerialAvailableReply Word32
+              | SerialAvailableReply Word8
               | SerialReadReply Int32
               | SerialReadListReply [Word8]
               | Stepper2PinReply Word8

@@ -21,18 +21,20 @@ static HardwareSerial *getDev(uint8_t p)
         {
         case 0:
             return &Serial;
+#if defined(__AVR_ATmega2560__)
         case 1:
             return &Serial1;
         case 2:
             return &Serial2;
         case 3:
             return &Serial3;
+#endif
         default:
             return NULL;
         }
     }
 
-uint32_t serialAvailable(uint8_t p)
+uint8_t serialAvailable(uint8_t p)
     {
     HardwareSerial *dev = getDev(p);
 

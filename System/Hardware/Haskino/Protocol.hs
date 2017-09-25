@@ -283,7 +283,7 @@ packageCodeBlock (Arduino commands) = do
       packProcedure (SerialAvailable p) = packShallowProcedure (SerialAvailable p) 0
       packProcedure (SerialAvailableE p) = do
           i <- packDeepProcedure (SerialAvailableE p)
-          return $ RemBindW32 i
+          return $ RemBindW8 i
       packProcedure (SerialRead p) = packShallowProcedure (SerialRead p) 0
       packProcedure (SerialReadE p) = do
           i <- packDeepProcedure (SerialReadE p)
@@ -1947,7 +1947,7 @@ unpackageResponse (cmdWord:args)
       (DIG_RESP_READ_PORT, [_t,_l,b])        -> DigitalPortReply b
       (ALG_RESP_READ_PIN, [_t,_l,bl,bh])     -> AnalogReply (bytesToWord16 (bl,bh))
       (I2C_RESP_READ, _:_:_:xs)              -> I2CReply xs
-      (SER_RESP_AVAIL, [w0,w1,w2,w3])        -> SerialAvailableReply (bytesToWord32 (w0,w1,w2,w3))
+      (SER_RESP_AVAIL, [w0])                 -> SerialAvailableReply w0
       (SER_RESP_READ, [i0,i1,i2,i3])         -> SerialReadReply (bytesToInt32 (i0,i1,i2,i3))
       (SER_RESP_READ_LIST, _:_:_:xs)         -> SerialReadListReply xs
       (STEP_RESP_2PIN, [_t,_l,st])           -> Stepper2PinReply st

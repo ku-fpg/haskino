@@ -15,6 +15,7 @@
 module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            buildDictionaryT,
                                            buildDictionaryTyConT,
+                                           buildDictionaryTyConTs,
                                            buildId,
                                            collectLets,
                                            fmapAbsExpr,

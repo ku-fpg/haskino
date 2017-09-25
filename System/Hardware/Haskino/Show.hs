@@ -306,7 +306,7 @@ showCodeBlock (Arduino commands) = do
       showProcedure (SerialAvailable p) = showShallow1Procedure "SerialAvailable" p 0
       showProcedure (SerialAvailableE p) = do
           i <- showDeep1Procedure "SerialAvailableE" p
-          return $ RemBindW32 i
+          return $ RemBindW8 i
       showProcedure (SerialRead p) = showShallow1Procedure "SerialRead" p 0
       showProcedure (SerialReadE p) = do
           i <- showDeep1Procedure "SerialReadE" p

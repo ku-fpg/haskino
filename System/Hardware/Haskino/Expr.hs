@@ -14,6 +14,8 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ConstrainedClassMethods #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts #-}
 module System.Hardware.Haskino.Expr where
 
 import       Data.Int (Int8, Int16, Int32)
@@ -877,6 +879,156 @@ instance B.OrdB (Expr [Word8]) where
 
 instance B.IfB (Expr [Word8]) where
   ifB = IfL8
+
+class (BN.IntegralB (Expr a), BN.IntegralB (Expr b)) => FromIntegralExpr a b where
+  fromIntegralE :: Expr a -> Expr b
+
+instance FromIntegralExpr Word8 Word8 where
+  fromIntegralE = id
+
+instance FromIntegralExpr Word8 Word16 where
+  fromIntegralE = FromIntW16 . ToIntW8
+
+instance FromIntegralExpr Word8 Word32 where
+  fromIntegralE = FromIntW32 . ToIntW8
+
+instance FromIntegralExpr Word8 Int8 where
+  fromIntegralE = FromIntI8 . ToIntW8
+
+instance FromIntegralExpr Word8 Int16 where
+  fromIntegralE = FromIntI16 . ToIntW8
+
+instance FromIntegralExpr Word8 Int32 where
+  fromIntegralE = FromIntI32 . ToIntW8
+
+instance FromIntegralExpr Word8 Int where
+  fromIntegralE = ToIntW8
+
+instance FromIntegralExpr Word16 Word8 where
+  fromIntegralE = FromIntW8 . ToIntW16
+
+instance FromIntegralExpr Word16 Word16 where
+  fromIntegralE = id
+
+instance FromIntegralExpr Word16 Word32 where
+  fromIntegralE = FromIntW32 . ToIntW16
+
+instance FromIntegralExpr Word16 Int8 where
+  fromIntegralE = FromIntI8 . ToIntW16
+
+instance FromIntegralExpr Word16 Int16 where
+  fromIntegralE = FromIntI16 . ToIntW16
+
+instance FromIntegralExpr Word16 Int32 where
+  fromIntegralE = FromIntI32 . ToIntW16
+
+instance FromIntegralExpr Word16 Int where
+  fromIntegralE = ToIntW16
+
+instance FromIntegralExpr Word32 Word8 where
+  fromIntegralE = FromIntW8 . ToIntW32
+
+instance FromIntegralExpr Word32 Word16 where
+  fromIntegralE = FromIntW16 . ToIntW32
+
+instance FromIntegralExpr Word32 Word32 where
+  fromIntegralE = id
+
+instance FromIntegralExpr Word32 Int8 where
+  fromIntegralE = FromIntI8 . ToIntW32
+
+instance FromIntegralExpr Word32 Int16 where
+  fromIntegralE = FromIntI16 . ToIntW32
+
+instance FromIntegralExpr Word32 Int32 where
+  fromIntegralE = FromIntI32 . ToIntW32
+
+instance FromIntegralExpr Word32 Int where
+  fromIntegralE = ToIntW32
+
+instance FromIntegralExpr Int8 Word8 where
+  fromIntegralE = FromIntW8 . ToIntI8
+
+instance FromIntegralExpr Int8 Word16 where
+  fromIntegralE = FromIntW16 . ToIntI8
+
+instance FromIntegralExpr Int8 Word32 where
+  fromIntegralE = FromIntW32 . ToIntI8
+
+instance FromIntegralExpr Int8 Int8 where
+  fromIntegralE = id
+
+instance FromIntegralExpr Int8 Int16 where
+  fromIntegralE = FromIntI16 . ToIntI8
+
+instance FromIntegralExpr Int8 Int32 where
+  fromIntegralE = FromIntI32 . ToIntI8
+
+instance FromIntegralExpr Int8 Int where
+  fromIntegralE = ToIntI8
+
+instance FromIntegralExpr Int16 Word8 where
+  fromIntegralE = FromIntW8 . ToIntI16
+
+instance FromIntegralExpr Int16 Word16 where
+  fromIntegralE = FromIntW16 . ToIntI16
+
+instance FromIntegralExpr Int16 Word32 where
+  fromIntegralE = FromIntW32 . ToIntI16
+
+instance FromIntegralExpr Int16 Int8 where
+  fromIntegralE = FromIntI8 . ToIntI16
+
+instance FromIntegralExpr Int16 Int16 where
+  fromIntegralE = id
+
+instance FromIntegralExpr Int16 Int32 where
+  fromIntegralE = FromIntI32 . ToIntI16
+
+instance FromIntegralExpr Int16 Int where
+  fromIntegralE = ToIntI16
+
+instance FromIntegralExpr Int32 Word8 where
+  fromIntegralE = FromIntW8 . ToIntI32
+
+instance FromIntegralExpr Int32 Word16 where
+  fromIntegralE = FromIntW16 . ToIntI32
+
+instance FromIntegralExpr Int32 Word32 where
+  fromIntegralE = FromIntW32 . ToIntI32
+
+instance FromIntegralExpr Int32 Int8 where
+  fromIntegralE = FromIntI8 . ToIntI32
+
+instance FromIntegralExpr Int32 Int16 where
+  fromIntegralE = FromIntI16 . ToIntI32
+
+instance FromIntegralExpr Int32 Int32 where
+  fromIntegralE = id
+
+instance FromIntegralExpr Int32 Int where
+  fromIntegralE = ToIntI32
+
+instance FromIntegralExpr Int Word8 where
+  fromIntegralE = FromIntW8
+
+instance FromIntegralExpr Int Word16 where
+  fromIntegralE = FromIntW16
+
+instance FromIntegralExpr Int Word32 where
+  fromIntegralE = FromIntW32
+
+instance FromIntegralExpr Int Int8 where
+  fromIntegralE = FromIntI8
+
+instance FromIntegralExpr Int Int16 where
+  fromIntegralE = FromIntI16
+
+instance FromIntegralExpr Int Int32 where
+  fromIntegralE = FromIntI32
+
+instance FromIntegralExpr Int Int where
+  fromIntegralE = id
 
 infixl 9 !!*
 infixl 5 *:, ++*

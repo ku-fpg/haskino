@@ -13,7 +13,7 @@
 
 // Serial port routines
 
-uint32_t serialAvailable(uint8_t p);
+uint8_t serialAvailable(uint8_t p);
 void serialBegin(uint8_t p, uint32_t c);
 void serialEnd(uint8_t p);
 void serialWrite(uint8_t p, uint8_t w);
