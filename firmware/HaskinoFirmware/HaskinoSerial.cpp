@@ -43,14 +43,22 @@ static HardwareSerial *getDev(uint8_t p)
     {
     switch(p)
         {
+#ifdef HAVE_HWSERIAL0
         case 0:
             return &Serial;
+#endif
+#ifdef HAVE_HWSERIAL1
         case 1:
             return &Serial1;
+#endif
+#ifdef HAVE_HWSERIAL2
         case 2:
             return &Serial2;
+#endif
+#ifdef HAVE_HWSERIAL3
         case 3:
             return &Serial3;
+#endif
         default:
             return NULL;
         }
