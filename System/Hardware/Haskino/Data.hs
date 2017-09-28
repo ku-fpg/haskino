@@ -474,6 +474,9 @@ data ArduinoPrimitive :: * -> * where
      IterateFloatL8E      :: Expr Float -> (Expr Float -> Arduino (ExprEither Float [Word8])) -> ArduinoPrimitive (Expr [Word8])
      IterateFloatFloatE   :: Expr Float -> (Expr Float -> Arduino (ExprEither Float Float)) -> ArduinoPrimitive (Expr Float)
      LiftIO               :: IO a -> ArduinoPrimitive a
+     LamExprWord8Unit     :: Expr Word8 -> Arduino (Expr ()) -> ArduinoPrimitive (Expr ())
+     AppExprWord8Unit     :: Arduino (Expr ()) -> Expr Word8 -> ArduinoPrimitive (Expr ())
+     AppLambdaUnit        :: String -> Arduino(Expr ()) -> ArduinoPrimitive (Expr ())
      Debug                :: [Word8] -> ArduinoPrimitive ()
      DebugE               :: Expr [Word8] -> ArduinoPrimitive ()
      DebugListen          :: ArduinoPrimitive ()
@@ -1490,6 +1493,20 @@ forInE ws bf = iterateE 0 ibf
     ibf i = do
         _ <- bf (ws !!* i)
         ifThenElseEither (i `lessE` (len ws)) (return $ ExprLeft (i+1)) (return $ ExprRight LitUnit)
+
+class (ExprB a, ExprB b) => ArduinoLambdaExpr a b where
+    lamExpr :: Expr a -> Arduino (Expr b) -> Arduino (Expr b)
+    appExpr :: Arduino (Expr b) -> Expr a -> Arduino (Expr b)
+
+class ExprB a => ArduinoLambdaApp a where
+    appLambda :: String -> Arduino (Expr a) -> Arduino (Expr a)
+
+instance ArduinoLambdaExpr Word8 () where
+    lamExpr arg bod = Arduino $ primitive $ LamExprWord8Unit arg bod 
+    appExpr f arg = Arduino $ primitive $ AppExprWord8Unit f arg
+
+instance ArduinoLambdaApp () where
+    appLambda n f = Arduino $ primitive $ AppLambdaUnit n f 
 
 -- | A response, as returned from the Arduino
 data Response = DelayResp

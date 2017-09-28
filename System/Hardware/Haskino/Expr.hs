@@ -82,6 +82,7 @@ data Expr a where
   RemBindList8 :: Int -> Expr [Word8]
   RemBindFloat :: Int -> Expr Float
   RemBindUnit  :: Int -> Expr ()
+  RemArgW8     :: Int -> Expr Word8
   FromIntW8    :: Expr Int -> Expr Word8
   FromIntW16   :: Expr Int -> Expr Word16
   FromIntW32   :: Expr Int -> Expr Word32

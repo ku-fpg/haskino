@@ -66,6 +66,8 @@ module System.Hardware.Haskino (
   , debug, debugE, debugListen, die, deframe
   -- ** Compiler
   , compileProgram, compileProgramE
+  -- ** Lambda's (will be removed)
+  , lamExpr, appExpr, appLambda
   -- ** Recursion
   , ArduinoIterate(..), ExprEither(..)
  )
