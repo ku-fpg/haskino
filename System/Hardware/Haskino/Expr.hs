@@ -82,7 +82,17 @@ data Expr a where
   RemBindList8 :: Int -> Expr [Word8]
   RemBindFloat :: Int -> Expr Float
   RemBindUnit  :: Int -> Expr ()
+  RemArgB      :: Int -> Expr Bool
   RemArgW8     :: Int -> Expr Word8
+  RemArgW16    :: Int -> Expr Word16
+  RemArgW32    :: Int -> Expr Word32
+  RemArgI8     :: Int -> Expr Int8
+  RemArgI16    :: Int -> Expr Int16
+  RemArgI32    :: Int -> Expr Int32
+  RemArgI      :: Int -> Expr Int
+  RemArgList8  :: Int -> Expr [Word8]
+  RemArgFloat  :: Int -> Expr Float
+  RemArgUnit   :: Int -> Expr ()
   FromIntW8    :: Expr Int -> Expr Word8
   FromIntW16   :: Expr Int -> Expr Word16
   FromIntW32   :: Expr Int -> Expr Word32
@@ -301,6 +311,7 @@ deriving instance (Show a, Show b) => Show (ExprEither a b)
 class ExprB a where
     lit      :: a -> Expr a
     eval'    :: Expr a -> a
+    remArg   :: Int -> Expr a
     remBind  :: Int -> Expr a
     showE    :: Expr a -> Expr [Word8]
     lessE    :: Expr a -> Expr a -> Expr Bool
@@ -334,6 +345,7 @@ instance ExprB () where
 instance ExprB Word8 where
     lit = LitW8
     eval' = evalExprW8
+    remArg = RemArgW8
     remBind = RemBindW8
     showE = ShowW8
     {-# INLINE lessE #-}

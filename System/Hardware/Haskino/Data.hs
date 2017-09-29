@@ -476,7 +476,7 @@ data ArduinoPrimitive :: * -> * where
      LiftIO               :: IO a -> ArduinoPrimitive a
      LamExprWord8Unit     :: Expr Word8 -> Arduino (Expr ()) -> ArduinoPrimitive (Expr ())
      AppExprWord8Unit     :: Arduino (Expr ()) -> Expr Word8 -> ArduinoPrimitive (Expr ())
-     AppLambdaUnit        :: String -> Arduino(Expr ()) -> ArduinoPrimitive (Expr ())
+     AppLambdaUnit        :: String -> Arduino (Expr ()) -> ArduinoPrimitive (Expr ())
      Debug                :: [Word8] -> ArduinoPrimitive ()
      DebugE               :: Expr [Word8] -> ArduinoPrimitive ()
      DebugListen          :: ArduinoPrimitive ()
@@ -1502,11 +1502,11 @@ class ExprB a => ArduinoLambdaApp a where
     appLambda :: String -> Arduino (Expr a) -> Arduino (Expr a)
 
 instance ArduinoLambdaExpr Word8 () where
-    lamExpr arg bod = Arduino $ primitive $ LamExprWord8Unit arg bod 
+    lamExpr arg bod = Arduino $ primitive $ LamExprWord8Unit arg bod
     appExpr f arg = Arduino $ primitive $ AppExprWord8Unit f arg
 
 instance ArduinoLambdaApp () where
-    appLambda n f = Arduino $ primitive $ AppLambdaUnit n f 
+    appLambda n f = Arduino $ primitive $ AppLambdaUnit n f
 
 -- | A response, as returned from the Arduino
 data Response = DelayResp

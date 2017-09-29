@@ -23,6 +23,8 @@ import           Data.Word                        (Word32, Word8)
 import           System.Hardware.Haskino.Data
 import           System.Hardware.Haskino.Expr
 
+data Compilable = forall a . ExprB a => MkCompilable (Arduino (Expr a))
+
 data CompileState = CompileState {level :: Int
                      , intTask          :: Bool
                      , ix               :: Int
@@ -35,7 +37,9 @@ data CompileState = CompileState {level :: Int
                      , bindList         :: [String]
                      , bindsInside      :: [Bool]
                      , tasksToDo        :: [(Arduino (Expr ()), String, Bool)]
+                     , funcsToDo        :: [(Compilable, CompileType, String)]
                      , tasksDone        :: [String]
+                     , funcsDone        :: [String]
                      , errors           :: [String]
                      , iterBinds        :: [(Int, Int)]
                      }
@@ -69,6 +73,9 @@ compileTypeToString FloatType  = "float"
 
 refName :: String
 refName = "ref"
+
+argName :: String
+argName = "arg"
 
 bindName :: String
 bindName = "bind"
@@ -115,7 +122,7 @@ compileProgramE p f = do
     mapM_ putStrLn $ errors st
   where
     (_, st) = runState compileTasks
-                (CompileState 0 False 0 0 "" "" "" "" [] [] [True] [(p, mainEntry, False)] [] [] [])
+                (CompileState 0 False 0 0 "" "" "" "" [] [] [True] [(p, mainEntry, False)] [] [] [] [] [])
     prog = "#include \"HaskinoRuntime.h\"\n\n" ++
            forwards st ++ "\n" ++
            "void setup()\n" ++
@@ -130,27 +137,41 @@ compileProgramE p f = do
            "void loop()\n" ++
            "    {\n" ++
            "    }\n\n" ++
-           refs st ++ "\n" ++ (concat $ tasksDone st)
+           refs st ++ "\n" ++ (concat $ funcsDone st) ++ (concat $ tasksDone st)
 
 compileTasks :: State CompileState ()
 compileTasks = do
     s <- get
     let tasks = tasksToDo s
     if null tasks
-    then return ()
+    then compileFunctions
     else do
         put s {tasksToDo = tail tasks}
         let (m, name, int) = head tasks
         compileTask m name int
         compileTasks
 
+compileFunctions :: State CompileState ()
+compileFunctions = do
+    s <- get
+    let funcs = funcsToDo s
+    if null funcs
+    then return ()
+    else do
+        put s {funcsToDo = tail funcs}
+        case head funcs of
+           (MkCompilable m, t, name) -> do
+              compileFunction m t name
+              compileFunctions
+
 compileTask :: Arduino (Expr ()) -> String -> Bool -> State CompileState ()
 compileTask t name int = do
     s <- get
     put s {level = 0, intTask = int, ib = 0, cmds = "",
            binds = "", cmdList = [], bindList = []}
-    _ <- compileLine $ "void " ++ name ++ "()"
-    _ <- compileForward $ "void " ++ name ++ "();"
+    let taskSig = "void " ++ name ++ "()"
+    _ <- compileLine taskSig
+    _ <- compileForward $ taskSig ++ ";"
     _ <- compileCodeBlock True "" t
     _ <- if not int
          then compileLineIndent "taskComplete();"
@@ -165,6 +186,33 @@ compileTask t name int = do
     s'' <- get
     put s'' {tasksDone = cmds s'' : tasksDone s''}
     return ()
+
+compileFunction :: Arduino (Expr a) -> CompileType -> String -> State CompileState ()
+compileFunction f t name = do
+    s <- get
+    put s {level = 0, ib = 0, cmds = "",
+           binds = "", cmdList = [], bindList = []}
+    let (body, argSig) = compileArgs2 f
+    let funcSig = "uint8_t " ++ name ++ "(" ++ argSig ++ ")"
+    _ <- compileLine funcSig
+    _ <- compileForward $ funcSig ++ ";"
+    r <- compileCodeBlock True "" body
+    _ <- if t == UnitType
+         then return ()
+         else do
+            _ <- compileLineIndent $ "return(" ++ compileExpr r ++ ");"
+            return ()
+    _ <- compileLineIndent "}\n"
+    s'' <- get
+    put s'' {funcsDone = cmds s'' : funcsDone s''}
+    return ()
+
+compileArgs2 :: Arduino a -> (Arduino a, String)
+compileArgs2 (Arduino (T.Appl ( T.Primitive (LamExprWord8Unit v f)))) =
+    (func, "uint8_t " ++ compileExpr v ++ if null string then "" else "," ++ string)
+  where
+    (func, string) = compileArgs2 f
+compileArgs2 f' = (f',[])
 
 compileLine :: String -> State CompileState (Expr ())
 compileLine s = do
@@ -1782,6 +1830,9 @@ compileProcedure (IterateFloatFloatE iv bf) = do
     let bj = RemBindFloat j
     _ <- compileIterateProcedure FloatType FloatType i bi j bj iv bf
     return bj
+compileProcedure (AppLambdaUnit n m) = compileAppLambdaProcedure n UnitType RemBindUnit m
+compileProcedure (LamExprWord8Unit _ _) = error "Crap1"
+compileProcedure (AppExprWord8Unit _ _) = error "Crap2"
 compileProcedure _ = error "compileProcedure - Unknown procedure, it may actually be a command"
 
 compileIfThenElseProcedure :: ExprB a => CompileType -> Expr Bool -> Arduino (Expr a) -> Arduino (Expr a) -> State CompileState (Expr a)
@@ -1860,6 +1911,26 @@ compileIterateProcedure ta tb b1 b1e b2 b2e iv bf = do
     s' <- get
     put s' {iterBinds = tail $ iterBinds s'}
     return b2e
+
+compileAppLambdaProcedure :: ExprB a => String -> CompileType -> (Int -> Expr a) -> Arduino (Expr a) -> State CompileState (Expr a)
+compileAppLambdaProcedure n t rb m = do
+    s <- get
+    let b = ib s
+    put s {ib = b + 1}
+    let (body, args) = compileArgs m
+    _ <- compileLine $ bindName ++ show b ++ " = " ++ n ++ "(" ++ args ++ ");"
+    _ <- compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
+    s' <- get
+    -- TBD only add it if it's not there already.
+    put s' {funcsToDo = (MkCompilable body, t, n) : funcsToDo s'}
+    return $ rb b
+
+compileArgs :: Arduino a -> (Arduino a, String)
+compileArgs (Arduino (T.Appl ( T.Primitive (AppExprWord8Unit m e)))) =
+    (func, compileExpr e ++ if null string then "" else "," ++ string)
+  where
+    (func, string) = compileArgs m
+compileArgs m' = (m', "")
 
 compileCodeBlock :: Bool -> String -> Arduino a -> State CompileState a
 compileCodeBlock bInside prelude (Arduino commands) = do
@@ -1951,6 +2022,9 @@ compileNeg = compileSubExpr "-"
 compileComp :: Expr a -> String
 compileComp = compileSubExpr "~"
 
+compileArg :: Int -> String
+compileArg b = argName ++ show b
+
 compileBind :: Int -> String
 compileBind b = bindName ++ show b
 
@@ -2008,11 +2082,13 @@ compileRef n = refName ++ show n
 compileExpr :: Expr a -> String
 compileExpr LitUnit = "0"
 compileExpr (ShowUnit _) = show ()
-compileExpr (RemBindUnit b) = bindName ++ show b
+compileExpr (RemArgUnit b) = compileArg b
+compileExpr (RemBindUnit b) = compileBind b
 compileExpr (LitB b) = if b then "1" else "0"
 compileExpr (ShowB e) = compileSubExpr "showBool" e
 compileExpr (RefB n) = compileRef n
-compileExpr (RemBindB b) = bindName ++ show b
+compileExpr (RemArgB b) = compileArg b
+compileExpr (RemBindB b) = compileBind b
 compileExpr (NotB e) = compileSubExpr "!" e
 compileExpr (AndB e1 e2) = compileBAnd e1 e2
 compileExpr (OrB e1 e2) = compileBOr e1 e2
@@ -2040,6 +2116,7 @@ compileExpr (LessFloat e1 e2) = compileLess e1 e2
 compileExpr (LitW8 w) = show w
 compileExpr (ShowW8 e) = compileSubExpr "showWord8" e
 compileExpr (RefW8 n) = compileRef n
+compileExpr (RemArgW8 b) = compileArg b
 compileExpr (RemBindW8 b) = compileBind b
 compileExpr (FromIntW8 e) = compileFromInt "uint8_t" e
 compileExpr (ToIntW8 e) = compileToInt e
@@ -2065,6 +2142,7 @@ compileExpr (ClrBW8 e1 e2) = compileTwoSubExpr "clrBW8" e1 e2
 compileExpr (LitW16 w) = show w
 compileExpr (ShowW16 e) = compileSubExpr "showWord16" e
 compileExpr (RefW16 n) = compileRef n
+compileExpr (RemArgW16 b) = compileArg b
 compileExpr (RemBindW16 b) = compileBind b
 compileExpr (FromIntW16 e) = compileFromInt "uint16_t" e
 compileExpr (ToIntW16 e) = compileToInt e
@@ -2090,6 +2168,7 @@ compileExpr (ClrBW16 e1 e2) = compileTwoSubExpr "clrBW16" e1 e2
 compileExpr (LitW32 w) = show w
 compileExpr (ShowW32 e) = compileSubExpr "showWord32" e
 compileExpr (RefW32 n) = compileRef n
+compileExpr (RemArgW32 b) = compileArg b
 compileExpr (RemBindW32 b) = compileBind b
 compileExpr (FromIntW32 e) = compileFromInt "uint32_t" e
 compileExpr (NegW32 e) = compileNeg e
@@ -2114,6 +2193,7 @@ compileExpr (ClrBW32 e1 e2) = compileTwoSubExpr "clrBW32" e1 e2
 compileExpr (LitI8 w) = show w
 compileExpr (ShowI8 e) = compileSubExpr "showInt8" e
 compileExpr (RefI8 n) = compileRef n
+compileExpr (RemArgI8 b) = compileArg b
 compileExpr (RemBindI8 b) = compileBind b
 compileExpr (FromIntI8 e) = compileFromInt "int8_t" e
 compileExpr (ToIntI8 e) = compileToInt e
@@ -2139,6 +2219,7 @@ compileExpr (ClrBI8 e1 e2) = compileTwoSubExpr "clrBI8" e1 e2
 compileExpr (LitI16 w) = show w
 compileExpr (ShowI16 e) = compileSubExpr "showInt16" e
 compileExpr (RefI16 n) = compileRef n
+compileExpr (RemArgI16 b) = compileArg b
 compileExpr (RemBindI16 b) = compileBind b
 compileExpr (FromIntI16 e) = compileFromInt "int16_t" e
 compileExpr (ToIntI16 e) = compileToInt e
@@ -2164,6 +2245,7 @@ compileExpr (ClrBI16 e1 e2) = compileTwoSubExpr "clrBI16" e1 e2
 compileExpr (LitI32 w) = show w
 compileExpr (ShowI32 e) = compileSubExpr "showInt32" e
 compileExpr (RefI32 n) = compileRef n
+compileExpr (RemArgI32 b) = compileArg b
 compileExpr (RemBindI32 b) = compileBind b
 compileExpr (FromIntI32 e) = compileFromInt "int32_t" e
 compileExpr (ToIntI32 e) = compileToInt e
@@ -2189,6 +2271,7 @@ compileExpr (ClrBI32 e1 e2) = compileTwoSubExpr "clrBI32" e1 e2
 compileExpr (LitI w) = show w
 compileExpr (ShowI e) = compileSubExpr "showInt32" e
 compileExpr (RefI n) = compileRef n
+compileExpr (RemArgI b) = compileArg b
 compileExpr (RemBindI b) = compileBind b
 compileExpr (NegI e) = compileNeg e
 compileExpr (SignI e) = compileSubExpr "sign32" e
@@ -2227,6 +2310,7 @@ compileExpr (SliceList8 e1 e2 e3) = compileThreeSubExpr "list8Slice" e1 e2 e3
 compileExpr (LitFloat f) = show f -- ToDo:  Is this correct?
 compileExpr (ShowFloat e1 e2) = compileTwoSubExpr "showF" e1 e2
 compileExpr (RefFloat n) = compileRef n
+compileExpr (RemArgFloat b) = compileArg b
 compileExpr (RemBindFloat b) = compileBind b
 compileExpr (FromIntFloat e) = compileFromInt "float" e
 compileExpr (NegFloat e) = compileNeg e
