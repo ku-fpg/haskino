@@ -67,7 +67,7 @@ module System.Hardware.Haskino (
   -- ** Compiler
   , compileProgram, compileProgramE
   -- ** Lambda's (will be removed)
-  , lamExpr, appExpr, appLambda, remArg
+  , lamExpr, appExpr, appLambda, remArg, appE, appFE, lamE
   -- ** Recursion
   , ArduinoIterate(..), ExprEither(..)
  )

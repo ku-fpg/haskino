@@ -475,8 +475,11 @@ data ArduinoPrimitive :: * -> * where
      IterateFloatFloatE   :: Expr Float -> (Expr Float -> Arduino (ExprEither Float Float)) -> ArduinoPrimitive (Expr Float)
      LiftIO               :: IO a -> ArduinoPrimitive a
      LamExprWord8Unit     :: Expr Word8 -> Arduino (Expr ()) -> ArduinoPrimitive (Expr ())
+     LamExprWord8Word8    :: Expr Word8 -> Arduino (Expr Word8) -> ArduinoPrimitive (Expr Word8)
      AppExprWord8Unit     :: Arduino (Expr ()) -> Expr Word8 -> ArduinoPrimitive (Expr ())
+     AppExprWord8Word8    :: Arduino (Expr Word8) -> Expr Word8 -> ArduinoPrimitive (Expr Word8)
      AppLambdaUnit        :: String -> Arduino (Expr ()) -> ArduinoPrimitive (Expr ())
+     AppLambdaWord8       :: String -> Arduino (Expr Word8) -> ArduinoPrimitive (Expr Word8)
      Debug                :: [Word8] -> ArduinoPrimitive ()
      DebugE               :: Expr [Word8] -> ArduinoPrimitive ()
      DebugListen          :: ArduinoPrimitive ()

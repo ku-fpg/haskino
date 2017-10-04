@@ -299,6 +299,12 @@ data Expr a where
   EqL8         :: Expr [Word8] -> Expr [Word8] -> Expr Bool
   LessL8       :: Expr [Word8] -> Expr [Word8] -> Expr Bool
   IfL8         :: Expr Bool  -> Expr [Word8] -> Expr [Word8] -> Expr [Word8]
+  LamW8Unit    :: Expr Word8 -> Expr () -> Expr ()
+  LamW8W8      :: Expr Word8 -> Expr Word8 -> Expr Word8
+  AppW8Unit    :: Expr () -> Expr Word8 -> Expr ()
+  AppW8W8      :: Expr Word8 -> Expr Word8 -> Expr Word8
+  AppFUnit     :: String -> Expr () -> Expr ()
+  AppFW8       :: String -> Expr Word8 -> Expr Word8
 
 deriving instance Show a => Show (Expr a)
 
@@ -333,6 +339,7 @@ class ExprB a where
 instance ExprB () where
     lit _ = LitUnit
     eval' = evalExprUnit
+    remArg = RemArgUnit
     remBind = RemBindUnit
     showE = ShowUnit
     {-# INLINE lessE #-}
@@ -358,6 +365,7 @@ instance ExprB Word8 where
 instance ExprB Word16 where
     lit = LitW16
     eval' = evalExprW16
+    remArg = RemArgW16
     remBind = RemBindW16
     showE = ShowW16
     {-# INLINE lessE #-}
@@ -370,6 +378,7 @@ instance ExprB Word16 where
 instance ExprB Word32 where
     lit = LitW32
     eval' = evalExprW32
+    remArg = RemArgW32
     remBind = RemBindW32
     showE = ShowW32
     {-# INLINE lessE #-}
@@ -382,6 +391,7 @@ instance ExprB Word32 where
 instance ExprB Int8 where
     lit = LitI8
     eval' = evalExprI8
+    remArg = RemArgI8
     remBind = RemBindI8
     showE = ShowI8
     {-# INLINE lessE #-}
@@ -394,6 +404,7 @@ instance ExprB Int8 where
 instance ExprB Int16 where
     lit = LitI16
     eval' = evalExprI16
+    remArg = RemArgI16
     remBind = RemBindI16
     showE = ShowI16
     {-# INLINE lessE #-}
@@ -406,6 +417,7 @@ instance ExprB Int16 where
 instance ExprB Int32 where
     lit = LitI32
     eval' = evalExprI32
+    remArg = RemArgI32
     remBind = RemBindI32
     showE = ShowI32
     {-# INLINE lessE #-}
@@ -418,6 +430,7 @@ instance ExprB Int32 where
 instance ExprB Int where
     lit = LitI
     eval' = evalExprI
+    remArg = RemArgI
     remBind = RemBindI
     showE = ShowI
     {-# INLINE lessE #-}
@@ -430,6 +443,7 @@ instance ExprB Int where
 instance ExprB Bool where
     lit = LitB
     eval' = evalExprB
+    remArg = RemArgB
     remBind = RemBindB
     showE = ShowB
     {-# INLINE lessE #-}
@@ -442,6 +456,7 @@ instance ExprB Bool where
 instance ExprB [Word8] where
     lit = LitList8
     eval' = evalExprL8
+    remArg = RemArgList8
     remBind = RemBindList8
     showE = id
     {-# INLINE lessE #-}
@@ -454,6 +469,7 @@ instance ExprB [Word8] where
 instance ExprB Float where
     lit = LitFloat
     eval' = evalExprFloat
+    remArg = RemArgFloat
     remBind = RemBindFloat
     showE = showFFloatE Nothing
     {-# INLINE lessE #-}
@@ -1076,6 +1092,27 @@ len l = LenList8 l
 
 pack :: [Expr Word8] -> Expr [Word8]
 pack l = PackList8 l
+
+class (ExprB a, ExprB b) => LambdaExpr a b where
+    lamE :: Expr a -> Expr b -> Expr b
+    appE :: Expr b -> Expr a -> Expr b
+
+class ExprB a => LambdaApp a where
+    appFE :: String -> Expr a -> Expr a
+
+instance LambdaExpr Word8 () where
+    lamE arg bod = LamW8Unit arg bod
+    appE f arg = AppW8Unit f arg
+
+instance LambdaExpr Word8 Word8 where
+    lamE arg bod = LamW8W8 arg bod
+    appE f arg = AppW8W8 f arg
+
+instance LambdaApp () where
+    appFE n f = AppFUnit n f
+
+instance LambdaApp Word8 where
+    appFE n f = AppFW8 n f
 
 -- | Haskino Firmware expresions, see:tbd
 data ExprType = EXPR_UNIT

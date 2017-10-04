@@ -25,6 +25,8 @@ import           System.Hardware.Haskino.Expr
 
 data Compilable = forall a . ExprB a => MkCompilable (Arduino (Expr a))
 
+data CompilableExpr  = forall a . ExprB a => MkCompilableExpr (Expr a)
+
 data CompileState = CompileState {level :: Int
                      , intTask          :: Bool
                      , ix               :: Int
@@ -38,8 +40,10 @@ data CompileState = CompileState {level :: Int
                      , bindsInside      :: [Bool]
                      , tasksToDo        :: [(Arduino (Expr ()), String, Bool)]
                      , funcsToDo        :: [(Compilable, CompileType, String)]
+                     , funcExprsToDo    :: [(CompilableExpr, CompileType, String)]
                      , tasksDone        :: [String]
                      , funcsDone        :: [String]
+                     , funcExprsDone    :: [String]
                      , errors           :: [String]
                      , iterBinds        :: [(Int, Int)]
                      }
@@ -122,7 +126,7 @@ compileProgramE p f = do
     mapM_ putStrLn $ errors st
   where
     (_, st) = runState compileTasks
-                (CompileState 0 False 0 0 "" "" "" "" [] [] [True] [(p, mainEntry, False)] [] [] [] [] [])
+                (CompileState 0 False 0 0 "" "" "" "" [] [] [True] [(p, mainEntry, False)] [] [] [] [] [] [] [])
     prog = "#include \"HaskinoRuntime.h\"\n\n" ++
            forwards st ++ "\n" ++
            "void setup()\n" ++
@@ -137,14 +141,16 @@ compileProgramE p f = do
            "void loop()\n" ++
            "    {\n" ++
            "    }\n\n" ++
-           refs st ++ "\n" ++ (concat $ funcsDone st) ++ (concat $ tasksDone st)
+           refs st ++ "\n" ++ (concat $ funcsDone st) ++ (concat $ funcExprsDone st) ++ (concat $ tasksDone st)
 
 compileTasks :: State CompileState ()
 compileTasks = do
     s <- get
     let tasks = tasksToDo s
     if null tasks
-    then compileFunctions
+    then do
+      compileFunctions
+      compileExprFunctions
     else do
         put s {tasksToDo = tail tasks}
         let (m, name, int) = head tasks
@@ -163,6 +169,19 @@ compileFunctions = do
            (MkCompilable m, t, name) -> do
               compileFunction m t name
               compileFunctions
+
+compileExprFunctions :: State CompileState ()
+compileExprFunctions = do
+    s <- get
+    let funcExprs = funcExprsToDo s
+    if null funcExprs
+    then return ()
+    else do
+        put s {funcExprsToDo = tail funcExprs}
+        case head funcExprs of
+           (MkCompilableExpr f, t, name) -> do
+              compileExprFunction f t name
+              compileExprFunctions
 
 compileTask :: Arduino (Expr ()) -> String -> Bool -> State CompileState ()
 compileTask t name int = do
@@ -192,7 +211,7 @@ compileFunction f t name = do
     s <- get
     put s {level = 0, ib = 0, cmds = "",
            binds = "", cmdList = [], bindList = []}
-    let (body, argSig) = compileArgs2 f
+    (body, argSig) <- compileArgs2 f
     let funcSig = "uint8_t " ++ name ++ "(" ++ argSig ++ ")"
     _ <- compileLine funcSig
     _ <- compileForward $ funcSig ++ ";"
@@ -200,19 +219,49 @@ compileFunction f t name = do
     _ <- if t == UnitType
          then return ()
          else do
-            _ <- compileLineIndent $ "return(" ++ compileExpr r ++ ");"
+            cr <- compileExpr r
+            _ <- compileLineIndent $ "return(" ++ cr ++ ");"
             return ()
     _ <- compileLineIndent "}\n"
     s'' <- get
     put s'' {funcsDone = cmds s'' : funcsDone s''}
     return ()
 
-compileArgs2 :: Arduino a -> (Arduino a, String)
-compileArgs2 (Arduino (T.Appl ( T.Primitive (LamExprWord8Unit v f)))) =
-    (func, "uint8_t " ++ compileExpr v ++ if null string then "" else "," ++ string)
+compileArgs2 :: Arduino a -> State CompileState (Arduino a, String)
+compileArgs2 (Arduino (T.Appl ( T.Primitive (LamExprWord8Unit v f)))) = do
+    (func, string) <- compileArgs2 f
+    cv <- compileExpr v
+    return (func, "uint8_t " ++ cv ++ if null string then "" else "," ++ string)
   where
-    (func, string) = compileArgs2 f
-compileArgs2 f' = (f',[])
+compileArgs2 f' = return (f',[])
+
+compileExprFunction :: Expr a -> CompileType -> String -> State CompileState ()
+compileExprFunction f t name = do
+    s <- get
+    put s {level = 0, ib = 0, cmds = "",
+           binds = "", cmdList = [], bindList = []}
+    (body, argSig) <- compileExprArgs2 f
+    let funcSig = compileTypeToString t ++ " " ++ name ++ "(" ++ argSig ++ ")"
+    _ <- compileForward $ funcSig ++ ";"
+    _ <- compileLine funcSig
+    _ <- compileLineIndent "{"    
+    cr <- compileExpr body
+    _ <- compileLineIndent $ "return(" ++ cr ++ ");"
+    _ <- compileLineIndent "}\n"
+    s'' <- get
+    put s'' {funcExprsDone = cmds s'' : funcExprsDone s''}
+    return ()
+
+compileExprArgs2 :: Expr a -> State CompileState (Expr a, String)
+compileExprArgs2 (LamW8Unit v f) = do
+    (func, string) <- compileExprArgs2 f
+    cv <- compileExpr v
+    return (func, "uint8_t " ++ cv ++ if null string then "" else ", " ++ string)
+compileExprArgs2 (LamW8W8 v f) = do
+    (func, string) <- compileExprArgs2 f
+    cv <- compileExpr v
+    return (func, "uint8_t " ++ cv ++ if null string then "" else ", " ++ string)
+compileExprArgs2 f' = return (f',[])
 
 compileLine :: String -> State CompileState (Expr ())
 compileLine s = do
@@ -273,29 +322,35 @@ compileNoExprCommand s = do
 
 compile1ExprCommand :: String -> Expr a -> State CompileState (Expr ())
 compile1ExprCommand s e = do
-    _ <- compileLine (s ++ "(" ++ compileExpr e ++ ");")
+    ce <- compileExpr e
+    _ <- compileLine (s ++ "(" ++ ce ++ ");")
     return LitUnit
 
 compile2ExprCommand :: String -> Expr a -> Expr b -> State CompileState (Expr ())
 compile2ExprCommand s e1 e2 = do
-    _ <- compileLine (s ++ "(" ++ compileExpr e1 ++ "," ++ compileExpr e2 ++ ");")
+    ce1 <- compileExpr e1
+    ce2 <- compileExpr e2
+    _ <- compileLine (s ++ "(" ++ ce1 ++ "," ++ ce2 ++ ");")
     return LitUnit
 
 compile3ExprCommand :: String -> Expr a -> Expr b -> Expr c -> State CompileState (Expr ())
 compile3ExprCommand s e1 e2 e3 = do
-    _ <- compileLine (s ++ "(" ++ compileExpr e1 ++ "," ++
-                                      compileExpr e2 ++ "," ++
-                                      compileExpr e3 ++ ");")
+    ce1 <- compileExpr e1
+    ce2 <- compileExpr e2
+    ce3 <- compileExpr e3
+    _ <- compileLine (s ++ "(" ++ ce1 ++ "," ++ ce2 ++ "," ++ ce3 ++ ");")
     return LitUnit
 
 compileWriteRef :: Int -> Expr a -> State CompileState (Expr ())
 compileWriteRef i e = do
-  _ <- compileLine $ refName ++ show i ++ " = " ++ compileExpr e ++ ";"
+  ce <- compileExpr e
+  _ <- compileLine $ refName ++ show i ++ " = " ++ ce ++ ";"
   return LitUnit
 
 compileWriteListRef :: Int -> Expr a -> State CompileState (Expr ())
 compileWriteListRef i e = do
-  _ <- compileLine $ "listAssign(&" ++ refName ++ show i ++ ", " ++ compileExpr e ++ ");"
+  ce <- compileExpr e
+  _ <- compileLine $ "listAssign(&" ++ refName ++ show i ++ ", " ++ ce ++ ");"
   return LitUnit
 
 compilePrimitive :: forall a . ArduinoPrimitive a -> State CompileState a
@@ -358,13 +413,16 @@ compileCommand (AttachInt p t _) = do
     _ <- compileShallowPrimitiveError $ "sttachInt " ++ show p ++ " " ++ show t
     return ()
 compileCommand (AttachIntE p t m) = do
-    let taskName = "task" ++ compileExpr t
+    ct <- compileExpr t
+    let taskName = "task" ++ ct
     s <- get
     put s {tasksToDo = addIntTask (tasksToDo s) taskName}
+    cp <- compileExpr p
+    cm <- compileExpr m
     compileLine ("attachInterrupt(digitalPinToInterrupt(" ++
-                                 compileExpr p ++ "), task" ++
-                                 compileExpr t ++ ", " ++
-                                 compileExpr m ++ ");")
+                                 cp ++ "), task" ++
+                                 ct ++ ", " ++
+                                 cm ++ ");")
   where
     addIntTask :: [(Arduino (Expr ()), String, Bool)] -> String -> [(Arduino (Expr ()), String, Bool)]
     addIntTask [] _ = []
@@ -432,45 +490,59 @@ compileNoExprProcedure t p = do
 
 compile1ExprProcedure :: CompileType -> String -> Expr a -> State CompileState Int
 compile1ExprProcedure t p e = do
-    b <- compileSimpleProcedure t (p ++ "(" ++ compileExpr e ++ ")")
+    ce <- compileExpr e
+    b <- compileSimpleProcedure t (p ++ "(" ++ ce ++ ")")
     return b
 
 compile2ExprProcedure :: CompileType -> String ->
                          Expr a -> Expr a -> State CompileState Int
 compile2ExprProcedure t p e1 e2 = do
-    b <- compileSimpleProcedure t (p ++ "(" ++ compileExpr e1 ++ "," ++
-                                               compileExpr e2 ++ ")")
+    ce1 <- compileExpr e1
+    ce2 <- compileExpr e1
+    b <- compileSimpleProcedure t (p ++ "(" ++ ce1 ++ "," ++
+                                               ce2 ++ ")")
     return b
 
 compile1ExprListProcedure :: String ->
                              Expr a -> State CompileState Int
 compile1ExprListProcedure p e1 = do
-    b <- compileSimpleListProcedure (p ++ "(" ++ compileExpr e1 ++ ")")
+    ce1 <- compileExpr e1
+    b <- compileSimpleListProcedure (p ++ "(" ++ ce1 ++ ")")
     return b
 
 compile2ExprListProcedure :: String ->
                              Expr a -> Expr a -> State CompileState Int
 compile2ExprListProcedure p e1 e2 = do
-    b <- compileSimpleListProcedure (p ++ "(" ++ compileExpr e1 ++ "," ++
-                                                 compileExpr e2 ++ ")")
+    ce1 <- compileExpr e1
+    ce2 <- compileExpr e2
+    b <- compileSimpleListProcedure (p ++ "(" ++ ce1 ++ "," ++
+                                                 ce2 ++ ")")
     return b
 
 compile3ExprProcedure :: CompileType -> String ->
                          Expr a -> Expr b  -> Expr c -> State CompileState Int
 compile3ExprProcedure t p e1 e2 e3 = do
-    b <- compileSimpleProcedure t (p ++ "(" ++ compileExpr e1 ++ "," ++
-                                               compileExpr e2 ++ "," ++
-                                               compileExpr e3 ++ ")")
+    ce1 <- compileExpr e1
+    ce2 <- compileExpr e2
+    ce3 <- compileExpr e3
+    b <- compileSimpleProcedure t (p ++ "(" ++ ce1 ++ "," ++
+                                               ce2 ++ "," ++
+                                               ce3 ++ ")")
     return b
 
 compile5ExprProcedure :: CompileType -> String -> Expr a -> Expr b ->
                          Expr c -> Expr d  -> Expr e -> State CompileState Int
 compile5ExprProcedure t p e1 e2 e3 e4 e5 = do
-    b <- compileSimpleProcedure t (p ++ "(" ++ compileExpr e1 ++ "," ++
-                                               compileExpr e2 ++ "," ++
-                                               compileExpr e3 ++ "," ++
-                                               compileExpr e4 ++ "," ++
-                                               compileExpr e5 ++ ")")
+    ce1 <- compileExpr e1
+    ce2 <- compileExpr e2
+    ce3 <- compileExpr e3
+    ce4 <- compileExpr e4
+    ce5 <- compileExpr e5
+    b <- compileSimpleProcedure t (p ++ "(" ++ ce1 ++ "," ++
+                                               ce2 ++ "," ++
+                                               ce3 ++ "," ++
+                                               ce4 ++ "," ++
+                                               ce5 ++ ")")
     return b
 
 compileNewRef :: CompileType -> Expr a -> State CompileState Int
@@ -479,7 +551,8 @@ compileNewRef t e = do
     let x = ix s
     put s {ix = x + 1}
     _ <- compileAllocRef $ compileTypeToString t ++ " " ++ refName ++ show x ++ ";"
-    _ <- compileLine $ refName ++ show x ++ " = " ++ compileExpr e ++ ";"
+    ce <- compileExpr e
+    _ <- compileLine $ refName ++ show x ++ " = " ++ ce ++ ";"
     return  x
 
 compileNewListRef :: Expr a -> State CompileState Int
@@ -489,8 +562,9 @@ compileNewListRef e = do
     put s {ix = x + 1}
     _ <- compileAllocRef $ compileTypeToString List8Type ++
                       " " ++ refName ++ show x ++ " = NULL;"
+    ce <- compileExpr e
     _ <- compileLine $ "listAssign(&" ++ refName ++ show x ++
-                  ", " ++ compileExpr e ++ ");"
+                  ", " ++ ce ++ ");"
     return  x
 
 compileReadRef :: CompileType -> Int -> State CompileState Int
@@ -653,7 +727,8 @@ compileProcedure (BootTaskE _) = do
 compileProcedure (Debug _) = do
     return ()
 compileProcedure (DebugE s) = do
-    _ <- compileLine ("debug((uint8_t *)" ++ compileExpr s ++ ");")
+    cs <- compileExpr s
+    _ <- compileLine ("debug((uint8_t *)" ++ cs ++ ");")
     return ()
 compileProcedure DebugListen = do
     return ()
@@ -1831,6 +1906,7 @@ compileProcedure (IterateFloatFloatE iv bf) = do
     _ <- compileIterateProcedure FloatType FloatType i bi j bj iv bf
     return bj
 compileProcedure (AppLambdaUnit n m) = compileAppLambdaProcedure n UnitType RemBindUnit m
+compileProcedure (AppLambdaWord8 n m) = compileAppLambdaProcedure n Word8Type RemBindW8 m
 compileProcedure (LamExprWord8Unit _ _) = error "Crap1"
 compileProcedure (AppExprWord8Unit _ _) = error "Crap2"
 compileProcedure _ = error "compileProcedure - Unknown procedure, it may actually be a command"
@@ -1843,17 +1919,22 @@ compileIfThenElseProcedure t e cb1 cb2 = do
     _ <- if t == UnitType
          then return LitUnit
          else compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
-    _ <- compileLine $ "if (" ++ compileExpr e ++ ")"
+    ce <- compileExpr e
+    _ <- compileLine $ "if (" ++ ce ++ ")"
     r1 <- compileCodeBlock True "" cb1
     _ <- if t == UnitType
          then return LitUnit
-         else compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r1 ++ ";"
+         else do
+           cr1 <- compileExpr r1
+           compileLineIndent $ bindName ++ show b ++ " = " ++ cr1 ++ ";"
     _ <- compileLineIndent "}"
     _ <- compileLine "else"
     r2 <- compileCodeBlock True "" cb2
     _ <- if t == UnitType
          then return LitUnit
-         else compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r2 ++ ";"
+         else do
+           cr2 <- compileExpr r2
+           compileLineIndent $ bindName ++ show b ++ " = " ++ cr2 ++ ";"
     _ <- compileLineIndent "}"
     return $ remBind b
 
@@ -1861,17 +1942,26 @@ compileIfThenElseEitherProcedure :: (ExprB a, ExprB b) => CompileType -> Compile
 compileIfThenElseEitherProcedure t1 t2 e cb1 cb2 = do
     s <- get
     let ibs = head $ iterBinds s
-    _ <- compileLine $ "if (" ++ compileExpr e ++ ")"
+    ce <- compileExpr e
+    _ <- compileLine $ "if (" ++ ce ++ ")"
     r1 <- compileCodeBlock True "" cb1
     _ <- case r1 of
             ExprLeft a -> do
                 if t1 == UnitType then return LitUnit
-                else if t1 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show (fst ibs) ++ ", " ++ compileExpr a ++ ");"
-                else compileLineIndent $ bindName ++ show (fst ibs) ++ " = " ++ compileExpr a ++ ";"
+                else if t1 == List8Type then do
+                  ca <- compileExpr a
+                  compileLineIndent $ "listAssign(&" ++ bindName ++ show (fst ibs) ++ ", " ++ ca ++ ");"
+                else do
+                  ca <- compileExpr a
+                  compileLineIndent $ bindName ++ show (fst ibs) ++ " = " ++ ca ++ ";"
             ExprRight b -> do
                 _ <- if t2 == UnitType then return LitUnit
-                     else if t2 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show (snd ibs) ++ ", " ++ compileExpr b ++ ");"
-                     else compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ compileExpr b ++ ";"
+                     else if t2 == List8Type then do
+                       cb <- compileExpr b
+                       compileLineIndent $ "listAssign(&" ++ bindName ++ show (snd ibs) ++ ", " ++ cb ++ ");"
+                     else do
+                       cb <- compileExpr b
+                       compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ cb ++ ";"
                 compileLineIndent "break;"
     _ <- compileLineIndent "}"
     _ <- compileLine "else"
@@ -1879,12 +1969,20 @@ compileIfThenElseEitherProcedure t1 t2 e cb1 cb2 = do
     _ <- case r2 of
             ExprLeft a -> do
                 if (t1 == UnitType) then return LitUnit
-                else if t1 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show (fst ibs) ++ ", " ++ compileExpr a ++ ");"
-                else compileLineIndent $ bindName ++ show (fst ibs) ++ " = " ++ compileExpr a ++ ";"
+                else if t1 == List8Type then do
+                  ca <- compileExpr a
+                  compileLineIndent $ "listAssign(&" ++ bindName ++ show (fst ibs) ++ ", " ++ ca ++ ");"
+                else do
+                  ca <- compileExpr a
+                  compileLineIndent $ bindName ++ show (fst ibs) ++ " = " ++ ca ++ ";"
             ExprRight b -> do
                 _ <- if (t2 == UnitType) then return LitUnit
-                     else if t2 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show (snd ibs) ++ ", " ++ compileExpr b ++ ");"
-                     else compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ compileExpr b ++ ";"
+                     else if t2 == List8Type then do
+                       cb <- compileExpr b
+                       compileLineIndent $ "listAssign(&" ++ bindName ++ show (snd ibs) ++ ", " ++ cb ++ ");"
+                     else do
+                       cb <- compileExpr b
+                       compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ cb ++ ";"
                 compileLineIndent "break;"
     _ <- compileLineIndent "}"
     return $ r2
@@ -1902,10 +2000,14 @@ compileIterateProcedure ta tb b1 b1e b2 b2e iv bf = do
          then return LitUnit
          else compileAllocBind $ compileTypeToString tb ++ " " ++ bindName ++ show b2 ++ ";"
     _ <- if ta == List8Type
-         then compileLine $ "listAssign(&" ++ bindName ++ show b1 ++ ", " ++ compileExpr iv ++ ");"
+         then do
+           civ <- compileExpr iv
+           compileLine $ "listAssign(&" ++ bindName ++ show b1 ++ ", " ++ civ ++ ");"
          else if ta == UnitType
               then return LitUnit
-              else compileLine $ bindName ++ show b1 ++ " = " ++ compileExpr iv ++ ";"
+              else do
+                civ <- compileExpr iv
+                compileLine $ bindName ++ show b1 ++ " = " ++ civ ++ ";"
     _ <- compileCodeBlock False "while (1)\n" $ bf b1e
     _ <- compileLineIndent "}"
     s' <- get
@@ -1917,20 +2019,31 @@ compileAppLambdaProcedure n t rb m = do
     s <- get
     let b = ib s
     put s {ib = b + 1}
-    let (body, args) = compileArgs m
+    (body, args) <- compileArgs m
     _ <- compileLine $ bindName ++ show b ++ " = " ++ n ++ "(" ++ args ++ ");"
     _ <- compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
     s' <- get
-    -- TBD only add it if it's not there already.
-    put s' {funcsToDo = (MkCompilable body, t, n) : funcsToDo s'}
+    let newFunc = (MkCompilable body, t, n)
+    if not $ funcElemToDo n (funcsToDo s')
+    then put s' {funcsToDo = newFunc : funcsToDo s'}
+    else return ()
     return $ rb b
 
-compileArgs :: Arduino a -> (Arduino a, String)
-compileArgs (Arduino (T.Appl ( T.Primitive (AppExprWord8Unit m e)))) =
-    (func, compileExpr e ++ if null string then "" else "," ++ string)
-  where
-    (func, string) = compileArgs m
-compileArgs m' = (m', "")
+funcElemToDo :: String -> [(Compilable, CompileType, String)] -> Bool
+funcElemToDo _ [] = False
+funcElemToDo s (f:fs) = case f of
+    (_, _, s') -> if s == s' then True else funcElemToDo s fs
+
+compileArgs :: Arduino a -> State CompileState (Arduino a, String)
+compileArgs (Arduino (T.Appl ( T.Primitive (AppExprWord8Unit m e)))) = do
+    (func, string) <- compileArgs m
+    ce <- compileExpr e
+    return (func, ce ++ if null string then "" else ", " ++ string)
+compileArgs (Arduino (T.Appl ( T.Primitive (AppExprWord8Word8 m e)))) = do
+    (func, string) <- compileArgs m
+    ce <- compileExpr e
+    return (func, ce ++ if null string then "" else "," ++ string)
+compileArgs m' = return (m', "")
 
 compileCodeBlock :: Bool -> String -> Arduino a -> State CompileState a
 compileCodeBlock bInside prelude (Arduino commands) = do
@@ -1993,98 +2106,115 @@ compileCodeBlock bInside prelude (Arduino commands) = do
       compileAppl (T.Alt _ _) = error "compileAppl: \"Alt\" not supported"
       compileAppl  T.Empty = error "compileAppl: \"Empty\" not supported"
 
-compileSubExpr :: String -> Expr a -> String
-compileSubExpr ec e = ec ++ "(" ++ compileExpr e ++ ")"
+compileSubExpr :: String -> Expr a -> State CompileState String
+compileSubExpr ec e = do
+  ce <- compileExpr e
+  return $ ec ++ "(" ++ ce ++ ")"
 
-compileTwoSubExpr :: String -> Expr a -> Expr b -> String
-compileTwoSubExpr ec e1 e2 = ec ++ "(" ++ compileExpr e1 ++
-                             "," ++ compileExpr e2 ++ ")"
+compileTwoSubExpr :: String -> Expr a -> Expr b -> State CompileState String
+compileTwoSubExpr ec e1 e2 = do
+  ce1 <- compileExpr e1
+  ce2 <- compileExpr e2
+  return $ ec ++ "(" ++ ce1 ++ "," ++ ce2 ++ ")"
 
-compileThreeSubExpr :: String -> Expr a -> Expr b -> Expr c -> String
-compileThreeSubExpr ec e1 e2 e3 = ec ++ "(" ++ compileExpr e1 ++
-                             "," ++ compileExpr e2 ++
-                             "," ++ compileExpr e3 ++ ")"
+compileThreeSubExpr :: String -> Expr a -> Expr b -> Expr c -> State CompileState String
+compileThreeSubExpr ec e1 e2 e3 = do
+  ce1 <- compileExpr e1
+  ce2 <- compileExpr e2
+  ce3 <- compileExpr e3
+  return $ ec ++ "(" ++ ce1 ++ "," ++ ce2 ++ "," ++ ce3 ++ ")"
 
-compileInfixSubExpr :: String -> Expr a -> Expr b -> String
-compileInfixSubExpr ec e1 e2 = "(" ++ compileExpr e1 ++ " " ++ ec ++
-                               " " ++ compileExpr e2 ++ ")"
+compileInfixSubExpr :: String -> Expr a -> Expr b -> State CompileState String
+compileInfixSubExpr ec e1 e2 = do
+  ce1 <- compileExpr e1
+  ce2 <- compileExpr e2
+  return $ "(" ++ ce1 ++ " " ++ ec ++ " " ++ ce2 ++ ")"
 
-compileSign :: Expr a -> String
-compileSign e = "(" ++ compileExpr e ++ " == 0 ? 0 : 1)"
+compileSign :: Expr a -> State CompileState String
+compileSign e = do
+  ce <- compileExpr e
+  return $ "(" ++ ce ++ " == 0 ? 0 : 1)"
 
-compileIfSubExpr :: Expr a -> Expr b -> Expr b -> String
-compileIfSubExpr e1 e2 e3 = compileExpr e1 ++ " ? " ++
-                            compileExpr e2 ++ " : " ++ compileExpr e3
+compileIfSubExpr :: Expr a -> Expr b -> Expr b -> State CompileState String
+compileIfSubExpr e1 e2 e3 = do
+  ce1 <- compileExpr e1
+  ce2 <- compileExpr e2
+  ce3 <- compileExpr e3
+  return $ ce1 ++ " ? " ++ ce2 ++ " : " ++ ce3
 
-compileNeg :: Expr a -> String
+compileNeg :: Expr a -> State CompileState String
 compileNeg = compileSubExpr "-"
 
-compileComp :: Expr a -> String
+compileComp :: Expr a -> State CompileState String
 compileComp = compileSubExpr "~"
 
-compileArg :: Int -> String
-compileArg b = argName ++ show b
+compileArg :: Int -> State CompileState String
+compileArg b = return $ argName ++ show b
 
-compileBind :: Int -> String
-compileBind b = bindName ++ show b
+compileBind :: Int -> State CompileState String
+compileBind b = return $ bindName ++ show b
 
-compileBAnd :: Expr a -> Expr a -> String
+compileBAnd :: Expr a -> Expr a -> State CompileState String
 compileBAnd = compileInfixSubExpr "&&"
 
-compileBOr :: Expr a -> Expr a -> String
+compileBOr :: Expr a -> Expr a -> State CompileState String
 compileBOr = compileInfixSubExpr "||"
 
-compileEqual :: Expr a -> Expr a -> String
+compileEqual :: Expr a -> Expr a -> State CompileState String
 compileEqual = compileInfixSubExpr "=="
 
-compileLess :: Expr a -> Expr a -> String
+compileLess :: Expr a -> Expr a -> State CompileState String
 compileLess = compileInfixSubExpr "<"
 
-compileAdd :: Expr a -> Expr a -> String
+compileAdd :: Expr a -> Expr a -> State CompileState String
 compileAdd = compileInfixSubExpr "+"
 
-compileSub :: Expr a -> Expr a -> String
+compileSub :: Expr a -> Expr a -> State CompileState String
 compileSub = compileInfixSubExpr "-"
 
-compileMult :: Expr a -> Expr a -> String
+compileMult :: Expr a -> Expr a -> State CompileState String
 compileMult = compileInfixSubExpr "*"
 
-compileDiv :: Expr a -> Expr a -> String
+compileDiv :: Expr a -> Expr a -> State CompileState String
 compileDiv = compileInfixSubExpr "/"
 
-compileMod :: Expr a -> Expr a -> String
+compileMod :: Expr a -> Expr a -> State CompileState String
 compileMod = compileInfixSubExpr "%"
 
-compileAnd :: Expr a -> Expr a -> String
+compileAnd :: Expr a -> Expr a -> State CompileState String
 compileAnd = compileInfixSubExpr "&"
 
-compileOr :: Expr a -> Expr a -> String
+compileOr :: Expr a -> Expr a -> State CompileState String
 compileOr = compileInfixSubExpr "|"
 
-compileXor :: Expr a -> Expr a -> String
+compileXor :: Expr a -> Expr a -> State CompileState String
 compileXor = compileInfixSubExpr "^"
 
-compileShiftLeft :: Expr a -> Expr b -> String
+compileShiftLeft :: Expr a -> Expr b -> State CompileState String
 compileShiftLeft = compileInfixSubExpr "<<"
 
-compileShiftRight :: Expr a -> Expr b -> String
+compileShiftRight :: Expr a -> Expr b -> State CompileState String
 compileShiftRight = compileInfixSubExpr ">>"
 
-compileToInt :: Expr a -> String
-compileToInt e = "((int32_t) " ++ compileExpr e ++ ")"
+compileToInt :: Expr a -> State CompileState String
+compileToInt e = do
+  ce <- compileExpr e
+  return $ "((int32_t) " ++ ce ++ ")"
 
-compileFromInt :: String -> Expr a -> String
-compileFromInt t e = "((" ++ t ++ ") " ++ compileExpr e ++ ")"
+compileFromInt :: String -> Expr a -> State CompileState String
+compileFromInt t e = do
+  ce <- compileExpr e
+  return $ "((" ++ t ++ ") " ++ ce ++ ")"
 
-compileRef :: Int -> String
-compileRef n = refName ++ show n
+compileRef :: Int -> State CompileState String
+compileRef n = return $ refName ++ show n
 
-compileExpr :: Expr a -> String
-compileExpr LitUnit = "0"
-compileExpr (ShowUnit _) = show ()
+compileExpr :: Expr a -> State CompileState String
+compileExpr LitUnit = return "0"
+compileExpr (ShowUnit _) = return $ show ()
 compileExpr (RemArgUnit b) = compileArg b
 compileExpr (RemBindUnit b) = compileBind b
-compileExpr (LitB b) = if b then "1" else "0"
+compileExpr (LitB b) = return $ if b then "1" else "0"
 compileExpr (ShowB e) = compileSubExpr "showBool" e
 compileExpr (RefB n) = compileRef n
 compileExpr (RemArgB b) = compileArg b
@@ -2113,7 +2243,7 @@ compileExpr (EqL8 e1 e2) = compileTwoSubExpr "list8Equal" e1 e2
 compileExpr (LessL8 e1 e2) = compileTwoSubExpr "list8Less" e1 e2
 compileExpr (EqFloat e1 e2) = compileEqual e1 e2
 compileExpr (LessFloat e1 e2) = compileLess e1 e2
-compileExpr (LitW8 w) = show w
+compileExpr (LitW8 w) = return $ show w
 compileExpr (ShowW8 e) = compileSubExpr "showWord8" e
 compileExpr (RefW8 n) = compileRef n
 compileExpr (RemArgW8 b) = compileArg b
@@ -2139,7 +2269,7 @@ compileExpr (IfW8 e1 e2 e3) = compileIfSubExpr e1 e2 e3
 compileExpr (TestBW8 e1 e2) = compileTwoSubExpr "testBW8" e1 e2
 compileExpr (SetBW8 e1 e2) = compileTwoSubExpr "setBW8" e1 e2
 compileExpr (ClrBW8 e1 e2) = compileTwoSubExpr "clrBW8" e1 e2
-compileExpr (LitW16 w) = show w
+compileExpr (LitW16 w) = return $ show w
 compileExpr (ShowW16 e) = compileSubExpr "showWord16" e
 compileExpr (RefW16 n) = compileRef n
 compileExpr (RemArgW16 b) = compileArg b
@@ -2165,7 +2295,7 @@ compileExpr (IfW16 e1 e2 e3) = compileIfSubExpr e1 e2 e3
 compileExpr (TestBW16 e1 e2) = compileTwoSubExpr "testBW16" e1 e2
 compileExpr (SetBW16 e1 e2) = compileTwoSubExpr "setBW16" e1 e2
 compileExpr (ClrBW16 e1 e2) = compileTwoSubExpr "clrBW16" e1 e2
-compileExpr (LitW32 w) = show w
+compileExpr (LitW32 w) = return $ show w
 compileExpr (ShowW32 e) = compileSubExpr "showWord32" e
 compileExpr (RefW32 n) = compileRef n
 compileExpr (RemArgW32 b) = compileArg b
@@ -2190,7 +2320,7 @@ compileExpr (IfW32 e1 e2 e3) = compileIfSubExpr e1 e2 e3
 compileExpr (TestBW32 e1 e2) = compileTwoSubExpr "testBW32" e1 e2
 compileExpr (SetBW32 e1 e2) = compileTwoSubExpr "setBW32" e1 e2
 compileExpr (ClrBW32 e1 e2) = compileTwoSubExpr "clrBW32" e1 e2
-compileExpr (LitI8 w) = show w
+compileExpr (LitI8 w) = return $ show w
 compileExpr (ShowI8 e) = compileSubExpr "showInt8" e
 compileExpr (RefI8 n) = compileRef n
 compileExpr (RemArgI8 b) = compileArg b
@@ -2216,7 +2346,7 @@ compileExpr (IfI8 e1 e2 e3) = compileIfSubExpr e1 e2 e3
 compileExpr (TestBI8 e1 e2) = compileTwoSubExpr "testBI8" e1 e2
 compileExpr (SetBI8 e1 e2) = compileTwoSubExpr "setBI8" e1 e2
 compileExpr (ClrBI8 e1 e2) = compileTwoSubExpr "clrBI8" e1 e2
-compileExpr (LitI16 w) = show w
+compileExpr (LitI16 w) = return $ show w
 compileExpr (ShowI16 e) = compileSubExpr "showInt16" e
 compileExpr (RefI16 n) = compileRef n
 compileExpr (RemArgI16 b) = compileArg b
@@ -2242,7 +2372,7 @@ compileExpr (IfI16 e1 e2 e3) = compileIfSubExpr e1 e2 e3
 compileExpr (TestBI16 e1 e2) = compileTwoSubExpr "testBI16" e1 e2
 compileExpr (SetBI16 e1 e2) = compileTwoSubExpr "setBI16" e1 e2
 compileExpr (ClrBI16 e1 e2) = compileTwoSubExpr "clrBI16" e1 e2
-compileExpr (LitI32 w) = show w
+compileExpr (LitI32 w) = return $ show w
 compileExpr (ShowI32 e) = compileSubExpr "showInt32" e
 compileExpr (RefI32 n) = compileRef n
 compileExpr (RemArgI32 b) = compileArg b
@@ -2268,7 +2398,7 @@ compileExpr (IfI32 e1 e2 e3) = compileIfSubExpr e1 e2 e3
 compileExpr (TestBI32 e1 e2) = compileTwoSubExpr "testBI32" e1 e2
 compileExpr (SetBI32 e1 e2) = compileTwoSubExpr "setBI32" e1 e2
 compileExpr (ClrBI32 e1 e2) = compileTwoSubExpr "clrBI32" e1 e2
-compileExpr (LitI w) = show w
+compileExpr (LitI w) = return $ show w
 compileExpr (ShowI e) = compileSubExpr "showInt32" e
 compileExpr (RefI n) = compileRef n
 compileExpr (RemArgI b) = compileArg b
@@ -2292,7 +2422,7 @@ compileExpr (IfI e1 e2 e3) = compileIfSubExpr e1 e2 e3
 compileExpr (TestBI e1 e2) = compileTwoSubExpr "testBI32" e1 e2
 compileExpr (SetBI e1 e2) = compileTwoSubExpr "setBI32" e1 e2
 compileExpr (ClrBI e1 e2) = compileTwoSubExpr "clrBI32" e1 e2
-compileExpr (LitList8 ws) = "(uint8_t * ) (const byte[]) {255, " ++ (show $ length ws) ++ compListLit ws
+compileExpr (LitList8 ws) = return $ "(uint8_t * ) (const byte[]) {255, " ++ (show $ length ws) ++ compListLit ws
   where
     compListLit :: [Word8] -> String
     compListLit [] = "}"
@@ -2307,7 +2437,7 @@ compileExpr (ApndList8 e1 e2) = compileTwoSubExpr "list8Apnd" e1 e2
 compileExpr (SliceList8 e1 e2 e3) = compileThreeSubExpr "list8Slice" e1 e2 e3
 -- ToDo:
 -- compileExpr (PackList8 es) = [exprLCmdVal EXPRL_PACK, fromIntegral $ length es] ++ (foldl (++) [] (map compileExpr es))
-compileExpr (LitFloat f) = show f -- ToDo:  Is this correct?
+compileExpr (LitFloat f) = return $ show f -- ToDo:  Is this correct?
 compileExpr (ShowFloat e1 e2) = compileTwoSubExpr "showF" e1 e2
 compileExpr (RefFloat n) = compileRef n
 compileExpr (RemArgFloat b) = compileArg b
@@ -2325,7 +2455,7 @@ compileExpr (FracFloat e) = compileSubExpr "frac" e
 compileExpr (RoundFloat e) = compileSubExpr "round" e
 compileExpr (CeilFloat e) = compileSubExpr "ceil" e
 compileExpr (FloorFloat e) = compileSubExpr "floor" e
-compileExpr PiFloat = "M_PI"
+compileExpr PiFloat = return "M_PI"
 compileExpr (ExpFloat e) = compileSubExpr "exp" e
 compileExpr (LogFloat e) = compileSubExpr "log" e
 compileExpr (SqrtFloat e) = compileSubExpr "sqrt" e
@@ -2342,4 +2472,32 @@ compileExpr (TanhFloat e) = compileSubExpr "tanh" e
 compileExpr (PowerFloat e1 e2) = compileTwoSubExpr "pow" e1 e2
 compileExpr (IsNaNFloat e) = compileSubExpr "isnan" e
 compileExpr (IsInfFloat e) = compileSubExpr "isinf" e
+compileExpr (AppFUnit n m) = compileAppExpr n UnitType RemBindUnit m
+compileExpr (AppFW8 n m) = compileAppExpr n Word8Type RemBindW8 m
 compileExpr _              = error "compileExpr: Unsupported expression"
+
+compileAppExpr :: ExprB a => String -> CompileType -> (Int -> Expr a) -> Expr a -> State CompileState String
+compileAppExpr n t rb m = do
+    (body, args) <- compileArgsE m
+    s' <- get
+    let newFunc = (MkCompilableExpr body, t, n)
+    if not $ funcExprElemToDo n (funcExprsToDo s')
+    then put s' {funcExprsToDo = newFunc : funcExprsToDo s'}
+    else return ()
+    return $ n ++ "(" ++ args ++ ")"
+
+funcExprElemToDo :: String -> [(CompilableExpr, CompileType, String)] -> Bool
+funcExprElemToDo _ [] = False
+funcExprElemToDo s (f:fs) = case f of
+    (_, _, s') -> if s == s' then True else funcExprElemToDo s fs
+
+compileArgsE :: Expr a -> State CompileState (Expr a, String)
+compileArgsE (AppW8Unit f e) = do
+    (func, string) <- compileArgsE f
+    ce <- compileExpr e
+    return (func, ce ++ if null string then "" else ", " ++ string)
+compileArgsE (AppW8W8 f e) = do
+    (func, string) <- compileArgsE f
+    ce <- compileExpr e
+    return (func, ce ++ if null string then "" else "," ++ string)
+compileArgsE f' = return (f', "")
