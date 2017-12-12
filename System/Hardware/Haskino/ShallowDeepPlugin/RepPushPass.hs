@@ -272,7 +272,7 @@ genDictArgs [] _ _ _ _ _ = return []
 genDictArgs (dty:dtys) tys frty trty args orty = do
     let (tyConTy, ty') = splitAppTys dty
     dictTys <- mapM findTypeMatch ty'
-    liftCoreM $ putMsg $ ppr dictTys
+    --liftCoreM $ putMsg $ ppr dictTys
     dict <- buildDictionaryTyConTs (tyConAppTyCon tyConTy) dictTys
     dicts <- genDictArgs dtys tys frty trty args orty
     return $ dict:dicts
