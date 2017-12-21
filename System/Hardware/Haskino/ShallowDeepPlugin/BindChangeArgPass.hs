@@ -656,14 +656,10 @@ changeAppExpr e = do
       then defaultRet
       else case tyCon_m of
           Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
-              let exprtyCon_m = splitTyConApp_maybe retTy'
-              case exprtyCon_m of
-                  Just (_exprTy, [_exprTy']) -> defaultRet
-                  _ -> do
-                      v_m <- findDeepId v
-                      case v_m of
-                        Just v' -> fmapAbsExpr (mkTyConTy retTyCon) retTy' (Var v')
-                        Nothing -> defaultRet
+              v_m <- findDeepId v
+              case v_m of
+                Just v' -> fmapAbsExpr (mkTyConTy retTyCon) retTy' (Var v')
+                Nothing -> defaultRet
           _ | isRetTyExprClass -> do
               v_m <- findDeepId v
               case v_m of
