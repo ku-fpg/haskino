@@ -242,6 +242,25 @@ uint8_t *list8Cons(uint8_t w, uint8_t *l)
     return newList;
     }
 
+uint8_t *list8Reverse(uint8_t *l)
+    {
+    int i;
+    int len = l[1];
+    byte *newList;
+
+    newList = listAlloc(len);
+
+    if (newList)
+        {
+        newList[1] = len;
+        for (i=0; i<len; i++)
+            newList[i] = l[len - i - 1];
+        }
+
+    listFree(l);
+    return newList;
+    }
+
 uint8_t *list8Apnd(uint8_t *l1, uint8_t *l2)
     {
     byte *newList;

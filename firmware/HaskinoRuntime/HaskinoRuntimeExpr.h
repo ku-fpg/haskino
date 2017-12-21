@@ -31,6 +31,7 @@ uint8_t list8Elem(uint8_t *l, uint8_t e);
 uint8_t list8Len(uint8_t *l);
 uint8_t *list8Cons(uint8_t w, uint8_t *l);
 uint8_t *list8Apnd(uint8_t *l1, uint8_t *l2);
+uint8_t *list8Reverse(uint8_t *l);
 uint8_t *list8Slice(uint8_t *l, uint8_t sindex, uint8_t len);
 
 // Bit functions
