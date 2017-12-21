@@ -2221,6 +2221,7 @@ compileExpr (ElemList8 e1 e2) = compileTwoSubExpr "list8Elem" e1 e2
 compileExpr (LenList8 e) = compileSubExpr "list8Len" e
 compileExpr (ConsList8 e1 e2) = compileTwoSubExpr "list8Cons" e1 e2
 compileExpr (ApndList8 e1 e2) = compileTwoSubExpr "list8Apnd" e1 e2
+compileExpr (RevList8 e) = compileSubExpr "list8Reverse" e
 compileExpr (SliceList8 e1 e2 e3) = compileThreeSubExpr "list8Slice" e1 e2 e3
 -- ToDo:
 -- compileExpr (PackList8 es) = [exprLCmdVal EXPRL_PACK, fromIntegral $ length es] ++ (foldl (++) [] (map compileExpr es))

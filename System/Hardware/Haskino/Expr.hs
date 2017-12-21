@@ -283,6 +283,7 @@ data Expr a where
   LenList8     :: Expr [Word8] -> Expr Int
   ConsList8    :: Expr Word8   -> Expr [Word8] -> Expr [Word8]
   ApndList8    :: Expr [Word8] -> Expr [Word8] -> Expr [Word8]
+  RevList8     :: Expr [Word8] -> Expr [Word8]
   PackList8    :: [Expr Word8] -> Expr [Word8]
   SliceList8   :: Expr [Word8] -> Expr Int -> Expr Int -> Expr [Word8]
   EqL8         :: Expr [Word8] -> Expr [Word8] -> Expr Bool
@@ -1047,6 +1048,9 @@ headE l = ElemList8 l 0
 
 tailE :: Expr [Word8] -> Expr [Word8]
 tailE l = SliceList8 l 1 0
+
+reverseE :: Expr [Word8] -> Expr [Word8]
+reverseE l = RevList8 l
 
 dropE :: Expr Int -> Expr [Word8] -> Expr [Word8]
 dropE n l = SliceList8 l n 0
