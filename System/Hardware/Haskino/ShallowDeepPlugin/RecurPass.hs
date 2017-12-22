@@ -64,13 +64,11 @@ recurBind' ((b, e) : bs) = do
           let argTyCon_m = splitTyConApp_maybe $ head argTys
           case argTyCon_m of
             Just (argTyCon, argTyArgs) -> do
-                let argTyArg = if argTyCon == listTyCon'
-                               then head argTys
-                               else head argTyArgs
+                let argTyArg = head argTyArgs
                 let retTyArg = case splitTyConApp_maybe $ head retTyArgs of
-                                  Just (rTyCon, [])      -> mkTyConTy rTyCon
-                                  Just (_, rTyArgs)      -> head rTyArgs
-                                  Nothing                -> head retTyArgs
+                                  Just (rTyCon, []) -> mkTyConTy rTyCon
+                                  _                 -> head retTyArgs
+                liftCoreM $ putMsg $ ppr retTyArg
                 s' <- get
                 put s' {funcId = [b]}
 
@@ -100,8 +98,7 @@ recurBind' ((b, e) : bs) = do
         then do
             let retTyArg = case splitTyConApp_maybe $ head retTyArgs of
                               Just (rTyCon, [])      -> mkTyConTy rTyCon
-                              Just (_, rTyArgs)      -> head rTyArgs
-                              Nothing                -> head retTyArgs
+                              _                      -> head retTyArgs
 
             unitTyCon' <- thNameToTyCon unitTyConTH
             let unitTyConTy = mkTyConTy unitTyCon'
