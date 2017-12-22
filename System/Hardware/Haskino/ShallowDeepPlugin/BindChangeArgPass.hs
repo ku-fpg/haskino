@@ -542,6 +542,13 @@ changeArg (b, ty, p) = do
           let ty' = mkTyConApp exprTyCon [ty]
           let b' = setVarType b ty'
           return (b', ty')
+      Just (_, [_]) -> do
+          -- Lookup the GHC type constructor of Expr
+          exprTyCon <- thNameToTyCon exprTyConTH
+          -- Make the type of the Expr for the specified type
+          let ty' = mkTyConApp exprTyCon [ty]
+          let b' = setVarType b ty'
+          return (b', ty')
       _       -> return (b, ty)
   else return (b, ty)
 
