@@ -2009,6 +2009,14 @@ compileExpr :: Expr a -> String
 compileExpr LitUnit = "0"
 compileExpr (ShowUnit _) = show ()
 compileExpr (RemBindUnit b) = bindName ++ show b
+compileExpr (LitPinMode m) = case m of
+                                INPUT         -> "INPUT"
+                                OUTPUT        -> "OUTPUT"
+                                INPUT_PULLUP  -> "INPUT_PULLUP"
+compileExpr (ShowPinMode e) = compileSubExpr "showPinMode" e
+compileExpr (RemBindPinMode b) = bindName ++ show b
+compileExpr (EqPinMode e1 e2) = compileEqual e1 e2
+compileExpr (IfPinMode e1 e2 e3) = compileIfSubExpr e1 e2 e3
 compileExpr (LitB b) = if b then "1" else "0"
 compileExpr (ShowB e) = compileSubExpr "showBool" e
 compileExpr (RefB n) = compileRef n

@@ -443,6 +443,7 @@ changeSubBind b e = do
   let (bs, e') = collectBinders e
   let tyCon_m = splitTyConApp_maybe retTy
   isRetTyExprClass <- isExprClassType retTy
+  isArgTyExprClass <- anyExprClassType argTys
   monadTyConId <- thNameToTyCon monadTyConTH
   case tyCon_m of
       -- We are looking for return types of Arduino a
@@ -528,6 +529,11 @@ changeSubBind b e = do
           put s'{shallowDeepMap = M.insert b b' (shallowDeepMap s')}
 
           return [(b, mkLams bs absE), (b', mkLams bs' e''')]
+      -- We are looking for argument types of ExprB a => a with
+      --   a return type that is not tyExprClass.
+      --_ | isArgTyExprClass -> do
+      --    xlatWarning ""
+      --    return [(b, e)]
       _ -> return [(b, e)]
 
 changeArg :: (CoreBndr, Type, Bool) -> BindM (CoreBndr, Type)
@@ -564,7 +570,7 @@ changeArgAppsExpr e = do
   s <- get
   case e of
     -- Replace any occurances of the parameters "p" with "abs_ p"
-    Var v | v `elem` (args s) -> absExpr e
+    Var v | v `elem` (args s) -> absVar v
     Var v -> return $ Var v
     Lit l -> return $ Lit l
     Type ty -> return $ Type ty

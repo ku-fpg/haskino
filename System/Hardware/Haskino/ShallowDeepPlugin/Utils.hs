@@ -13,6 +13,8 @@
 {-# LANGUAGE ExplicitForAll #-}
 
 module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
+                                           absVar,
+                                           anyExprClassType,
                                            buildDictionaryT,
                                            buildDictionaryTyConT,
                                            buildDictionaryTyConTs,
@@ -74,6 +76,7 @@ import           Encoding            (zEncodeString)
 import           ErrUtils
 import           GhcPlugins
 import qualified Language.Haskell.TH as TH
+import           MonadUtils
 import           OccName
 import           TcRnMonad
 import           TcSMonad
@@ -137,11 +140,13 @@ litL8NameTH :: TH.Name
 litL8NameTH            = 'System.Hardware.Haskino.LitList8
 litFloatNameTH :: TH.Name
 litFloatNameTH         = 'System.Hardware.Haskino.LitFloat
+litPinModeNameTH :: TH.Name
+litPinModeNameTH       = 'System.Hardware.Haskino.LitPinMode
 
 exprClassNames :: [TH.Name]
 exprClassNames = [litUnitNameTH, litBNameTH, litW8NameTH, litW16NameTH,
                   litW32NameTH, litI8NameTH, litI16NameTH, litI32NameTH,
-                  litL8NameTH, litFloatNameTH]
+                  litL8NameTH, litFloatNameTH, litPinModeNameTH]
 
 isExprClassType :: PassCoreM m => Type -> m Bool
 isExprClassType ty = do
@@ -150,6 +155,10 @@ isExprClassType ty = do
   where
     exprClassTypes :: PassCoreM m => m [Type]
     exprClassTypes = mapM thNameToReturnBaseType exprClassNames
+
+anyExprClassType :: PassCoreM m => [Type] -> m Bool
+anyExprClassType tys = do
+    anyM isExprClassType tys
 
 isBindTopLevel :: Var -> Bool
 isBindTopLevel b =
@@ -280,16 +289,33 @@ modId v s = do
 
 repExpr :: PassCoreM m => CoreExpr -> m CoreExpr
 repExpr e = do
-    let ty = exprType e
-    repId <- thNameToId repNameTH
-    repDict <- thNameTyToDict exprClassTyConTH ty
-    return $ mkCoreApps (Var repId) [Type ty, repDict, e]
+    case e of
+        Let bind body -> do
+            body' <- repExpr body
+            return $ Let bind body'
+        _ -> do
+            let ty = exprType e
+            repId <- thNameToId repNameTH
+            repDict <- thNameTyToDict exprClassTyConTH ty
+            return $ mkCoreApps (Var repId) [Type ty, repDict, e]
 
 absExpr :: PassCoreM m => CoreExpr -> m CoreExpr
 absExpr e = do
-    let ty = exprType e
+    case e of
+        Let bind body -> do
+            body' <- absExpr body
+            return $ Let bind body'
+        _ -> do
+            let (_, [ty']) = splitTyConApp $ exprType e
+            absId <- thNameToId absNameTH
+            return $ mkCoreApps (Var absId) [Type ty', e]
+
+absVar :: PassCoreM m => Id -> m CoreExpr
+absVar v = do
+    exprTyCon <- thNameToTyCon exprTyConTH
+    let exprTyConApp = mkTyConApp exprTyCon [varType v]
     absId <- thNameToId absNameTH
-    return $ mkCoreApps (Var absId) [Type ty, e]
+    return $ mkCoreApps (Var absId) [Type exprTyConApp, Var v]
 
 fmapAbsExpr :: PassCoreM m => Type -> Type -> CoreExpr -> m CoreExpr
 fmapAbsExpr tyConTy ty e = do
