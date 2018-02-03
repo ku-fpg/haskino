@@ -56,6 +56,7 @@ recurBind' ((b, e) : bs) = do
     let (argTys, retTy) = splitFunTys $ exprType e
     let retTyCon_m = splitTyConApp_maybe retTy
     monadTyCon <- thNameToTyCon monadTyConTH
+    exprTyCon <- thNameToTyCon exprTyConTH
     listTyCon' <- thNameToTyCon listTyConTH
     case retTyCon_m of
       Just (retTyCon, retTyArgs) -> do
@@ -67,7 +68,7 @@ recurBind' ((b, e) : bs) = do
                 let argTyArg = head argTyArgs
                 let retTyArg = case splitTyConApp_maybe $ head retTyArgs of
                                   Just (rTyCon, []) -> mkTyConTy rTyCon
-                                  Just (rTyCon, [retTyArg']) -> retTyArg'
+                                  Just (rTyCon, [retTyArg']) | rTyCon == exprTyCon -> retTyArg'
                                   _                 -> head retTyArgs
                 s' <- get
                 put s' {funcId = [b]}
