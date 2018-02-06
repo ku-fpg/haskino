@@ -14,6 +14,7 @@
 // Show routines
 
 byte *showBool(bool b);
+byte *showPinMode(uint32_t m);
 byte *showWord8(uint8_t w);
 byte *showWord16(uint16_t w);
 byte *showWord32(uint32_t w);

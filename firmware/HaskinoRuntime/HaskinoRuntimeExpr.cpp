@@ -37,6 +37,28 @@ byte *showBool(bool b)
     return listMem;
     }
 
+byte *showPinMode(uint32_t m)
+    {
+    byte *listMem;
+
+    switch(m)
+        {
+        case 0:
+            listMem = listAlloc(1+5+1);
+            listMem[1] = sprintf((char *) &listMem[2],"%s","INPUT");
+        case 1:
+            listMem = listAlloc(1+6+1);
+            listMem[1] = sprintf((char *) &listMem[2],"%s","OUTPUT");
+        case 2:
+            listMem = listAlloc(1+12+1);
+            listMem[1] = sprintf((char *) &listMem[2],"%s","INPUT_PULLUP");
+        default:
+            listMem = listAlloc(1+7+1);
+            listMem[1] = sprintf((char *) &listMem[2],"%s","Invalid");
+        }
+    return listMem;
+    }
+
 byte *showWord8(uint8_t w)
     {
     byte *listMem;

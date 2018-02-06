@@ -53,12 +53,6 @@ pinNoPortNo n = n `quot` 8
 pinPortIndex :: Pin -> Word8
 pinPortIndex p = p `rem` 8
 
--- | The mode for a pin.
-data PinMode = INPUT
-             | OUTPUT
-             | INPUT_PULLUP
-        deriving (Eq, Show, Enum)
-
 -- | The mode for a triggering an interrupt on a pin.
 data IntMode = LOW
              | CHANGE
@@ -95,7 +89,7 @@ type VarSize = Word8
 data ArduinoPrimitive :: * -> * where
      -- Commands
      SystemResetE         ::                                      ArduinoPrimitive (Expr ())
-     SetPinModeE          :: PinE -> Expr Word8                -> ArduinoPrimitive (Expr ())
+     SetPinModeE          :: PinE -> Expr PinMode              -> ArduinoPrimitive (Expr ())
      DigitalPortWriteE    :: PinE -> Expr Word8 -> Expr Word8  -> ArduinoPrimitive (Expr ())
      DigitalWriteE        :: PinE -> Expr Bool                 -> ArduinoPrimitive (Expr ())
      AnalogWriteE         :: PinE -> Expr Word16               -> ArduinoPrimitive (Expr ())
@@ -545,10 +539,10 @@ systemResetE :: Arduino (Expr ())
 systemResetE =  Arduino $ primitive SystemResetE
 
 setPinMode :: Pin -> PinMode -> Arduino ()
-setPinMode p pm = evalExprUnit <$> (Arduino $ primitive $ SetPinModeE (lit p) (lit $ fromIntegral $ fromEnum pm))
+setPinMode p pm = evalExprUnit <$> (Arduino $ primitive $ SetPinModeE (lit p) (lit pm))
 
-setPinModeE :: PinE -> PinMode -> Arduino (Expr ())
-setPinModeE p pm =  Arduino $ primitive $ SetPinModeE p (lit $ fromIntegral $ fromEnum pm)
+setPinModeE :: PinE -> Expr PinMode -> Arduino (Expr ())
+setPinModeE p pm =  Arduino $ primitive $ SetPinModeE p pm
 
 digitalWrite :: Pin -> Bool -> Arduino ()
 digitalWrite p b = evalExprUnit <$> (Arduino $ primitive $ DigitalWriteE (lit p) (lit b))

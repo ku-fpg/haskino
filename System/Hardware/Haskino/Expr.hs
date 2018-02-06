@@ -25,6 +25,12 @@ import       Data.Boolean.Numbers as BN
 import       Data.Boolean.Bits as BB
 import       System.Hardware.Haskino.Utils
 
+-- | The mode for a pin.
+data PinMode = INPUT
+             | OUTPUT
+             | INPUT_PULLUP
+        deriving (Eq, Show, Enum)
+
 data RemoteRef a where
     RemoteRefB   :: Int -> RemoteRef Bool
     RemoteRefW8  :: Int -> RemoteRef Word8
@@ -51,6 +57,7 @@ data Expr a where
   LitI         :: Int   -> Expr Int
   LitList8     :: [Word8] -> Expr [Word8]
   LitFloat     :: Float -> Expr Float
+  LitPinMode   :: PinMode -> Expr PinMode
   ShowB        :: Expr Bool -> Expr [Word8]
   ShowW8       :: Expr Word8 -> Expr [Word8]
   ShowW16      :: Expr Word16 -> Expr [Word8]
@@ -61,6 +68,7 @@ data Expr a where
   ShowI        :: Expr Int   -> Expr [Word8]
   ShowFloat    :: Expr Float -> Expr Word8 -> Expr [Word8]
   ShowUnit     :: Expr () -> Expr [Word8]
+  ShowPinMode  :: Expr PinMode -> Expr [Word8]
   RefB         :: Int -> Expr Bool
   RefW8        :: Int -> Expr Word8
   RefW16       :: Int -> Expr Word16
@@ -82,6 +90,7 @@ data Expr a where
   RemBindList8 :: Int -> Expr [Word8]
   RemBindFloat :: Int -> Expr Float
   RemBindUnit  :: Int -> Expr ()
+  RemBindPinMode :: Int -> Expr PinMode
   FromIntW8    :: Expr Int -> Expr Word8
   FromIntW16   :: Expr Int -> Expr Word16
   FromIntW32   :: Expr Int -> Expr Word32
@@ -95,6 +104,8 @@ data Expr a where
   ToIntI8      :: Expr Int8  -> Expr Int
   ToIntI16     :: Expr Int16 -> Expr Int
   ToIntI32     :: Expr Int32 -> Expr Int
+  EqPinMode    :: Expr PinMode -> Expr PinMode -> Expr Bool
+  IfPinMode    :: Expr Bool  -> Expr PinMode -> Expr PinMode -> Expr PinMode
   NotB         :: Expr Bool -> Expr Bool
   AndB         :: Expr Bool -> Expr Bool -> Expr Bool
   OrB          :: Expr Bool -> Expr Bool -> Expr Bool
@@ -331,6 +342,18 @@ instance ExprB () where
     {-# INLINE ifBE #-}
     ifBE _ _ _ = LitUnit
 
+instance ExprB PinMode where
+    lit = LitPinMode
+    eval' = evalExprPM
+    remBind = RemBindPinMode
+    showE = ShowPinMode
+    {-# INLINE lessE #-}
+    lessE = true
+    {-# INLINE eqE #-}
+    eqE = (==*)
+    {-# INLINE ifBE #-}
+    ifBE = ifB
+
 instance ExprB Word8 where
     lit = LitW8
     eval' = evalExprW8
@@ -481,6 +504,14 @@ instance B.OrdB (Expr Bool) where
 
 instance B.IfB (Expr Bool) where
   ifB = IfB
+
+type instance BooleanOf (Expr PinMode) = Expr Bool
+
+instance B.EqB (Expr PinMode) where
+  (==*) = EqPinMode
+
+instance B.IfB (Expr PinMode) where
+  ifB = IfPinMode
 
 instance Num (Expr Word8) where
   (+) x y = AddW8 x y
@@ -1192,6 +1223,10 @@ evalExprB v        = evalError v
 evalExprW8 :: Expr Word8 -> Word8
 evalExprW8 (LitW8 v) = v
 evalExprW8 v         = evalError v
+
+evalExprPM :: Expr PinMode -> PinMode
+evalExprPM (LitPinMode v) = v
+evalExprPM v         = evalError v
 
 evalExprW16 :: Expr Word16 -> Word16
 evalExprW16 (LitW16 v) = v
