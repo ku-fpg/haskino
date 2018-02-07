@@ -185,9 +185,7 @@ commProcExpr e = do
     Var v -> do
       inList <- funcInXlatList v
       case inList of
-          Just xe -> do
-            v' <- toId xe
-            return $ Var v'
+          Just xe -> commProcXlat xe e
           Nothing -> return $ Var v
     Lit l -> return $ Lit l
     Type ty -> return $ Type ty
