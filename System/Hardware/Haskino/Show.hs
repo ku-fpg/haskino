@@ -271,7 +271,7 @@ showCodeBlock (Arduino commands) = do
       showProcedure QueryFirmwareE = do
           i <- showDeep0Procedure "QueryFirmwareE"
           return $ RemBindW16 i
-      showProcedure QueryProcessor = showShallow0Procedure "QueryProcessor" UNKNOWN_PROCESSOR
+      showProcedure QueryProcessor = showShallow0Procedure "QueryProcessor" 0
       showProcedure QueryProcessorE = do
           i <- showDeep0Procedure "QueryProcessorE"
           return $ RemBindW8 i

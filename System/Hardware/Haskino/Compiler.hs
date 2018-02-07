@@ -474,7 +474,7 @@ compileProcedure QueryFirmwareE = do
     return $ remBind b
 compileProcedure QueryProcessor = do
     _ <- compileShallowPrimitiveError "queryProcessor"
-    return ATMEGA8
+    return 0
 compileProcedure QueryProcessorE = do
     b <- compileNoExprProcedure Word8Type "queryProcessor"
     return $ remBind b
@@ -2100,6 +2100,7 @@ compileExpr (ShowW32 e) = compileSubExpr "showWord32" e
 compileExpr (RefW32 n) = compileRef n
 compileExpr (RemBindW32 b) = compileBind b
 compileExpr (FromIntW32 e) = compileFromInt "uint32_t" e
+compileExpr (ToIntW32 e) = compileToInt e
 compileExpr (NegW32 e) = compileNeg e
 compileExpr (SignW32 e) = compileSign e
 compileExpr (AddW32 e1 e2) = compileAdd e1 e2

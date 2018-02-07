@@ -248,7 +248,7 @@ packageCodeBlock (Arduino commands) = do
       packProcedure QueryFirmwareE = do
           i <- packDeepProcedure QueryFirmwareE
           return $ RemBindW16 i
-      packProcedure QueryProcessor = packShallowProcedure QueryProcessor UNKNOWN_PROCESSOR
+      packProcedure QueryProcessor = packShallowProcedure QueryProcessor 0
       packProcedure QueryProcessorE = do
           i <- packDeepProcedure QueryProcessorE
           return $ RemBindW8 i

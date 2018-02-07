@@ -67,7 +67,7 @@ data ArduinoConnection = ArduinoConnection {
               , port          :: SerialPort                           -- ^ Serial port we are communicating on
               , firmwareID    :: String                               -- ^ The ID of the board (as identified by the Board itself)
               , deviceChannel :: Chan Response                        -- ^ Incoming messages from the board
-              , processor     :: Processor                            -- ^ Type of processor on board
+              , processor     :: Word8                                -- ^ Type of processor on board
               , listenerTid   :: MVar ThreadId                        -- ^ ThreadId of the listener
               , refIndex      :: MVar Int                             -- ^ Index used for remote references
               }
@@ -150,7 +150,7 @@ data ArduinoPrimitive :: * -> * where
      -- Procedures
      QueryFirmware        :: ArduinoPrimitive Word16                   -- ^ Query the Firmware version installed
      QueryFirmwareE       :: ArduinoPrimitive (Expr Word16)                  -- ^ Query the Firmware version installed
-     QueryProcessor       :: ArduinoPrimitive Processor                -- ^ Query the type of processor on
+     QueryProcessor       :: ArduinoPrimitive Word8                -- ^ Query the type of processor on
      QueryProcessorE      :: ArduinoPrimitive (Expr Word8)
      Micros               :: ArduinoPrimitive Word32
      MicrosE              :: ArduinoPrimitive (Expr Word32)
@@ -791,7 +791,7 @@ queryFirmware = Arduino $ primitive QueryFirmware
 queryFirmwareE :: Arduino (Expr Word16)
 queryFirmwareE = Arduino $ primitive QueryFirmwareE
 
-queryProcessor :: Arduino Processor
+queryProcessor :: Arduino Word8
 queryProcessor = Arduino $ primitive QueryProcessor
 
 queryProcessorE :: Arduino (Expr Word8)
