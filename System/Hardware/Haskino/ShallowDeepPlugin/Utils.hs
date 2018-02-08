@@ -136,6 +136,8 @@ litI16NameTH :: TH.Name
 litI16NameTH           = 'System.Hardware.Haskino.LitI16
 litI32NameTH :: TH.Name
 litI32NameTH           = 'System.Hardware.Haskino.LitI32
+litINameTH :: TH.Name
+litINameTH             = 'System.Hardware.Haskino.LitI
 litL8NameTH :: TH.Name
 litL8NameTH            = 'System.Hardware.Haskino.LitList8
 litFloatNameTH :: TH.Name
@@ -146,7 +148,7 @@ litPinModeNameTH       = 'System.Hardware.Haskino.LitPinMode
 exprClassNames :: [TH.Name]
 exprClassNames = [litUnitNameTH, litBNameTH, litW8NameTH, litW16NameTH,
                   litW32NameTH, litI8NameTH, litI16NameTH, litI32NameTH,
-                  litL8NameTH, litFloatNameTH, litPinModeNameTH]
+                  litINameTH, litL8NameTH, litFloatNameTH, litPinModeNameTH]
 
 isExprClassType :: PassCoreM m => Type -> m Bool
 isExprClassType ty = do
