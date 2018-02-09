@@ -62,6 +62,7 @@ Library
                     , System.Hardware.Haskino.ShallowDeepPlugin.RecurPass
                     , System.Hardware.Haskino.ShallowDeepPlugin.RepAbsFusePass
                     , System.Hardware.Haskino.ShallowDeepPlugin.RepCasePushPass
+                    , System.Hardware.Haskino.ShallowDeepPlugin.RepConstrPushPass
                     , System.Hardware.Haskino.ShallowDeepPlugin.RepPushPass
                     , System.Hardware.Haskino.ShallowDeepPlugin.ReturnsPass
                     , System.Hardware.Haskino.ShallowDeepPlugin.Typechecker
