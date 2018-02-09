@@ -5,17 +5,8 @@
 -- License     :  BSD3
 -- Stability   :  experimental
 --
--- Push rep through case alternatives
--- This pass is used to push rep_ expressions through case alternatives.
--- This will only be used to translate case expressions that match on a
--- type that is not in the ExprB type class of the deep expression langauge,
--- but the result type of the case is of a ExprB type:
--- Its transformation does the following:
---
--- forall (a1 :: ExprB a => a) ... (an :: ExprB a => a)
--- rep (case c of e1 -> a1 ... cn -> an)
---    =
--- case c of e1 -> rep_ a1 ... cn -> rep_ an
+-- Push rep through constructors
+-- This pass TBD.
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -87,29 +78,20 @@ repConstrPushExpr e = do
             if isConstr
             then do
                 let (f, args) = collectArgs e1''
-                liftCoreM $ putMsgS "********************"
-                liftCoreM $ putMsg $ ppr constr
-                liftCoreM $ putMsgS $ show $ length args
                 exprTyCon <- thNameToTyCon exprTyConTH
                 let exprTyConApp = mkTyConApp exprTyCon [cTy]
                 let la = length args
-                case la of
-                    2 -> do 
-                      e2' <- repExpr e2
-                      return $ ((Var constr) :$ (Type exprTyConApp) :$ e2')
-                    _ -> defaultRet
+                    nonTypeArgs = tail args
+                nonTypeArgs' <- mapM repExpr nonTypeArgs
+                return $ mkLets ls $ mkCoreApps (Var constr) ((Type exprTyConApp) : nonTypeArgs)
             else defaultRet
         (Var constr) :$ (Type cTy) -> do
             isConstr <- funcInConstrList constr
             if isConstr
             then do
-                let (f, args) = collectArgs e1''
-                liftCoreM $ putMsgS "********************"
-                liftCoreM $ putMsg $ ppr constr
-                liftCoreM $ putMsgS $ show $ length args
                 exprTyCon <- thNameToTyCon exprTyConTH
                 let exprTyConApp = mkTyConApp exprTyCon [cTy]
-                return $ ((Var constr) :$ (Type exprTyConApp))
+                return $ mkLets ls ((Var constr) :$ (Type exprTyConApp))
             else defaultRet
         _ -> defaultRet
     App e1 e2 -> do
