@@ -99,7 +99,7 @@ packageCommand (SerialEndE p) =
     addCommand SER_CMD_END (packageExpr p)
 packageCommand (SerialWriteE p w) =
     addCommand SER_CMD_WRITE (packageExpr p ++ packageExpr w)
-packageCommand (SerialWriteE p ws) =
+packageCommand (SerialWriteListE p ws) =
     addCommand SER_CMD_WRITE_LIST (packageExpr p ++ packageExpr ws)
 packageCommand (StepperSetSpeedE st sp) =
     addCommand STEP_CMD_SET_SPEED (packageExpr st ++ packageExpr sp)

@@ -452,14 +452,14 @@ main = do
     quickCheck (prop_arith conn refW8)
     print "Bind Tests:"
     quickCheck (prop_bind conn refW8)
+{-
     print "IfThenElse Tests:"
     quickCheck (prop_ifthenelse conn)
-{-
     print "IfThenElseEitherW8 Tests:"
     quickCheck (prop_ifthenelseeitherw8 conn)
     print "IfThenElseEitherBool Tests:"
     quickCheck (prop_ifthenelseeitherb conn)
--}
     print "While Tests:"
     quickCheck (prop_while conn)
     closeArduino conn
+-}
