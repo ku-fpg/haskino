@@ -482,6 +482,8 @@ instance KnownResult ArduinoPrimitive where
   knownResult (AnalogWriteE {}         ) = Just LitUnit
   knownResult (ToneE {}                ) = Just LitUnit
   knownResult (NoToneE {}              ) = Just LitUnit
+  knownResult (I2CConfigE {}           ) = Just LitUnit
+  knownResult (I2CWriteE {}            ) = Just LitUnit
   knownResult (SerialBeginE {}         ) = Just LitUnit
   knownResult (SerialEndE {}           ) = Just LitUnit
   knownResult (SerialWriteE {}         ) = Just LitUnit

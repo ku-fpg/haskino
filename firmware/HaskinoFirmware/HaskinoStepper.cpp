@@ -47,9 +47,9 @@ static bool handle2Pin(int size, const byte *msg, CONTEXT *context)
     byte stepperReply[3];
 
     newStepper = new Stepper(steps, pin1No, pin2No);
-    stepperReply[0] = EXPR_BOOL;
+    stepperReply[0] = EXPR_WORD8;
     stepperReply[1] = EXPR_LIT;
-    stepperReply[1] = nextStepper;
+    stepperReply[2] = nextStepper;
 
     steppers[nextStepper++] = newStepper;
     sendReply(sizeof(stepperReply), STEP_RESP_2PIN, 
@@ -70,9 +70,9 @@ static bool handle4Pin(int size, const byte *msg, CONTEXT *context)
     byte stepperReply[3];
 
     newStepper = new Stepper(steps, pin1No, pin2No, pin3No, pin4No);
-    stepperReply[0] = EXPR_BOOL;
+    stepperReply[0] = EXPR_WORD8;
     stepperReply[1] = EXPR_LIT;
-    stepperReply[1] = nextStepper;
+    stepperReply[2] = nextStepper;
 
     steppers[nextStepper++] = newStepper;
     sendReply(sizeof(stepperReply), STEP_RESP_4PIN, 

@@ -83,7 +83,7 @@ repConstrPushExpr e = do
                 let la = length args
                     nonTypeArgs = tail args
                 nonTypeArgs' <- mapM repExpr nonTypeArgs
-                return $ mkLets ls $ mkCoreApps (Var constr) ((Type exprTyConApp) : nonTypeArgs)
+                return $ mkLets ls $ mkCoreApps (Var constr) ((Type exprTyConApp) : nonTypeArgs')
             else defaultRet
         (Var constr) :$ (Type cTy) -> do
             isConstr <- funcInConstrList constr
