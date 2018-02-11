@@ -38,6 +38,7 @@ data CompileState = CompileState {level :: Int
                      , tasksDone        :: [String]
                      , errors           :: [String]
                      , iterBinds        :: [(Int, Int)]
+                     , ifEitherComp     :: Integer
                      }
 
 data CompileType =
@@ -115,7 +116,7 @@ compileProgramE p f = do
     mapM_ putStrLn $ errors st
   where
     (_, st) = runState compileTasks
-                (CompileState 0 False 0 0 "" "" "" "" [] [] [True] [(p, mainEntry, False)] [] [] [])
+                (CompileState 0 False 0 0 "" "" "" "" [] [] [True] [(p, mainEntry, False)] [] [] [] 0)
     prog = "#include \"HaskinoRuntime.h\"\n\n" ++
            forwards st ++ "\n" ++
            "void setup()\n" ++
@@ -1808,7 +1809,8 @@ compileIfThenElseProcedure t e cb1 cb2 = do
 
 compileIfThenElseEitherProcedure :: (ExprB a, ExprB b) => CompileType -> CompileType -> Expr Bool -> Arduino (ExprEither a b) -> Arduino (ExprEither a b) -> State CompileState (ExprEither a b)
 compileIfThenElseEitherProcedure t1 t2 e cb1 cb2 = do
-    s <- get
+    s <- get    
+    put s {ifEitherComp = 1 + ifEitherComp s}
     let ibs = head $ iterBinds s
     _ <- compileLine $ "if (" ++ compileExpr e ++ ")"
     r1 <- compileCodeBlock True "" cb1
@@ -1825,7 +1827,12 @@ compileIfThenElseEitherProcedure t1 t2 e cb1 cb2 = do
     _ <- compileLineIndent "}"
     _ <- compileLine "else"
     r2 <- compileCodeBlock True "" cb2
-    _ <- case r2 of
+    s' <- get
+    -- Check if there is another ifThenElseEither block inside of this one.
+    -- If so, the else effects should only be compiled in the innermost ifThenElseEither
+    if ifEitherComp s' == ifEitherComp s + 1
+    then do
+        case r2 of
             ExprLeft a -> do
                 if (t1 == UnitType) then return LitUnit
                 else if t1 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show (fst ibs) ++ ", " ++ compileExpr a ++ ");"
@@ -1835,6 +1842,7 @@ compileIfThenElseEitherProcedure t1 t2 e cb1 cb2 = do
                      else if t2 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show (snd ibs) ++ ", " ++ compileExpr b ++ ");"
                      else compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ compileExpr b ++ ";"
                 compileLineIndent "break;"
+    else return LitUnit
     _ <- compileLineIndent "}"
     return $ r2
 
@@ -1846,10 +1854,14 @@ compileIterateProcedure ta tb b1 b1e b2 b2e iv bf = do
     put s {iterBinds = (b1, b2):iterBinds s}
     _ <- if ta == UnitType
          then return LitUnit
-         else compileAllocBind $ compileTypeToString ta ++ " " ++ bindName ++ show b1 ++ ";"
+         else if ta == List8Type
+              then compileAllocBind $ compileTypeToString ta ++ " " ++ bindName ++ show b1 ++ " = NULL;"
+              else compileAllocBind $ compileTypeToString ta ++ " " ++ bindName ++ show b1 ++ ";"
     _ <- if tb == UnitType
          then return LitUnit
-         else compileAllocBind $ compileTypeToString tb ++ " " ++ bindName ++ show b2 ++ ";"
+         else if tb == List8Type
+              then compileAllocBind $ compileTypeToString tb ++ " " ++ bindName ++ show b2 ++ " = NULL;"
+              else compileAllocBind $ compileTypeToString tb ++ " " ++ bindName ++ show b2 ++ ";"
     _ <- if ta == List8Type
          then compileLine $ "listAssign(&" ++ bindName ++ show b1 ++ ", " ++ compileExpr iv ++ ");"
          else if ta == UnitType

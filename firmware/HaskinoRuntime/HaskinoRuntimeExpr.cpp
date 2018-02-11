@@ -276,7 +276,7 @@ uint8_t *list8Reverse(uint8_t *l)
         {
         newList[1] = len;
         for (i=0; i<len; i++)
-            newList[i] = l[len - i - 1];
+            newList[i+2] = l[len - i + 1];
         }
 
     listFree(l);
