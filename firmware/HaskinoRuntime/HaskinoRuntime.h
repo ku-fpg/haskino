@@ -25,6 +25,7 @@
 #include "HaskinoRuntimeDebug.h"
 #include "HaskinoRuntimeMem.h"
 #include "HaskinoRuntimeExpr.h"
+#include "HaskinoRuntimeRefs.h"
 
 #endif /* HaskinoRuntimeH */
 

@@ -1226,11 +1226,11 @@ packageProcedure p = do
     packageProcedure' (AnalogReadE pe) ib' = addCommand ALG_CMD_READ_PIN ((fromIntegral ib') : (packageExpr pe))
     packageProcedure' (I2CRead sa cnt) ib' = addCommand I2C_CMD_READ ((fromIntegral ib') : ((packageExpr $ lit sa) ++ (packageExpr $ lit cnt)))
     packageProcedure' (I2CReadE sae cnte) ib' = addCommand I2C_CMD_READ ((fromIntegral ib') : ((packageExpr sae) ++ (packageExpr cnte)))
-    packageProcedure' (SerialAvailable p) ib' = addCommand SER_CMD_AVAIL ((fromIntegral ib') : (packageExpr $ lit p))
+    packageProcedure' (SerialAvailable p') ib' = addCommand SER_CMD_AVAIL ((fromIntegral ib') : (packageExpr $ lit p'))
     packageProcedure' (SerialAvailableE pe) ib' = addCommand SER_CMD_AVAIL ((fromIntegral ib') : (packageExpr pe))
-    packageProcedure' (SerialRead p) ib' = addCommand SER_CMD_READ ((fromIntegral ib') : (packageExpr $ lit p))
+    packageProcedure' (SerialRead p') ib' = addCommand SER_CMD_READ ((fromIntegral ib') : (packageExpr $ lit p'))
     packageProcedure' (SerialReadE pe) ib' = addCommand SER_CMD_READ ((fromIntegral ib') : (packageExpr pe))
-    packageProcedure' (SerialReadList p) ib' = addCommand SER_CMD_READ_LIST ((fromIntegral ib') : (packageExpr $ lit p))
+    packageProcedure' (SerialReadList p') ib' = addCommand SER_CMD_READ_LIST ((fromIntegral ib') : (packageExpr $ lit p'))
     packageProcedure' (SerialReadListE pe) ib' = addCommand SER_CMD_READ_LIST ((fromIntegral ib') : (packageExpr pe))
     packageProcedure' (Stepper2Pin s p1 p2) ib' = addCommand STEP_CMD_2PIN ((fromIntegral ib') : ((packageExpr $ lit s) ++ (packageExpr $ lit p1) ++ (packageExpr $ lit p2)))
     packageProcedure' (Stepper2PinE s p1 p2) ib' = addCommand STEP_CMD_2PIN ((fromIntegral ib') : ((packageExpr s) ++ (packageExpr p1) ++ (packageExpr p2)))
@@ -1650,6 +1650,14 @@ packageExpr (EqL8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_EQ) e1 e2
 packageExpr (LessL8 e1 e2) = packageTwoSubExpr (exprLCmdVal EXPRL_LESS) e1 e2
 packageExpr (EqFloat e1 e2) = packageTwoSubExpr (exprFCmdVal EXPRF_EQ) e1 e2
 packageExpr (LessFloat e1 e2) = packageTwoSubExpr (exprFCmdVal EXPRF_LESS) e1 e2
+packageExpr (LitPinMode m) = (exprCmdVal EXPR_WORD8 EXPR_LIT) ++ [case m of
+                                                                    INPUT         -> 0
+                                                                    OUTPUT        -> 1
+                                                                    INPUT_PULLUP  -> 2 ]
+packageExpr (EqPinMode e1 e2) = packageTwoSubExpr (exprCmdVal EXPR_WORD8 EXPR_EQ) e1 e2
+packageExpr (ShowPinMode e) = packageSubExpr (exprCmdVal EXPR_WORD8 EXPR_SHOW) e
+packageExpr (IfPinMode e1 e2 e3) = packageIfBSubExpr (exprCmdVal EXPR_WORD8 EXPR_IF) e1 e2 e3
+packageExpr (RemBindPinMode b) = (exprCmdVal EXPR_WORD8 EXPR_BIND) ++ [fromIntegral b]
 packageExpr (LitW8 w) = (exprCmdVal EXPR_WORD8 EXPR_LIT) ++ [w]
 packageExpr (ShowW8 e) = packageSubExpr (exprCmdVal EXPR_WORD8 EXPR_SHOW) e
 packageExpr (RefW8 n) = packageRef n (exprCmdVal EXPR_WORD8 EXPR_REF)
