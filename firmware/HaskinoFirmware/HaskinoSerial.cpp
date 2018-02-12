@@ -109,7 +109,7 @@ static bool handleRead(int size, const byte *msg, CONTEXT *context)
     readReply[1] = EXPR_LIT;
     memcpy(&readReply[2], &data, sizeof(data));
 
-    sendReply(sizeof(readReply), SER_RESP_READ, readReply, context, bind);
+    sendReply(2 + sizeof(readReply), SER_RESP_READ, readReply, context, bind);
 
     return false;
     }

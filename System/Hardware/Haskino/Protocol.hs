@@ -1948,15 +1948,15 @@ unpackageResponse (cmdWord:args)
       (BS_RESP_DEBUG, [])                    -> DebugResp
       (BS_RESP_VERSION, [majV, minV])        -> Firmware (bytesToWord16 (majV,minV))
       (BS_RESP_TYPE, [p])                    -> ProcessorType p
-      (BS_RESP_MICROS, [m0,m1,m2,m3])        -> MicrosReply (bytesToWord32 (m0,m1,m2,m3))
-      (BS_RESP_MILLIS, [m0,m1,m2,m3])        -> MillisReply (bytesToWord32 (m0,m1,m2,m3))
+      (BS_RESP_MICROS, [_t,_l,m0,m1,m2,m3])  -> MicrosReply (bytesToWord32 (m0,m1,m2,m3))
+      (BS_RESP_MILLIS, [_t,_l,m0,m1,m2,m3])  -> MillisReply (bytesToWord32 (m0,m1,m2,m3))
       (BS_RESP_STRING, rest)                 -> StringMessage (getString rest)
       (DIG_RESP_READ_PIN, [_t,_l,b])         -> DigitalReply b
       (DIG_RESP_READ_PORT, [_t,_l,b])        -> DigitalPortReply b
       (ALG_RESP_READ_PIN, [_t,_l,bl,bh])     -> AnalogReply (bytesToWord16 (bl,bh))
       (I2C_RESP_READ, _:_:_:xs)              -> I2CReply xs
-      (SER_RESP_AVAIL, [w0])                 -> SerialAvailableReply w0
-      (SER_RESP_READ, [i0,i1,i2,i3])         -> SerialReadReply (bytesToInt32 (i0,i1,i2,i3))
+      (SER_RESP_AVAIL, [_t, _l, w0])         -> SerialAvailableReply w0
+      (SER_RESP_READ, [_t,_l,i0,i1,i2,i3])   -> SerialReadReply (bytesToInt32 (i0,i1,i2,i3))
       (SER_RESP_READ_LIST, _:_:_:xs)         -> SerialReadListReply xs
       (STEP_RESP_2PIN, [_t,_l,st])           -> Stepper2PinReply st
       (STEP_RESP_4PIN, [_t,_l,st])           -> Stepper4PinReply st

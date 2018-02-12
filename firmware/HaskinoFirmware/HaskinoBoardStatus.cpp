@@ -96,7 +96,7 @@ static bool handleRequestMicros(int size, const byte *msg, CONTEXT *context)
     ms = micros();
     memcpy(&microReply[2], &ms, sizeof(ms));
 
-    sendReply(sizeof(microReply), BS_RESP_MICROS, 
+    sendReply(2 + sizeof(microReply), BS_RESP_MICROS, 
               (byte *) &microReply, context, bind);
     return false;
     }
@@ -112,7 +112,7 @@ static bool handleRequestMillis(int size, const byte *msg, CONTEXT *context)
     ms = millis();
     memcpy(&milliReply[2], &ms, sizeof(ms));
 
-    sendReply(sizeof(uint32_t), BS_RESP_MILLIS, 
+    sendReply(2 + sizeof(uint32_t), BS_RESP_MILLIS, 
               (byte *) &milliReply, context, bind);
     return false;
     }
