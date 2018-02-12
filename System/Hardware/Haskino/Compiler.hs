@@ -257,7 +257,7 @@ compilePrimitive prim = case knownResult prim of
                           Nothing -> compileProcedure prim
 
 compileCommand :: ArduinoPrimitive a -> State CompileState a
-compileCommand SystemResetE = return LitUnit
+compileCommand SystemResetE = compileNoExprCommand "soft_restart"
 compileCommand (SetPinModeE p m) = compile2ExprCommand "pinMode" p m
 compileCommand (DigitalWriteE p b) = compile2ExprCommand "digitalWrite" p b
 compileCommand (DigitalPortWriteE p b m) =
