@@ -155,6 +155,7 @@ compileTask t name int = do
     _ <- compileLine $ "void " ++ name ++ "()"
     _ <- compileForward $ "void " ++ name ++ "();"
     _ <- compileCodeBlock True "" t
+    compileInReleases
     _ <- if not int
          then compileLineIndent "taskComplete();"
          else return LitUnit
@@ -1816,6 +1817,7 @@ compileIfThenElseProcedure t e cb1 cb2 = do
          else if t == List8Type
               then compileLineIndent $ "listAssign(&" ++ bindName ++ show b ++ ", " ++ compileExpr r1 ++ ");"
               else compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r1 ++ ";"
+    _ <- compileInReleases
     _ <- compileLineIndent "}"
     _ <- compileLine "else"
     r2 <- compileCodeBlock True "" cb2
@@ -1824,6 +1826,7 @@ compileIfThenElseProcedure t e cb1 cb2 = do
          else if t == List8Type
               then compileLineIndent $ "listAssign(&" ++ bindName ++ show b ++ ", " ++ compileExpr r2 ++ ");"
               else compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r2 ++ ";"
+    _ <- compileInReleases
     _ <- compileLineIndent "}"
     return $ remBind b
 
@@ -1839,10 +1842,17 @@ compileIfThenElseEitherProcedure t1 t2 e cb1 cb2 = do
                 if t1 == UnitType then return LitUnit
                 else if t1 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show (fst ibs) ++ ", " ++ compileExpr a ++ ");"
                 else compileLineIndent $ bindName ++ show (fst ibs) ++ " = " ++ compileExpr a ++ ";"
+                --sr <- get
+                --put sr {cmds = (cmds sr) ++ (releases sr)}
+                --return LitUnit
+                compileInReleases
             ExprRight b -> do
                 _ <- if t2 == UnitType then return LitUnit
                      else if t2 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show (snd ibs) ++ ", " ++ compileExpr b ++ ");"
                      else compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ compileExpr b ++ ";"
+                --sr' <- get
+                --put sr' {cmds = (cmds sr') ++ (releases sr')}
+                compileInReleases
                 compileLineIndent "break;"
     _ <- compileLineIndent "}"
     _ <- compileLine "else"
@@ -1857,10 +1867,17 @@ compileIfThenElseEitherProcedure t1 t2 e cb1 cb2 = do
                 if (t1 == UnitType) then return LitUnit
                 else if t1 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show (fst ibs) ++ ", " ++ compileExpr a ++ ");"
                 else compileLineIndent $ bindName ++ show (fst ibs) ++ " = " ++ compileExpr a ++ ";"
+                --sr'' <- get
+                --put sr'' {cmds = (cmds sr'') ++ (releases sr'')}
+                --return LitUnit
+                compileInReleases
             ExprRight b -> do
                 _ <- if (t2 == UnitType) then return LitUnit
                      else if t2 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show (snd ibs) ++ ", " ++ compileExpr b ++ ");"
                      else compileLineIndent $ bindName ++ show (snd ibs) ++ " = " ++ compileExpr b ++ ";"
+                --sr''' <- get
+                --put sr''' {cmds = (cmds sr''') ++ (releases sr''')}
+                compileInReleases
                 compileLineIndent "break;"
     else return LitUnit
     _ <- compileLineIndent "}"
@@ -1897,6 +1914,14 @@ compileIterateProcedure ta tb b1 b1e b2 b2e iv bf = do
     put s' {iterBinds = tail $ iterBinds s'}
     return b2e
 
+compileInReleases :: State CompileState (Expr ())
+compileInReleases = do
+    s <- get
+    put s {releaseList = tail $ releaseList s,
+           releases = head $ releaseList s,
+           cmds = (cmds s) ++ (releases s)}
+    return LitUnit
+
 compileCodeBlock :: Bool -> String -> Arduino a -> State CompileState a
 compileCodeBlock bInside prelude (Arduino commands) = do
     s <- get
@@ -1912,13 +1937,11 @@ compileCodeBlock bInside prelude (Arduino commands) = do
     s' <- get
     if bInside then
       put s' {bindList = tail $ bindList s',
-             releaseList = tail $ releaseList s',
              cmdList = tail $ cmdList s',
              binds = head $ bindList s',
-             releases = head $ releaseList s',
              bindsInside = tail (bindsInside s'),
              cmds = (head $ cmdList s') ++ (indent $ level s') ++ "{\n" ++
-                    body (binds s') (cmds s') (releases s'),
+                    body (binds s') (cmds s'),
              level = level s' - 1 }
     else
       put s' {bindList = tail $ bindList s',
@@ -1934,11 +1957,9 @@ compileCodeBlock bInside prelude (Arduino commands) = do
              level = level s' - 1 }
     return r
   where
-      body :: String -> String -> String -> String
-      body [] cs [] = cs
-      body [] cs rs = cs ++ "\n" ++ rs
-      body bs cs [] = bs ++ "\n" ++ cs
-      body bs cs rs = bs ++ "\n" ++ cs ++ "\n" ++ rs
+      body :: String -> String -> String
+      body [] cs = cs
+      body bs cs = bs ++ "\n" ++ cs
 
       compileMonad :: RemoteMonad ArduinoPrimitive a ->
                       State CompileState a
