@@ -29,10 +29,12 @@ data CompileState = CompileState {level :: Int
                      , ib               :: Int
                      , cmds             :: String
                      , binds            :: String
+                     , releases         :: String
                      , refs             :: String
                      , forwards         :: String
                      , cmdList          :: [String]
                      , bindList         :: [String]
+                     , releaseList      :: [String]
                      , bindsInside      :: [Bool]
                      , tasksToDo        :: [(Arduino (Expr ()), String, Bool)]
                      , tasksDone        :: [String]
@@ -116,7 +118,7 @@ compileProgramE p f = do
     mapM_ putStrLn $ errors st
   where
     (_, st) = runState compileTasks
-                (CompileState 0 False 0 0 "" "" "" "" [] [] [True] [(p, mainEntry, False)] [] [] [] 0)
+                (CompileState 0 False 0 0 "" "" "" "" "" [] [] [] [True] [(p, mainEntry, False)] [] [] [] 0)
     prog = "#include \"HaskinoRuntime.h\"\n\n" ++
            forwards st ++ "\n" ++
            "void setup()\n" ++
@@ -149,7 +151,7 @@ compileTask :: Arduino (Expr ()) -> String -> Bool -> State CompileState ()
 compileTask t name int = do
     s <- get
     put s {level = 0, intTask = int, ib = 0, cmds = "",
-           binds = "", cmdList = [], bindList = []}
+           binds = "", releases = "", cmdList = [], bindList = [], releaseList = []}
     _ <- compileLine $ "void " ++ name ++ "()"
     _ <- compileForward $ "void " ++ name ++ "();"
     _ <- compileCodeBlock True "" t
@@ -184,6 +186,14 @@ compileAllocBind s = do
     st <- get
     let ilvl = if head $ bindsInside st then level st else (level st) - 1
     put st { binds = binds st ++ (indent ilvl) ++  s ++ "\n"}
+    return LitUnit
+
+compileRelease :: String -> State CompileState (Expr ())
+compileRelease s = do
+    st <- get
+    -- let ilvl = if head $ bindsInside st then level st else (level st) - 1
+    let ilvl = level st
+    put st { releases = releases st ++ (indent ilvl) ++  s ++ "\n"}
     return LitUnit
 
 compileAllocRef :: String -> State CompileState (Expr ())
@@ -376,6 +386,7 @@ compileSimpleListProcedure p = do
     _ <- compileLine $ "listAssign(&" ++ bindName ++ show b ++ ", " ++ p ++ ");"
     _ <- compileAllocBind $ compileTypeToString List8Type ++ " " ++
                        bindName ++ show b ++ " = NULL;"
+    _ <- compileRelease $ "listRelease(&" ++ bindName ++ show b ++ ");"
     return b
 
 compileNoExprProcedure :: CompileType -> String -> State CompileState Int
@@ -464,6 +475,7 @@ compileReadListRef ix' = do
                   refName ++ show ix' ++ ");"
     _ <- compileAllocBind $ compileTypeToString List8Type ++ " " ++
                        bindName ++ show b ++ " = NULL;"
+    _ <- compileRelease $ "listRelease(&" ++ bindName ++ show b ++ ");"
     return b
 
 compileProcedure :: ArduinoPrimitive a -> State CompileState a
@@ -1792,18 +1804,26 @@ compileIfThenElseProcedure t e cb1 cb2 = do
     put s {ib = b + 1}
     _ <- if t == UnitType
          then return LitUnit
-         else compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
+         else if t == List8Type
+              then do
+                  _ <- compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ " = NULL;"
+                  compileRelease $ "listRelease(&" ++ bindName ++ show b ++ ");"
+              else compileAllocBind $ compileTypeToString t ++ " " ++ bindName ++ show b ++ ";"
     _ <- compileLine $ "if (" ++ compileExpr e ++ ")"
     r1 <- compileCodeBlock True "" cb1
     _ <- if t == UnitType
          then return LitUnit
-         else compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r1 ++ ";"
+         else if t == List8Type
+              then compileLineIndent $ "listAssign(&" ++ bindName ++ show b ++ ", " ++ compileExpr r1 ++ ");"
+              else compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r1 ++ ";"
     _ <- compileLineIndent "}"
     _ <- compileLine "else"
     r2 <- compileCodeBlock True "" cb2
     _ <- if t == UnitType
          then return LitUnit
-         else compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r2 ++ ";"
+         else if t == List8Type
+              then compileLineIndent $ "listAssign(&" ++ bindName ++ show b ++ ", " ++ compileExpr r2 ++ ");"
+              else compileLineIndent $ bindName ++ show b ++ " = " ++ compileExpr r2 ++ ";"
     _ <- compileLineIndent "}"
     return $ remBind b
 
@@ -1855,12 +1875,16 @@ compileIterateProcedure ta tb b1 b1e b2 b2e iv bf = do
     _ <- if ta == UnitType
          then return LitUnit
          else if ta == List8Type
-              then compileAllocBind $ compileTypeToString ta ++ " " ++ bindName ++ show b1 ++ " = NULL;"
+              then do
+                  _ <- compileAllocBind $ compileTypeToString ta ++ " " ++ bindName ++ show b1 ++ " = NULL;"
+                  compileRelease $ "listRelease(&" ++ bindName ++ show b1 ++ ");"
               else compileAllocBind $ compileTypeToString ta ++ " " ++ bindName ++ show b1 ++ ";"
     _ <- if tb == UnitType
          then return LitUnit
          else if tb == List8Type
-              then compileAllocBind $ compileTypeToString tb ++ " " ++ bindName ++ show b2 ++ " = NULL;"
+              then do
+                  _ <- compileAllocBind $ compileTypeToString tb ++ " " ++ bindName ++ show b2 ++ " = NULL;"
+                  compileRelease $ "listRelease(&" ++ bindName ++ show b2 ++ ");"
               else compileAllocBind $ compileTypeToString tb ++ " " ++ bindName ++ show b2 ++ ";"
     _ <- if ta == List8Type
          then compileLine $ "listAssign(&" ++ bindName ++ show b1 ++ ", " ++ compileExpr iv ++ ");"
@@ -1877,8 +1901,10 @@ compileCodeBlock :: Bool -> String -> Arduino a -> State CompileState a
 compileCodeBlock bInside prelude (Arduino commands) = do
     s <- get
     put s {bindList = (binds s) : (bindList s),
+           releaseList = (releases s) : (releaseList s),
            cmdList = (cmds s) : (cmdList s),
            binds = "",
+           releases = "",
            bindsInside = bInside : (bindsInside s),
            cmds = "",
            level = level s + 1 }
@@ -1886,27 +1912,33 @@ compileCodeBlock bInside prelude (Arduino commands) = do
     s' <- get
     if bInside then
       put s' {bindList = tail $ bindList s',
+             releaseList = tail $ releaseList s',
              cmdList = tail $ cmdList s',
              binds = head $ bindList s',
+             releases = head $ releaseList s',
              bindsInside = tail (bindsInside s'),
              cmds = (head $ cmdList s') ++ (indent $ level s') ++ "{\n" ++
-                    body (binds s') (cmds s'),
+                    body (binds s') (cmds s') (releases s'),
              level = level s' - 1 }
     else
       put s' {bindList = tail $ bindList s',
+             releaseList = tail $ releaseList s',
              cmdList = tail $ cmdList s',
              binds = head $ bindList s',
+             releases = head $ releaseList s',
              bindsInside = tail (bindsInside s'),
              cmds = (head $ cmdList s') ++
              binds s' ++
              (indent $ (level s') - 1) ++ prelude ++
-             (indent $ level s') ++ "{\n" ++ (cmds s'),
+             (indent $ level s') ++ "{\n" ++ (cmds s') ++ (releases s'),
              level = level s' - 1 }
     return r
   where
-      body :: String -> String -> String
-      body [] cs = cs
-      body bs cs = bs ++ "\n" ++ cs
+      body :: String -> String -> String -> String
+      body [] cs [] = cs
+      body [] cs rs = cs ++ "\n" ++ rs
+      body bs cs [] = bs ++ "\n" ++ cs
+      body bs cs rs = bs ++ "\n" ++ cs ++ "\n" ++ rs
 
       compileMonad :: RemoteMonad ArduinoPrimitive a ->
                       State CompileState a
