@@ -26,6 +26,7 @@ byte *showFloat(byte *f, uint16_t w);
 // List functions
 extern byte emptyList[];
 void listAssign(byte **v, const byte *l);
+void listRelease(byte **v);
 bool list8Less(byte *l1, byte *l2);
 bool list8Equal(byte *l1, byte *l2);
 uint8_t list8Elem(uint8_t *l, uint8_t e);

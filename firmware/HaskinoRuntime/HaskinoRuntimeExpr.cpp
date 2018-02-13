@@ -184,6 +184,21 @@ void listAssign(byte **v, const byte *l)
     *v = (byte *) l;
     }
 
+void listRelease(byte **v)
+    {
+    byte *currList = *v;
+
+    if (currList != NULL && currList[0] != 0 && currList[0] != LITERAL_USE_COUNT)
+        {
+        currList[0] = currList[0] - 1;
+        if (currList[0] == 0)
+            {
+            listFree(currList);
+            *v = NULL;
+            }
+        }
+    }
+
 bool list8Less(byte *l1, byte *l2)
     {
     bool val;
@@ -236,15 +251,23 @@ bool list8Equal(byte *l1, byte *l2)
 
 uint8_t list8Elem(uint8_t *l, uint8_t e)
     {
+    uint8_t elem;
+
     if (e < l[1])
-        return l[2+e];
+        elem =  l[2+e];
     else // ToDo: handle out of bound index
-        return 0;
+        elem = 0;
+
+    listFree(l);
+    return elem;
     }
 
 uint8_t list8Len(uint8_t *l)
     {
-    return l[1];
+    uint8_t len = l[1];
+
+    listFree(l);
+    return len;
     }
 
 uint8_t *list8Cons(uint8_t w, uint8_t *l)
