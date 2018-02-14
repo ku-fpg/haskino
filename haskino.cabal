@@ -59,6 +59,7 @@ Library
                     , System.Hardware.Haskino.ShallowDeepPlugin.CommProcPass
                     , System.Hardware.Haskino.ShallowDeepPlugin.CondPass
                     , System.Hardware.Haskino.ShallowDeepPlugin.CoreShow
+                    , System.Hardware.Haskino.ShallowDeepPlugin.MutRecurPass
                     , System.Hardware.Haskino.ShallowDeepPlugin.RecurPass
                     , System.Hardware.Haskino.ShallowDeepPlugin.RepAbsFusePass
                     , System.Hardware.Haskino.ShallowDeepPlugin.RepCasePushPass

@@ -9,10 +9,11 @@
 -------------------------------------------------------------------------------
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
-module System.Hardware.Haskino.ShallowDeepPlugin.RecurPass (recurPass) where
+module System.Hardware.Haskino.ShallowDeepPlugin.MutRecurPass (mutRecurPass) where
 
 import Control.Monad.State
 import CoreMonad
+import Data.List
 import GhcPlugins
 
 import System.Hardware.Haskino.ShallowDeepPlugin.Utils
@@ -31,29 +32,35 @@ instance PassCoreM BindM where
     liftCoreM m = BindM $ lift m
     getModGuts = gets pluginModGuts
 
-
-recurPass :: ModGuts -> CoreM ModGuts
-recurPass guts = do
-    bindsL' <- (\x -> fst <$> (runStateT (runBindM $ (mapM recurBind) x) (BindEnv guts []))) (mg_binds guts)
+mutRecurPass :: ModGuts -> CoreM ModGuts
+mutRecurPass guts = do
+    bindsL' <- (\x -> fst <$> (runStateT (runBindM $ (mapM mutRecurBind) x) (BindEnv guts []))) (mg_binds guts)
     return (guts { mg_binds = concat bindsL' })
 
-recurBind :: CoreBind -> BindM [CoreBind]
-recurBind (NonRec b e) = do
-    e' <- recurSubExpr e
+mutRecurBind :: CoreBind -> BindM [CoreBind]
+mutRecurBind (NonRec b e) = do
+    e' <- mutRecurSubExpr e
     return [NonRec b e']
-recurBind (Rec bs) = do
-    -- Only handle self recursive here, handle multiple recursion in seperate pass.
-    if (length bs == 1) -- No not here, need to recurse inside first!!
+mutRecurBind (Rec bs) = do
+    -- Only handle Mut recursive here, handle multiple recursion in seperate pass.
+    if (length bs /= 1)  -- But need to check recursively inside other binds.
     then do
-        (nonRec, bs') <- recurBind' bs
+        let (ids, es) = unzip bs
+            esTypes  = map exprType es
+            eqExpr   = length (nubBy eqType esTypes) == 1
+        liftCoreM $ putMsgS "************"
+        liftCoreM $ putMsg $ ppr ids
+        liftCoreM $ putMsg $ ppr esTypes
+        liftCoreM $ putMsg $ ppr eqExpr
+        (nonRec, bs') <- mutRecurBind' bs
         return $ nonRec ++ [Rec bs']
-    else return [Rec bs]
+    else return $ [Rec bs]
 
-recurBind' :: [(Id, CoreExpr)] -> BindM ([CoreBind],[(Id, CoreExpr)])
-recurBind' [] = return ([],[])
-recurBind' ((b, e) : bs) = do
+mutRecurBind' :: [(Id, CoreExpr)] -> BindM ([CoreBind],[(Id, CoreExpr)])
+mutRecurBind' [] = return ([],[])
+mutRecurBind' ((b, e) : bs) = do
     let defaultRet = do
-          (nonrec, bs') <- recurBind' bs
+          (nonrec, bs') <- mutRecurBind' bs
           return $ (nonrec, (b, e) : bs')
     s <- get
     put s {funcId = [b]}
@@ -78,7 +85,7 @@ recurBind' ((b, e) : bs) = do
                 put s' {funcId = [b]}
 
                 let (lbs, e') = collectBinders e
-                e'' <- recurSubExpr e'
+                e'' <- mutRecurSubExpr e'
                 let arg = head lbs
 
                 -- Build the step body of the While
@@ -96,7 +103,7 @@ recurBind' ((b, e) : bs) = do
                 let nonrecBind = NonRec b (mkLams lbs iterateExpr)
 
                 -- Recursively call for the other binds in the array
-                (nonrecs, bs') <- recurBind' bs
+                (nonrecs, bs') <- mutRecurBind' bs
                 return $ (nonrecBind : nonrecs, bs')
             _ -> defaultRet
         else if length argTys == 0 && retTyCon == monadTyCon && length retTyArgs == 1
@@ -134,7 +141,7 @@ recurBind' ((b, e) : bs) = do
             let wrapperBind = NonRec b wrapperB
 
             -- Recursively call for the other binds in the array
-            (nonrecs, bs') <- recurBind' bs
+            (nonrecs, bs') <- mutRecurBind' bs
             return $ ([nonrecBind, wrapperBind] ++ nonrecs, bs')
         else if retTyCon == monadTyCon
         then error $ "*** Haskiono RecurPass: " ++ getOccString b ++ ": Unable to translate recursive function with\ngreater than one arguments"
@@ -278,56 +285,56 @@ changeVarExprAlts f t ((ac, b, a) : as) = do
   bs' <- changeVarExprAlts f t as
   return $ (ac, b, a') : bs'
 
-recurSubExpr :: CoreExpr -> BindM CoreExpr
-recurSubExpr e = do
+mutRecurSubExpr :: CoreExpr -> BindM CoreExpr
+mutRecurSubExpr e = do
   case e of
     Var _ -> return e
     Lit l -> return $ Lit l
     Type ty -> return $ Type ty
     Coercion co -> return $ Coercion co
     App e1 e2 -> do
-      e1' <- recurSubExpr e1
-      e2' <- recurSubExpr e2
+      e1' <- mutRecurSubExpr e1
+      e2' <- mutRecurSubExpr e2
       return $ App e1' e2'
     Lam tb el -> do
-      e' <- recurSubExpr el
+      e' <- mutRecurSubExpr el
       return $ Lam tb e'
     Let bind body -> do
       case bind of
         (NonRec v el) -> do
-          e' <- recurSubExpr el
-          body' <- recurSubExpr body
+          e' <- mutRecurSubExpr el
+          body' <- mutRecurSubExpr body
           return $ Let (NonRec v e') body'
         (Rec rbs) -> do
-          rbs' <- recurSubExpr' rbs
-          body' <- recurSubExpr body
-          (nonRec, rbs'') <- recurBind' rbs'
+          rbs' <- mutRecurSubExpr' rbs
+          body' <- mutRecurSubExpr body
+          (nonRec, rbs'') <- mutRecurBind' rbs'
           -- ToDo: Recurse inside of bind expressions.
           let ls = case rbs'' of
                     [] -> nonRec
                     _  -> (Rec rbs'') : nonRec
           return $ mkCoreLets ls body'
     Case ec tb ty alts -> do
-      e' <- recurSubExpr ec
-      alts' <- recurSubExprAlts alts
+      e' <- mutRecurSubExpr ec
+      alts' <- mutRecurSubExprAlts alts
       return $ Case e' tb ty alts'
     Tick t et -> do
-      e' <- recurSubExpr et
+      e' <- mutRecurSubExpr et
       return $ Tick t e'
     Cast ec co -> do
-      e' <- recurSubExpr ec
+      e' <- mutRecurSubExpr ec
       return $ Cast e' co
 
-recurSubExpr' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
-recurSubExpr' [] = return []
-recurSubExpr' ((b, e) : bs) = do
-  e' <- recurSubExpr e
-  bs' <- recurSubExpr' bs
+mutRecurSubExpr' :: [(Id, CoreExpr)] -> BindM [(Id, CoreExpr)]
+mutRecurSubExpr' [] = return []
+mutRecurSubExpr' ((b, e) : bs) = do
+  e' <- mutRecurSubExpr e
+  bs' <- mutRecurSubExpr' bs
   return $ (b, e') : bs'
 
-recurSubExprAlts :: [GhcPlugins.Alt CoreBndr] -> BindM [GhcPlugins.Alt CoreBndr]
-recurSubExprAlts [] = return []
-recurSubExprAlts ((ac, b, a) : as) = do
-  a' <- recurSubExpr a
-  bs' <- recurSubExprAlts as
+mutRecurSubExprAlts :: [GhcPlugins.Alt CoreBndr] -> BindM [GhcPlugins.Alt CoreBndr]
+mutRecurSubExprAlts [] = return []
+mutRecurSubExprAlts ((ac, b, a) : as) = do
+  a' <- mutRecurSubExpr a
+  bs' <- mutRecurSubExprAlts as
   return $ (ac, b, a') : bs'
