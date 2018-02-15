@@ -313,10 +313,11 @@ procDelay proc =
     DelayMillisE (LitW32 d) -> millisToMicros (fromIntegral d) + secsToMicros 2
     DebugListen             -> 1000 * 1000 * 60 * 60 *24 -- Listen for a day
     BootTaskE _             -> secsToMicros 30
-    IterateUnitUnitE _ _    -> secsToMicros 60
-    IterateW8BoolE _ _      -> secsToMicros 60
-    IterateW8W8E _ _        -> secsToMicros 60
-    IterateW8W16E _ _       -> secsToMicros 60
+    IterateUnitUnitE _ _ _  -> secsToMicros 60
+    IterateW8BoolE _ _ _    -> secsToMicros 60
+    IterateW8W8E _ _ _      -> secsToMicros 60
+    IterateW8W16E _ _ _     -> secsToMicros 60
+    -- TBD add rest of Iterates
     _                       -> secsToMicros 5
 
 millisToMicros :: Int -> Int

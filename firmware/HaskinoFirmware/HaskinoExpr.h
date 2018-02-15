@@ -4,7 +4,7 @@
 #include "HaskinoScheduler.h"
 
 // Base Expression Types
-#define EXPR_TYPE_MASK      0x7F
+#define EXPR_TYPE_MASK      0x0F
 #define EXPR_UNIT           0x00
 #define EXPR_BOOL           0x01
 #define EXPR_WORD8          0x02
@@ -20,6 +20,7 @@
 #define EXPR_EITHER_MASK    0x80
 #define EXPRE_RIGHT_FLAG    0x00
 #define EXPRE_LEFT_FLAG     0x80
+#define EXPRE_LEFT_MASK     0x70
 
 // Base Expression Ops
 #define EXPR_LIT            0x00

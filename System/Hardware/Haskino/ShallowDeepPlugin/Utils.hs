@@ -51,6 +51,8 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            ifBNameTH,
                                            iterateETH,
                                            leftNameTH,
+                                           leftZeroNameTH,
+                                           litZeroNameTH,
                                            rightNameTH,
                                            -- General Haskell names
                                            apNameTH,
@@ -118,6 +120,10 @@ iterateETH :: TH.Name
 iterateETH             = 'System.Hardware.Haskino.iterateE
 leftNameTH :: TH.Name
 leftNameTH             = 'System.Hardware.Haskino.ExprLeft
+leftZeroNameTH :: TH.Name
+leftZeroNameTH         = 'System.Hardware.Haskino.exprLeft
+litZeroNameTH :: TH.Name
+litZeroNameTH         = 'System.Hardware.Haskino.litZero
 rightNameTH :: TH.Name
 rightNameTH            = 'System.Hardware.Haskino.ExprRight
 litUnitNameTH :: TH.Name

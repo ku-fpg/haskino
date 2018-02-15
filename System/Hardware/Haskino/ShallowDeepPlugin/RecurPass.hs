@@ -42,12 +42,8 @@ recurBind (NonRec b e) = do
     e' <- recurSubExpr e
     return [NonRec b e']
 recurBind (Rec bs) = do
-    -- Only handle self recursive here, handle multiple recursion in seperate pass.
-    if (length bs == 1) -- No not here, need to recurse inside first!!
-    then do
-        (nonRec, bs') <- recurBind' bs
-        return $ nonRec ++ [Rec bs']
-    else return [Rec bs]
+    (nonRec, bs') <- recurBind' bs
+    return $ nonRec ++ [Rec bs']
 
 recurBind' :: [(Id, CoreExpr)] -> BindM ([CoreBind],[(Id, CoreExpr)])
 recurBind' [] = return ([],[])
@@ -62,6 +58,7 @@ recurBind' ((b, e) : bs) = do
     monadTyCon <- thNameToTyCon monadTyConTH
     exprTyCon <- thNameToTyCon exprTyConTH
     listTyCon' <- thNameToTyCon listTyConTH
+    litZeroId <- thNameToId litZeroNameTH
     case retTyCon_m of
       Just (retTyCon, retTyArgs) -> do
         if length argTys == 1 && retTyCon == monadTyCon && length retTyArgs == 1
@@ -90,7 +87,7 @@ recurBind' ((b, e) : bs) = do
                 -- Build the iterate expression
                 iterateEId <- thNameToId iterateETH
                 eitherDict <- thNameTysToDict monadIterateTyConTH [argTyArg, retTyArg]
-                let iterateExpr = mkCoreApps (Var iterateEId) [Type argTyArg, Type retTyArg, eitherDict, Var arg, stepLam]
+                let iterateExpr = mkCoreApps (Var iterateEId) [Type argTyArg, Type retTyArg, eitherDict, Var litZeroId, Var arg, stepLam]
 
                 -- Create the transformed non-recursive bind
                 let nonrecBind = NonRec b (mkLams lbs iterateExpr)
@@ -126,7 +123,7 @@ recurBind' ((b, e) : bs) = do
             -- Build the iterate expression
             iterateEId <- thNameToId iterateETH
             eitherDict <- thNameTysToDict monadIterateTyConTH [unitTyConTy, retTyArg]
-            let iterateExpr = mkCoreApps (Var iterateEId) [Type unitTyConTy, Type retTyArg, eitherDict, Var newArgB, stepLam]
+            let iterateExpr = mkCoreApps (Var iterateEId) [Type unitTyConTy, Type retTyArg, eitherDict, Var litZeroId,  Var newArgB, stepLam]
 
             -- Create the transformed non-recursive bind
             let nonrecBind = NonRec newStepB (mkLams [newArgB] iterateExpr)
@@ -185,8 +182,8 @@ transformRecur argTy retTy e = do
           -- Generate the ExprLeft expression with the function arg
           argDict <- thNameTyToDict exprClassTyConTH argTy
           retDict <- thNameTyToDict exprClassTyConTH retTy
-          leftId <- thNameToId leftNameTH
-          let leftExpr = mkCoreApps (Var leftId) [Type argTy, Type retTy, argDict, retDict, leftArg]
+          leftZeroId <- thNameToId leftZeroNameTH
+          let leftExpr = mkCoreApps (Var leftZeroId) [Type argTy, Type retTy, argDict, retDict, leftArg]
           -- Generate the return expression
           monadTyConId <- thNameToTyCon monadTyConTH
           let monadTyConTy = mkTyConTy monadTyConId

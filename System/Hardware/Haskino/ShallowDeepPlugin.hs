@@ -58,7 +58,7 @@ install _ todo = do
 
   return $ [simplPass] ++ apRemoveToDo ++ condToDo ++ commProcToDo ++ returnsToDo ++
            bindArgRetAppToDo ++ repCasePushToDo ++ repConstrPushToDo ++ repPushToDo ++ 
-           absLambdaToDo ++ repAbsFuseToDo ++ recurToDo ++ mutRecurToDo ++
+           absLambdaToDo ++ repAbsFuseToDo ++ recurToDo ++
            absThenToDo ++ todo -- ++ dumpToDo
 --
 -- This pass is needed to simplify inlined applications that may be introduced

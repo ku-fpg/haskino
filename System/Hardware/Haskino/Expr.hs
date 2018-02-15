@@ -304,10 +304,17 @@ data Expr a where
 deriving instance Show a => Show (Expr a)
 
 data ExprEither a b where
-    ExprLeft   :: (ExprB a, ExprB b) => Expr a -> ExprEither a b
+    ExprLeft   :: (ExprB a, ExprB b) => Expr Int -> Expr a -> ExprEither a b
     ExprRight  :: (ExprB a, ExprB b) => Expr b -> ExprEither a b
 
 deriving instance (Show a, Show b) => Show (ExprEither a b)
+
+-- Convience functions for ExprLeft constructor without a int parameter
+litZero :: Expr Int
+litZero = lit 0
+
+exprLeft :: (ExprB a, ExprB b) => Expr a -> ExprEither a b
+exprLeft = ExprLeft litZero
 
 class ExprB a where
     lit      :: a -> Expr a

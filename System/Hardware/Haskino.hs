@@ -58,7 +58,7 @@ module System.Hardware.Haskino (
   , writeRemoteRef, writeRemoteRefE, modifyRemoteRef, modifyRemoteRefE, (++*), (*:), (!!*)
   , len, pack, litString, litStringE, showB, showE, showFFloatE, ExprB, abs_, rep_, lessE
   , lesseqE, greatE, greateqE, eqE, neqE, headE, tailE, nullE, ifBE, fromIntegralE, reverseE
-  , dropE, takeE
+  , dropE, takeE, litZero, exprLeft
   -- ** Serial
   , serialBegin, serialBeginE, serialEnd, serialEndE, serialAvailable, serialAvailableE
   , serialRead, serialReadE, serialReadList, serialReadListE
