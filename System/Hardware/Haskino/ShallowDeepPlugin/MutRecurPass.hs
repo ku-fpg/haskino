@@ -107,6 +107,10 @@ mutRecurXform bs = do
                 es' <- transformRecurs argTyArg retTyArg newStepB es
                 liftCoreM $ putMsgS "*******************"
                 liftCoreM $ putMsg $ ppr es'
+
+                es'' <- addIfThenElses newSelectB argTyArg retTyArg es'
+                liftCoreM $ putMsgS "^^^^^^^^^^^^^^^^^^^^^"
+                liftCoreM $ putMsg $ ppr es''
                 {-
                 let stepLam = mkLams [newStepB] stepE
 
@@ -168,24 +172,36 @@ mutRecurXform bs = do
         else defaultRet
       _ -> defaultRet
 
-{-
-addIfThenElses :: CoreBndr -> Type -> Type -> Int -> [CoreExpr] -> BindM CoreExpr
-addIfThenElses sb at rt indx es = addIfThenElses' indx es
+
+addIfThenElses :: CoreBndr -> Type -> Type -> [CoreExpr] -> BindM CoreExpr
+addIfThenElses sb at rt es = addIfThenElses' 0 es
   where
     addIfThenElses' :: Int -> [CoreExpr] -> BindM CoreExpr
-    addIfThenElses' _ [s] = s 
+    addIfThenElses' _ [s] = return s 
     addIfThenElses' i (tb : eb : []) = do
         ifThenElseEitherId <- thNameToId ifThenElseEitherNameTH
         eitherDict <- thNameTysToDict monadIterateTyConTH [at, rt]
-        cond = mkCoreApps 
-        mkCoreApps (Var ifThenElseEitherId) [Type at, Type rt, eitherDict, cond, tb, eb]
-    addIfThenElses i (tb : rest) =
+        eqId <- thNameToId eqNameTH
+        intTyCon <- thNameToTyCon intTyConTH
+        let intTyConTy = mkTyConTy intTyCon
+        eqDict <- thNameTysToDict exprTyConTH [intTyConTy]
+        df <- liftCoreM getDynFlags
+        indexArg <- repExpr $ mkIntExprInt df i
+        let cond = mkCoreApps (Var eqId) [Type intTyConTy, eqDict, (Var sb), indexArg]
+        return $ mkCoreApps (Var ifThenElseEitherId) [Type at, Type rt, eitherDict, cond, tb, eb]
+    addIfThenElses i (tb : rest) = do
         ifThenElseEitherId <- thNameToId ifThenElseEitherNameTH
         eitherDict <- thNameTysToDict monadIterateTyConTH [at, rt]
+        eqId <- thNameToId eqNameTH
+        intTyCon <- thNameToTyCon intTyConTH
+        let intTyConTy = mkTyConTy intTyCon
+        eqDict <- thNameTysToDict exprTyConTH [intTyConTy]
+        df <- liftCoreM getDynFlags
+        indexArg <- repExpr $ mkIntExprInt df i
+        let cond = mkCoreApps (Var eqId) [Type intTyConTy, eqDict, (Var sb), indexArg]
         eb' <- addIfThenElses' (i+1) rest
-        let cond 
-        mkCoreApps (Var ifThenElseEitherId) [Type at, Type rt, eitherDict, cond, tb, eb']
--}
+        return $ mkCoreApps (Var ifThenElseEitherId) [Type at, Type rt, eitherDict, cond, tb, eb']
+
 transformRecurs :: Type -> Type -> CoreBndr -> [CoreExpr] -> BindM [CoreExpr]
 transformRecurs argTy retTy newStepB es = mapM transformRecur' es
   where

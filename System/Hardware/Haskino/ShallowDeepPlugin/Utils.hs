@@ -45,6 +45,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            monadIterateTyConTH,
                                            monadTyConTH,
                                            absNameTH,
+                                           eqNameTH,
                                            repNameTH,
                                            ifThenElseNameTH,
                                            ifThenElseEitherNameTH,
@@ -109,6 +110,8 @@ monadIterateTyConTH :: TH.Name
 monadIterateTyConTH    = ''System.Hardware.Haskino.ArduinoIterate
 absNameTH :: TH.Name
 absNameTH              = 'System.Hardware.Haskino.abs_
+eqNameTH :: TH.Name
+eqNameTH              = 'System.Hardware.Haskino.eqE
 repNameTH :: TH.Name
 repNameTH              = 'System.Hardware.Haskino.rep_
 ifThenElseNameTH :: TH.Name
