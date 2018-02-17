@@ -32,6 +32,9 @@ instance PassCoreM BindM where
     liftCoreM m = BindM $ lift m
     getModGuts = gets pluginModGuts
 
+mutSuffix :: String
+mutSuffix = "_mut'"
+
 mutRecurPass :: ModGuts -> CoreM ModGuts
 mutRecurPass guts = do
     bindsL' <- (\x -> fst <$> (runStateT (runBindM $ (mapM mutRecurBind) x) (BindEnv guts []))) (mg_binds guts)
@@ -125,8 +128,8 @@ mutRecurXform bs = do
                 let iterateExpr = mkCoreApps (Var iterateEId) [Type argTyArg, Type retTyArg, eitherDict, Var newArgB, Var arg, stepLam]
 
                 -- Build the new Bind
-                let xformedTy = mkFunTys (exprIntTy : argTys) retTy
-                newFunc <- buildId ("mut_func") xformedTy
+                bMut <- modId (head ids) mutSuffix
+                let newFunc = setVarType bMut $ mkFunTys (exprIntTy : argTys) retTy
 
                 let xformedBind = NonRec newFunc $ mkLams (newArgB : lbs) iterateExpr
                 liftCoreM $ putMsgS "^^^^^^^^^^^^^^^^^^^^^"
