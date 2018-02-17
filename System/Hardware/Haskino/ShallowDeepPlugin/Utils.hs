@@ -59,6 +59,7 @@ module System.Hardware.Haskino.ShallowDeepPlugin.Utils (absExpr,
                                            andNameTH,
                                            bindNameTH,
                                            functTyConTH,
+                                           intTyConTH,
                                            listTyConTH,
                                            unitTyConTH,
                                            unitValueTH,
@@ -186,6 +187,8 @@ unitValueTH :: TH.Name
 unitValueTH          = '()
 listTyConTH :: TH.Name
 listTyConTH          = ''[]
+intTyConTH :: TH.Name
+intTyConTH           = ''Int
 bindNameTH :: TH.Name
 bindNameTH           = '(>>=)
 bindThenNameTH :: TH.Name

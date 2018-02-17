@@ -42,29 +42,41 @@ mutRecurBind (NonRec b e) = do
     e' <- mutRecurSubExpr e
     return [NonRec b e']
 mutRecurBind (Rec bs) = do
-    -- Only handle Mut recursive here, handle multiple recursion in seperate pass.
-    if (length bs /= 1)  -- But need to check recursively inside other binds.
+    (nonRec, bs') <- mutRecurBind' bs
+    return $ nonRec ++ [Rec bs']
+
+mutRecurBind' :: [(Id, CoreExpr)] -> BindM ([CoreBind],[(Id, CoreExpr)])
+mutRecurBind' bs = do
+    let defaultRet = do
+            bs' <- mapM mutRecurBind'' bs
+            return $ ([], bs')
+    liftCoreM $ putMsgS "#####################"
+    liftCoreM $ putMsg $ ppr bs
+    if (length bs /= 1) 
     then do
         let (ids, es) = unzip bs
             esTypes  = map exprType es
             eqExpr   = length (nubBy eqType esTypes) == 1
-        liftCoreM $ putMsgS "************"
-        liftCoreM $ putMsg $ ppr ids
-        liftCoreM $ putMsg $ ppr esTypes
-        liftCoreM $ putMsg $ ppr eqExpr
-        (nonRec, bs') <- mutRecurBind' bs
-        return $ nonRec ++ [Rec bs']
-    else return $ [Rec bs]
+        liftCoreM $ putMsgS "%%%%%%%%%%%%%%%%%%%%%%%"
+        liftCoreM $ putMsg $ ppr $ nubBy eqType esTypes
+        if length (nubBy eqType esTypes) == 1
+        then mutRecurXform bs
+        else defaultRet
+    else defaultRet
 
-mutRecurBind' :: [(Id, CoreExpr)] -> BindM ([CoreBind],[(Id, CoreExpr)])
-mutRecurBind' [] = return ([],[])
-mutRecurBind' ((b, e) : bs) = do
+mutRecurBind'' :: (Id, CoreExpr) -> BindM (Id, CoreExpr)
+mutRecurBind'' (id, e) = do
+    e' <- mutRecurSubExpr e
+    return (id, e')
+
+mutRecurXform :: [(Id, CoreExpr)] -> BindM ([CoreBind],[(Id, CoreExpr)])
+mutRecurXform bs = do
     let defaultRet = do
-          (nonrec, bs') <- mutRecurBind' bs
-          return $ (nonrec, (b, e) : bs')
+            bs' <- mapM mutRecurBind'' bs
+            return $ ([], bs')
+    let (ids, es) = unzip bs
     s <- get
-    put s {funcId = [b]}
-    let (argTys, retTy) = splitFunTys $ exprType e
+    let (argTys, retTy) = splitFunTys $ exprType $ head es
     let retTyCon_m = splitTyConApp_maybe retTy
     monadTyCon <- thNameToTyCon monadTyConTH
     exprTyCon <- thNameToTyCon exprTyConTH
@@ -82,22 +94,26 @@ mutRecurBind' ((b, e) : bs) = do
                                   Just (rTyCon, [retTyArg']) | rTyCon == exprTyCon -> retTyArg'
                                   _                 -> head retTyArgs
                 s' <- get
-                put s' {funcId = [b]}
+                put s' {funcId = ids}
 
-                let (lbs, e') = collectBinders e
-                e'' <- mutRecurSubExpr e'
+                let (lbs, e') = collectBinders $ head es
                 let arg = head lbs
-
-                -- Build the step body of the While
-                e'''  <- transformRecur argTyArg retTyArg e''
                 newStepB <- buildId ("x") argTyArg
-                stepE <- changeVarExpr arg newStepB e'''
+
+                intTyCon <- thNameToTyCon intTyConTH
+                let intTyConTy = mkTyConTy intTyCon
+                newSelectB <- buildId ("i") intTyConTy
+
+                es' <- transformRecurs argTyArg retTyArg newStepB es
+                liftCoreM $ putMsgS "*******************"
+                liftCoreM $ putMsg $ ppr es'
+                {-
                 let stepLam = mkLams [newStepB] stepE
 
                 -- Build the iterate expression
                 iterateEId <- thNameToId iterateETH
                 eitherDict <- thNameTysToDict monadIterateTyConTH [argTyArg, retTyArg]
-                let iterateExpr = mkCoreApps (Var iterateEId) [Type argTyArg, Type retTyArg, eitherDict, Var arg, stepLam]
+                let iterateExpr = mkCoreApps (Var iterateEId) [Type argTyArg, Type retTyArg, eitherDict, Var litZeroId, Var arg, stepLam]
 
                 -- Create the transformed non-recursive bind
                 let nonrecBind = NonRec b (mkLams lbs iterateExpr)
@@ -105,7 +121,10 @@ mutRecurBind' ((b, e) : bs) = do
                 -- Recursively call for the other binds in the array
                 (nonrecs, bs') <- mutRecurBind' bs
                 return $ (nonrecBind : nonrecs, bs')
+                -}
+                defaultRet
             _ -> defaultRet
+{-
         else if length argTys == 0 && retTyCon == monadTyCon && length retTyArgs == 1
         then do
             let retTyArg = case splitTyConApp_maybe $ head retTyArgs of
@@ -133,7 +152,7 @@ mutRecurBind' ((b, e) : bs) = do
             -- Build the iterate expression
             iterateEId <- thNameToId iterateETH
             eitherDict <- thNameTysToDict monadIterateTyConTH [unitTyConTy, retTyArg]
-            let iterateExpr = mkCoreApps (Var iterateEId) [Type unitTyConTy, Type retTyArg, eitherDict, Var newArgB, stepLam]
+            let iterateExpr = mkCoreApps (Var iterateEId) [Type unitTyConTy, Type retTyArg, eitherDict, Var litZeroId,  Var newArgB, stepLam]
 
             -- Create the transformed non-recursive bind
             let nonrecBind = NonRec newStepB (mkLams [newArgB] iterateExpr)
@@ -143,11 +162,40 @@ mutRecurBind' ((b, e) : bs) = do
             -- Recursively call for the other binds in the array
             (nonrecs, bs') <- mutRecurBind' bs
             return $ ([nonrecBind, wrapperBind] ++ nonrecs, bs')
+-}
         else if retTyCon == monadTyCon
-        then error $ "*** Haskiono RecurPass: " ++ getOccString b ++ ": Unable to translate recursive function with\ngreater than one arguments"
+        then error $ "*** Haskiono RecurPass: " ++ getOccString (head ids) ++ ": Unable to translate recursive function with\ngreater than one arguments"
         else defaultRet
       _ -> defaultRet
 
+{-
+addIfThenElses :: CoreBndr -> Type -> Type -> Int -> [CoreExpr] -> BindM CoreExpr
+addIfThenElses sb at rt indx es = addIfThenElses' indx es
+  where
+    addIfThenElses' :: Int -> [CoreExpr] -> BindM CoreExpr
+    addIfThenElses' _ [s] = s 
+    addIfThenElses' i (tb : eb : []) = do
+        ifThenElseEitherId <- thNameToId ifThenElseEitherNameTH
+        eitherDict <- thNameTysToDict monadIterateTyConTH [at, rt]
+        cond = mkCoreApps 
+        mkCoreApps (Var ifThenElseEitherId) [Type at, Type rt, eitherDict, cond, tb, eb]
+    addIfThenElses i (tb : rest) =
+        ifThenElseEitherId <- thNameToId ifThenElseEitherNameTH
+        eitherDict <- thNameTysToDict monadIterateTyConTH [at, rt]
+        eb' <- addIfThenElses' (i+1) rest
+        let cond 
+        mkCoreApps (Var ifThenElseEitherId) [Type at, Type rt, eitherDict, cond, tb, eb']
+-}
+transformRecurs :: Type -> Type -> CoreBndr -> [CoreExpr] -> BindM [CoreExpr]
+transformRecurs argTy retTy newStepB es = mapM transformRecur' es
+  where
+    transformRecur' :: CoreExpr -> BindM CoreExpr
+    transformRecur' e = do
+        let (lbs, e') = collectBinders e
+        let arg = head lbs
+        e'' <- mutRecurSubExpr e'
+        e''' <- transformRecur argTy retTy e''
+        changeVarExpr arg newStepB e'''
 
 transformRecur :: Type -> Type -> CoreExpr -> BindM CoreExpr
 transformRecur argTy retTy e = do
@@ -183,7 +231,7 @@ transformRecur argTy retTy e = do
             _ -> return e
       -- We are at the bottom of the bind chain.....
       -- Check for recursive call.
-      Var fv | fv == head funcId' -> do
+      Var fv | fv `elem` funcId' -> do
           -- Find the argument for the Left call
           unitValueId <- thNameToId unitValueTH
           let leftArg = if length args == 0
@@ -193,7 +241,10 @@ transformRecur argTy retTy e = do
           argDict <- thNameTyToDict exprClassTyConTH argTy
           retDict <- thNameTyToDict exprClassTyConTH retTy
           leftId <- thNameToId leftNameTH
-          let leftExpr = mkCoreApps (Var leftId) [Type argTy, Type retTy, argDict, retDict, leftArg]
+          df <- liftCoreM getDynFlags
+          let Just funcIndex = fv `elemIndex` funcId'
+          leftIndexArg <- repExpr $ mkIntExprInt df funcIndex
+          let leftExpr = mkCoreApps (Var leftId) [Type argTy, Type retTy, argDict, retDict, leftIndexArg, leftArg]
           -- Generate the return expression
           monadTyConId <- thNameToTyCon monadTyConTH
           let monadTyConTy = mkTyConTy monadTyConId

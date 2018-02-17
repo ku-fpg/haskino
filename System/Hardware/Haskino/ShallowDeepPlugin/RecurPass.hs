@@ -61,6 +61,7 @@ recurBind' ((b, e) : bs) = do
     litZeroId <- thNameToId litZeroNameTH
     case retTyCon_m of
       Just (retTyCon, retTyArgs) -> do
+        -- TBD Check that arg is of ExprB type.
         if length argTys == 1 && retTyCon == monadTyCon && length retTyArgs == 1
         then do
           let argTyCon_m = splitTyConApp_maybe $ head argTys
