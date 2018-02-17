@@ -130,10 +130,17 @@ mutRecurXform bs = do
                 -- Build the new Bind
                 bMut <- modId (head ids) mutSuffix
                 let newFunc = setVarType bMut $ mkFunTys (exprIntTy : argTys) retTy
-
                 let xformedBind = NonRec newFunc $ mkLams (newArgB : lbs) iterateExpr
-                liftCoreM $ putMsgS "^^^^^^^^^^^^^^^^^^^^^"
-                liftCoreM $ putMsg $ ppr xformedBind
+
+                -- Modify bodies of old functions
+                newFuncBinds <- modOrigFuncs ids newFunc 
+
+                -- liftCoreM $ putMsgS "^^^^^^^^^^^^^^^^^^^^^"
+                -- liftCoreM $ putMsg $ ppr newFuncBinds
+
+                -- Return modified originals and new function
+                return $ (xformedBind : newFuncBinds, [])
+
                 {-                
    
                 -- Create the transformed non-recursive bind
@@ -144,7 +151,7 @@ mutRecurXform bs = do
                 return $ (nonrecBind : nonrecs, bs')
                 -}
 
-                defaultRet
+                -- defaultRet
             _ -> defaultRet
 {-
         else if length argTys == 0 && retTyCon == monadTyCon && length retTyArgs == 1
@@ -190,6 +197,17 @@ mutRecurXform bs = do
         else defaultRet
       _ -> defaultRet
 
+modOrigFuncs :: [Id] -> Id -> BindM [CoreBind]
+modOrigFuncs ids newFunc = modOrigFuncs' ids 0
+  where
+    modOrigFuncs' :: [Id] -> Int -> BindM [CoreBind]
+    modOrigFuncs' [] _ = return []
+    modOrigFuncs' (f:fs) i = do
+        df <- liftCoreM getDynFlags
+        indexArg <- repExpr $ mkIntExprInt df i
+        let newe = mkCoreApps (Var newFunc) [indexArg]
+        bs' <- modOrigFuncs' fs (i+1)
+        return $ (NonRec f newe) : bs'
 
 addIfThenElses :: CoreBndr -> Type -> Type -> [CoreExpr] -> BindM CoreExpr
 addIfThenElses sb at rt es = addIfThenElses' 0 es
