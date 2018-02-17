@@ -220,10 +220,12 @@ addIfThenElses sb at rt es = addIfThenElses' 0 es
         eqId <- thNameToId eqNameTH
         intTyCon <- thNameToTyCon intTyConTH
         let intTyConTy = mkTyConTy intTyCon
-        eqDict <- thNameTysToDict exprTyConTH [intTyConTy]
+        exprTyCon <- thNameToTyCon exprTyConTH
+        let exprIntTy = mkTyConApp exprTyCon [intTyConTy]
+        eqDict <- thNameTysToDict exprClassTyConTH [intTyConTy]
         df <- liftCoreM getDynFlags
         indexArg <- repExpr $ mkIntExprInt df i
-        let cond = mkCoreApps (Var eqId) [Type intTyConTy, eqDict, (Var sb), indexArg]
+        let cond = mkCoreApps (Var eqId) [Type exprIntTy, eqDict, (Var sb), indexArg]
         return $ mkCoreApps (Var ifThenElseEitherId) [Type at, Type rt, eitherDict, cond, tb, eb]
     addIfThenElses i (tb : rest) = do
         ifThenElseEitherId <- thNameToId ifThenElseEitherNameTH
@@ -231,10 +233,12 @@ addIfThenElses sb at rt es = addIfThenElses' 0 es
         eqId <- thNameToId eqNameTH
         intTyCon <- thNameToTyCon intTyConTH
         let intTyConTy = mkTyConTy intTyCon
-        eqDict <- thNameTysToDict exprTyConTH [intTyConTy]
+        exprTyCon <- thNameToTyCon exprTyConTH
+        let exprIntTy = mkTyConApp exprTyCon [intTyConTy]
+        eqDict <- thNameTysToDict exprClassTyConTH [intTyConTy]
         df <- liftCoreM getDynFlags
         indexArg <- repExpr $ mkIntExprInt df i
-        let cond = mkCoreApps (Var eqId) [Type intTyConTy, eqDict, (Var sb), indexArg]
+        let cond = mkCoreApps (Var eqId) [Type exprIntTy, eqDict, (Var sb), indexArg]
         eb' <- addIfThenElses' (i+1) rest
         return $ mkCoreApps (Var ifThenElseEitherId) [Type at, Type rt, eitherDict, cond, tb, eb']
 
