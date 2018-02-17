@@ -1555,7 +1555,7 @@ packageIfThenElseEitherProcedure rt1 rt2 _ e cb1 cb2 = do
     return $ B.append i (B.append pc1' pc2')
 
 packageIterateProcedure :: (ExprB a, ExprB b) => Expr Int -> ExprType -> ExprType -> Int -> Expr a ->
-                           Expr a -> (Expr a -> Arduino(ExprEither a b)) ->
+                           Expr a -> (Expr Int -> Expr a -> Arduino(ExprEither a b)) ->
                            State CommandState B.ByteString
 packageIterateProcedure bre ta tb ib' be iv bf = do
     let ibr =case bre of
@@ -1563,7 +1563,7 @@ packageIterateProcedure bre ta tb ib' be iv bf = do
                _      -> 0
     s <- get
     put s {iterBinds = (ibr, ib') : iterBinds s}
-    (r, pc, pureWasLast) <- packageCodeBlock $ bf be
+    (r, pc, pureWasLast) <- packageCodeBlock $ bf bre be
     let rc = buildCommand EXPR_CMD_RET $ (fromIntegral ib') : packageExprEither ta tb r
     let pc'  = if pureWasLast then B.append pc $ lenPackage rc else pc
     w <- addCommand BC_CMD_ITERATE ([fromIntegral $ fromEnum ta, fromIntegral $ fromEnum tb, fromIntegral ib', fromIntegral $ length ive] ++ ive)

@@ -248,11 +248,11 @@ showCodeBlock (Arduino commands) = do
           return r2
 
       showIterateProcedure :: (Show a, Show b, ExprB a, ExprB b) => Int -> Expr Int -> Int -> Expr a -> Int -> Expr b -> Expr a ->
-                              (Expr a -> Arduino(ExprEither a b)) -> State ShowState Int
+                              (Expr Int -> Expr a -> Arduino(ExprEither a b)) -> State ShowState Int
       showIterateProcedure br bre b1 b1e b2 _b2e iv bf = do
           s <- get
           put s {iterBinds = (br, b1, b2):iterBinds s}
-          (r, cs) <- showCodeBlock (bf b1e)
+          (r, cs) <- showCodeBlock (bf bre b1e)
           let cs' = cs ++ replicate (indent s + 2) ' ' ++ "return " ++ show r ++ "\n"
           addToBlock $ "RemBind " ++ show b2 ++ " <- " ++ "Iterate  (" ++ show bre ++ ") (" ++ show iv ++ ")\n" ++ cs'
           s' <- get
