@@ -81,7 +81,7 @@ recurBind' ((b, e) : bs) = do
 
                 -- Build the step body of the While
                 e'''  <- transformRecur argTyArg retTyArg e''
-                newStepB <- buildId ("x") argTyArg
+                newStepB <- buildId ("x") $ head argTys
                 stepE <- changeVarExpr arg newStepB e'''
                 let stepLam = mkLams [newStepB] stepE
 

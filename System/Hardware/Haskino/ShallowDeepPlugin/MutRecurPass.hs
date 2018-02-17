@@ -50,15 +50,11 @@ mutRecurBind' bs = do
     let defaultRet = do
             bs' <- mapM mutRecurBind'' bs
             return $ ([], bs')
-    liftCoreM $ putMsgS "#####################"
-    liftCoreM $ putMsg $ ppr bs
     if (length bs /= 1) 
     then do
         let (ids, es) = unzip bs
             esTypes  = map exprType es
             eqExpr   = length (nubBy eqType esTypes) == 1
-        liftCoreM $ putMsgS "%%%%%%%%%%%%%%%%%%%%%%%"
-        liftCoreM $ putMsg $ ppr $ nubBy eqType esTypes
         if length (nubBy eqType esTypes) == 1
         then mutRecurXform bs
         else defaultRet
@@ -98,27 +94,35 @@ mutRecurXform bs = do
 
                 let (lbs, e') = collectBinders $ head es
                 let arg = head lbs
-                newStepB <- buildId ("x") argTyArg
+
+                exprTyCon <- thNameToTyCon exprTyConTH
+                let exprArgTy = mkTyConApp exprTyCon [head argTys]
+                newStepB <- buildId ("x") $ exprArgTy
 
                 intTyCon <- thNameToTyCon intTyConTH
                 let intTyConTy = mkTyConTy intTyCon
-                newSelectB <- buildId ("i") intTyConTy
+                let exprIntTy = mkTyConApp exprTyCon [intTyConTy]
+                newSelectB <- buildId ("i") exprIntTy
+                newArgB <- buildId ("indx") exprIntTy
 
+                -- Transform the bodies of each of the functions
                 es' <- transformRecurs argTyArg retTyArg newStepB es
-                liftCoreM $ putMsgS "*******************"
-                liftCoreM $ putMsg $ ppr es'
 
+                -- Wrap the transformed functions with ifThenElseEither's
+                -- that test the function index
                 es'' <- addIfThenElses newSelectB argTyArg retTyArg es'
-                liftCoreM $ putMsgS "^^^^^^^^^^^^^^^^^^^^^"
-                liftCoreM $ putMsg $ ppr es''
-                {-
-                let stepLam = mkLams [newStepB] stepE
+
+                let stepLam = mkLams [newSelectB, newStepB] es''
 
                 -- Build the iterate expression
                 iterateEId <- thNameToId iterateETH
                 eitherDict <- thNameTysToDict monadIterateTyConTH [argTyArg, retTyArg]
-                let iterateExpr = mkCoreApps (Var iterateEId) [Type argTyArg, Type retTyArg, eitherDict, Var litZeroId, Var arg, stepLam]
+                let iterateExpr = mkCoreApps (Var iterateEId) [Type argTyArg, Type retTyArg, eitherDict, Var newArgB, Var arg, stepLam]
 
+                liftCoreM $ putMsgS "^^^^^^^^^^^^^^^^^^^^^"
+                liftCoreM $ putMsg $ ppr iterateExpr
+                {-                
+   
                 -- Create the transformed non-recursive bind
                 let nonrecBind = NonRec b (mkLams lbs iterateExpr)
 
@@ -126,6 +130,7 @@ mutRecurXform bs = do
                 (nonrecs, bs') <- mutRecurBind' bs
                 return $ (nonrecBind : nonrecs, bs')
                 -}
+
                 defaultRet
             _ -> defaultRet
 {-
