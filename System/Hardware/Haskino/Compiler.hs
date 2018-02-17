@@ -2000,7 +2000,7 @@ compileIfThenElseEitherProcedure t1 t2 e cb1 cb2 = do
 
 compileIterateProcedure :: (ExprB a, ExprB b) => CompileType -> CompileType -> Int -> Expr Int ->
                            Int -> Expr a -> Int -> Expr b -> Expr a ->
-                           (Expr a -> Arduino(ExprEither a b)) -> State CompileState (Expr b)
+                           (Expr Int -> Expr a -> Arduino(ExprEither a b)) -> State CompileState (Expr b)
 compileIterateProcedure ta tb b be b1 b1e b2 b2e iv bf = do
     s <- get
     put s {iterBinds = (b, b1, b2):iterBinds s}
@@ -2025,7 +2025,7 @@ compileIterateProcedure ta tb b be b1 b1e b2 b2e iv bf = do
               then return LitUnit
               else compileLine $ bindName ++ show b1 ++ " = " ++ compileExpr iv ++ ";"
     _ <- compileLine $ bindName ++ show b ++ " = " ++ compileExpr be ++ ";"
-    _ <- compileCodeBlock False "while (1)\n" $ bf b1e
+    _ <- compileCodeBlock False "while (1)\n" $ bf be b1e
     _ <- compileLineIndent "}"
     s' <- get
     put s' {iterBinds = tail $ iterBinds s'}
