@@ -95,10 +95,15 @@ mutRecurXform bs = do
                 let (lbs, e') = collectBinders $ head es
                 let arg = head lbs
 
+                -- Build the new Step ID used for Iteration (x)
                 exprTyCon <- thNameToTyCon exprTyConTH
                 let exprArgTy = mkTyConApp exprTyCon [head argTys]
                 newStepB <- buildId ("x") $ exprArgTy
 
+                -- Build the new function index ID's, one for the
+                -- lambda passed to IterateE (i), and another for the one
+                -- we will add to the xformed function and passed to
+                -- IterateE (indx)
                 intTyCon <- thNameToTyCon intTyConTH
                 let intTyConTy = mkTyConTy intTyCon
                 let exprIntTy = mkTyConApp exprTyCon [intTyConTy]
@@ -119,8 +124,13 @@ mutRecurXform bs = do
                 eitherDict <- thNameTysToDict monadIterateTyConTH [argTyArg, retTyArg]
                 let iterateExpr = mkCoreApps (Var iterateEId) [Type argTyArg, Type retTyArg, eitherDict, Var newArgB, Var arg, stepLam]
 
+                -- Build the new Bind
+                let xformedTy = mkFunTys (exprIntTy : argTys) retTy
+                newFunc <- buildId ("mut_func") xformedTy
+
+                let xformedBind = NonRec newFunc $ mkLams (newArgB : lbs) iterateExpr
                 liftCoreM $ putMsgS "^^^^^^^^^^^^^^^^^^^^^"
-                liftCoreM $ putMsg $ ppr iterateExpr
+                liftCoreM $ putMsg $ ppr xformedBind
                 {-                
    
                 -- Create the transformed non-recursive bind
