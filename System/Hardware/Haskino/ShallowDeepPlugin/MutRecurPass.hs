@@ -129,7 +129,7 @@ mutRecurXform bs = do
                 let xformedBind = NonRec newFunc $ mkLams (newArgB : lbs) iterateExpr
 
                 -- Modify bodies of old functions
-                newFuncBinds <- modOrigFuncs ids newFunc 
+                newFuncBinds <- modOrigFuncs ids newFunc False 
 
                 -- Return modified originals and new function
                 return $ (xformedBind : newFuncBinds, [])
@@ -176,7 +176,7 @@ mutRecurXform bs = do
                 let xformedBind = NonRec newFunc $ mkLams [newArgB ,newFuncArgB] iterateExpr
 
                 -- Modify bodies of old functions
-                newFuncBinds <- modOrigFuncs ids newFunc 
+                newFuncBinds <- modOrigFuncs ids newFunc True
 
                 -- Return modified originals and new function
                 return $ (xformedBind : newFuncBinds, [])
@@ -185,8 +185,8 @@ mutRecurXform bs = do
         else defaultRet
       _ -> defaultRet
 
-modOrigFuncs :: [Id] -> Id -> BindM [CoreBind]
-modOrigFuncs ids newFunc = modOrigFuncs' ids 0
+modOrigFuncs :: [Id] -> Id -> Bool -> BindM [CoreBind]
+modOrigFuncs ids newFunc addUnitType = modOrigFuncs' ids 0
   where
     modOrigFuncs' :: [Id] -> Int -> BindM [CoreBind]
     modOrigFuncs' [] _ = return []
@@ -194,7 +194,9 @@ modOrigFuncs ids newFunc = modOrigFuncs' ids 0
         df <- liftCoreM getDynFlags
         unitValue <- thNameToId unitValueTH
         indexArg <- repExpr $ mkIntExprInt df i
-        let newe = mkCoreApps (Var newFunc) [indexArg, Var unitValue]
+        let newe = if addUnitType
+                   then mkCoreApps (Var newFunc) [indexArg, Var unitValue]
+                   else mkCoreApps (Var newFunc) [indexArg]
         bs' <- modOrigFuncs' fs (i+1)
         return $ (NonRec f newe) : bs'
 
