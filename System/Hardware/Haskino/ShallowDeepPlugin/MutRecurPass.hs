@@ -134,48 +134,52 @@ mutRecurXform bs = do
                 -- Return modified originals and new function
                 return $ (xformedBind : newFuncBinds, [])
             _ -> defaultRet
-{-
         else if length argTys == 0 && retTyCon == monadTyCon && length retTyArgs == 1
         then do
                 let retTyArg = case splitTyConApp_maybe $ head retTyArgs of
                                   Just (rTyCon, [])      -> mkTyConTy rTyCon
                                   _                      -> head retTyArgs
 
-                s' <- get
-                put s' {funcId = ids}
-
                 unitTyCon' <- thNameToTyCon unitTyConTH
                 let unitTyConTy = mkTyConTy unitTyCon'
-                -- Generate "Expr retTy"
-                exprTyConApp <- thNameTyToTyConApp exprTyConTH unitTyConTy
-                let newBTy = mkFunTy exprTyConApp retTy
-                newStepB <- buildId ((varString b) ++ "'") newBTy
-                -- Create body of wrapper function
-                unitValueId <- thNameToId unitValueTH
-                let wrapperB = mkCoreApps (Var newStepB) [(Var unitValueId)]
+                unitValue <- thNameToId unitValueTH
+                -- Build the new Step ID used for Iteration (x)
+                let exprArgTy = mkTyConApp exprTyCon [unitTyConTy]
+                newStepB <- buildId ("x") $ exprArgTy
+
+                -- Build the new function index ID's, one for the
+                -- lambda passed to IterateE (i), and another for the one
+                -- we will add to the xformed function and passed to
+                -- IterateE (indx)
+                newSelectB <- buildId ("i") exprIntTy
+                newArgB <- buildId ("indx") exprIntTy
 
                 -- Create new function argument
-                newArgB <- buildId "p" unitTyConTy
+                newFuncArgB <- buildId "p" unitTyConTy
 
-                -- Build the step body of the While
-                e'  <- transformRecur unitTyConTy retTyArg e
-                newStepLamB <- buildId ("x") unitTyConTy
-                let stepLam = mkLams [newStepLamB] e'
+                -- Transform the bodies of each of the functions
+                es' <- transformRecurs unitTyConTy retTyArg newStepB es
+
+                -- Wrap the transformed functions with ifThenElseEither's
+                -- that test the function index
+                es'' <- addIfThenElses newSelectB unitTyConTy retTyArg es'
+
+                let stepLam = mkLams [newSelectB, newStepB] es''
 
                 -- Build the iterate expression
-                iterateEId <- thNameToId iterateETH
                 eitherDict <- thNameTysToDict monadIterateTyConTH [unitTyConTy, retTyArg]
-                let iterateExpr = mkCoreApps (Var iterateEId) [Type unitTyConTy, Type retTyArg, eitherDict, Var litZeroId,  Var newArgB, stepLam]
+                let iterateExpr = mkCoreApps (Var iterateEId) [Type unitTyConTy, Type retTyArg, eitherDict, Var newArgB, Var unitValue, stepLam]
 
-                -- Create the transformed non-recursive bind
-                let nonrecBind = NonRec newStepB (mkLams [newArgB] iterateExpr)
-                -- Create the wrapper bind
-                let wrapperBind = NonRec b wrapperB
+                -- Build the new Bind
+                bMut <- modId (head ids) mutSuffix
+                let newFunc = setVarType bMut $ mkFunTys (exprIntTy : [unitTyConTy]) retTy
+                let xformedBind = NonRec newFunc $ mkLams [newArgB ,newFuncArgB] iterateExpr
 
-                -- Recursively call for the other binds in the array
-                (nonrecs, bs') <- mutRecurBind' bs
-                return $ ([nonrecBind, wrapperBind] ++ nonrecs, bs')
--}
+                -- Modify bodies of old functions
+                newFuncBinds <- modOrigFuncs ids newFunc 
+
+                -- Return modified originals and new function
+                return $ (xformedBind : newFuncBinds, [])
         else if retTyCon == monadTyCon
         then error $ "*** Haskiono RecurPass: " ++ getOccString (head ids) ++ ": Unable to translate recursive function with\ngreater than one arguments"
         else defaultRet
@@ -188,8 +192,9 @@ modOrigFuncs ids newFunc = modOrigFuncs' ids 0
     modOrigFuncs' [] _ = return []
     modOrigFuncs' (f:fs) i = do
         df <- liftCoreM getDynFlags
+        unitValue <- thNameToId unitValueTH
         indexArg <- repExpr $ mkIntExprInt df i
-        let newe = mkCoreApps (Var newFunc) [indexArg]
+        let newe = mkCoreApps (Var newFunc) [indexArg, Var unitValue]
         bs' <- modOrigFuncs' fs (i+1)
         return $ (NonRec f newe) : bs'
 
@@ -232,10 +237,11 @@ transformRecurs argTy retTy newStepB es = mapM transformRecur' es
     transformRecur' :: CoreExpr -> BindM CoreExpr
     transformRecur' e = do
         let (lbs, e') = collectBinders e
-        let arg = head lbs
         e'' <- mutRecurSubExpr e'
         e''' <- transformRecur argTy retTy e''
-        changeVarExpr arg newStepB e'''
+        if length lbs == 0
+        then return e'''
+        else changeVarExpr (head lbs) newStepB e'''
 
 transformRecur :: Type -> Type -> CoreExpr -> BindM CoreExpr
 transformRecur argTy retTy e = do
