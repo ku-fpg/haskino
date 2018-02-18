@@ -61,7 +61,7 @@ mutRecurBind' bs = do
         if length (nubBy eqType esTypes) == 1
         then mutRecurXform bs
         else defaultRet
-    else defaultRet
+    else mutRecurXform bs
 
 mutRecurBind'' :: (Id, CoreExpr) -> BindM (Id, CoreExpr)
 mutRecurBind'' (id, e) = do
