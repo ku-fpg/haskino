@@ -690,44 +690,46 @@ changeAppExpr e = do
             e1' <- changeAppExpr e1
             e2' <- changeAppExpr e2
             return $ App e1' e2'
-      let (Var vb) = b
-      let vbs = varString vb
-      isRetTyExprClass <- isExprClassType retTy
-      if isSuffixOf deepSuffix vbs || vbs `elem` comProcList
-      then defaultRet
-      else case tyCon_m of
-            Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
-                vb_m <- findDeepId vb
-                case vb_m of
-                  Just vb' -> do
-                    -- Calculate which args we should translate, only
-                    -- ones of our languages expression types
-                    xlats <- mapM isExprClassType argTys
-                    -- Recursively translate inside of args.
-                    args'' <- mapM changeAppExpr args'
-                    args''' <- mapM repShallowArg $ zip args'' xlats
-                    let e' = mkCoreApps (Var vb') args'''
-                    isExpr <- isExprClassType retTy'
-                    absE <- if isExpr
-                            then fmapAbsExpr (mkTyConTy retTyCon) retTy' e'
-                            else return e'
-                    return $ absE
-                  -- TBD Print warning?
-                  Nothing -> defaultRet
-            _ | isRetTyExprClass -> do
-                vb_m <- findDeepId vb
-                case vb_m of
-                  Just vb' -> do
-                    -- Calculate which args we should translate, only
-                    -- ones of our languages expression types
-                    xlats <- mapM isExprClassType argTys
-                    -- Recursively translate inside of args.
-                    args'' <- mapM changeAppExpr args'
-                    args''' <- mapM repShallowArg $ zip args'' xlats
-                    let e' = mkCoreApps (Var vb') args'''
-                    absExpr e'
-                  Nothing -> defaultRet
-            _ -> defaultRet
+      case b of
+        Var vb -> do
+          let vbs = varString vb
+          isRetTyExprClass <- isExprClassType retTy
+          if isSuffixOf deepSuffix vbs || vbs `elem` comProcList
+          then defaultRet
+          else case tyCon_m of
+                Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
+                    vb_m <- findDeepId vb
+                    case vb_m of
+                      Just vb' -> do
+                        -- Calculate which args we should translate, only
+                        -- ones of our languages expression types
+                        xlats <- mapM isExprClassType argTys
+                        -- Recursively translate inside of args.
+                        args'' <- mapM changeAppExpr args'
+                        args''' <- mapM repShallowArg $ zip args'' xlats
+                        let e' = mkCoreApps (Var vb') args'''
+                        isExpr <- isExprClassType retTy'
+                        absE <- if isExpr
+                                then fmapAbsExpr (mkTyConTy retTyCon) retTy' e'
+                                else return e'
+                        return $ absE
+                      -- TBD Print warning?
+                      Nothing -> defaultRet
+                _ | isRetTyExprClass -> do
+                    vb_m <- findDeepId vb
+                    case vb_m of
+                      Just vb' -> do
+                        -- Calculate which args we should translate, only
+                        -- ones of our languages expression types
+                        xlats <- mapM isExprClassType argTys
+                        -- Recursively translate inside of args.
+                        args'' <- mapM changeAppExpr args'
+                        args''' <- mapM repShallowArg $ zip args'' xlats
+                        let e' = mkCoreApps (Var vb') args'''
+                        absExpr e'
+                      Nothing -> defaultRet
+                _ -> defaultRet
+        _ -> defaultRet
     Lam tb el -> do
       e' <- changeAppExpr el
       return $ Lam tb e'
