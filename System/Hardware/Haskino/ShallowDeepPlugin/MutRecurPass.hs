@@ -75,6 +75,7 @@ mutRecurXform bs = do
             return $ ([], bs')
     let (ids, es) = unzip bs
     s <- get
+    put s {funcId = ids}
     let (argTys, retTy) = splitFunTys $ exprType $ head es
     let retTyCon_m = splitTyConApp_maybe retTy
     monadTyCon <- thNameToTyCon monadTyConTH
@@ -95,9 +96,6 @@ mutRecurXform bs = do
                                   Just (rTyCon, []) -> mkTyConTy rTyCon
                                   Just (rTyCon, [retTyArg']) | rTyCon == exprTyCon -> retTyArg'
                                   _                 -> head retTyArgs
-                s' <- get
-                put s' {funcId = ids}
-
                 let (lbs, e') = collectBinders $ head es
                 let arg = head lbs
 
