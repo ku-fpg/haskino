@@ -428,19 +428,12 @@ changeArgBind (Rec bs) = do
 changeArgBind' :: [(Id, CoreExpr)] -> BindM ([CoreBind], [(Id, CoreExpr)])
 changeArgBind' [] = return ([], [])
 changeArgBind' ((b, e) : bs) = do
-  liftCoreM $ putMsgS "++++++++++++++++++++++"
-  liftCoreM $ putMsg $ ppr b
   ides <- changeSubBind b e
-  liftCoreM $ putMsgS "&&&&&&&&&&&&&&&&&&&&&&"
-  liftCoreM $ putMsg $ ppr $ length ides
   (nrbs', rbs') <- changeArgBind' bs
   if length ides == 1
   then do
     return (nrbs', ides ++ rbs')
   else do
-    liftCoreM $ putMsgS "++++++++++++++++++++++"
-    liftCoreM $ putMsg $ ppr $ ides !! 0
-    liftCoreM $ putMsg $ ppr $ ides !! 1
     let [nrb, rb] = ides
     let (b', e')  = nrb
     return ((NonRec b' e') : nrbs', rb : rbs')
@@ -766,8 +759,6 @@ changeAppExpr e = do
                 (_nrbs', rbs') <- changeArgBind' rbs
                 rbs'' <- changeAppExpr' rbs'
                 body' <- changeAppExpr body
-                liftCoreM $ putMsgS "(((((((((((((((((((("
-                liftCoreM $ putMsg $ ppr $ Let (Rec rbs'') body'
                 return $ Let (Rec rbs'') body'
       s' <- get
       put s' {shallowDeepMap  = head $ shallowDeepMaps s',
