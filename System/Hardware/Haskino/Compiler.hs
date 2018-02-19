@@ -2078,28 +2078,34 @@ compileIfThenElseEitherProcedure t1 t2 e cb1 cb2 = do
     put s {ifEitherComp = 1 + ifEitherComp s}
     let (ib1, ib2, ib3) = head $ iterBinds s
     _ <- compileLine $ "if (" ++ compileExpr e ++ ")"
+    s' <- get
     r1 <- compileCodeBlock True "" cb1
-    _ <- case r1 of
-            ExprLeft i a -> do
-                _ <- compileLineIndent $ bindName ++ show ib1 ++ " = " ++ compileExpr i ++ ";"
-                _ <- if t1 == UnitType then return LitUnit
-                     else if t1 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show ib2 ++ ", " ++ compileExpr a ++ ");"
-                          else compileLineIndent $ bindName ++ show ib2 ++ " = " ++ compileExpr a ++ ";"
-                _ <- compileInReleases
-                return LitUnit
-            ExprRight b -> do
-                _ <- if t2 == UnitType then return LitUnit
-                     else if t2 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show ib3 ++ ", " ++ compileExpr b ++ ");"
-                          else compileLineIndent $ bindName ++ show ib3 ++ " = " ++ compileExpr b ++ ";"
-                _ <- compileInReleases
-                compileLineIndent "break;"
+    s'' <- get
+    _ <- if ifEitherComp s'' == ifEitherComp s'
+         then do
+             case r1 of
+                ExprLeft i a -> do
+                    _ <- compileLineIndent $ bindName ++ show ib1 ++ " = " ++ compileExpr i ++ ";"
+                    _ <- if t1 == UnitType then return LitUnit
+                         else if t1 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show ib2 ++ ", " ++ compileExpr a ++ ");"
+                              else compileLineIndent $ bindName ++ show ib2 ++ " = " ++ compileExpr a ++ ";"
+                    _ <- compileInReleases
+                    return LitUnit
+                ExprRight b -> do
+                    _ <- if t2 == UnitType then return LitUnit
+                         else if t2 == List8Type then compileLineIndent $ "listAssign(&" ++ bindName ++ show ib3 ++ ", " ++ compileExpr b ++ ");"
+                              else compileLineIndent $ bindName ++ show ib3 ++ " = " ++ compileExpr b ++ ";"
+                    _ <- compileInReleases
+                    compileLineIndent "break;"
+         else return LitUnit
     _ <- compileLineIndent "}"
     _ <- compileLine "else"
+    s''' <- get
     r2 <- compileCodeBlock True "" cb2
-    s' <- get
+    s'''' <- get
     -- Check if there is another ifThenElseEither block inside of this one.
     -- If so, the else effects should only be compiled in the innermost ifThenElseEither
-    _ <- if ifEitherComp s' == ifEitherComp s + 1
+    _ <- if ifEitherComp s'''' == ifEitherComp s'''
          then do
             case r2 of
                 ExprLeft i a -> do
