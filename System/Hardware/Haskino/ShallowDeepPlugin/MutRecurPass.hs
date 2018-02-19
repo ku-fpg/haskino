@@ -91,6 +91,11 @@ mutRecurXform bs = do
           let argTyCon_m = splitTyConApp_maybe $ head argTys
           case argTyCon_m of
             Just (argTyCon, argTyArgs) -> do
+                -- TBD Fix this.  ArgTyArgs may be [] and Word8
+                --liftCoreM $ putMsgS "**********************"
+                --liftCoreM $ putMsg $ ppr argTyArgs
+                --liftCoreM $ putMsg $ ppr ids
+                --liftCoreM $ putMsg $ ppr es
                 let argTyArg = head argTyArgs
                 let retTyArg = case splitTyConApp_maybe $ head retTyArgs of
                                   Just (rTyCon, []) -> mkTyConTy rTyCon
@@ -218,7 +223,7 @@ addIfThenElses sb at rt es = addIfThenElses' 0 es
         indexArg <- repExpr $ mkIntExprInt df i
         let cond = mkCoreApps (Var eqId) [Type exprIntTy, eqDict, (Var sb), indexArg]
         return $ mkCoreApps (Var ifThenElseEitherId) [Type at, Type rt, eitherDict, cond, tb, eb]
-    addIfThenElses i (tb : rest) = do
+    addIfThenElses' i (tb : rest) = do
         ifThenElseEitherId <- thNameToId ifThenElseEitherNameTH
         eitherDict <- thNameTysToDict monadIterateTyConTH [at, rt]
         eqId <- thNameToId eqNameTH

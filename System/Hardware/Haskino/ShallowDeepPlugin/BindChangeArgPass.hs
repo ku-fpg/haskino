@@ -428,11 +428,19 @@ changeArgBind (Rec bs) = do
 changeArgBind' :: [(Id, CoreExpr)] -> BindM ([CoreBind], [(Id, CoreExpr)])
 changeArgBind' [] = return ([], [])
 changeArgBind' ((b, e) : bs) = do
+  liftCoreM $ putMsgS "++++++++++++++++++++++"
+  liftCoreM $ putMsg $ ppr b
   ides <- changeSubBind b e
+  liftCoreM $ putMsgS "&&&&&&&&&&&&&&&&&&&&&&"
+  liftCoreM $ putMsg $ ppr $ length ides
   (nrbs', rbs') <- changeArgBind' bs
   if length ides == 1
-  then return (nrbs', ides ++ rbs')
+  then do
+    return (nrbs', ides ++ rbs')
   else do
+    liftCoreM $ putMsgS "++++++++++++++++++++++"
+    liftCoreM $ putMsg $ ppr $ ides !! 0
+    liftCoreM $ putMsg $ ppr $ ides !! 1
     let [nrb, rb] = ides
     let (b', e')  = nrb
     return ((NonRec b' e') : nrbs', rb : rbs')
@@ -534,7 +542,8 @@ changeSubBind b e = do
       --_ | isArgTyExprClass -> do
       --    xlatWarning ""
       --    return [(b, e)]
-      _ -> return [(b, e)]
+      _ -> do
+        return [(b, e)]
 
 changeArg :: (CoreBndr, Type, Bool) -> BindM (CoreBndr, Type)
 changeArg (b, ty, p) = do
@@ -754,18 +763,12 @@ changeAppExpr e = do
                   -- This case should not happen
                   _ -> return e
               (Rec rbs) -> do
-                (nrbs', rbs') <- changeArgBind' rbs
+                (_nrbs', rbs') <- changeArgBind' rbs
                 rbs'' <- changeAppExpr' rbs'
                 body' <- changeAppExpr body
-                case nrbs' of
-                  []        -> return $ Let (Rec rbs'') body'
-                  [NonRec _b1 _e1] -> do
-                    -- ToDo: Same as above, do we need shallow?
-                    -- e1' <- changeAppExpr e1
-                    -- return $ Let (Rec rbs'') (Let (NonRec b1 e1') body')
-                    return $ Let (Rec rbs'') body'
-                  -- This case should not happen
-                  _ -> return e
+                liftCoreM $ putMsgS "(((((((((((((((((((("
+                liftCoreM $ putMsg $ ppr $ Let (Rec rbs'') body'
+                return $ Let (Rec rbs'') body'
       s' <- get
       put s' {shallowDeepMap  = head $ shallowDeepMaps s',
               shallowDeepMaps = tail $ shallowDeepMaps s'}
