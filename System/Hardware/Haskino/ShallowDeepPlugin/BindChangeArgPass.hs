@@ -441,55 +441,61 @@ changeArgBind' ((b, e) : bs) = do
 changeSubBind :: Id -> CoreExpr -> BindM [(Id, CoreExpr)]
 changeSubBind b e = do
   let (argTys, retTy) = splitFunTys $ varType b
-  let (bs, e') = collectBinders e
+  let (ls,e') = collectLets e
+  let (bs, e'') = collectBinders e'
   let tyCon_m = splitTyConApp_maybe retTy
   isRetTyExprClass <- isExprClassType retTy
   isArgTyExprClass <- anyExprClassType argTys
   monadTyConId <- thNameToTyCon monadTyConTH
   case tyCon_m of
-      -- We are looking for return types of Arduino a
+      -- We are looking for return types of Arduino a where a
+      --  is one of our Expr types.
       Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
-          -- Calculate which args we should translate, only
-          -- ones of our languages expression types
-          xlats <- mapM isExprClassType argTys
-          -- Change the binds and arg types to Expr a
-          zipBsArgTys <- mapM changeArg (zip3 bs argTys xlats)
-          let (bs', argTys') = unzip zipBsArgTys
+          isRetTyExprClass' <- isExprClassType retTy'
+          if isRetTyExprClass'
+          then do
+              -- Calculate which args we should translate, only
+              -- ones of our languages expression types
+              xlats <- mapM isExprClassType argTys
+              -- Change the binds and arg types to Expr a
+              zipBsArgTys <- mapM changeArg (zip3 bs argTys xlats)
+              let (bs', argTys') = unzip zipBsArgTys
 
-          -- Put arg names to translate in body into state
-          let (bs'', _) = unzip $ filter snd $ zip bs' xlats
-          s <- get
-          put s{args = bs''}
+              -- Put arg names to translate in body into state
+              let (bs'', _) = unzip $ filter snd $ zip bs' xlats
+              s <- get
+              put s{args = bs''}
 
-          -- Change any apps of the changed args in the body
-          e'' <- changeArgAppsExpr e'
+              -- Change any apps of the changed args in the body
+              e''' <- changeArgAppsExpr e''
 
-          -- Generate args for new shallow body
-          deepArgs <- mapM repShallowArg $ zip (map Var bs) xlats
+              -- Generate args for new shallow body
+              deepArgs <- mapM repShallowArg $ zip (map Var bs) xlats
 
-          -- Change return type
-          exprTyCon <- thNameToTyCon exprTyConTH
-          let exprTyConApp = mkTyConApp exprTyCon [retTy']
+              -- Change return type
+              exprTyCon <- thNameToTyCon exprTyConTH
+              let exprTyConApp = mkTyConApp exprTyCon [retTy']
 
-          -- Change the return
-          e''' <- fmapRepBindReturn e''
+              -- Change the return
+              e'''' <- fmapRepBindReturn e'''
 
-          -- Create a new top level bind type with the deep tyep
-          bDeep <- modId b deepSuffix
-          let b' = setVarType bDeep $ mkFunTys argTys' (mkTyConApp retTyCon [exprTyConApp])
+              -- Create a new top level bind type with the deep tyep
+              bDeep <- modId b deepSuffix
+              let b' = setVarType bDeep $ mkFunTys argTys' (mkTyConApp retTyCon [exprTyConApp])
 
-          -- Apply the abs <$> to the new shallow body
-          let shallowE = mkCoreApps (Var b') deepArgs
-          isExpr <- isExprClassType retTy'
-          absE <- if isExpr
-                  then fmapAbsExpr (mkTyConTy retTyCon) retTy' shallowE
-                  else return shallowE
+              -- Apply the abs <$> to the new shallow body
+              let shallowE = mkCoreApps (Var b') deepArgs
+              isExpr <- isExprClassType retTy'
+              absE <- if isExpr
+                      then fmapAbsExpr (mkTyConTy retTyCon) retTy' shallowE
+                      else return shallowE
 
-          -- Put id pair into state
-          s' <- get
-          put s'{shallowDeepMap = M.insert b b' (shallowDeepMap s')}
+              -- Put id pair into state
+              s' <- get
+              put s'{shallowDeepMap = M.insert b b' (shallowDeepMap s')}
 
-          return [(b, mkLams bs absE), (b', mkLams bs' e''')]
+              return [(b, mkLams bs absE), (b', mkLets ls $ mkLams bs' e'''')]
+          else return [(b, e)]
       -- We are looking for return types of ExprB a => a
       _ | isRetTyExprClass -> do
           -- Calculate which args we should translate, only
@@ -505,7 +511,7 @@ changeSubBind b e = do
           put s{args = bs''}
 
           -- Change any apps of the changed args in the body
-          e'' <- changeArgAppsExpr e'
+          e''' <- changeArgAppsExpr e''
 
           -- Generate args for new shallow body
           deepArgs <- mapM repShallowArg $ zip (map Var bs) xlats
@@ -515,7 +521,7 @@ changeSubBind b e = do
           let exprTyConApp = mkTyConApp exprTyCon [retTy]
 
           -- Change the return
-          e''' <- repExpr e''
+          e'''' <- repExpr e'''
 
           -- Create a new top level bind type with the deep tyep
           bDeep <- modId b deepSuffix
@@ -529,7 +535,7 @@ changeSubBind b e = do
           s' <- get
           put s'{shallowDeepMap = M.insert b b' (shallowDeepMap s')}
 
-          return [(b, mkLams bs absE), (b', mkLams bs' e''')]
+          return [(b, mkLams bs absE), (b', mkLets ls $ mkLams bs' e'''')]
       -- We are looking for argument types of ExprB a => a with
       --   a return type that is not tyExprClass.
       --_ | isArgTyExprClass -> do

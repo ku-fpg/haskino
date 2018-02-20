@@ -390,6 +390,9 @@ fmapRepBindReturn e = do
           Case ec tb ty alts -> do
             alts' <- fmapRepBindReturnAlts alts
             return $ Right $ Case ec tb ty alts'
+          Let lb lbody -> do
+            lbody' <- fmapRepBindReturn lbody
+            return $ Right $ Let lb lbody'
           _ -> return $ Right e1
 
     -- Apply rep_ <$> to the end of the bind chain if possible.
