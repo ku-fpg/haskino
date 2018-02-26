@@ -33,6 +33,7 @@ import           Control.Remote.Packet.Applicative as AP
 import           Data.Bits                         ((.&.), xor, shiftR)
 import qualified Data.ByteString                   as B
 import           Data.List                         (intercalate)
+import qualified Data.Map                          as M
 import           System.Hardware.Haskino.Data
 import           System.Hardware.Haskino.Decode
 import           System.Hardware.Haskino.Expr
@@ -87,6 +88,7 @@ openArduino verbose fp = do
                            , deviceChannel = dc
                            , listenerTid   = listenerTid
                            , refIndex      = refIndex
+                           , refBMap       = M.empty
                         }
           -- Step 0: Delay for 1 second after opeing serial port to allow Mega
           --    to funciton correctly, as opening the serial port while
@@ -232,6 +234,7 @@ sendProcedureCmds c (Debug msg) cmds = do
     message c $ bytesToString msg
     sendToArduino c cmds
 sendProcedureCmds c (Die msg msgs) _ = runDie c msg msgs
+-- sendProcedureCmds c (NewRemoteRefB r) cmds = sendRemoteNewRefB
 sendProcedureCmds c (NewRemoteRefBE r) cmds = sendRemoteBindingCmds c (NewRemoteRefBE r) cmds
 sendProcedureCmds c (NewRemoteRefW8E r) cmds  = sendRemoteBindingCmds c (NewRemoteRefW8E r) cmds
 sendProcedureCmds c (NewRemoteRefW16E r) cmds = sendRemoteBindingCmds c (NewRemoteRefW16E r) cmds
@@ -261,6 +264,15 @@ sendRemoteBindingCmds c b cmds = do
     sendToArduino c (B.append cmds (framePackage prb))
     qr <- waitResponse c (secsToMicros 5) b
     return qr
+
+{-
+sendRemoteNewRefB :: ArduinoConnection -> IO a
+sendRemoteNewRefB c = do
+    ix <- takeMVar (refIndex c)
+    putMVar (refIndex c) (ix+1)
+    bref <- newIoRef 
+    return RemoteRefB ix
+-}
 
 packageCommandIndex :: ArduinoConnection -> ArduinoPrimitive a -> IO B.ByteString
 packageCommandIndex c cmd = do

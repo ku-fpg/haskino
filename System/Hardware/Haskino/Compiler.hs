@@ -348,15 +348,45 @@ compileCommand (GiveSemE i) =
     compile1ExprCommand "giveSem" i
 compileCommand (TakeSemE i) =
     compile1ExprCommand "takeSem" i
+compileCommand (WriteRemoteRefB (RemoteRefB i) e) = do
+  compileShallowPrimitiveError "writeRemoteRefB"
+  return ()
 compileCommand (WriteRemoteRefBE (RemoteRefB i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefW8 (RemoteRefW8 i) e) = do
+  compileShallowPrimitiveError "writeRemoteRefW8"
+  return ()
 compileCommand (WriteRemoteRefW8E (RemoteRefW8 i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefW16 (RemoteRefW16 i) e) = do
+  compileShallowPrimitiveError "writeRemoteRefW16"
+  return ()
 compileCommand (WriteRemoteRefW16E (RemoteRefW16 i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefW32 (RemoteRefW32 i) e) = do
+  compileShallowPrimitiveError "writeRemoteRefW32"
+  return ()
 compileCommand (WriteRemoteRefW32E (RemoteRefW32 i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefI8 (RemoteRefI8 i) e) = do
+  compileShallowPrimitiveError "writeRemoteRefI8"
+  return ()
 compileCommand (WriteRemoteRefI8E (RemoteRefI8 i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefI16 (RemoteRefI16 i) e) = do
+  compileShallowPrimitiveError "writeRemoteRefI16"
+  return ()
 compileCommand (WriteRemoteRefI16E (RemoteRefI16 i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefI32 (RemoteRefI32 i) e) = do
+  compileShallowPrimitiveError "writeRemoteRefI32"
+  return ()
 compileCommand (WriteRemoteRefI32E (RemoteRefI32 i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefI (RemoteRefI i) e) = do
+  compileShallowPrimitiveError "writeRemoteRefI"
+  return ()
 compileCommand (WriteRemoteRefIE (RemoteRefI i) e) = compileWriteRef i e
+compileCommand (WriteRemoteRefL8 (RemoteRefL8 i) e) = do
+  compileShallowPrimitiveError "writeRemoteRefL8"
+  return ()
 compileCommand (WriteRemoteRefL8E (RemoteRefL8 i) e) = compileWriteListRef i e
+compileCommand (WriteRemoteRefFloat (RemoteRefFloat i) e) = do
+  compileShallowPrimitiveError "writeRemoteRefFloat"
+  return ()
 compileCommand (WriteRemoteRefFloatE (RemoteRefFloat i) e) = compileWriteRef i e
 compileCommand (ModifyRemoteRefBE (RemoteRefB i) f) = compileWriteRef i f
 compileCommand (ModifyRemoteRefW8E (RemoteRefW8 i) f) = compileWriteRef i f
@@ -626,60 +656,117 @@ compileProcedure DebugListen = do
 compileProcedure (Die _ _) = do
     _ <- compileUnsupportedError "die"
     return ()
+compileProcedure (NewRemoteRefB e) = do
+    _ <- compileUnsupportedError "newRemoteRefB"
+    return $ RemoteRefB 0
 compileProcedure (NewRemoteRefBE e) = do
     x <- compileNewRef BoolType e
     return $ RemoteRefB x
+compileProcedure (NewRemoteRefW8 e) = do
+    _ <- compileUnsupportedError "newRemoteRefW8"
+    return $ RemoteRefW8 0
 compileProcedure (NewRemoteRefW8E e) = do
     x <- compileNewRef Word8Type e
     return $ RemoteRefW8 x
+compileProcedure (NewRemoteRefW16 e) = do
+    _ <- compileUnsupportedError "newRemoteRefW16"
+    return $ RemoteRefW16 0
 compileProcedure (NewRemoteRefW16E e) = do
     x <- compileNewRef Word16Type e
     return $ RemoteRefW16 x
+compileProcedure (NewRemoteRefW32 e) = do
+    _ <- compileUnsupportedError "newRemoteRefW32"
+    return $ RemoteRefW32 0
 compileProcedure (NewRemoteRefW32E e) = do
     x <- compileNewRef Word32Type e
     return $ RemoteRefW32 x
+compileProcedure (NewRemoteRefI8 e) = do
+    _ <- compileUnsupportedError "newRemoteRefI8"
+    return $ RemoteRefI8 0
 compileProcedure (NewRemoteRefI8E e) = do
     x <- compileNewRef Int8Type e
     return $ RemoteRefI8 x
+compileProcedure (NewRemoteRefI16 e) = do
+    _ <- compileUnsupportedError "newRemoteRefI16"
+    return $ RemoteRefI16 0
 compileProcedure (NewRemoteRefI16E e) = do
     x <- compileNewRef Int16Type e
     return $ RemoteRefI16 x
+compileProcedure (NewRemoteRefI32 e) = do
+    _ <- compileUnsupportedError "newRemoteRefI32"
+    return $ RemoteRefI32 0
 compileProcedure (NewRemoteRefI32E e) = do
     x <- compileNewRef Int32Type e
     return $ RemoteRefI32 x
+compileProcedure (NewRemoteRefI e) = do
+    _ <- compileUnsupportedError "newRemoteRefI"
+    return $ RemoteRefI 0
 compileProcedure (NewRemoteRefIE e) = do
     x <- compileNewRef IntType e
     return $ RemoteRefI x
+compileProcedure (NewRemoteRefL8 e) = do
+    _ <- compileUnsupportedError "newRemoteRefL8"
+    return $ RemoteRefL8 0
 compileProcedure (NewRemoteRefL8E e) = do
     x <- compileNewListRef e
     return $ RemoteRefL8 x
+compileProcedure (NewRemoteRefFloat e) = do
+    _ <- compileUnsupportedError "newRemoteRefFloat"
+    return $ RemoteRefFloat 0
 compileProcedure (NewRemoteRefFloatE e) = do
     x <- compileNewRef FloatType e
     return $ RemoteRefFloat x
+compileProcedure (ReadRemoteRefB _) = do
+    _ <- compileUnsupportedError "readRemoteRefB"
+    return False
 compileProcedure (ReadRemoteRefBE (RemoteRefB i)) = do
     b <- compileReadRef BoolType i
     return $ remBind b
+compileProcedure (ReadRemoteRefW8 _) = do
+    _ <- compileUnsupportedError "readRemoteRefW8"
+    return 0
 compileProcedure (ReadRemoteRefW8E (RemoteRefW8 i)) = do
     b <- compileReadRef Word8Type i
     return $ remBind b
+compileProcedure (ReadRemoteRefW16 _) = do
+    _ <- compileUnsupportedError "readRemoteRefW16"
+    return 0
 compileProcedure (ReadRemoteRefW16E (RemoteRefW16 i)) = do
     b <- compileReadRef Word16Type i
     return $ remBind b
+compileProcedure (ReadRemoteRefW32 _) = do
+    _ <- compileUnsupportedError "readRemoteRefW32"
+    return 0
 compileProcedure (ReadRemoteRefW32E (RemoteRefW32 i)) = do
     b <- compileReadRef Word32Type i
     return $ remBind b
+compileProcedure (ReadRemoteRefI8 _) = do
+    _ <- compileUnsupportedError "readRemoteRefI8"
+    return 0
 compileProcedure (ReadRemoteRefI8E (RemoteRefI8 i)) = do
     b <- compileReadRef Int8Type i
     return $ remBind b
+compileProcedure (ReadRemoteRefI16 _) = do
+    _ <- compileUnsupportedError "readRemoteRefI16"
+    return 0
 compileProcedure (ReadRemoteRefI16E (RemoteRefI16 i)) = do
     b <- compileReadRef Int16Type i
     return $ remBind b
+compileProcedure (ReadRemoteRefI32 _) = do
+    _ <- compileUnsupportedError "readRemoteRefI32"
+    return 0
 compileProcedure (ReadRemoteRefI32E (RemoteRefI32 i)) = do
     b <- compileReadRef Int32Type i
     return $ remBind b
+compileProcedure (ReadRemoteRefL8 _) = do
+    _ <- compileUnsupportedError "readRemoteRefL8"
+    return []
 compileProcedure (ReadRemoteRefL8E (RemoteRefL8 i)) = do
     b <- compileReadListRef i
     return $ remBind b
+compileProcedure (ReadRemoteRefFloat _) = do
+    _ <- compileUnsupportedError "readRemoteRefFloat"
+    return $ 0.0
 compileProcedure (ReadRemoteRefFloatE (RemoteRefFloat i)) = do
     b <- compileReadRef FloatType i
     return $ remBind b
