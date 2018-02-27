@@ -18,7 +18,7 @@ module System.Hardware.Haskino.Comm where
 
 import           Control.Concurrent                (Chan, MVar, ThreadId,
                                                     newChan, newEmptyMVar, newMVar,
-                                                    putMVar, takeMVar,
+                                                    putMVar, readMVar, takeMVar,
                                                     writeChan, readChan,
                                                     forkIO, tryTakeMVar,
                                                     killThread, threadDelay)
@@ -316,7 +316,7 @@ sendShallowNewRef c iv dv cmds = do
 sendShallowWriteRef :: ArduinoConnection -> Int -> a -> MVar (M.Map Int (IORef a)) -> B.ByteString -> IO ()
 sendShallowWriteRef c i v dv cmds = do
     sendToArduino c cmds
-    d <- takeMVar dv
+    d <- readMVar dv
     let ir = M.lookup i d
     case ir of
       Just ir' -> writeIORef ir' v
@@ -325,7 +325,7 @@ sendShallowWriteRef c i v dv cmds = do
 sendShallowReadRef :: ArduinoConnection -> Int -> MVar (M.Map Int (IORef a)) -> B.ByteString -> IO a
 sendShallowReadRef c i dv cmds = do
     sendToArduino c cmds
-    d <- takeMVar dv
+    d <- readMVar dv
     let ir = M.lookup i d
     case ir of
       Just ir' -> readIORef ir'
