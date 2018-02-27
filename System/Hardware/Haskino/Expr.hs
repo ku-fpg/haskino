@@ -42,6 +42,8 @@ data RemoteRef a where
     RemoteRefI   :: Int -> RemoteRef Int
     RemoteRefL8  :: Int -> RemoteRef [Word8]
     RemoteRefFloat :: Int -> RemoteRef Float
+    RemoteRefPinMode :: Int -> RemoteRef PinMode
+    RemoteRefUnit :: Int -> RemoteRef ()
 
 deriving instance Show a => Show (RemoteRef a)
 
@@ -336,6 +338,7 @@ class ExprB a where
     {-# INLINE neqE #-}
     neqE a b = notB (eqE a b)
     ifBE     :: Expr Bool -> Expr a -> Expr a -> Expr a
+    remoteRef :: Int -> RemoteRef a
 
 instance ExprB () where
     lit _ = LitUnit
@@ -348,6 +351,7 @@ instance ExprB () where
     eqE _ _ = true
     {-# INLINE ifBE #-}
     ifBE _ _ _ = LitUnit
+    remoteRef = RemoteRefUnit
 
 instance ExprB PinMode where
     lit = LitPinMode
@@ -360,6 +364,7 @@ instance ExprB PinMode where
     eqE = (==*)
     {-# INLINE ifBE #-}
     ifBE = ifB
+    remoteRef = RemoteRefPinMode
 
 instance ExprB Word8 where
     lit = LitW8
@@ -372,6 +377,7 @@ instance ExprB Word8 where
     eqE = (==*)
     {-# INLINE ifBE #-}
     ifBE = ifB
+    remoteRef = RemoteRefW8
 
 instance ExprB Word16 where
     lit = LitW16
@@ -384,6 +390,7 @@ instance ExprB Word16 where
     eqE = (==*)
     {-# INLINE ifBE #-}
     ifBE = ifB
+    remoteRef = RemoteRefW16
 
 instance ExprB Word32 where
     lit = LitW32
@@ -396,6 +403,7 @@ instance ExprB Word32 where
     eqE = (==*)
     {-# INLINE ifBE #-}
     ifBE = ifB
+    remoteRef = RemoteRefW32
 
 instance ExprB Int8 where
     lit = LitI8
@@ -408,6 +416,7 @@ instance ExprB Int8 where
     eqE = (==*)
     {-# INLINE ifBE #-}
     ifBE = ifB
+    remoteRef = RemoteRefI8
 
 instance ExprB Int16 where
     lit = LitI16
@@ -420,6 +429,7 @@ instance ExprB Int16 where
     eqE = (==*)
     {-# INLINE ifBE #-}
     ifBE = ifB
+    remoteRef = RemoteRefI16
 
 instance ExprB Int32 where
     lit = LitI32
@@ -432,6 +442,7 @@ instance ExprB Int32 where
     eqE = (==*)
     {-# INLINE ifBE #-}
     ifBE = ifB
+    remoteRef = RemoteRefI32
 
 instance ExprB Int where
     lit = LitI
@@ -444,6 +455,7 @@ instance ExprB Int where
     eqE = (==*)
     {-# INLINE ifBE #-}
     ifBE = ifB
+    remoteRef = RemoteRefI
 
 instance ExprB Bool where
     lit = LitB
@@ -456,6 +468,7 @@ instance ExprB Bool where
     eqE = (==*)
     {-# INLINE ifBE #-}
     ifBE = ifB
+    remoteRef = RemoteRefB
 
 instance ExprB [Word8] where
     lit = LitList8
@@ -468,6 +481,7 @@ instance ExprB [Word8] where
     eqE = (==*)
     {-# INLINE ifBE #-}
     ifBE = ifB
+    remoteRef = RemoteRefL8
 
 instance ExprB Float where
     lit = LitFloat
@@ -480,6 +494,7 @@ instance ExprB Float where
     eqE = (==*)
     {-# INLINE ifBE #-}
     ifBE = ifB
+    remoteRef = RemoteRefFloat
 
 litString :: String -> [Word8]
 litString = stringToBytes

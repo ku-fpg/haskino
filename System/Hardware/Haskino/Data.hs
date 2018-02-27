@@ -72,7 +72,16 @@ data ArduinoConnection = ArduinoConnection {
               , processor     :: Word8                                -- ^ Type of processor on board
               , listenerTid   :: MVar ThreadId                        -- ^ ThreadId of the listener
               , refIndex      :: MVar Int                             -- ^ Index used for remote references
-              , refBMap       :: M.Map Int (IORef Bool)
+              , refBMap       :: MVar (M.Map Int (IORef Bool))        -- ^ Mapping of Bool RemoteRef -> IORef
+              , refW8Map      :: MVar (M.Map Int (IORef Word8))       -- ^ Mapping of Word8 RemoteRef -> IORef
+              , refW16Map     :: MVar (M.Map Int (IORef Word16))      -- ^ Mapping of Word16 RemoteRef -> IORef
+              , refW32Map     :: MVar (M.Map Int (IORef Word32))      -- ^ Mapping of Word32 RemoteRef -> IORef
+              , refI8Map      :: MVar (M.Map Int (IORef Int8))        -- ^ Mapping of Word8 RemoteRef -> IORef
+              , refI16Map     :: MVar (M.Map Int (IORef Int16))       -- ^ Mapping of Word16 RemoteRef -> IORef
+              , refI32Map     :: MVar (M.Map Int (IORef Int32))       -- ^ Mapping of Word32 RemoteRef -> IORef
+              , refIMap       :: MVar (M.Map Int (IORef Int))         -- ^ Mapping of Word32 RemoteRef -> IORef
+              , refL8Map      :: MVar (M.Map Int (IORef [Word8]))     -- ^ Mapping of [Word8] RemoteRef -> IORef
+              , refFloatMap   :: MVar (M.Map Int (IORef Float))       -- ^ Mapping of Float RemoteRef -> IORef
               }
 
 type SlaveAddress = Word8
@@ -544,25 +553,15 @@ instance KnownResult ArduinoPrimitive where
   knownResult (GiveSemE {}             ) = Just LitUnit
   knownResult (TakeSem {}              ) = Just ()
   knownResult (TakeSemE {}             ) = Just LitUnit
-  knownResult (WriteRemoteRefB {}      ) = Just ()
   knownResult (WriteRemoteRefBE {}     ) = Just LitUnit
-  knownResult (WriteRemoteRefW8 {}     ) = Just ()
   knownResult (WriteRemoteRefW8E {}    ) = Just LitUnit
-  knownResult (WriteRemoteRefW16 {}    ) = Just ()
   knownResult (WriteRemoteRefW16E {}   ) = Just LitUnit
-  knownResult (WriteRemoteRefW32  {}   ) = Just ()
   knownResult (WriteRemoteRefW32E  {}  ) = Just LitUnit
-  knownResult (WriteRemoteRefI8 {}     ) = Just ()
   knownResult (WriteRemoteRefI8E {}    ) = Just LitUnit
-  knownResult (WriteRemoteRefI16 {}    ) = Just ()
   knownResult (WriteRemoteRefI16E {}   ) = Just LitUnit
-  knownResult (WriteRemoteRefI32 {}    ) = Just ()
   knownResult (WriteRemoteRefI32E {}   ) = Just LitUnit
-  knownResult (WriteRemoteRefI {}      ) = Just ()
   knownResult (WriteRemoteRefIE {}     ) = Just LitUnit
-  knownResult (WriteRemoteRefL8 {}     ) = Just ()
   knownResult (WriteRemoteRefL8E {}    ) = Just LitUnit
-  knownResult (WriteRemoteRefFloat {}  ) = Just ()
   knownResult (WriteRemoteRefFloatE {} ) = Just LitUnit
   knownResult (ModifyRemoteRefBE {}    ) = Just LitUnit
   knownResult (ModifyRemoteRefW8E {}   ) = Just LitUnit

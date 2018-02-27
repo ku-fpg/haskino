@@ -17,7 +17,7 @@
 module System.Hardware.Haskino.Comm where
 
 import           Control.Concurrent                (Chan, MVar, ThreadId,
-                                                    newChan, newEmptyMVar,
+                                                    newChan, newEmptyMVar, newMVar,
                                                     putMVar, takeMVar,
                                                     writeChan, readChan,
                                                     forkIO, tryTakeMVar,
@@ -32,6 +32,7 @@ import           Control.Remote.Packet.Weak        as WP
 import           Control.Remote.Packet.Applicative as AP
 import           Data.Bits                         ((.&.), xor, shiftR)
 import qualified Data.ByteString                   as B
+import           Data.IORef
 import           Data.List                         (intercalate)
 import qualified Data.Map                          as M
 import           System.Hardware.Haskino.Data
@@ -76,8 +77,17 @@ openArduino verbose fp = do
           dc <- newChan
           tid <- setupListener port debugger dc
           liftIO $ putMVar listenerTid tid
-          refIndex <- newEmptyMVar
-          liftIO $ putMVar refIndex 0
+          refIndex <- newMVar 0
+          refBMap <- newMVar M.empty
+          refW8Map <- newMVar M.empty
+          refW16Map <- newMVar M.empty
+          refW32Map <- newMVar M.empty
+          refI8Map <- newMVar M.empty
+          refI16Map <- newMVar M.empty
+          refI32Map <- newMVar M.empty
+          refIMap <- newMVar M.empty
+          refL8Map <- newMVar M.empty
+          refFloatMap <- newMVar M.empty
           debugger $ "Started listener thread: " ++ show tid
           let initState = ArduinoConnection {
                              message       = debugger
@@ -88,7 +98,16 @@ openArduino verbose fp = do
                            , deviceChannel = dc
                            , listenerTid   = listenerTid
                            , refIndex      = refIndex
-                           , refBMap       = M.empty
+                           , refBMap       = refBMap
+                           , refW8Map      = refW8Map
+                           , refW16Map     = refW16Map
+                           , refW32Map     = refW32Map
+                           , refI8Map      = refI8Map
+                           , refI16Map     = refI16Map
+                           , refI32Map     = refI32Map
+                           , refIMap       = refIMap
+                           , refL8Map      = refL8Map
+                           , refFloatMap   = refFloatMap
                         }
           -- Step 0: Delay for 1 second after opeing serial port to allow Mega
           --    to funciton correctly, as opening the serial port while
@@ -234,17 +253,46 @@ sendProcedureCmds c (Debug msg) cmds = do
     message c $ bytesToString msg
     sendToArduino c cmds
 sendProcedureCmds c (Die msg msgs) _ = runDie c msg msgs
--- sendProcedureCmds c (NewRemoteRefB r) cmds = sendRemoteNewRefB
+sendProcedureCmds c (NewRemoteRefB r) cmds = sendShallowNewRef c r (refBMap c) cmds
 sendProcedureCmds c (NewRemoteRefBE r) cmds = sendRemoteBindingCmds c (NewRemoteRefBE r) cmds
+sendProcedureCmds c (NewRemoteRefW8 r) cmds  = sendShallowNewRef c r (refW8Map c) cmds
 sendProcedureCmds c (NewRemoteRefW8E r) cmds  = sendRemoteBindingCmds c (NewRemoteRefW8E r) cmds
+sendProcedureCmds c (NewRemoteRefW16 r) cmds = sendShallowNewRef c r (refW16Map c) cmds
 sendProcedureCmds c (NewRemoteRefW16E r) cmds = sendRemoteBindingCmds c (NewRemoteRefW16E r) cmds
+sendProcedureCmds c (NewRemoteRefW32 r) cmds = sendShallowNewRef c r (refW32Map c) cmds
 sendProcedureCmds c (NewRemoteRefW32E r) cmds = sendRemoteBindingCmds c (NewRemoteRefW32E r) cmds
+sendProcedureCmds c (NewRemoteRefI8 r) cmds = sendShallowNewRef c r (refI8Map c) cmds
 sendProcedureCmds c (NewRemoteRefI8E r) cmds = sendRemoteBindingCmds c (NewRemoteRefI8E r) cmds
+sendProcedureCmds c (NewRemoteRefI16 r) cmds = sendShallowNewRef c r (refI16Map c) cmds
 sendProcedureCmds c (NewRemoteRefI16E r) cmds = sendRemoteBindingCmds c (NewRemoteRefI16E r) cmds
+sendProcedureCmds c (NewRemoteRefI32 r) cmds = sendShallowNewRef c r (refI32Map c) cmds
 sendProcedureCmds c (NewRemoteRefI32E r) cmds = sendRemoteBindingCmds c (NewRemoteRefI32E r) cmds
+sendProcedureCmds c (NewRemoteRefI r) cmds = sendShallowNewRef c r (refIMap c) cmds
 sendProcedureCmds c (NewRemoteRefIE r) cmds = sendRemoteBindingCmds c (NewRemoteRefIE r) cmds
+sendProcedureCmds c (NewRemoteRefL8 r) cmds = sendShallowNewRef c r (refL8Map c) cmds
 sendProcedureCmds c (NewRemoteRefL8E r) cmds = sendRemoteBindingCmds c (NewRemoteRefL8E r) cmds
+sendProcedureCmds c (NewRemoteRefFloat r) cmds = sendShallowNewRef c r (refFloatMap c) cmds
 sendProcedureCmds c (NewRemoteRefFloatE r) cmds = sendRemoteBindingCmds c (NewRemoteRefFloatE r) cmds
+sendProcedureCmds c (WriteRemoteRefB (RemoteRefB ri) v) cmds = sendShallowWriteRef c ri v (refBMap c) cmds
+sendProcedureCmds c (WriteRemoteRefW8 (RemoteRefW8 ri) v) cmds = sendShallowWriteRef c ri v (refW8Map c) cmds
+sendProcedureCmds c (WriteRemoteRefW16 (RemoteRefW16 ri) v) cmds = sendShallowWriteRef c ri v (refW16Map c) cmds
+sendProcedureCmds c (WriteRemoteRefW32 (RemoteRefW32 ri) v) cmds = sendShallowWriteRef c ri v (refW32Map c) cmds
+sendProcedureCmds c (WriteRemoteRefI8 (RemoteRefI8 ri) v) cmds = sendShallowWriteRef c ri v (refI8Map c) cmds
+sendProcedureCmds c (WriteRemoteRefI16 (RemoteRefI16 ri) v) cmds = sendShallowWriteRef c ri v (refI16Map c) cmds
+sendProcedureCmds c (WriteRemoteRefI32 (RemoteRefI32 ri) v) cmds = sendShallowWriteRef c ri v (refI32Map c) cmds
+sendProcedureCmds c (WriteRemoteRefI (RemoteRefI ri) v) cmds = sendShallowWriteRef c ri v (refIMap c) cmds
+sendProcedureCmds c (WriteRemoteRefL8 (RemoteRefL8 ri) v) cmds = sendShallowWriteRef c ri v (refL8Map c) cmds
+sendProcedureCmds c (WriteRemoteRefFloat (RemoteRefFloat ri) v) cmds = sendShallowWriteRef c ri v (refFloatMap c) cmds
+sendProcedureCmds c (ReadRemoteRefB (RemoteRefB ri)) cmds = sendShallowReadRef c ri (refBMap c) cmds
+sendProcedureCmds c (ReadRemoteRefW8 (RemoteRefW8 ri)) cmds = sendShallowReadRef c ri (refW8Map c) cmds
+sendProcedureCmds c (ReadRemoteRefW16 (RemoteRefW16 ri)) cmds = sendShallowReadRef c ri (refW16Map c) cmds
+sendProcedureCmds c (ReadRemoteRefW32 (RemoteRefW32 ri)) cmds = sendShallowReadRef c ri (refW32Map c) cmds
+sendProcedureCmds c (ReadRemoteRefI8 (RemoteRefI8 ri)) cmds = sendShallowReadRef c ri (refI8Map c) cmds
+sendProcedureCmds c (ReadRemoteRefI16 (RemoteRefI16 ri)) cmds = sendShallowReadRef c ri (refI16Map c) cmds
+sendProcedureCmds c (ReadRemoteRefI32 (RemoteRefI32 ri)) cmds = sendShallowReadRef c ri (refI32Map c) cmds
+sendProcedureCmds c (ReadRemoteRefI (RemoteRefI ri)) cmds = sendShallowReadRef c ri (refIMap c) cmds
+sendProcedureCmds c (ReadRemoteRefL8 (RemoteRefL8 ri)) cmds = sendShallowReadRef c ri (refL8Map c) cmds
+sendProcedureCmds c (ReadRemoteRefFloat (RemoteRefFloat ri)) cmds = sendShallowReadRef c ri (refFloatMap c) cmds
 sendProcedureCmds c (LiftIO m) cmds = do
     sendToArduino c cmds
     m
@@ -255,6 +303,34 @@ sendProcedureCmds c procedure cmds = do
     qr <- waitResponse c (procDelay procedure) procedure
     return qr
 
+sendShallowNewRef :: ExprB a => ArduinoConnection -> a -> MVar (M.Map Int (IORef a)) -> B.ByteString -> IO (RemoteRef a)
+sendShallowNewRef c iv dv cmds = do
+    ix <- takeMVar (refIndex c)
+    putMVar (refIndex c) (ix+1)
+    sendToArduino c cmds
+    ir <- newIORef iv
+    d <- takeMVar dv
+    putMVar dv (M.insert ix ir d)
+    return $ remoteRef ix
+
+sendShallowWriteRef :: ArduinoConnection -> Int -> a -> MVar (M.Map Int (IORef a)) -> B.ByteString -> IO ()
+sendShallowWriteRef c i v dv cmds = do
+    sendToArduino c cmds
+    d <- takeMVar dv
+    let ir = M.lookup i d
+    case ir of
+      Just ir' -> writeIORef ir' v
+      Nothing -> error "Writing Unitialized Remote Refereence"
+
+sendShallowReadRef :: ArduinoConnection -> Int -> MVar (M.Map Int (IORef a)) -> B.ByteString -> IO a
+sendShallowReadRef c i dv cmds = do
+    sendToArduino c cmds
+    d <- takeMVar dv
+    let ir = M.lookup i d
+    case ir of
+      Just ir' -> readIORef ir'
+      Nothing -> error "Writing Unitialized Remote Refereence"
+
 sendRemoteBindingCmds :: ArduinoConnection -> ArduinoPrimitive a -> B.ByteString -> IO a
 sendRemoteBindingCmds c b cmds = do
     ix <- takeMVar (refIndex c)
@@ -264,15 +340,6 @@ sendRemoteBindingCmds c b cmds = do
     sendToArduino c (B.append cmds (framePackage prb))
     qr <- waitResponse c (secsToMicros 5) b
     return qr
-
-{-
-sendRemoteNewRefB :: ArduinoConnection -> IO a
-sendRemoteNewRefB c = do
-    ix <- takeMVar (refIndex c)
-    putMVar (refIndex c) (ix+1)
-    bref <- newIoRef 
-    return RemoteRefB ix
--}
 
 packageCommandIndex :: ArduinoConnection -> ArduinoPrimitive a -> IO B.ByteString
 packageCommandIndex c cmd = do
