@@ -2334,6 +2334,27 @@ compileInfixSubExpr :: String -> Expr a -> Expr b -> String
 compileInfixSubExpr ec e1 e2 = "(" ++ compileExpr e1 ++ " " ++ ec ++
                                " " ++ compileExpr e2 ++ ")"
 
+compileExprWithCast :: CompileType -> Expr a -> String
+compileExprWithCast t e =
+  case e of
+    LitW8 _      -> compileExpr e
+    LitW16 _     -> compileExpr e
+    LitI8 _      -> compileExpr e
+    LitI16 _     -> compileExpr e
+    FromIntW8 _  -> compileExpr e
+    FromIntW16 _ -> compileExpr e
+    FromIntI8 _  -> compileExpr e
+    FromIntI16 _ -> compileExpr e
+    RemBindW8 _  -> compileExpr e
+    RemBindW16 _ -> compileExpr e
+    RemBindI8 _  -> compileExpr e
+    RemBindI16 _ -> compileExpr e
+    _            -> "((" ++ compileTypeToString t ++ ") " ++ compileExpr e ++ ")"
+
+compileInfixSubExprWithCast :: String -> CompileType -> Expr a -> Expr b -> String
+compileInfixSubExprWithCast ec et e1 e2 = "(" ++ compileExprWithCast et e1 ++ " " ++ ec ++
+                               " " ++ compileExprWithCast et e2 ++ ")"
+
 compileSign :: Expr a -> String
 compileSign e = "(" ++ compileExpr e ++ " == 0 ? 0 : 1)"
 
@@ -2361,6 +2382,12 @@ compileEqual = compileInfixSubExpr "=="
 
 compileLess :: Expr a -> Expr a -> String
 compileLess = compileInfixSubExpr "<"
+
+compileEqualWithCast ::  CompileType -> Expr a -> Expr a -> String
+compileEqualWithCast = compileInfixSubExprWithCast "=="
+
+compileLessWithCast ::  CompileType -> Expr a -> Expr a -> String
+compileLessWithCast = compileInfixSubExprWithCast "<"
 
 compileAdd :: Expr a -> Expr a -> String
 compileAdd = compileInfixSubExpr "+"
@@ -2423,16 +2450,16 @@ compileExpr (OrB e1 e2) = compileBOr e1 e2
 compileExpr (EqB e1 e2) = compileEqual e1 e2
 compileExpr (LessB e1 e2) = compileLess e1 e2
 compileExpr (IfB e1 e2 e3) = compileIfSubExpr e1 e2 e3
-compileExpr (EqW8 e1 e2) = compileEqual e1 e2
-compileExpr (LessW8 e1 e2) = compileLess e1 e2
-compileExpr (EqW16 e1 e2) = compileEqual e1 e2
-compileExpr (LessW16 e1 e2) = compileLess e1 e2
+compileExpr (EqW8 e1 e2) = compileEqualWithCast Word8Type e1 e2
+compileExpr (LessW8 e1 e2) = compileLessWithCast Word8Type e1 e2
+compileExpr (EqW16 e1 e2) = compileEqualWithCast Word16Type e1 e2
+compileExpr (LessW16 e1 e2) = compileLessWithCast Word16Type e1 e2
 compileExpr (EqW32 e1 e2) = compileEqual e1 e2
 compileExpr (LessW32 e1 e2) = compileLess e1 e2
-compileExpr (EqI8 e1 e2) = compileEqual e1 e2
-compileExpr (LessI8 e1 e2) = compileLess e1 e2
-compileExpr (EqI16 e1 e2) = compileEqual e1 e2
-compileExpr (LessI16 e1 e2) = compileLess e1 e2
+compileExpr (EqI8 e1 e2) = compileEqualWithCast Int8Type e1 e2
+compileExpr (LessI8 e1 e2) = compileLessWithCast Int8Type e1 e2
+compileExpr (EqI16 e1 e2) = compileEqualWithCast Int16Type e1 e2
+compileExpr (LessI16 e1 e2) = compileLessWithCast Int16Type e1 e2
 compileExpr (EqI32 e1 e2) = compileEqual e1 e2
 compileExpr (LessI32 e1 e2) = compileLess e1 e2
 compileExpr (EqI e1 e2) = compileEqual e1 e2
