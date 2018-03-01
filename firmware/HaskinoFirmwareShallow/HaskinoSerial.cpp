@@ -71,7 +71,7 @@ static void handleBegin(int size, const byte *msg)
     if ( msg[1] == EXPR_WORD8  && msg[2] == EXPR_LIT &&
          msg[4] == EXPR_WORD32 && msg[5] == EXPR_LIT )
         {
-        port = msg[4];
+        port = msg[3];
         rate = ((uint32_t) msg[9] << 24) | ((uint32_t) msg[8] << 16) |
                ((uint32_t) msg[7] << 8) | (uint32_t) msg[6];
         dev = getDev(port);
@@ -86,9 +86,9 @@ static void handleEnd(int size, const byte *msg)
     byte port;
     HardwareSerial *dev;
 
-    if ( msg[2] == EXPR_WORD8 && msg[3] == EXPR_LIT)
+    if ( msg[1] == EXPR_WORD8 && msg[2] == EXPR_LIT)
         {
-        port = msg[4];
+        port = msg[3];
         dev = getDev(port);
 
         if (dev)
@@ -106,6 +106,8 @@ static void handleRead(int size, const byte *msg)
     if ( msg[2] == EXPR_WORD8 && msg[3] == EXPR_LIT)
         {
         port = msg[4];
+        dev = getDev(port);
+
         if (dev)
             {
             data = dev->read();
@@ -194,6 +196,8 @@ static void handleWriteList(int size, const byte *msg)
          msg[4] == EXPR_LIST8 && msg[5] == EXPR_LIT )
         {
         port = msg[3];
+        dev = getDev(port);
+
         list = (byte *) &msg[6];
         listSize = list[1];
         data = &list[2];

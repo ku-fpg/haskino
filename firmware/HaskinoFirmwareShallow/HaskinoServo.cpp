@@ -55,9 +55,9 @@ static void handleAttach(int size, const byte *msg)
          msg[5] == EXPR_WORD16 && msg[6] == EXPR_LIT &&
          msg[9] == EXPR_WORD16 && msg[10] == EXPR_LIT )
         {
-        servoId = msg[3];
+        pin = msg[4];
         min = ((int16_t) msg[8] << 8) | (uint16_t) msg[7];
-        min = ((int16_t) msg[12] << 8) | (uint16_t) msg[11];
+        max = ((int16_t) msg[12] << 8) | (uint16_t) msg[11];
 
         newServo = new Servo();
         newServo->attach(pin, min, max);

@@ -39,11 +39,11 @@ static void handleRead(int size, const byte *msg)
     byte *localMem, *local;
     int byteAvail;
 
-    if ( msg[1] == EXPR_WORD8  && msg[2] == EXPR_LIT &&
-         msg[4] == EXPR_BOOL   && msg[5] == EXPR_LIT )
+    if ( msg[2] == EXPR_WORD8  && msg[3] == EXPR_LIT &&
+         msg[5] == EXPR_BOOL   && msg[6] == EXPR_LIT )
         {
-        slaveAddress = msg[3];
-        byteCount = msg[6];
+        slaveAddress = msg[4];
+        byteCount = msg[7];
         Wire.requestFrom((int) slaveAddress, (int) byteCount);
         byteAvail = Wire.available();
 
