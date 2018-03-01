@@ -12,6 +12,6 @@ void endReplyFrame();
 void sendReplyByte(byte replyByte);
 void sendReply(int count, byte replyType, const byte *reply);
 void sendStringf(const char *fmt, ...);
-bool parseMessage(int size, const byte *msg);
+void parseMessage(int size, const byte *msg);
 
 #endif /* HaskinoCommH */

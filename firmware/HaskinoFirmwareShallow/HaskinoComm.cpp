@@ -156,5 +156,5 @@ void sendStringf(const char *fmt, ...)
     va_start(argp, fmt);
     vsprintf(buffer, fmt, argp);
     va_end(argp);
-    sendReply(strlen(buffer), BS_RESP_STRING, (const byte *) buffer, NULL, 0);
+    sendReply(strlen(buffer), BS_RESP_STRING, (const byte *) buffer);
     }

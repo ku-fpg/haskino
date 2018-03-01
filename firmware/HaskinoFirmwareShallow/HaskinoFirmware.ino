@@ -4,7 +4,6 @@
 #include "HaskinoComm.h"
 #include "HaskinoCommands.h"
 #include "HaskinoBoardStatus.h"
-#include "HaskinoScheduler.h"
 
 /*
  
@@ -20,7 +19,6 @@
 void setup()
 {
     Serial.begin(115200);
-    schedulerBootTask();
 }
 
 /*==============================================================================
@@ -31,4 +29,5 @@ void loop()
     while (Serial.available()) 
         {
         handleInput();
+        }
 }

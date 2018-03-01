@@ -18,7 +18,7 @@ static bool handleWriteMicros(int size, const byte *msg, CONTEXT *context);
 static bool handleRead(int size, const byte *msg, CONTEXT *context);
 static bool handleReadMicros(int size, const byte *msg, CONTEXT *context);
 
-bool parseServoMessage(int size, const byte *msg, CONTEXT *context)
+void parseServoMessage(int size, const byte *msg, CONTEXT *context)
     {
     switch (msg[0]) 
         {

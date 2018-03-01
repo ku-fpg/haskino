@@ -46,6 +46,7 @@ firmware/Arduino-Makefile
 
 # Firmware binaries
 firmware/HaskinoFirmware/build-*
+firmware/HaskinoFirmwareShallow/build-*
 firmware/HaskinoRuntime/build-*
 firmware/EEPROMErase/build-*
 

@@ -1,8 +1,6 @@
 #ifndef HaskinoStepperH
 #define HaskinoStepperH
 
-#include "HaskinoScheduler.h"
-
-bool parseStepperMessage(int size, const byte *msg, CONTEXT *context);
+void parseStepperMessage(int size, const byte *msg);
 
 #endif /* HaskinoStepperH */

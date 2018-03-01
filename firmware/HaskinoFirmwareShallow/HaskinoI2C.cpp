@@ -3,111 +3,108 @@
 #include "HaskinoComm.h"
 #include "HaskinoCommands.h"
 #include "HaskinoConfig.h"
-#include "HaskinoExpr.h"
 #include "HaskinoI2C.h"
 
 #ifdef INCLUDE_I2C_CMDS
-static bool handleConfig(int size, const byte *msg, CONTEXT *context);
-static bool handleRead(int size, const byte *msg, CONTEXT *context);
-static bool handleWrite(int size, const byte *msg, CONTEXT *context);
+static void handleConfig(int size, const byte *msg);
+static void handleRead(int size, const byte *msg);
+static void handleWrite(int size, const byte *msg);
 
-bool parseI2CMessage(int size, const byte *msg, CONTEXT *context)
+void parseI2CMessage(int size, const byte *msg)
     {
-    switch (msg[0] ) 
+    switch (msg[0] )
         {
         case I2C_CMD_CONFIG:
-            return handleConfig(size, msg, context);
+            return handleConfig(size, msg);
             break;
         case I2C_CMD_READ:
-            return handleRead(size, msg, context);
+            return handleRead(size, msg);
             break;
         case I2C_CMD_WRITE:
-            return handleWrite(size, msg, context);
+            return handleWrite(size, msg);
             break;
         }
-    return false;
     }
 
-static bool handleConfig(int size, const byte *msg, CONTEXT *context)
+static void handleConfig(int size, const byte *msg)
     {
     Wire.begin();
     delay(10);
-    return false;
     }
 
-static bool handleRead(int size, const byte *msg, CONTEXT *context)
+static void handleRead(int size, const byte *msg)
     {
-    byte bind = msg[1];
-    byte *expr = (byte *) &msg[2];
-    byte slaveAddress = evalWord8Expr(&expr, context);
-    byte byteCount = evalWord8Expr(&expr, context);
+    byte slaveAddress;
+    byte byteCount;
     byte *localMem, *local;
     int byteAvail;
 
-    Wire.requestFrom((int) slaveAddress, (int) byteCount);
-    byteAvail = Wire.available();
-
-    if (byteCount < byteAvail) 
+    if ( msg[1] == EXPR_WORD8  && msg[2] == EXPR_LIT &&
+         msg[4] == EXPR_BOOL   && msg[5] == EXPR_LIT )
         {
-#ifdef DEBUG
-        sendStringf("I2C: M");
-#endif
-        } 
-    else if (byteCount > byteAvail) 
-        {
-#ifdef DEBUG
-        sendStringf("I2C: F");
-#endif
-        }
+        slaveAddress = msg[3];
+        byteCount = msg[6];
+        Wire.requestFrom((int) slaveAddress, (int) byteCount);
+        byteAvail = Wire.available();
 
-    localMem = (byte *) malloc(byteAvail+3);
-    local = &localMem[3];
+        if (byteCount < byteAvail)
+            {
+    #ifdef DEBUG
+            sendStringf("I2C: M");
+    #endif
+            }
+        else if (byteCount > byteAvail)
+            {
+    #ifdef DEBUG
+            sendStringf("I2C: F");
+    #endif
+            }
 
-    localMem[0] = EXPR_LIST8;
-    localMem[1] = EXPR_LIT;
-    localMem[2] = byteAvail;
+        localMem = (byte *) malloc(byteAvail+3);
+        local = &localMem[3];
 
-    for (int i = 0; i < byteAvail; i++)
-        { 
-        *local++ = Wire.read();
-        }
+        localMem[0] = EXPR_LIST8;
+        localMem[1] = EXPR_LIT;
+        localMem[2] = byteAvail;
 
-    if (context && context->bind)
-        {
-        putBindListPtr(context, bind, localMem);
+        for (int i = 0; i < byteAvail; i++)
+            {
+            *local++ = Wire.read();
+            }
+
+        sendReply(byteAvail+3, I2C_RESP_READ, localMem);
+        free(localMem);
         }
-    else 
-        {
-        sendReply(byteAvail+3, I2C_RESP_READ, localMem, context, bind);
-        free(localMem);    
-        }
-    return false;
     }
 
-static bool handleWrite(int size, const byte *msg, CONTEXT *context)
+static void handleWrite(int size, const byte *msg)
     {
-    byte *expr = (byte *) &msg[1];
-    byte slaveAddress = evalWord8Expr(&expr, context);
-    bool alloc;
-    byte *list = evalList8Expr(&expr, context, &alloc);
-    byte listSize = list[1];
-    const byte *data = &list[2];
-    byte byteCount = size;
+    byte slaveAddress;
+    byte *list;
+    byte listSize;
+    const byte *data;
+    byte byteCount;
 
-    if (byteCount > listSize)
-        byteCount = listSize;
-
-    if (byteCount > 0)
+    if ( msg[1] == EXPR_WORD8  && msg[2] == EXPR_LIT &&
+         msg[4] == EXPR_LIST8  && msg[5] == EXPR_LIT )
         {
-        Wire.beginTransmission(slaveAddress);
-        Wire.write(data, byteCount);
-        Wire.endTransmission();
-        delayMicroseconds(70);
+        slaveAddress = msg[3];
+        list = (byte *) &msg[6];
+
+        listSize = list[1];
+        data = &list[2];
+        byteCount = size;
+
+        if (byteCount > listSize)
+            byteCount = listSize;
+
+        if (byteCount > 0)
+            {
+            Wire.beginTransmission(slaveAddress);
+            Wire.write(data, byteCount);
+            Wire.endTransmission();
+            delayMicroseconds(70);
+            }
         }
-
-    if (alloc)
-        free(list);
-
-    return false;
     }
 #endif

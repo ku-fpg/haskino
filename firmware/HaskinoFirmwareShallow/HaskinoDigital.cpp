@@ -3,99 +3,111 @@
 #include "HaskinoCommands.h"
 #include "HaskinoConfig.h"
 #include "HaskinoDigital.h"
-#include "HaskinoExpr.h"
 
 #ifdef INCLUDE_DIG_CMDS
-static bool handleReadPin(int size, const byte *msg, CONTEXT *context);
-static bool handleWritePin(int size, const byte *msg, CONTEXT *context);
-static bool handleReadPort(int size, const byte *msg, CONTEXT *context);
-static bool handleWritePort(int size, const byte *msg, CONTEXT *context);
+static void handleReadPin(int size, const byte *msg);
+static void handleWritePin(int size, const byte *msg);
+static void handleReadPort(int size, const byte *msg);
+static void handleWritePort(int size, const byte *msg);
 
-bool parseDigitalMessage(int size, const byte *msg, CONTEXT *context)
+void parseDigitalMessage(int size, const byte *msg)
     {
-    switch (msg[0]) 
+    switch (msg[0])
         {
         case DIG_CMD_READ_PIN:
-            handleReadPin(size, msg, context);
+            handleReadPin(size, msg);
             break;
         case DIG_CMD_WRITE_PIN:
-            handleWritePin(size, msg, context);
+            handleWritePin(size, msg);
             break;
         case DIG_CMD_READ_PORT:
-            handleReadPort(size, msg, context);
+            handleReadPort(size, msg);
             break;
         case DIG_CMD_WRITE_PORT:
-            handleWritePort(size, msg, context);
+            handleWritePort(size, msg);
             break;
         }
-    return false;
     }
 
-static bool handleReadPin(int size, const byte *msg, CONTEXT *context)
+static void handleReadPin(int size, const byte *msg)
     {
-    byte bind = msg[1];
-    byte *expr = (byte *) &msg[2];
-    byte pinNo = evalWord8Expr(&expr, context);
+    byte pinNo;
     byte digitalReply[3];
 
-    digitalReply[0] = EXPR_BOOL;
-    digitalReply[1] = EXPR_LIT;
-    digitalReply[2] = digitalRead(pinNo);
+    if ( msg[2] == EXPR_WORD8 && msg[3] == EXPR_LIT)
+        {
+        pinNo = msg[4];
+        digitalReply[0] = EXPR_BOOL;
+        digitalReply[1] = EXPR_LIT;
+        digitalReply[2] = digitalRead(pinNo);
 
-    sendReply(sizeof(digitalReply), DIG_RESP_READ_PIN, 
-              digitalReply, context, bind);
-    return false;
+        sendReply(sizeof(digitalReply), DIG_RESP_READ_PIN, digitalReply);
+        }
     }
 
-static bool handleWritePin(int size, const byte *msg, CONTEXT *context)
+static void handleWritePin(int size, const byte *msg)
     {
-    byte *expr = (byte *) &msg[1];
-    byte pinNo = evalWord8Expr(&expr, context);
-    byte value = evalBoolExpr(&expr, context);
+    byte pinNo;
+    byte value;
 
-    digitalWrite(pinNo, value);
-    return false;
+    if ( msg[1] == EXPR_WORD8  && msg[2] == EXPR_LIT &&
+         msg[4] == EXPR_BOOL   && msg[5] == EXPR_LIT )
+        {
+        pinNo = msg[3];
+        value = msg[6];
+
+        digitalWrite(pinNo, value);
+        }
     }
 
 static uint8_t bits[8] = {0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80};
 
-static bool handleReadPort(int size, const byte *msg, CONTEXT *context)
+static void handleReadPort(int size, const byte *msg)
     {
-    byte bind = msg[1];
-    byte *expr = (byte *) &msg[2];
-    byte pinNo = evalWord8Expr(&expr, context);
-    byte mask = evalWord8Expr(&expr, context);
+    byte pinNo;
+    byte mask;
     byte digitalReply[3];
 
-    digitalReply[0] = EXPR_WORD8;
-    digitalReply[1] = EXPR_LIT;
-    digitalReply[2] = 0;
-    for (int i=0;i<8;i++)
+    if ( msg[1] == EXPR_WORD8  && msg[2] == EXPR_LIT &&
+         msg[4] == EXPR_WORD8  && msg[5] == EXPR_LIT )
         {
-        if ((bits[i] & mask) && digitalRead(pinNo+i))
-            digitalReply[1] |= bits[i];
-        }
+        pinNo = msg[3];
+        mask = msg[6];
 
-    sendReply(sizeof(digitalReply), DIG_RESP_READ_PORT, 
-              digitalReply, context, bind);
-    return false;
+        digitalReply[0] = EXPR_WORD8;
+        digitalReply[1] = EXPR_LIT;
+        digitalReply[2] = 0;
+        for (int i=0;i<8;i++)
+            {
+            if ((bits[i] & mask) && digitalRead(pinNo+i))
+                digitalReply[1] |= bits[i];
+            }
+
+        sendReply(sizeof(digitalReply), DIG_RESP_READ_PORT, digitalReply);
+        }
     }
 
-static bool handleWritePort(int size, const byte *msg, CONTEXT *context)
+static void handleWritePort(int size, const byte *msg)
     {
-    byte *expr = (byte *) &msg[1];
-    byte pinNo = evalWord8Expr(&expr, context);
-    byte value = evalWord8Expr(&expr, context);
-    byte mask = evalWord8Expr(&expr, context);
+    byte pinNo;
+    byte value;
+    byte mask;
 
-    for (int i=0;i<8;i++)
+    if ( msg[1] == EXPR_WORD8  && msg[2] == EXPR_LIT &&
+         msg[4] == EXPR_WORD8  && msg[5] == EXPR_LIT &&
+         msg[7] == EXPR_WORD8  && msg[8] == EXPR_LIT )
         {
-        if (bits[i] & mask) 
+        pinNo = msg[3];
+        value = msg[6];
+        mask = msg[9];
+
+        for (int i=0;i<8;i++)
             {
-            digitalWrite(pinNo+i, (bits[i] & value) == bits[i]);
+            if (bits[i] & mask)
+                {
+                digitalWrite(pinNo+i, (bits[i] & value) == bits[i]);
+                }
             }
         }
-
-    return false;
     }
 #endif

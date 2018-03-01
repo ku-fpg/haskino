@@ -2,41 +2,39 @@
 #include "HaskinoComm.h"
 #include "HaskinoCommands.h"
 #include "HaskinoConfig.h"
-#include "HaskinoExpr.h"
 #include "HaskinoSerial.h"
 
 #ifdef INCLUDE_SERIAL_CMDS
-static bool handleBegin(int size, const byte *msg, CONTEXT *context);
-static bool handleEnd(int size, const byte *msg, CONTEXT *context);
-static bool handleWrite(int size, const byte *msg, CONTEXT *context);
-static bool handleWriteList(int size, const byte *msg, CONTEXT *context);
-static bool handleRead(int size, const byte *msg, CONTEXT *context);
-static bool handleReadList(int size, const byte *msg, CONTEXT *context);
+static void handleBegin(int size, const byte *msg);
+static void handleEnd(int size, const byte *msg);
+static void handleWrite(int size, const byte *msg);
+static void handleWriteList(int size, const byte *msg);
+static void handleRead(int size, const byte *msg);
+static void handleReadList(int size, const byte *msg);
 
-bool parseSerialMessage(int size, const byte *msg, CONTEXT *context)
+void parseSerialMessage(int size, const byte *msg)
     {
     switch (msg[0] )
         {
         case SER_CMD_BEGIN:
-            return handleBegin(size, msg, context);
+            handleBegin(size, msg);
             break;
         case SER_CMD_END:
-            return handleEnd(size, msg, context);
+            handleEnd(size, msg);
             break;
         case SER_CMD_WRITE:
-            return handleWrite(size, msg, context);
+            handleWrite(size, msg);
             break;
         case SER_CMD_WRITE_LIST:
-            return handleWriteList(size, msg, context);
+            handleWriteList(size, msg);
             break;
         case SER_CMD_READ:
-            return handleRead(size, msg, context);
+            handleRead(size, msg);
             break;
         case SER_CMD_READ_LIST:
-            return handleReadList(size, msg, context);
+            handleReadList(size, msg);
             break;
         }
-    return false;
     }
 
 static HardwareSerial *getDev(uint8_t p)
@@ -64,135 +62,150 @@ static HardwareSerial *getDev(uint8_t p)
         }
     }
 
-static bool handleBegin(int size, const byte *msg, CONTEXT *context)
+static void handleBegin(int size, const byte *msg)
     {
-    byte *expr = (byte *) &msg[1];
-    byte port = evalWord8Expr(&expr, context);
-    byte rate = evalWord32Expr(&expr, context);
-    HardwareSerial *dev = getDev(port);
+    byte port;
+    uint32_t rate;
+    HardwareSerial *dev;
 
-    if (dev)
-        dev ->begin(rate);
-    return false;
+    if ( msg[1] == EXPR_WORD8  && msg[2] == EXPR_LIT &&
+         msg[4] == EXPR_WORD32 && msg[5] == EXPR_LIT )
+        {
+        port = msg[4];
+        rate = ((uint32_t) msg[9] << 24) | ((uint32_t) msg[8] << 16) |
+               ((uint32_t) msg[7] << 8) | (uint32_t) msg[6];
+        dev = getDev(port);
+
+        if (dev)
+            dev ->begin(rate);
+        }
     }
 
-static bool handleEnd(int size, const byte *msg, CONTEXT *context)
+static void handleEnd(int size, const byte *msg)
     {
-    byte *expr = (byte *) &msg[1];
-    byte port = evalWord8Expr(&expr, context);
-    HardwareSerial *dev = getDev(port);
+    byte port;
+    HardwareSerial *dev;
 
-    if (dev)
-        dev ->end();
-    return false;
+    if ( msg[2] == EXPR_WORD8 && msg[3] == EXPR_LIT)
+        {
+        port = msg[4];
+        dev = getDev(port);
+
+        if (dev)
+            dev ->end();
+        }
     }
 
-static bool handleRead(int size, const byte *msg, CONTEXT *context)
+static void handleRead(int size, const byte *msg)
     {
-    byte bind = msg[1];
-    byte *expr = (byte *) &msg[2];
-    byte port = evalWord8Expr(&expr, context);
-    HardwareSerial *dev = getDev(port);
+    byte port;
+    HardwareSerial *dev;
     byte readReply[6];
     int32_t data;
 
-    if (dev)
+    if ( msg[2] == EXPR_WORD8 && msg[3] == EXPR_LIT)
         {
-        data = dev->read();
+        port = msg[4];
+        if (dev)
+            {
+            data = dev->read();
+            }
+        else
+            {
+            data = -1;
+            }
+
+        readReply[0] = EXPR_INT32;
+        readReply[1] = EXPR_LIT;
+        memcpy(&readReply[2], &data, sizeof(data));
+
+        sendReply(2 + sizeof(readReply), SER_RESP_READ, readReply);
         }
-    else
-        {
-        data = -1;
-        }
-
-    readReply[0] = EXPR_INT32;
-    readReply[1] = EXPR_LIT;
-    memcpy(&readReply[2], &data, sizeof(data));
-
-    sendReply(2 + sizeof(readReply), SER_RESP_READ, readReply, context, bind);
-
-    return false;
     }
 
-static bool handleReadList(int size, const byte *msg, CONTEXT *context)
+static void handleReadList(int size, const byte *msg)
     {
-    byte bind = msg[1];
-    byte *expr = (byte *) &msg[2];
-    byte port = evalWord8Expr(&expr, context);
-    HardwareSerial *dev = getDev(port);
+    byte port;
+    HardwareSerial *dev;
     byte *localMem, *local;
     int byteAvail;
 
-    if (dev)
+    if ( msg[2] == EXPR_WORD8 && msg[3] == EXPR_LIT)
         {
-        byteAvail = dev->available();
-        }
-    else
-        {
-        byteAvail = 0;
-        }
+        port = msg[4];
+        dev = getDev(port);
 
-    localMem = (byte *) malloc(byteAvail+3);
-    local = &localMem[3];
+        if (dev)
+            {
+            byteAvail = dev->available();
+            }
+        else
+            {
+            byteAvail = 0;
+            }
 
-    localMem[0] = EXPR_LIST8;
-    localMem[1] = EXPR_LIT;
-    localMem[2] = byteAvail;
+        localMem = (byte *) malloc(byteAvail+3);
+        local = &localMem[3];
 
-    for (int i = 0; i < byteAvail; i++)
-        {
-        *local++ = dev->read();
-        }
+        localMem[0] = EXPR_LIST8;
+        localMem[1] = EXPR_LIT;
+        localMem[2] = byteAvail;
 
-    if (context && context->bind)
-        {
-        putBindListPtr(context, bind, localMem);
-        }
-    else
-        {
-        sendReply(byteAvail+3, I2C_RESP_READ, localMem, context, bind);
+        for (int i = 0; i < byteAvail; i++)
+            {
+            *local++ = dev->read();
+            }
+
+        sendReply(byteAvail+3, I2C_RESP_READ, localMem);
         free(localMem);
         }
-    return false;
     }
 
-static bool handleWrite(int size, const byte *msg, CONTEXT *context)
+static void handleWrite(int size, const byte *msg)
     {
-    byte *expr = (byte *) &msg[1];
-    byte port = evalWord8Expr(&expr, context);
-    HardwareSerial *dev = getDev(port);
-    byte data = evalWord8Expr(&expr, context);
+    byte port;
+    HardwareSerial *dev;
+    byte data;
 
-    if (dev)
+    if ( msg[1] == EXPR_WORD8 && msg[2] == EXPR_LIT &&
+         msg[4] == EXPR_WORD8 && msg[5] == EXPR_LIT )
         {
-        dev->write(data);
-        }
+        port = msg[3];
+        data = msg[6];
+        dev = getDev(port);
 
-    return false;
+        if (dev)
+            {
+            dev->write(data);
+            }
+        }
     }
 
-static bool handleWriteList(int size, const byte *msg, CONTEXT *context)
+static void handleWriteList(int size, const byte *msg)
     {
-    byte *expr = (byte *) &msg[1];
-    byte port = evalWord8Expr(&expr, context);
-    HardwareSerial *dev = getDev(port);
-    bool alloc;
-    byte *list = evalList8Expr(&expr, context, &alloc);
-    byte listSize = list[1];
-    const byte *data = &list[2];
-    byte byteCount = size;
+    byte port;
+    HardwareSerial *dev;
+    byte *list;
+    byte listSize;
+    const byte *data;
+    byte byteCount;
 
-    if (byteCount > listSize)
-        byteCount = listSize;
-
-    if (dev && byteCount > 0)
+    if ( msg[1] == EXPR_WORD8 && msg[2] == EXPR_LIT &&
+         msg[4] == EXPR_LIST8 && msg[5] == EXPR_LIT )
         {
-        dev->write(data, byteCount);
+        port = msg[3];
+        list = (byte *) &msg[6];
+        listSize = list[1];
+        data = &list[2];
+        byteCount = size;
+
+        if (byteCount > listSize)
+            byteCount = listSize;
+
+        if (dev && byteCount > 0)
+            {
+            dev->write(data, byteCount);
+            }
         }
-
-    if (alloc)
-        free(list);
-
-    return false;
     }
 #endif

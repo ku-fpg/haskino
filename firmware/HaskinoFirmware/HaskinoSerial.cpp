@@ -13,8 +13,7 @@ static bool handleWriteList(int size, const byte *msg, CONTEXT *context);
 static bool handleRead(int size, const byte *msg, CONTEXT *context);
 static bool handleReadList(int size, const byte *msg, CONTEXT *context);
 
-bool parseSerialMessage(int size, const byte *msg, CONTEXT *context)
-    {
+void    {
     switch (msg[0] )
         {
         case SER_CMD_BEGIN:
@@ -68,7 +67,7 @@ static bool handleBegin(int size, const byte *msg, CONTEXT *context)
     {
     byte *expr = (byte *) &msg[1];
     byte port = evalWord8Expr(&expr, context);
-    byte rate = evalWord32Expr(&expr, context);
+    uint32_t rate = evalWord32Expr(&expr, context);
     HardwareSerial *dev = getDev(port);
 
     if (dev)
