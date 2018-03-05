@@ -1,7 +1,7 @@
 #ifndef HaskinoConfigH
 #define HaskinoConfigH
 
-#define MESSAGE_MAX_SIZE    256
+#define MESSAGE_MAX_SIZE    32
 #define MAX_REFS            32
 #define BIND_SPACING        6
 #define DEFAULT_BIND_COUNT  10
