@@ -2656,7 +2656,7 @@ compileExpr (SliceList8 e1 e2 e3) = compileThreeSubExpr "list8Slice" e1 e2 e3
 compileExpr (ElemList8 e1 e2) =
   case e1 of
     SliceList8 l st len -> compileTwoSubExpr "list8Elem" l (AddI st e2)
-    _ -> compileTwoSubExpr "list8Elem" e1 e2
+    _                   -> compileTwoSubExpr "list8Elem" e1 e2
 compileExpr (LenList8 e) = 
   case e of
     SliceList8 l st len -> compileSub (LenList8 l) st
