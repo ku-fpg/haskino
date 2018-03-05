@@ -48,6 +48,7 @@ firmware/Arduino-Makefile
 firmware/HaskinoFirmware/build-*
 firmware/HaskinoFirmwareShallow/build-*
 firmware/HaskinoRuntime/build-*
+firmware/HaskinoRuntime/test
 firmware/EEPROMErase/build-*
 
 # Mac Files
