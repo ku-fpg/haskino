@@ -13,6 +13,7 @@
 #include <Stepper.h>
 #include <Wire.h>
 #include <math.h>
+#include <stdarg.h>
 #include "HaskinoRuntime.h"
 #include "HaskinoRuntimeList.h"
 
@@ -268,6 +269,28 @@ uint8_t list8Len(uint8_t *l)
 
     listFree(l);
     return len;
+    }
+
+uint8_t *list8Pack(int count, ...)
+    {
+    byte *newList;
+    int i;
+    va_list args;
+    va_start(args, count);
+
+    newList = listAlloc(count);
+
+    if (newList)
+        {
+        newList[1] = count;
+        for (i=0; i<count; i++)
+            {
+            newList[i+2] = va_arg(args, uint8_t);
+            }
+        }
+
+    va_end(args);
+    return newList;
     }
 
 uint8_t *list8Cons(uint8_t w, uint8_t *l)

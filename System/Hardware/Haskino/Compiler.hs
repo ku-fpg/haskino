@@ -2649,19 +2649,44 @@ compileExpr (LitList8 ws) = "(uint8_t * ) (const byte[]) {255, " ++ (show $ leng
 compileExpr (RefList8 n) = compileRef n
 compileExpr (RemBindList8 b) = compileBind b
 compileExpr (IfL8 e1 e2 e3) = compileIfSubExpr e1 e2 e3
-compileExpr (ConsList8 e1 e2) = compileTwoSubExpr "list8Cons" e1 e2
+compileExpr (ConsList8 e1 e2) =
+  case e2 of
+    e | not $ onlyConsAndLit e2 -> compileTwoSubExpr "list8Cons" e1 e2
+    _                           -> compileConsList8 [e1] e2
+  where
+    compileConsList8 :: [Expr Word8] -> Expr [Word8] -> String
+    compileConsList8 es e =
+      case e of
+        ConsList8 e1' e2' -> compileConsList8 (e1' : es) e2'
+        LitList8 le -> "list8Pack(" ++ show (length es + length le) ++ ", " ++ compileListExpr (not (null le)) es ++ compileLitListExpr le ++ ")"
+        _ -> ""
+
+    compileListExpr :: Bool -> [Expr Word8] -> String
+    compileListExpr _ []     = ""
+    compileListExpr il [e]   = compileExpr e ++ if il then ", " else ""
+    compileListExpr il (e:es) = compileExpr e ++ ", " ++ compileListExpr il es
+
+    compileLitListExpr :: [Word8] -> String
+    compileLitListExpr []     = ""
+    compileLitListExpr [w]    = show w
+    compileLitListExpr (w:ws) = show w ++ ", " ++ compileLitListExpr ws
+
+    onlyConsAndLit :: Expr a -> Bool
+    onlyConsAndLit (LitList8 _)        = True
+    onlyConsAndLit (ConsList8 _ e2') = onlyConsAndLit e2'
+    onlyConsAndLit _                   = False
 compileExpr (ApndList8 e1 e2) = compileTwoSubExpr "list8Apnd" e1 e2
 compileExpr (RevList8 e) = compileSubExpr "list8Reverse" e
 compileExpr (SliceList8 e1 e2 e3) = compileThreeSubExpr "list8Slice" e1 e2 e3
 compileExpr (ElemList8 e1 e2) =
   case e1 of
-    SliceList8 l st len -> compileTwoSubExpr "list8Elem" l (AddI st e2)
-    _                   -> compileTwoSubExpr "list8Elem" e1 e2
-compileExpr (LenList8 e) = 
+    SliceList8 l st _ -> compileTwoSubExpr "list8Elem" l (AddI st e2)
+    _ -> compileTwoSubExpr "list8Elem" e1 e2
+compileExpr (LenList8 e) =
   case e of
-    SliceList8 l st len -> compileSub (LenList8 l) st
-    RevList8 l          -> compileSubExpr "list8Len" l
-    _                   -> compileSubExpr "list8Len" e
+    SliceList8 l st _ -> compileSub (LenList8 l) st
+    RevList8 l        -> compileSubExpr "list8Len" l
+    _                 -> compileSubExpr "list8Len" e
 -- ToDo:
 -- compileExpr (PackList8 es) = [exprLCmdVal EXPRL_PACK, fromIntegral $ length es] ++ (foldl (++) [] (map compileExpr es))
 compileExpr (LitFloat f) = show f -- ToDo:  Is this correct?
