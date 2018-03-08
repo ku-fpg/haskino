@@ -27,5 +27,15 @@ Test Measurements
             4095 ms
             4092 ms
             -------
-            
+            4092.8ms / 1000 = 4.093 ms   1.8% less
+
+
+Command Message = 5 bytes + Checksum + Frame Char = 7 bytes
+Reply Message   = 3 bytes + Checksum + Frame Char = 5 bytes
+
+1 character = 115200 bits/sec/10 bits = 11520 bytes/sec
+
+Comms Time
+12 bytes / 11520 bytes/sec = 1.042 ms
+
 
