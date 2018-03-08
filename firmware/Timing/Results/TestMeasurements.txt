@@ -1,0 +1,31 @@
+Test Measurements
+    C Version   
+        digitalRead 1000 times
+            4170 ms
+            4167 ms
+            4169 ms
+            4167 ms
+            4169 ms
+            4169 ms
+            4167 ms
+            4170 ms
+            4173 ms
+            4167 ms
+            -------
+            4167.9 ms / 1000 = 4.168 ms
+
+    Haskino Version
+        digitalRead 1000 times
+            4092 ms
+            4092 ms
+            4093 ms
+            4092 ms
+            4096 ms
+            4092 ms
+            4093 ms
+            4091 ms
+            4095 ms
+            4092 ms
+            -------
+            
+
