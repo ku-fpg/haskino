@@ -2130,10 +2130,10 @@ compileProcedure (IterateFloatFloatE br iv bf) = do
     return bj
 compileProcedure (App1Arg name arg1 ap1 f) = do
     case arg1 of
-      RemBindB i  -> do
+      RemArgB i  -> do
           b <- compile1ExprProcedure BoolType name ap1
           return $ remBind b
-      RemBindW8 i -> do
+      RemArgW8 i -> do
           b <- compile1ExprProcedure Word8Type name ap1
           return $ remBind b
       _         -> error "Bad stuff"

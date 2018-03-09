@@ -66,7 +66,7 @@ module System.Hardware.Haskino (
   -- ** Debugging
   , debug, debugE, debugListen, die, deframe
   -- ** Compiler
-  , compileProgram, compileProgramE
+  , compileProgram, compileProgramE, app1Arg, remBind, remArg
   -- ** Recursion
   , ArduinoIterate(..), ExprEither(..)
  )

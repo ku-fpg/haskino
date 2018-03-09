@@ -992,6 +992,9 @@ queryTaskE tid = Arduino $ primitive $ QueryTaskE tid
 bootTaskE :: Expr [Word8] -> Arduino (Expr Bool)
 bootTaskE tids = Arduino $ primitive $ BootTaskE tids
 
+app1Arg :: (ExprB a, ExprB b) => String -> Expr a -> Expr a -> Arduino (Expr b) -> Arduino (Expr b)
+app1Arg name ap1 arg1 f = Arduino $ primitive $ App1Arg name ap1 arg1 f
+
 debug :: [Word8] -> Arduino ()
 debug msg = Arduino $ primitive $ Debug msg
 
