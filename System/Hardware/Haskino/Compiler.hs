@@ -76,6 +76,9 @@ refName = "ref"
 bindName :: String
 bindName = "bind"
 
+argName :: String
+argName = "arg"
+
 indentString :: String
 indentString = "    "
 
@@ -2125,6 +2128,15 @@ compileProcedure (IterateFloatFloatE br iv bf) = do
     let bj = RemBindFloat j
     _ <- compileIterateProcedure FloatType FloatType b bb br i bi j bj iv bf
     return bj
+compileProcedure (App1Arg name arg1 ap1 f) = do
+    case arg1 of
+      RemBindB i  -> do
+          b <- compile1ExprProcedure BoolType name ap1
+          return $ remBind b
+      RemBindW8 i -> do
+          b <- compile1ExprProcedure Word8Type name ap1
+          return $ remBind b
+      _         -> error "Bad stuff"
 compileProcedure _ = error "compileProcedure - Unknown procedure, it may actually be a command"
 
 compileIfThenElseProcedure :: ExprB a => CompileType -> Expr Bool -> Arduino (Expr a) -> Arduino (Expr a) -> State CompileState (Expr a)
@@ -2371,6 +2383,9 @@ compileComp = compileSubExpr "~"
 compileBind :: Int -> String
 compileBind b = bindName ++ show b
 
+compileArg :: Int -> String
+compileArg b = argName ++ show b
+
 compileBAnd :: Expr a -> Expr a -> String
 compileBAnd = compileInfixSubExpr "&&"
 
@@ -2432,18 +2447,21 @@ compileExpr :: Expr a -> String
 compileExpr LitUnit = "0"
 compileExpr (ShowUnit _) = show ()
 compileExpr (RemBindUnit b) = bindName ++ show b
+compileExpr (RemArgUnit b) = argName ++ show b
 compileExpr (LitPinMode m) = case m of
                                 INPUT         -> "INPUT"
                                 OUTPUT        -> "OUTPUT"
                                 INPUT_PULLUP  -> "INPUT_PULLUP"
 compileExpr (ShowPinMode e) = compileSubExpr "showPinMode" e
 compileExpr (RemBindPinMode b) = bindName ++ show b
+compileExpr (RemArgPinMode b) = argName ++ show b
 compileExpr (EqPinMode e1 e2) = compileEqual e1 e2
 compileExpr (IfPinMode e1 e2 e3) = compileIfSubExpr e1 e2 e3
 compileExpr (LitB b) = if b then "1" else "0"
 compileExpr (ShowB e) = compileSubExpr "showBool" e
 compileExpr (RefB n) = compileRef n
 compileExpr (RemBindB b) = bindName ++ show b
+compileExpr (RemArgB b) = argName ++ show b
 compileExpr (NotB e) = compileSubExpr "!" e
 compileExpr (AndB e1 e2) = compileBAnd e1 e2
 compileExpr (OrB e1 e2) = compileBOr e1 e2
@@ -2472,6 +2490,7 @@ compileExpr (LitW8 w) = show w
 compileExpr (ShowW8 e) = compileSubExpr "showWord8" e
 compileExpr (RefW8 n) = compileRef n
 compileExpr (RemBindW8 b) = compileBind b
+compileExpr (RemArgW8 b) = compileArg b
 compileExpr (FromIntW8 e) = compileFromInt "uint8_t" e
 compileExpr (ToIntW8 e) = compileToInt e
 compileExpr (NegW8 e) = compileNeg e -- ToDo:  Check arduino compiler
@@ -2497,6 +2516,7 @@ compileExpr (LitW16 w) = show w
 compileExpr (ShowW16 e) = compileSubExpr "showWord16" e
 compileExpr (RefW16 n) = compileRef n
 compileExpr (RemBindW16 b) = compileBind b
+compileExpr (RemArgW16 b) = compileArg b
 compileExpr (FromIntW16 e) = compileFromInt "uint16_t" e
 compileExpr (ToIntW16 e) = compileToInt e
 compileExpr (NegW16 e) = compileNeg e
@@ -2522,6 +2542,7 @@ compileExpr (LitW32 w) = show w
 compileExpr (ShowW32 e) = compileSubExpr "showWord32" e
 compileExpr (RefW32 n) = compileRef n
 compileExpr (RemBindW32 b) = compileBind b
+compileExpr (RemArgW32 b) = compileArg b
 compileExpr (FromIntW32 e) = compileFromInt "uint32_t" e
 compileExpr (ToIntW32 e) = compileToInt e
 compileExpr (NegW32 e) = compileNeg e
@@ -2547,6 +2568,7 @@ compileExpr (LitI8 w) = show w
 compileExpr (ShowI8 e) = compileSubExpr "showInt8" e
 compileExpr (RefI8 n) = compileRef n
 compileExpr (RemBindI8 b) = compileBind b
+compileExpr (RemArgI8 b) = compileArg b
 compileExpr (FromIntI8 e) = compileFromInt "int8_t" e
 compileExpr (ToIntI8 e) = compileToInt e
 compileExpr (NegI8 e) = compileNeg e
@@ -2572,6 +2594,7 @@ compileExpr (LitI16 w) = show w
 compileExpr (ShowI16 e) = compileSubExpr "showInt16" e
 compileExpr (RefI16 n) = compileRef n
 compileExpr (RemBindI16 b) = compileBind b
+compileExpr (RemArgI16 b) = compileArg b
 compileExpr (FromIntI16 e) = compileFromInt "int16_t" e
 compileExpr (ToIntI16 e) = compileToInt e
 compileExpr (NegI16 e) = compileNeg e
@@ -2597,6 +2620,7 @@ compileExpr (LitI32 w) = show w
 compileExpr (ShowI32 e) = compileSubExpr "showInt32" e
 compileExpr (RefI32 n) = compileRef n
 compileExpr (RemBindI32 b) = compileBind b
+compileExpr (RemArgI32 b) = compileArg b
 compileExpr (FromIntI32 e) = compileFromInt "int32_t" e
 compileExpr (ToIntI32 e) = compileToInt e
 compileExpr (NegI32 e) = compileNeg e
@@ -2622,6 +2646,7 @@ compileExpr (LitI w) = show w
 compileExpr (ShowI e) = compileSubExpr "showInt32" e
 compileExpr (RefI n) = compileRef n
 compileExpr (RemBindI b) = compileBind b
+compileExpr (RemArgI b) = compileArg b
 compileExpr (NegI e) = compileNeg e
 compileExpr (SignI e) = compileSubExpr "sign32" e
 compileExpr (AddI e1 e2) = compileAdd e1 e2
@@ -2648,6 +2673,7 @@ compileExpr (LitList8 ws) = "(uint8_t * ) (const byte[]) {255, " ++ (show $ leng
     compListLit (w : ws') = "," ++ show w ++ compListLit ws'
 compileExpr (RefList8 n) = compileRef n
 compileExpr (RemBindList8 b) = compileBind b
+compileExpr (RemArgList8 b) = compileArg b
 compileExpr (IfL8 e1 e2 e3) = compileIfSubExpr e1 e2 e3
 compileExpr (ConsList8 e1 e2) = compileTwoSubExpr "list8Cons" e1 e2
 compileExpr (ApndList8 e1 e2) = compileTwoSubExpr "list8Apnd" e1 e2
@@ -2668,6 +2694,7 @@ compileExpr (LitFloat f) = show f -- ToDo:  Is this correct?
 compileExpr (ShowFloat e1 e2) = compileTwoSubExpr "showF" e1 e2
 compileExpr (RefFloat n) = compileRef n
 compileExpr (RemBindFloat b) = compileBind b
+compileExpr (RemArgFloat b) = compileArg b
 compileExpr (FromIntFloat e) = compileFromInt "float" e
 compileExpr (NegFloat e) = compileNeg e
 compileExpr (SignFloat e) = compileSubExpr "signF" e

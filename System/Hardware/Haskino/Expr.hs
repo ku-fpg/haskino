@@ -93,6 +93,18 @@ data Expr a where
   RemBindFloat :: Int -> Expr Float
   RemBindUnit  :: Int -> Expr ()
   RemBindPinMode :: Int -> Expr PinMode
+  RemArgB      :: Int -> Expr Bool
+  RemArgW8     :: Int -> Expr Word8
+  RemArgW16    :: Int -> Expr Word16
+  RemArgW32    :: Int -> Expr Word32
+  RemArgI8     :: Int -> Expr Int8
+  RemArgI16    :: Int -> Expr Int16
+  RemArgI32    :: Int -> Expr Int32
+  RemArgI      :: Int -> Expr Int
+  RemArgList8  :: Int -> Expr [Word8]
+  RemArgFloat  :: Int -> Expr Float
+  RemArgUnit   :: Int -> Expr ()
+  RemArgPinMode :: Int -> Expr PinMode
   FromIntW8    :: Expr Int -> Expr Word8
   FromIntW16   :: Expr Int -> Expr Word16
   FromIntW32   :: Expr Int -> Expr Word32
@@ -322,6 +334,7 @@ class ExprB a where
     lit      :: a -> Expr a
     eval'    :: Expr a -> a
     remBind  :: Int -> Expr a
+    remArg   :: Int -> Expr a
     showE    :: Expr a -> Expr [Word8]
     lessE    :: Expr a -> Expr a -> Expr Bool
     lesseqE  :: Expr a -> Expr a -> Expr Bool
@@ -344,6 +357,7 @@ instance ExprB () where
     lit _ = LitUnit
     eval' = evalExprUnit
     remBind = RemBindUnit
+    remArg = RemArgUnit
     showE = ShowUnit
     {-# INLINE lessE #-}
     lessE _ _ = false
@@ -357,6 +371,7 @@ instance ExprB PinMode where
     lit = LitPinMode
     eval' = evalExprPM
     remBind = RemBindPinMode
+    remArg = RemArgPinMode
     showE = ShowPinMode
     {-# INLINE lessE #-}
     lessE = true
@@ -370,6 +385,7 @@ instance ExprB Word8 where
     lit = LitW8
     eval' = evalExprW8
     remBind = RemBindW8
+    remArg = RemArgW8
     showE = ShowW8
     {-# INLINE lessE #-}
     lessE = (B.<*)
@@ -383,6 +399,7 @@ instance ExprB Word16 where
     lit = LitW16
     eval' = evalExprW16
     remBind = RemBindW16
+    remArg = RemArgW16
     showE = ShowW16
     {-# INLINE lessE #-}
     lessE = (B.<*)
@@ -396,6 +413,7 @@ instance ExprB Word32 where
     lit = LitW32
     eval' = evalExprW32
     remBind = RemBindW32
+    remArg = RemArgW32
     showE = ShowW32
     {-# INLINE lessE #-}
     lessE = (B.<*)
@@ -409,6 +427,7 @@ instance ExprB Int8 where
     lit = LitI8
     eval' = evalExprI8
     remBind = RemBindI8
+    remArg = RemArgI8
     showE = ShowI8
     {-# INLINE lessE #-}
     lessE = (B.<*)
@@ -422,6 +441,7 @@ instance ExprB Int16 where
     lit = LitI16
     eval' = evalExprI16
     remBind = RemBindI16
+    remArg = RemArgI16
     showE = ShowI16
     {-# INLINE lessE #-}
     lessE = (B.<*)
@@ -435,6 +455,7 @@ instance ExprB Int32 where
     lit = LitI32
     eval' = evalExprI32
     remBind = RemBindI32
+    remArg = RemArgI32
     showE = ShowI32
     {-# INLINE lessE #-}
     lessE = (B.<*)
@@ -448,6 +469,7 @@ instance ExprB Int where
     lit = LitI
     eval' = evalExprI
     remBind = RemBindI
+    remArg = RemArgI
     showE = ShowI
     {-# INLINE lessE #-}
     lessE = (B.<*)
@@ -461,6 +483,7 @@ instance ExprB Bool where
     lit = LitB
     eval' = evalExprB
     remBind = RemBindB
+    remArg = RemArgB
     showE = ShowB
     {-# INLINE lessE #-}
     lessE = (B.<*)
@@ -474,6 +497,7 @@ instance ExprB [Word8] where
     lit = LitList8
     eval' = evalExprL8
     remBind = RemBindList8
+    remArg = RemArgList8
     showE = id
     {-# INLINE lessE #-}
     lessE = (B.<*)
@@ -487,6 +511,7 @@ instance ExprB Float where
     lit = LitFloat
     eval' = evalExprFloat
     remBind = RemBindFloat
+    remArg = RemArgFloat
     showE = showFFloatE Nothing
     {-# INLINE lessE #-}
     lessE = (B.<*)
