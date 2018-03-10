@@ -6,7 +6,7 @@ byte haskinoMainTcb[sizeof(TCB) + HASKINOMAIN_STACK_SIZE];
 
 // ******** Start of Instrumentation            
 #define TEST_COUNT 1000
-#define TEST_CMD   0x30           
+#define TEST_CMD  0x20
 static uint8_t cmdChar;
 static uint32_t start;
 static uint32_t end;

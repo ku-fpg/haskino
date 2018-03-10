@@ -39,3 +39,42 @@ Comms Time
 12 bytes / 11520 bytes/sec = 1.042 ms
 
 
+    C Version   
+        8 digitalWrite - 1 queryFirmware 1000 times
+            8213 ms
+            8203 ms
+            8199 ms
+            8198 ms
+            8205 ms
+            8210 ms
+            8197 ms
+            8219 ms
+            8200 ms
+            8199 ms
+            -------
+            8204.3ms / 1000 = 8.2043 ms
+ 
+    Haskino Version
+        8 digitalWrite - 1 queryFirmware 1000 times
+            8252 ms
+            8206 ms
+            8200 ms
+            8211 ms 
+            8203 ms
+            8260 ms
+            8255 ms
+            8207 ms
+            8219 ms
+            8202 ms
+            -------
+            8221.5ms / 1000 = 8.2215 ms - 0.2% more
+
+Command Message = 6 bytes + Checksum + Frame Char = 8 bytes * 8 = 64 bytes
+Procedure Message = 1 bytes + Checksum + Frame Char = 3 bytes
+Reply Message   = 2 bytes + Checksum + Frame Char = 4 bytes
+
+1 character = 115200 bits/sec/10 bits = 11520 bytes/sec
+
+Comms Time
+71 bytes / 11520 bytes/sec = 1.042 ms
+
