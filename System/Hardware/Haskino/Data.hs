@@ -43,6 +43,20 @@ newtype Arduino a = Arduino (RemoteMonad ArduinoPrimitive a)
 instance MonadIO Arduino where
   liftIO m = Arduino $ primitive $ LiftIO m
 
+data ExprRetType a where
+    ExprRetTypeB       :: Arduino(Expr Bool) -> ExprRetType Bool
+    ExprRetTypePinMode :: Arduino(Expr PinMode) -> ExprRetType PinMode
+    ExprRetTypeW8      :: Arduino(Expr Word8) -> ExprRetType Word8
+    ExprRetTypeW16     :: Arduino(Expr Word16) -> ExprRetType Word16
+    ExprRetTypeW32     :: Arduino(Expr Word32) -> ExprRetType Word32
+    ExprRetTypeI8      :: Arduino(Expr Int8) -> ExprRetType Int8
+    ExprRetTypeI16     :: Arduino(Expr Int16) -> ExprRetType Int16
+    ExprRetTypeI32     :: Arduino(Expr Int32) -> ExprRetType Int32
+    ExprRetTypeI       :: Arduino(Expr Int) -> ExprRetType Int
+    ExprRetTypeFloat   :: Arduino(Expr Float) -> ExprRetType Float
+    ExprRetTypeL8      :: Arduino(Expr [Word8]) -> ExprRetType [Word8]
+    ExprRetTypeUnit    :: Arduino(Expr ()) -> ExprRetType ()
+
 type Pin  = Word8
 type PinE = Expr Word8
 
@@ -509,7 +523,7 @@ data ArduinoPrimitive :: * -> * where
      IterateFloatIE       :: Expr Int -> Expr Float -> (Expr Int -> Expr Float -> Arduino (ExprEither Float Int)) -> ArduinoPrimitive (Expr Int)
      IterateFloatL8E      :: Expr Int -> Expr Float -> (Expr Int -> Expr Float -> Arduino (ExprEither Float [Word8])) -> ArduinoPrimitive (Expr [Word8])
      IterateFloatFloatE   :: Expr Int -> Expr Float -> (Expr Int -> Expr Float -> Arduino (ExprEither Float Float)) -> ArduinoPrimitive (Expr Float)
-     App1Arg              :: (ExprB a, ExprB b) => String -> Expr a -> Expr a -> Arduino (Expr b) -> ArduinoPrimitive (Expr b)
+     App1Arg              :: (ExprB a, ExprB b) => String -> ExprArgType a -> ExprRetType b -> ArduinoPrimitive (Expr b)
      LiftIO               :: IO a -> ArduinoPrimitive a
      Debug                :: [Word8] -> ArduinoPrimitive ()
      DebugE               :: Expr [Word8] -> ArduinoPrimitive ()
@@ -992,8 +1006,8 @@ queryTaskE tid = Arduino $ primitive $ QueryTaskE tid
 bootTaskE :: Expr [Word8] -> Arduino (Expr Bool)
 bootTaskE tids = Arduino $ primitive $ BootTaskE tids
 
-app1Arg :: (ExprB a, ExprB b) => String -> Expr a -> Expr a -> Arduino (Expr b) -> Arduino (Expr b)
-app1Arg name ap1 arg1 f = Arduino $ primitive $ App1Arg name ap1 arg1 f
+app1Arg :: (ExprB a, ExprB b) => String -> ExprArgType a -> ExprRetType b -> Arduino (Expr b)
+app1Arg name arg1 f = Arduino $ primitive $ App1Arg name arg1 f
 
 debug :: [Word8] -> Arduino ()
 debug msg = Arduino $ primitive $ Debug msg
@@ -1006,6 +1020,42 @@ debugListen = Arduino $ primitive $ DebugListen
 
 die :: String -> [String] -> Arduino ()
 die msg msgs = Arduino $ primitive $ Die msg msgs
+
+class ExprB a => ArduinoApp a where
+    exprRetType :: Arduino(Expr a) -> ExprRetType a
+
+instance ArduinoApp () where
+    exprRetType = ExprRetTypeUnit
+
+instance ArduinoApp Bool where
+    exprRetType = ExprRetTypeB
+
+instance ArduinoApp Word8 where
+    exprRetType = ExprRetTypeW8
+
+instance ArduinoApp Word16 where
+    exprRetType = ExprRetTypeW16
+
+instance ArduinoApp Word32 where
+    exprRetType = ExprRetTypeW32
+
+instance ArduinoApp Int8 where
+    exprRetType = ExprRetTypeI8
+
+instance ArduinoApp Int16 where
+    exprRetType = ExprRetTypeI16
+
+instance ArduinoApp Int32 where
+    exprRetType = ExprRetTypeI32
+
+instance ArduinoApp Int where
+    exprRetType = ExprRetTypeI
+
+instance ArduinoApp Float where
+    exprRetType = ExprRetTypeFloat
+
+instance ArduinoApp [Word8] where
+    exprRetType = ExprRetTypeL8
 
 class ExprB a => ArduinoConditional a where
     ifThenElseE  :: Expr Bool -> Arduino (Expr a) ->

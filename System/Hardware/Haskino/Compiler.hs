@@ -2128,13 +2128,40 @@ compileProcedure (IterateFloatFloatE br iv bf) = do
     let bj = RemBindFloat j
     _ <- compileIterateProcedure FloatType FloatType b bb br i bi j bj iv bf
     return bj
-compileProcedure (App1Arg name arg1 ap1 f) = do
+compileProcedure (App1Arg name arg1 f) = do
     case arg1 of
-      RemArgB i  -> do
-          b <- compile1ExprProcedure BoolType name ap1
+      ExprArgTypeUnit arg  -> do
+          b <- compile1ExprProcedure UnitType name arg
           return $ remBind b
-      RemArgW8 i -> do
-          b <- compile1ExprProcedure Word8Type name ap1
+      ExprArgTypeB arg -> do
+          b <- compile1ExprProcedure BoolType name arg
+          return $ remBind b
+      ExprArgTypePinMode arg -> do
+          b <- compile1ExprProcedure IntType name arg
+          return $ remBind b
+      ExprArgTypeW8 arg -> do
+          b <- compile1ExprProcedure Word8Type name arg
+          return $ remBind b
+      ExprArgTypeW16 arg -> do
+          b <- compile1ExprProcedure Word16Type name arg
+          return $ remBind b
+      ExprArgTypeW32 arg -> do
+          b <- compile1ExprProcedure Word32Type name arg
+          return $ remBind b
+      ExprArgTypeI8 arg -> do
+          b <- compile1ExprProcedure Int8Type name arg
+          return $ remBind b
+      ExprArgTypeI16 arg -> do
+          b <- compile1ExprProcedure Int16Type name arg
+          return $ remBind b
+      ExprArgTypeI32 arg -> do
+          b <- compile1ExprProcedure Int32Type name arg
+          return $ remBind b
+      ExprArgTypeI arg -> do
+          b <- compile1ExprProcedure IntType name arg
+          return $ remBind b
+      ExprArgTypeFloat arg -> do
+          b <- compile1ExprProcedure FloatType name arg
           return $ remBind b
       _         -> error "Bad stuff"
 compileProcedure _ = error "compileProcedure - Unknown procedure, it may actually be a command"
@@ -2681,13 +2708,13 @@ compileExpr (RevList8 e) = compileSubExpr "list8Reverse" e
 compileExpr (SliceList8 e1 e2 e3) = compileThreeSubExpr "list8Slice" e1 e2 e3
 compileExpr (ElemList8 e1 e2) =
   case e1 of
-    SliceList8 l st len -> compileTwoSubExpr "list8Elem" l (AddI st e2)
-    _                   -> compileTwoSubExpr "list8Elem" e1 e2
-compileExpr (LenList8 e) = 
+    SliceList8 l st _ -> compileTwoSubExpr "list8Elem" l (AddI st e2)
+    _                 -> compileTwoSubExpr "list8Elem" e1 e2
+compileExpr (LenList8 e) =
   case e of
-    SliceList8 l st len -> compileSub (LenList8 l) st
-    RevList8 l          -> compileSubExpr "list8Len" l
-    _                   -> compileSubExpr "list8Len" e
+    SliceList8 l st _ -> compileSub (LenList8 l) st
+    RevList8 l        -> compileSubExpr "list8Len" l
+    _                 -> compileSubExpr "list8Len" e
 -- ToDo:
 -- compileExpr (PackList8 es) = [exprLCmdVal EXPRL_PACK, fromIntegral $ length es] ++ (foldl (++) [] (map compileExpr es))
 compileExpr (LitFloat f) = show f -- ToDo:  Is this correct?

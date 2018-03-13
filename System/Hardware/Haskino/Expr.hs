@@ -323,6 +323,20 @@ data ExprEither a b where
 
 deriving instance (Show a, Show b) => Show (ExprEither a b)
 
+data ExprArgType a where
+    ExprArgTypeB       :: Expr Bool -> ExprArgType Bool
+    ExprArgTypePinMode :: Expr PinMode -> ExprArgType PinMode
+    ExprArgTypeW8      :: Expr Word8 -> ExprArgType Word8
+    ExprArgTypeW16     :: Expr Word16 -> ExprArgType Word16
+    ExprArgTypeW32     :: Expr Word32 -> ExprArgType Word32
+    ExprArgTypeI8      :: Expr Int8 -> ExprArgType Int8
+    ExprArgTypeI16     :: Expr Int16 -> ExprArgType Int16
+    ExprArgTypeI32     :: Expr Int32 -> ExprArgType Int32
+    ExprArgTypeI       :: Expr Int -> ExprArgType Int
+    ExprArgTypeFloat   :: Expr Float -> ExprArgType Float
+    ExprArgTypeL8      :: Expr [Word8] -> ExprArgType [Word8]
+    ExprArgTypeUnit    :: Expr () -> ExprArgType ()
+
 -- Convience functions for ExprLeft constructor without a int parameter
 litZero :: Expr Int
 litZero = lit 0
@@ -352,6 +366,7 @@ class ExprB a where
     neqE a b = notB (eqE a b)
     ifBE     :: Expr Bool -> Expr a -> Expr a -> Expr a
     remoteRef :: Int -> RemoteRef a
+    exprArgType :: Expr a -> ExprArgType a
 
 instance ExprB () where
     lit _ = LitUnit
@@ -366,6 +381,7 @@ instance ExprB () where
     {-# INLINE ifBE #-}
     ifBE _ _ _ = LitUnit
     remoteRef = RemoteRefUnit
+    exprArgType = ExprArgTypeUnit
 
 instance ExprB PinMode where
     lit = LitPinMode
@@ -380,6 +396,7 @@ instance ExprB PinMode where
     {-# INLINE ifBE #-}
     ifBE = ifB
     remoteRef = RemoteRefPinMode
+    exprArgType = ExprArgTypePinMode
 
 instance ExprB Word8 where
     lit = LitW8
@@ -394,6 +411,7 @@ instance ExprB Word8 where
     {-# INLINE ifBE #-}
     ifBE = ifB
     remoteRef = RemoteRefW8
+    exprArgType = ExprArgTypeW8
 
 instance ExprB Word16 where
     lit = LitW16
@@ -408,6 +426,7 @@ instance ExprB Word16 where
     {-# INLINE ifBE #-}
     ifBE = ifB
     remoteRef = RemoteRefW16
+    exprArgType = ExprArgTypeW16
 
 instance ExprB Word32 where
     lit = LitW32
@@ -422,6 +441,7 @@ instance ExprB Word32 where
     {-# INLINE ifBE #-}
     ifBE = ifB
     remoteRef = RemoteRefW32
+    exprArgType = ExprArgTypeW32
 
 instance ExprB Int8 where
     lit = LitI8
@@ -436,6 +456,7 @@ instance ExprB Int8 where
     {-# INLINE ifBE #-}
     ifBE = ifB
     remoteRef = RemoteRefI8
+    exprArgType = ExprArgTypeI8
 
 instance ExprB Int16 where
     lit = LitI16
@@ -450,6 +471,7 @@ instance ExprB Int16 where
     {-# INLINE ifBE #-}
     ifBE = ifB
     remoteRef = RemoteRefI16
+    exprArgType = ExprArgTypeI16
 
 instance ExprB Int32 where
     lit = LitI32
@@ -464,6 +486,7 @@ instance ExprB Int32 where
     {-# INLINE ifBE #-}
     ifBE = ifB
     remoteRef = RemoteRefI32
+    exprArgType = ExprArgTypeI32
 
 instance ExprB Int where
     lit = LitI
@@ -478,6 +501,7 @@ instance ExprB Int where
     {-# INLINE ifBE #-}
     ifBE = ifB
     remoteRef = RemoteRefI
+    exprArgType = ExprArgTypeI
 
 instance ExprB Bool where
     lit = LitB
@@ -492,6 +516,7 @@ instance ExprB Bool where
     {-# INLINE ifBE #-}
     ifBE = ifB
     remoteRef = RemoteRefB
+    exprArgType = ExprArgTypeB
 
 instance ExprB [Word8] where
     lit = LitList8
@@ -506,6 +531,7 @@ instance ExprB [Word8] where
     {-# INLINE ifBE #-}
     ifBE = ifB
     remoteRef = RemoteRefL8
+    exprArgType = ExprArgTypeL8
 
 instance ExprB Float where
     lit = LitFloat
@@ -520,6 +546,7 @@ instance ExprB Float where
     {-# INLINE ifBE #-}
     ifBE = ifB
     remoteRef = RemoteRefFloat
+    exprArgType = ExprArgTypeFloat
 
 litString :: String -> [Word8]
 litString = stringToBytes
