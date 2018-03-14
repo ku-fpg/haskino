@@ -524,6 +524,7 @@ data ArduinoPrimitive :: * -> * where
      IterateFloatL8E      :: Expr Int -> Expr Float -> (Expr Int -> Expr Float -> Arduino (ExprEither Float [Word8])) -> ArduinoPrimitive (Expr [Word8])
      IterateFloatFloatE   :: Expr Int -> Expr Float -> (Expr Int -> Expr Float -> Arduino (ExprEither Float Float)) -> ArduinoPrimitive (Expr Float)
      App1Arg              :: (ExprB a, ExprB b) => String -> ExprArgType a -> ExprRetType b -> ArduinoPrimitive (Expr b)
+     App2Arg              :: (ExprB a, ExprB b, ExprB c) => String -> ExprArgType a -> ExprArgType b -> ExprRetType c -> ArduinoPrimitive (Expr c)
      LiftIO               :: IO a -> ArduinoPrimitive a
      Debug                :: [Word8] -> ArduinoPrimitive ()
      DebugE               :: Expr [Word8] -> ArduinoPrimitive ()
@@ -1008,6 +1009,9 @@ bootTaskE tids = Arduino $ primitive $ BootTaskE tids
 
 app1Arg :: (ExprB a, ExprB b) => String -> ExprArgType a -> ExprRetType b -> Arduino (Expr b)
 app1Arg name arg1 f = Arduino $ primitive $ App1Arg name arg1 f
+
+app2Arg :: (ExprB a, ExprB b, ExprB c) => String -> ExprArgType a -> ExprArgType b -> ExprRetType c -> Arduino (Expr c)
+app2Arg name arg1 arg2 f = Arduino $ primitive $ App2Arg name arg1 arg2 f
 
 debug :: [Word8] -> Arduino ()
 debug msg = Arduino $ primitive $ Debug msg
