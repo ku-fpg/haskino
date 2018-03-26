@@ -49,6 +49,7 @@ firmware/HaskinoFirmware/build-*
 firmware/HaskinoFirmwareShallow/build-*
 firmware/HaskinoRuntime/build-*
 firmware/HaskinoRuntime/test
+firmware/HaskinoFirmwareShallow/test
 firmware/EEPROMErase/build-*
 
 # Mac Files
