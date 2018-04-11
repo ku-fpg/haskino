@@ -55,6 +55,7 @@ import           Avail
 import           Control.Monad.State
 import           CoreMonad
 import           Data.List
+import           Data.List.Split
 import qualified Data.Map             as M
 import           GhcPlugins
 
@@ -398,6 +399,12 @@ instance PassCoreM BindM where
 deepSuffix :: String
 deepSuffix = "_deep'"
 
+ghcGenPrefix :: String
+ghcGenPrefix = "$"
+
+isNotGhcGenId :: Id -> Bool
+isNotGhcGenId i = not $ isPrefixOf ghcGenPrefix $ last $ splitOn "." (varString i)
+    
 bindChangeArgRetAppPass :: ModGuts -> CoreM ModGuts
 bindChangeArgRetAppPass guts = do
     (bindsL', s) <- (\x -> (runStateT (runBindM $ (mapM changeArgBind) x) (BindEnv guts [] M.empty []))) (mg_binds guts)
@@ -415,7 +422,7 @@ changeArgBind bndr@(NonRec b e) = do
   -- Only do top level binds, as some Core binds appear in mg_binds, but are
   -- not top level. This could cause translation of elements of a non-ExprB
   -- data type instantiation, which is not what we want.
-  if isBindTopLevel b
+  if isBindTopLevel b && isNotGhcGenId b
   then do
     ides <- changeSubBind b e
     let bs = map (\ide -> NonRec (fst ide) (snd ide)) ides
@@ -428,7 +435,9 @@ changeArgBind (Rec bs) = do
 changeArgBind' :: [(Id, CoreExpr)] -> BindM ([CoreBind], [(Id, CoreExpr)])
 changeArgBind' [] = return ([], [])
 changeArgBind' ((b, e) : bs) = do
-  ides <- changeSubBind b e
+  ides <- if isNotGhcGenId b
+          then changeSubBind b e
+          else return [(b,e)]
   (nrbs', rbs') <- changeArgBind' bs
   if length ides == 1
   then do
@@ -673,7 +682,7 @@ changeAppExpr e = do
       let defaultRet = return $ Var v
       let vs = varString v
       isRetTyExprClass <- isExprClassType $ varType v
-      if isSuffixOf deepSuffix vs || vs `elem` comProcList
+      if isSuffixOf deepSuffix vs || isPrefixOf ghcGenPrefix vs || vs `elem` comProcList
       then defaultRet
       else case tyCon_m of
           Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
@@ -702,7 +711,7 @@ changeAppExpr e = do
         Var vb -> do
           let vbs = varString vb
           isRetTyExprClass <- isExprClassType retTy
-          if isSuffixOf deepSuffix vbs || vbs `elem` comProcList
+          if isSuffixOf deepSuffix vbs || isPrefixOf ghcGenPrefix vbs || vbs `elem` comProcList
           then defaultRet
           else case tyCon_m of
                 Just (retTyCon, [retTy']) | retTyCon == monadTyConId -> do
